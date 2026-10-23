@@ -73,7 +73,13 @@ sizeForm.addEventListener('submit', (event) => {
 });
 for (const { name, box } of boxes)
   box.addEventListener('change', () => sign.setLayer(name, box.checked));
-hue.addEventListener('change', () => sign.setColor(userHex()));
+// The visitor's message first plays at the program's second step, so a change replays from there.
+const replay = () => sign.restart(only === null ? 1 : 0);
+message.addEventListener('change', replay);
+hue.addEventListener('change', () => {
+  sign.setColor(userHex());
+  replay();
+});
 rate.addEventListener('input', () => {
   sign.ramp(Number(rate.value), 200);
   rateOut.value = `${Number(rate.value).toFixed(2)}×`;
