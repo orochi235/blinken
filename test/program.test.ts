@@ -94,6 +94,18 @@ describe('play', () => {
     expect(stepNames(m).some((n) => n?.startsWith('tile'))).toBe(false);
   });
 
+  it('resolves done after a sync when no step fits', async () => {
+    const m = fresh();
+    const program = play(m, b, [{ text: 'I', hex: 0, effect: 'tile' }]);
+    let done = false;
+    void program.done.then(() => {
+      done = true;
+    });
+    m.sync(1);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(done).toBe(true);
+  });
+
   it('names an unknown effect in the error', () => {
     expect(() => play(fresh(), b, [{ text: 'I', hex: 0, effect: 'nope' }])).toThrow(
       'bree: no effect named nope',

@@ -1,9 +1,10 @@
 import { mix } from '@msb235/blits';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { board, KIT, type Led, type Pose, SIZE, type Subject } from '@/board.js';
 import { EFFECTS, LAYERS } from '@/builtins.js';
 import { stageEffect } from '@/effects.js';
 import { rasterize } from '@/font.js';
+import { createMarquee } from '@/marquee.js';
 import { chase } from '@/modulators/index.js';
 import { scrollAcross } from '@/moves/index.js';
 import { place } from '@/orders.js';
@@ -80,5 +81,31 @@ describe('chase', () => {
         expect(shown).toBe((i + 3 - beat) % 3 === 0 ? 1 : 0.1);
       });
     }
+  });
+});
+
+describe('createMarquee', () => {
+  it('starts a pass that cues nothing again at the next frame, not at once', async () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (f: FrameRequestCallback) => frames.push(f));
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    let passes = 0;
+    const sign = createMarquee({} as HTMLCanvasElement, {
+      draw: false,
+      program: () => {
+        passes++;
+        return [{ effect: 'tile', text: 'I', hex: 0 }];
+      },
+    });
+    const settle = () => new Promise((r) => setTimeout(r, 0));
+    await settle();
+    expect(passes).toBe(1);
+    for (let i = 1; i <= 3; i++) {
+      (frames.shift() as FrameRequestCallback)(i * 16);
+      await settle();
+    }
+    expect(passes).toBe(4);
+    sign.destroy();
+    vi.unstubAllGlobals();
   });
 });

@@ -85,12 +85,16 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   let program = opts.program ?? [];
   let live = true;
   let pass: Handle<Subject> | null = null;
+  /** A pass ended; the next starts at the next frame, so one that ends at once cannot spin. */
+  let due = false;
   // Each pass reads the program as it stands when it starts.
   const again = () => {
     if (!live) return;
     const steps = typeof program === 'function' ? program() : program;
     pass = steps.length > 0 ? play(m, b, steps) : null;
-    pass?.done.then(again);
+    pass?.done.then(() => {
+      due = true;
+    });
   };
   again();
 
@@ -114,6 +118,10 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     if (gap > AWAY_MS) {
       m.rebase();
       gap = 0;
+    }
+    if (due) {
+      due = false;
+      again();
     }
     const t0 = performance.now();
     m.sync(now);

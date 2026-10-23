@@ -58,6 +58,8 @@ export function play(
     cueEffect(m, m.owns({ owner: program, start, name }), staged, name);
     start += staged.ms;
   }
+  // An owner holding nothing would stay until faded.
+  if (start === 0) program.fade({ over: 0 });
   return program;
 }
 
