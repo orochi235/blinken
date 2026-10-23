@@ -1,0 +1,60 @@
+import { oklab, patch } from '@msb235/blits';
+import type { Pose, Subject } from '../board.js';
+import type { ColorsParam } from '../params.js';
+import { cycleMs, depth, modulator, phasePerStep, RATE } from './modulator.js';
+
+const frac = (x: number) => x - Math.floor(x);
+
+/** Tint stepping through its colors in order, each held for one step. */
+export const palette = modulator({
+  name: 'palette',
+  about: 'Dots step through a list of colors.',
+  params: {
+    colors: { label: 'colors', colors: [0xff3b30, 0xffcc00, 0x34c759, 0x0a84ff] } as ColorsParam,
+    step: { label: 'step', min: 50, max: 2000, step: 10, value: 400, unit: 'ms' },
+    phase: phasePerStep(0.05),
+  },
+  writes: ['tint'],
+  on: 'dots',
+  length: (_at, p) => p.step * Math.max(1, p.colors.length),
+  patch: (_at, p, rank) => {
+    const tints = p.colors.map(oklab);
+    const n = Math.max(1, tints.length);
+    return patch<Subject, Pose>(
+      p.step * n,
+      (phase, subject) => {
+        const tint = tints[Math.floor(frac(phase + rank(subject) * p.phase) * n)];
+        return tint ? { tint } : {};
+      },
+      { writes: ['tint'] },
+    );
+  },
+});
+
+/** Tint blending between the first two of its colors along a sine. */
+export const twoColor = modulator({
+  name: 'two-color',
+  about: 'Dots blend back and forth between two colors.',
+  params: {
+    colors: { label: 'colors', colors: [0xff3b30, 0x0a84ff] } as ColorsParam,
+    rate: RATE,
+    depth: depth(1),
+    phase: phasePerStep(0.01),
+  },
+  writes: ['tint'],
+  on: 'dots',
+  length: (_at, p) => cycleMs(p.rate),
+  patch: (_at, p, rank) => {
+    const a = oklab(p.colors[0] ?? 0xffffff);
+    const b = oklab(p.colors[1] ?? p.colors[0] ?? 0xffffff);
+    return patch<Subject, Pose>(
+      cycleMs(p.rate),
+      (phase, subject) => {
+        const u = (Math.sin(2 * Math.PI * (phase + rank(subject) * p.phase)) + 1) / 2;
+        const k = u * p.depth;
+        return { tint: a.map((v, i) => v + ((b[i] ?? v) - v) * k) };
+      },
+      { writes: ['tint'] },
+    );
+  },
+});
