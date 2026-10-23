@@ -5,6 +5,7 @@ import './layers.css';
 import { mount } from '@msb235/blits-panel';
 import { createMarquee } from '@/index.js';
 import { h } from './controls.js';
+import { mountDefects } from './defects.js';
 import { mountDesigner } from './designer.js';
 import { layerOf, mountLayers } from './layers.js';
 import { mountProgram } from './program.js';
@@ -77,6 +78,8 @@ mountLayers(el('layers'), state, (name) => {
   sign.setLayer(name, layer.on, layer.params);
   save(state);
 });
+
+mountDefects(el('defects'), sign.board, (defects) => sign.setDefects(defects));
 
 // Export: the clipboard may refuse (a headless browser, an insecure origin), so each also shows.
 const linkOut = el<HTMLInputElement>('link');

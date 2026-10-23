@@ -1,5 +1,6 @@
 import type { Board, Led } from './board.js';
 import { dotColor } from './color.js';
+import { type Afflictions, afflict, afflictions, type Defect } from './defects.js';
 
 /** How long a dot takes to light and to go dark: a filament warms fast and cools slowly. */
 const RISE_MS = 12;
@@ -54,6 +55,8 @@ export function paintBulbs(b: Board, cells: SignColumns, cols: SignColumns): voi
 export interface Sign {
   /** Draws one frame from the mix's columns, `dt` ms after the last. */
   render(cols: SignColumns, fallback: number, dt: number): void;
+  /** Replaces the sign's broken lights. */
+  setDefects(defects: readonly Defect[]): void;
   /** Stops following its parent's size. */
   destroy(): void;
 }
@@ -77,6 +80,8 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
   const bctx = body.getContext('2d') as CanvasRenderingContext2D;
   const housing = document.createElement('canvas');
   const shown = new Float64Array(leds.length);
+  let broken: Afflictions = afflictions(leds, []);
+  let clock = 0;
   let pitch = 0;
 
   const box = canvas.parentElement as HTMLElement;
@@ -119,11 +124,12 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
     render({ lit, gain, tint, hue, chroma, glow: halo }, fallback, dt) {
       const rise = 1 - Math.exp(-dt / RISE_MS);
       const fall = 1 - Math.exp(-dt / FALL_MS);
+      clock += dt;
       gctx.clearRect(0, 0, glow.width, glow.height);
       bctx.clearRect(0, 0, body.width, body.height);
       for (let i = 0; i < leds.length; i++) {
         const want = lit[i] ?? 0;
-        const target = want > 0 ? Math.min(want, 1) : 0;
+        const target = afflict(broken, i, want > 0 ? Math.min(want, 1) : 0, clock);
         const was = shown[i] ?? 0;
         const now = was + (target - was) * (target > was ? rise : fall);
         shown[i] = now;
@@ -164,6 +170,9 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
       ctx.filter = 'none';
       ctx.drawImage(body, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
+    },
+    setDefects(defects) {
+      broken = afflictions(leds, defects);
     },
     destroy() {
       watch.disconnect();

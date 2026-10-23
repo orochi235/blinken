@@ -11,6 +11,16 @@ export {
 } from './board.js';
 export { EFFECTS, type EffectName, LAYERS, type LayerName, type LayerSpec } from './builtins.js';
 export { dotColor } from './color.js';
+export {
+  type Afflictions,
+  afflict,
+  afflictions,
+  type Defect,
+  type Fault,
+  type FaultKind,
+  scatter,
+  type Where,
+} from './defects.js';
 export { createSign, paintBulbs, type Sign, type SignColumns, signColumns } from './draw.js';
 export { type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 export { ADVANCE, type Bitmap, FACE, ROWS, rasterize } from './font.js';

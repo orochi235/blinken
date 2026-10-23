@@ -1,6 +1,7 @@
 import { type Handle, level, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
 import { LAYERS, type LayerSpec } from './builtins.js';
+import type { Defect } from './defects.js';
 import { createSign, paintBulbs, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
 import type { ParamValue } from './params.js';
@@ -37,6 +38,8 @@ export interface MarqueeOptions {
   readonly color?: number;
   /** The mix's rate. Default 1. */
   readonly rate?: number;
+  /** Broken lights, which show their fault whatever the program asks; `scatter` makes some. Default none. */
+  readonly defects?: readonly Defect[];
   /** False runs the mix without drawing, for timing it alone. Default true. */
   readonly draw?: boolean;
   /** Called after every frame with what it cost. */
@@ -59,6 +62,8 @@ export interface Marquee {
   setColor(hex: number): void;
   /** Ramps the mix's rate to `rate` over `ms`. */
   ramp(rate: number, ms?: number): void;
+  /** Replaces the broken lights. */
+  setDefects(defects: readonly Defect[]): void;
   /** Stops the frame loop and lets go of the canvas. */
   destroy(): void;
 }
@@ -82,6 +87,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const cells = signColumns(b.cells.length);
   const drawing = opts.draw ?? true;
   const sign = drawing ? createSign(canvas, b, leds) : null;
+  if (opts.defects) sign?.setDefects(opts.defects);
   let color = opts.color ?? AMBER;
 
   let program = opts.program ?? [];
@@ -199,6 +205,9 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     },
     ramp(rate, ms = 200) {
       m.ramp(rate, ms);
+    },
+    setDefects(defects) {
+      sign?.setDefects(defects);
     },
     destroy() {
       live = false;

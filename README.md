@@ -63,6 +63,24 @@ built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the bo
 stepping around; and `rainbow`, a hue running across the sign that recolors whatever is lit. They
 are in `LAYERS`.
 
+## Broken lights
+
+A sign can have broken lights, which show their fault whatever the program asks of them: `dead`
+never lights, `dim` lights at a fraction of its brightness, `flicker` drops out at random, and
+`stuck` stays lit. Name them one by one, by a dot's column and row or a bulb's place in the border,
+or let `scatter` break a share of the dots, the same ones for the same seed:
+
+```ts
+const sign = createMarquee(canvas, {
+  defects: [{ kind: 'dead', at: { x: 12, y: 3 } }, { kind: 'stuck', at: { bulb: 5 } }],
+});
+sign.setDefects(scatter(sign.board, { dead: 0.03, dim: 0.05, flicker: 0.01 }, 7));
+```
+
+Faults belong to the sign, not the mix, so a mix you pull yourself still reads every light as
+sound; `createSign` applies them as it draws. The compose lab's defects pane sets the shares and
+the seed.
+
 ## On your own mix
 
 `board(cols, rows)` lays out the dots and the border. `KIT` is the pose they fold to: `lit` by
