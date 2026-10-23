@@ -1,7 +1,9 @@
 import { type Handle, level, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
-import { LAYERS, type LayerName } from './builtins.js';
+import { LAYERS, type LayerSpec } from './builtins.js';
 import { createSign, type SignColumns, signColumns } from './draw.js';
+import type { EffectSpec } from './effects.js';
+import type { ParamValue } from './params.js';
 import { cueLayer, play, type Step } from './program.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
@@ -24,8 +26,13 @@ export interface MarqueeOptions {
    * program can follow inputs that change. Default: nothing, until `setProgram`.
    */
   readonly program?: readonly Step[] | (() => readonly Step[]);
-  /** Which layers are on, or the weight each plays at. Default: none. */
-  readonly layers?: Partial<Record<LayerName, boolean | number>>;
+  /** Effects steps can name, ahead of the built-ins. */
+  readonly effects?: Readonly<Record<string, EffectSpec>>;
+  /**
+   * Layers by name: a built-in's name with on, off or a weight, or a full spec under any name.
+   * Default: none.
+   */
+  readonly layers?: Partial<Record<string, boolean | number | LayerSpec>>;
   /** The color of a lit dot nothing has tinted. Default amber. */
   readonly color?: number;
   /** The mix's rate. Default 1. */
@@ -42,8 +49,12 @@ export interface Marquee {
   readonly mix: Mix<Subject, Pose>;
   /** Replaces the program from the next pass. */
   setProgram(program: readonly Step[] | (() => readonly Step[])): void;
-  /** Turns a layer on or off, or sets the weight it plays at. */
-  setLayer(name: LayerName, on: boolean | number): void;
+  /** Replaces the effects steps can name, from the next pass. */
+  setEffects(effects: Readonly<Record<string, EffectSpec>>): void;
+  /** Starts the program over at `fromStep`, fading the pass playing now at once. */
+  restart(fromStep?: number): void;
+  /** Turns a layer on or off, or sets the weight it plays at; `params` re-cue it with them. */
+  setLayer(name: string, on: boolean | number, params?: Readonly<Record<string, ParamValue>>): void;
   /** The color of a lit dot nothing has tinted. */
   setColor(hex: number): void;
   /** Ramps the mix's rate to `rate` over `ms`. */
@@ -83,28 +94,40 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   let color = opts.color ?? AMBER;
 
   let program = opts.program ?? [];
+  let effects = opts.effects ?? {};
   let live = true;
   let pass: Handle<Subject> | null = null;
   /** A pass ended; the next starts at the next frame, so one that ends at once cannot spin. */
   let due = false;
-  // Each pass reads the program as it stands when it starts.
-  const again = () => {
+  // Each pass reads the program and effects as they stand when it starts.
+  const again = (from = 0) => {
     if (!live) return;
-    const steps = typeof program === 'function' ? program() : program;
-    pass = steps.length > 0 ? play(m, b, steps) : null;
-    pass?.done.then(() => {
-      due = true;
+    const all = typeof program === 'function' ? program() : program;
+    const steps = from > 0 ? all.slice(from) : all;
+    const mine = steps.length > 0 ? play(m, b, steps, effects) : null;
+    pass = mine;
+    mine?.done.then(() => {
+      if (pass === mine) due = true;
     });
   };
   again();
 
-  const weights = new Map<LayerName, ReturnType<typeof level<Subject>>>();
-  const weightOf = (name: LayerName, on: boolean | number) =>
-    on === true ? (LAYERS[name].weight ?? 1) : on === false ? 0 : on;
-  for (const [name, l] of Object.entries(LAYERS) as [LayerName, (typeof LAYERS)[LayerName]][]) {
-    const weight = level<Subject>(weightOf(name, opts.layers?.[name] ?? false));
-    weights.set(name, weight);
-    cueLayer(m, b, l, weight);
+  type Weight = ReturnType<typeof level<Subject>>;
+  const weightOf = (spec: LayerSpec, on: boolean | number) =>
+    on === true ? (spec.weight ?? 1) : on === false ? 0 : on;
+  const layers = new Map<string, { spec: LayerSpec; weight: Weight; voice: Handle<Subject> }>();
+  const addLayer = (name: string, spec: LayerSpec, on: boolean | number) => {
+    const weight = level<Subject>(weightOf(spec, on));
+    layers.set(name, { spec, weight, voice: cueLayer(m, b, spec, weight) });
+  };
+  for (const [name, spec] of Object.entries(LAYERS)) addLayer(name, spec, false);
+  for (const [name, v] of Object.entries(opts.layers ?? {})) {
+    if (v === undefined) continue;
+    if (typeof v === 'object') {
+      layers.get(name)?.voice.fade({ over: 0 });
+      addLayer(name, v, true);
+    } else
+      layers.get(name)?.weight.set(weightOf((layers.get(name) as { spec: LayerSpec }).spec, v));
   }
 
   let last = performance.now();
@@ -145,8 +168,24 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       program = next;
       if (idle) again();
     },
-    setLayer(name, on) {
-      weights.get(name)?.set(weightOf(name, on));
+    setEffects(next) {
+      effects = next;
+    },
+    restart(fromStep = 0) {
+      pass?.fade({ over: 0 });
+      due = false;
+      again(fromStep);
+    },
+    setLayer(name, on, params) {
+      const layer = layers.get(name);
+      if (!layer) throw new Error(`bree: no layer named ${name}`);
+      if (params) {
+        const spec = { ...layer.spec, params: { ...layer.spec.params, ...params } };
+        layer.voice.fade({ over: 0 });
+        layer.voice = cueLayer(m, b, spec, layer.weight);
+        layer.spec = spec;
+      }
+      layer.weight.set(weightOf(layer.spec, on));
     },
     setColor(hex) {
       color = hex;

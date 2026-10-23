@@ -14,42 +14,59 @@ import { createMarquee } from 'bree';
 const sign = createMarquee(canvas, {
   cols: 80,
   rows: 7,
+  effects: {
+    blink: {
+      name: 'blink',
+      about: 'Stands still and flashes.',
+      active: [{ move: 'stand' }, { mod: 'flash', params: { ms: 2000, flashes: 4 } }],
+      hold: 2000,
+    },
+  },
   program: [
-    { how: 'hold', text: 'NOW SHOWING', hex: 0xff4030 },
-    { how: 'scroll', text: 'TONIGHT ONLY', hex: 0xff9a2e },
+    { effect: 'hold', text: 'NOW SHOWING', hex: 0xff4030 },
+    { effect: 'blink', text: 'TONIGHT ONLY', hex: 0xff9a2e },
+    { effect: 'scroll', text: 'SEE YOU THERE', hex: 0x6dff5a },
   ],
   layers: { chase: true, sparkle: true },
 });
 
 sign.setLayer('rainbow', true);
+sign.setLayer('sparkle', true, { rate: 0.02 }); // new params re-cue the layer
+sign.restart(1); // start the program over at its second step
 sign.destroy();
 ```
 
 The canvas takes the largest size its parent element allows. `program` loops; given as a function,
-it is read again at the start of every pass. `sign.mix` is the mix itself, for cueing voices of your
-own on `sign.board`'s dots and cells.
+it is read again at the start of every pass. `layers` takes the name of a built-in with on, off or
+a weight, or a full layer spec under a name of your own. `setEffects` replaces the effects steps
+can name from the next pass. `sign.mix` is the mix itself, for cueing voices of your own on
+`sign.board`'s dots and cells.
 
-## The effects on your own mix
+## Pieces, effects and programs
+
+A piece is one thing happening to the dots. A move places the text: `stand` holds it, `scroll-across`
+carries it over the sign, `tumble` turns each letter end over end. A modulator changes how the dots
+look while it plays: `flash`, `pulse`, `hue-cycle`, `sparkle`, `chase`. Each declares its tuning as
+`params`, plain data giving each number's label, range and default, for a control panel to be
+built from.
+
+An effect is plain data made of pieces: an `enter`, an `active` and an `exit` slot, each holding a
+piece or several that play together, an optional `order` that staggers the dots (by column, by
+letter, at random), and a `hold` time. A program is a list of steps, each a message with its color
+and the effect it plays; a step names an effect or carries one inline. Each step starts where the
+one before it ends.
+
+The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall` and `tile`, in `EFFECTS`. The
+built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the border's bulbs
+stepping around; and `rainbow`, a hue running across the sign that recolors whatever is lit. They
+are in `LAYERS`.
+
+## On your own mix
 
 `board(cols, rows)` lays out the dots and the border, `KIT` is the pose they fold to (`lit` by
-`max`, `tint` by color), and `play(mix, board, steps)` cues one pass of a program on an owner of its
-own. `cueLayer` cues a layer looping. `createSign` draws a board from the mix's pulled columns, or
-pull them yourself and draw them however you like.
-
-| Effect | Kind | What it does |
-|---|---|---|
-| hold | text | Stands centered and flashes midway, wiping on and off a column at a time. |
-| scroll | text | Crosses the sign a whole column at a time. |
-| flip | text | Letters unfold from edge on, tumble end over end and fold away, staggered by letter. |
-| roll | text | Each letter a slot reel spinning through random glyphs, landing left to right. |
-| fall | text | Columns drop in from above at random and later fall out the bottom. |
-| tile | text | The message in tilted brick rows over the whole sign. Needs room for two lines. |
-| sparkle | layer | Stray dots lighting for a moment. |
-| chase | layer | One border cell of three lit, stepping a cell a beat. |
-| rainbow | layer | Hue running across the sign; it writes only `tint`, so it recolors whatever is lit. |
-
-Each effect declares its tuning as `params`, plain data giving each number's label, range and
-default, for a control panel to be built from.
+`max`, `tint` by color), and `play(mix, board, steps, effects?)` cues one pass of a program on an
+owner of its own. `cueLayer` cues a layer looping. `createSign` draws a board from the mix's pulled
+columns, or pull them yourself and draw them however you like.
 
 ## Development
 

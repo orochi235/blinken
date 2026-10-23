@@ -111,4 +111,79 @@ describe('createMarquee', () => {
       vi.unstubAllGlobals();
     }
   });
+
+  /** Runs `body` against a sign with a stubbed frame loop, handing it a way to run a frame. */
+  const withSign = async (
+    opts: Parameters<typeof createMarquee>[1],
+    body: (
+      sign: ReturnType<typeof createMarquee>,
+      step: (ms: number) => void,
+    ) => void | Promise<void>,
+  ) => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (f: FrameRequestCallback) => frames.push(f));
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    try {
+      const sign = createMarquee({} as HTMLCanvasElement, { draw: false, ...opts });
+      let now = 0;
+      // Hops under the hidden-tab gap, which the sign leaves out of the show.
+      const step = (ms: number) => {
+        while (now < ms) {
+          now = Math.min(ms, now + 100);
+          (frames.shift() as FrameRequestCallback)(now);
+        }
+      };
+      await body(sign, step);
+      sign.destroy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  };
+
+  it('setLayer with params re-cues the layer with them', async () => {
+    await withSign(
+      { layers: { tinted: { mod: 'two-color', params: { depth: 0 } } } },
+      (sign, step) => {
+        step(100);
+        const led = sign.board.dots[0] as Led;
+        const before = [...sign.mix.probe(led).tint];
+        expect(before.some((v) => v !== 0)).toBe(true);
+        sign.setLayer('tinted', true, { colors: [0x00ff00, 0x00ff00] });
+        step(200);
+        expect([...sign.mix.probe(led).tint]).not.toEqual(before);
+      },
+    );
+  });
+
+  it('setLayer on an unknown name with no spec throws', async () => {
+    await withSign({}, (sign) => {
+      expect(() => sign.setLayer('nope', true)).toThrow('bree: no layer named nope');
+    });
+  });
+
+  it('restart from step 2 plays step 2 first', async () => {
+    const steps: Step[] = [
+      { effect: 'hold', text: 'I', hex: 0xff9a2e },
+      { effect: 'hold', text: 'I', hex: 0xff9a2e },
+      { effect: 'scroll', text: 'I', hex: 0x6dff5a },
+    ];
+    await withSign({ program: steps }, (sign, step) => {
+      sign.restart(2);
+      step((COLS + 0.5) * STEP_MS);
+      expect(sign.mix.probe(sign.board.dots[2] as Led).lit).toBe(1);
+    });
+  });
+
+  it('setEffects applies from the next pass', async () => {
+    const stand = { name: 'mine', active: { move: 'stand' }, hold: 1000 } as const;
+    await withSign(
+      { program: [{ effect: 'mine', text: 'I', hex: 0 }], effects: { mine: stand } },
+      (sign, step) => {
+        sign.setEffects({ mine: { name: 'mine', active: { move: 'scroll-across' } } });
+        sign.restart();
+        step((COLS + 0.5) * STEP_MS);
+        expect(sign.mix.probe(sign.board.dots[2] as Led).lit).toBe(1);
+      },
+    );
+  });
 });
