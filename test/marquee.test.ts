@@ -140,19 +140,55 @@ describe('createMarquee', () => {
     }
   };
 
-  it('setLayer with params re-cues the layer with them', async () => {
+  const GREEN = { colors: [0x00ff00, 0x00ff00] };
+  const tintAt = (led: Led, sign: ReturnType<typeof createMarquee>) => [
+    ...sign.mix.probe(led).tint,
+  ];
+
+  it('setLayer with params re-cues the layer, leaving none of the old params playing', async () => {
+    const spec = { mod: 'two-color', params: { depth: 0 } } as const;
+    let fresh: number[] = [];
     await withSign(
-      { layers: { tinted: { mod: 'two-color', params: { depth: 0 } } } },
+      { layers: { tinted: { ...spec, params: { depth: 0, ...GREEN } } } },
       (sign, step) => {
         step(100);
-        const led = sign.board.dots[0] as Led;
-        const before = [...sign.mix.probe(led).tint];
-        expect(before.some((v) => v !== 0)).toBe(true);
-        sign.setLayer('tinted', true, { colors: [0x00ff00, 0x00ff00] });
-        step(200);
-        expect([...sign.mix.probe(led).tint]).not.toEqual(before);
+        fresh = tintAt(sign.board.dots[0] as Led, sign);
       },
     );
+    await withSign({ layers: { tinted: spec } }, (sign, step) => {
+      step(100);
+      const led = sign.board.dots[0] as Led;
+      const before = tintAt(led, sign);
+      expect(before.some((v) => v !== 0)).toBe(true);
+      sign.setLayer('tinted', true, GREEN);
+      step(200);
+      expect(tintAt(led, sign)).not.toEqual(before);
+      expect(tintAt(led, sign)).toEqual(fresh);
+    });
+  });
+
+  it('setLayer with params keeps the layer weight', async () => {
+    const ring = { mod: 'chase', weight: 0.5 } as const;
+    const litCells = (sign: ReturnType<typeof createMarquee>) =>
+      sign.board.cells.map((c) => sign.mix.probe(c).lit);
+    let fresh: number[] = [];
+    await withSign({ layers: { ring: { ...ring, params: { dim: 0.2 } } } }, (sign, step) => {
+      step(50);
+      fresh = litCells(sign);
+    });
+    expect(Math.max(...fresh)).toBeCloseTo(0.5);
+    await withSign({ layers: { ring } }, (sign, step) => {
+      step(100);
+      sign.setLayer('ring', true, { dim: 0.2 });
+      step(150);
+      expect(litCells(sign)).toEqual(fresh);
+    });
+  });
+
+  it('a bare weight for a layer that does not exist throws', async () => {
+    expect(() =>
+      createMarquee({} as HTMLCanvasElement, { draw: false, layers: { nope: true } }),
+    ).toThrow('bree: no layer named nope');
   });
 
   it('setLayer on an unknown name with no spec throws', async () => {
@@ -161,17 +197,82 @@ describe('createMarquee', () => {
     });
   });
 
-  it('restart from step 2 plays step 2 first', async () => {
+  const quick = { name: 'quick', active: { move: 'stand' }, hold: 400 } as const;
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+  const litAmong = (sign: ReturnType<typeof createMarquee>, from: number, to: number) => {
+    let n = 0;
+    for (let y = 0; y < SIZE.rows; y++)
+      for (let x = from; x < to; x++) n += sign.mix.probe(sign.board.dots[y * COLS + x] as Led).lit;
+    return n;
+  };
+
+  it('restart from step 2 plays step 2 alone, replacing the pass underway', async () => {
     const steps: Step[] = [
-      { effect: 'hold', text: 'I', hex: 0xff9a2e },
-      { effect: 'hold', text: 'I', hex: 0xff9a2e },
-      { effect: 'scroll', text: 'I', hex: 0x6dff5a },
+      { effect: 'quick', text: 'WWWW', hex: 0xff9a2e },
+      { effect: 'quick', text: 'WWWW', hex: 0xff9a2e },
+      { effect: 'quick', text: 'I', hex: 0x6dff5a },
     ];
-    await withSign({ program: steps }, (sign, step) => {
+    await withSign({ program: steps, effects: { quick } }, (sign, step) => {
+      step(200);
+      expect(litAmong(sign, 28, 36)).toBeGreaterThan(0);
       sign.restart(2);
-      step((COLS + 0.5) * STEP_MS);
-      expect(sign.mix.probe(sign.board.dots[2] as Led).lit).toBe(1);
+      step(300);
+      expect(litAmong(sign, 28, 36)).toBe(0);
+      expect(litAmong(sign, 36, 44)).toBeGreaterThan(0);
     });
+  });
+
+  it('restart past the last step falls back to the first', async () => {
+    await withSign(
+      { program: [{ effect: 'quick', text: 'I', hex: 0 }], effects: { quick } },
+      (sign, step) => {
+        sign.restart(5);
+        step(100);
+        expect(litAmong(sign, 36, 44)).toBeGreaterThan(0);
+      },
+    );
+  });
+
+  it('restart mid-pass starts exactly one new pass', async () => {
+    let passes = 0;
+    await withSign(
+      {
+        program: () => {
+          passes++;
+          return [{ effect: 'quick', text: 'I', hex: 0 }];
+        },
+        effects: { quick },
+      },
+      async (sign, step) => {
+        step(200);
+        sign.restart();
+        await settle();
+        step(500);
+        await settle();
+        expect(passes).toBe(2);
+      },
+    );
+  });
+
+  it('restart right after a pass ended starts exactly one new pass', async () => {
+    let passes = 0;
+    await withSign(
+      {
+        program: () => {
+          passes++;
+          return [{ effect: 'quick', text: 'I', hex: 0 }];
+        },
+        effects: { quick },
+      },
+      async (sign, step) => {
+        step(500);
+        await settle();
+        sign.restart();
+        step(600);
+        await settle();
+        expect(passes).toBe(2);
+      },
+    );
   });
 
   it('setEffects applies from the next pass', async () => {

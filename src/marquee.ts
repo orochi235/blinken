@@ -103,7 +103,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const again = (from = 0) => {
     if (!live) return;
     const all = typeof program === 'function' ? program() : program;
-    const steps = from > 0 ? all.slice(from) : all;
+    const steps = from > 0 && from < all.length ? all.slice(from) : all;
     const mine = steps.length > 0 ? play(m, b, steps, effects) : null;
     pass = mine;
     mine?.done.then(() => {
@@ -123,11 +123,12 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   for (const [name, spec] of Object.entries(LAYERS)) addLayer(name, spec, false);
   for (const [name, v] of Object.entries(opts.layers ?? {})) {
     if (v === undefined) continue;
+    const known = layers.get(name);
     if (typeof v === 'object') {
-      layers.get(name)?.voice.fade({ over: 0 });
+      known?.voice.fade({ over: 0 });
       addLayer(name, v, true);
-    } else
-      layers.get(name)?.weight.set(weightOf((layers.get(name) as { spec: LayerSpec }).spec, v));
+    } else if (known) known.weight.set(weightOf(known.spec, v));
+    else throw new Error(`bree: no layer named ${name}`);
   }
 
   let last = performance.now();
