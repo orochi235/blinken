@@ -1,5 +1,5 @@
 import { type Board, type Led, leftOf, type Subject } from './board.js';
-import { ADVANCE, type Bitmap } from './font.js';
+import { ADVANCE, type Bitmap, rasterize } from './font.js';
 import { hash } from './hash.js';
 
 export type OrderBy =
@@ -47,6 +47,12 @@ export const place = (board: Board, text: Bitmap): Placed => ({
   board,
   text,
   left: leftOf(board, text),
+});
+
+/** A message as typed, rasterized and standing centered on the board, labeled for warnings. */
+export const placeText = (board: Board, text: string): Placed => ({
+  ...place(board, rasterize(text)),
+  label: text,
 });
 
 const shuffle = (cols: number, seed: number): readonly number[] => {

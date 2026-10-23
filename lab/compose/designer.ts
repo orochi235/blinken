@@ -3,8 +3,7 @@ import {
   EFFECTS,
   type EffectSpec,
   piecesOf,
-  place,
-  rasterize,
+  placeText,
   SLOTS,
   type Slot,
   stageEffect,
@@ -50,8 +49,7 @@ export function mountDesigner(
     const text = step?.text ?? ' ';
     let warnings: readonly Warning[];
     try {
-      const at = { ...place(board, rasterize(text)), label: text };
-      warnings = stageEffect(s, at, step?.hex ?? 0xffffff).warnings;
+      warnings = stageEffect(s, placeText(board, text), step?.hex ?? 0xffffff).warnings;
     } catch (e) {
       warnings = [{ text: (e as Error).message }];
     }

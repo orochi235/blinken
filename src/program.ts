@@ -5,7 +5,7 @@ import { cueEffect, type EffectSpec, stageEffect } from './effects.js';
 import { rasterize } from './font.js';
 import { MODULATORS } from './modulators/index.js';
 import { MOVES } from './moves/index.js';
-import { place, rankOf } from './orders.js';
+import { place, placeText, rankOf } from './orders.js';
 import { values } from './params.js';
 import { piecesOf, TOGETHER } from './pieces.js';
 
@@ -50,8 +50,7 @@ export function play(
   const staged = steps.flatMap((step) => {
     const effect = effectOf(step, effects);
     if (!fits(b, effect)) return [];
-    const at = { ...place(b, rasterize(step.text)), label: step.text };
-    const s = stageEffect(effect, at, step.hex, step.hold);
+    const s = stageEffect(effect, placeText(b, step.text), step.hex, step.hold);
     return s.ms > 0 ? [{ staged: s, name: `${effect.name} ${step.text}` }] : [];
   });
   const program = m.owns({ name: 'program' });

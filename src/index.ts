@@ -28,6 +28,7 @@ export {
   type OrderBy,
   type Placed,
   place,
+  placeText,
   rankOf,
 } from './orders.js';
 export {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { board, type Cell } from '@/board.js';
 import { rasterize } from '@/font.js';
-import { delayOf, groupsOf, place, rankOf, spanOf } from '@/orders.js';
+import { delayOf, groupsOf, place, placeText, rankOf, spanOf } from '@/orders.js';
 
 const at = place(board(20, 7), rasterize('AB'));
 const dot = (x: number, y = 0) => {
@@ -61,5 +61,12 @@ describe('orders', () => {
       expect([r(a), r(b), r(c)]).toEqual([0, 1, 2]);
     }
     expect(rankOf({ by: 'together' }, at)(c)).toBe(0);
+  });
+
+  it('places a typed message centered, labeled with its text', () => {
+    const b = board(40, 7);
+    const at = placeText(b, 'HI');
+    expect(at).toMatchObject({ board: b, left: place(b, rasterize('HI')).left, label: 'HI' });
+    expect(at.text.cols).toBe(rasterize('HI').cols);
   });
 });
