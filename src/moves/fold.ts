@@ -58,10 +58,10 @@ export const fold = move({
   },
 });
 
-/** Letters turn end over end. */
+/** Letters turn end over end in the middle third of the pass, standing upright either side. */
 export const tumble = move({
   name: 'tumble',
-  about: 'Letters turn end over end.',
+  about: 'Letters stand, turn end over end, and stand again.',
   slot: 'active',
   params: {
     ms: { label: 'length', min: 200, max: 10000, step: 100, value: 1200, unit: 'ms' },
@@ -70,8 +70,11 @@ export const tumble = move({
   length: (_, p) => p.ms,
   patch(at, p) {
     const draw = turned(at);
-    return patch<Led, Pose>(p.ms, (phase, led) => draw(led, 2 * Math.PI * p.turns * phase), {
-      writes: ['lit'],
-    });
+    // Tumbling in the middle third only, upright either side.
+    const turn = (phase: number) => {
+      const u = 3 * phase - 1;
+      return u > 0 && u < 1 ? 2 * Math.PI * p.turns * u : 0;
+    };
+    return patch<Led, Pose>(p.ms, (phase, led) => draw(led, turn(phase)), { writes: ['lit'] });
   },
 });

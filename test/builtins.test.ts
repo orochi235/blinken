@@ -4,7 +4,9 @@ import { board, KIT, type Pose, type Subject } from '@/board.js';
 import { EFFECTS, type EffectName } from '@/builtins.js';
 import { cueEffect, stageEffect } from '@/effects.js';
 import { rasterize } from '@/font.js';
+import { MOVES } from '@/moves/index.js';
 import { place } from '@/orders.js';
+import { values } from '@/params.js';
 import { fits } from '@/program.js';
 
 const b = board(80, 7);
@@ -30,25 +32,40 @@ describe('EFFECTS', () => {
     expect(fits(board(80, 15), EFFECTS.tile)).toBe(true);
   });
 
-  it('hold flashes: at its middle some lit dots have gain 0', () => {
-    const { ms } = stageEffect(EFFECTS.hold, at('HELLO'), HEX);
+  it('hold flashes three times in the middle third of its hold, steady either side', () => {
     const m = cued('hold', 'HELLO');
-    m.sync(ms / 2);
-    const lit = b.dots.filter((d) => m.probe(d).lit > 0);
-    expect(lit.length).toBeGreaterThan(0);
-    expect(lit.some((d) => m.probe(d).gain === 0)).toBe(true);
-    // Lit again before the wipe off begins.
-    m.sync(1 + 3550);
-    expect(m.probe(b.dots[0] as Subject).gain).toBe(1);
+    const x = 40;
+    const dot = b.dots[x] as Subject;
+    // Column x's arc starts x lags in, and its active part after the 1 ms cut-on.
+    const gainAt = (t: number) => {
+      m.sync(14 * x + 1 + t);
+      return m.probe(dot).gain;
+    };
+    const lit = [100, 600, 1100, 1300, 1700, 2100, 2500, 3000, 3500];
+    const dark = [1500, 1900, 2300];
+    for (const t of [...lit, ...dark].sort((p, q) => p - q))
+      expect(gainAt(t), `${t}`).toBe(dark.includes(t) ? 0 : 1);
   });
 
   it('flip overlaps letters', () => {
     const m = cued('flip', 'ABC');
-    const ins = m.marks(0, 10_000).filter((k) => k.mark === 'in');
-    const inOf = (name: string) => ins.find((k) => k.name === name)?.timestamp as number;
-    // Letter 0 is tumbling before letter 2 has finished unfolding.
-    expect(inOf('flip 0')).toBeLessThan(inOf('flip 2'));
-    expect(inOf('flip 2') - inOf('flip 0')).toBe(180);
+    const marks = m.marks(0, 10_000);
+    const markOf = (mark: string, name: string) =>
+      marks.find((k) => k.mark === mark && k.name === name)?.timestamp as number;
+    // Letter 0 is still standing in its active part when letter 2 finishes unfolding.
+    expect(markOf('out', 'flip 0')).toBeGreaterThan(markOf('in', 'flip 2'));
+  });
+
+  it('flip keeps each letter upright through the first third of its active part', () => {
+    const a = at('ABC');
+    const m = cued('flip', 'ABC');
+    const fold = 300;
+    m.sync(fold + 600);
+    const letter0 = b.dots.filter((d) => d.x >= a.left && d.x < a.left + 6);
+    const stand = MOVES.stand.patch(a, values(MOVES.stand));
+    expect(letter0.map((d) => m.probe(d).lit)).toEqual(
+      letter0.map((d) => stand.at(0, d, {} as never).lit),
+    );
   });
 
   it('roll lands its letters left to right', () => {

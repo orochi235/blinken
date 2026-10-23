@@ -23,10 +23,10 @@ export function effectOf(
   effects: Readonly<Record<string, EffectSpec>> = {},
 ): EffectSpec {
   if (typeof step.effect !== 'string') return step.effect;
-  const found =
-    effects[step.effect] ?? (EFFECTS as Readonly<Record<string, EffectSpec>>)[step.effect];
-  if (found === undefined) throw new Error(`bree: no effect named ${step.effect}`);
-  return found;
+  const name = step.effect;
+  if (Object.hasOwn(effects, name)) return effects[name] as EffectSpec;
+  if (Object.hasOwn(EFFECTS, name)) return EFFECTS[name as keyof typeof EFFECTS];
+  throw new Error(`bree: no effect named ${name}`);
 }
 
 /** Whether the board has room for every move an effect uses. */
@@ -46,17 +46,19 @@ export function play(
   steps: readonly Step[],
   effects?: Readonly<Record<string, EffectSpec>>,
 ): Handle<Subject> {
+  // Staged in full first, so a bad step throws before anything is cued.
+  const staged = steps.flatMap((step) => {
+    const effect = effectOf(step, effects);
+    if (!fits(b, effect)) return [];
+    const at = { ...place(b, rasterize(step.text)), label: step.text };
+    const s = stageEffect(effect, at, step.hex, step.hold);
+    return s.ms > 0 ? [{ staged: s, name: `${effect.name} ${step.text}` }] : [];
+  });
   const program = m.owns({ name: 'program' });
   let start = 0;
-  for (const step of steps) {
-    const effect = effectOf(step, effects);
-    if (!fits(b, effect)) continue;
-    const at = { ...place(b, rasterize(step.text)), label: step.text };
-    const staged = stageEffect(effect, at, step.hex, step.hold);
-    if (staged.ms <= 0) continue;
-    const name = `${effect.name} ${step.text}`;
-    cueEffect(m, m.owns({ owner: program, start, name }), staged, name);
-    start += staged.ms;
+  for (const { staged: s, name } of staged) {
+    cueEffect(m, m.owns({ owner: program, start, name }), s, name);
+    start += s.ms;
   }
   // An owner holding nothing would stay until faded.
   if (start === 0) program.fade({ over: 0 });

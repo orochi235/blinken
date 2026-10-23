@@ -33,7 +33,7 @@ const userHex = () => Number.parseInt(hue.value, 16);
 /** `?show=flip` loops that one effect on the message, for looking at it alone. */
 const only = params.get('show');
 const program = (): Step[] =>
-  only !== null && only in EFFECTS
+  only !== null && Object.hasOwn(EFFECTS, only)
     ? [{ effect: only, text: message.value || ' ', hex: userHex() }]
     : [
         { effect: 'hold', text: 'BLITS', hex: AMBER },

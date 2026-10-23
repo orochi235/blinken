@@ -34,6 +34,12 @@ describe('modulators', () => {
     expect(poseAt('flash', 900).gain).toBe(0);
   });
 
+  it('flash keeps its flashes inside its window, each dark for the second half of its beat', () => {
+    const given = { ms: 3000, flashes: 2, from: 0.5, to: 1 };
+    const g = (t: number) => poseAt('flash', t, undefined, given).gain;
+    expect([100, 1400, 1700, 2100, 2400, 2900].map(g)).toEqual([1, 1, 1, 0, 1, 0]);
+  });
+
   it('hue-cycle at rate 1 turns the hue a full 360 in 1000 ms', () => {
     const at0 = poseAt('hue-cycle', 0).hue as number;
     expect(at0).toBeCloseTo(0);

@@ -112,6 +112,15 @@ describe('play', () => {
     );
   });
 
+  it('throws for a bad step before cueing anything', () => {
+    const m = fresh();
+    const good: Step = { text: 'I', hex: 0, effect: LEFT };
+    expect(() => play(m, b, [good, { text: 'I', hex: 0, effect: 'constructor' }])).toThrow(
+      'bree: no effect named constructor',
+    );
+    expect(m.marks(0, 100_000)).toEqual([]);
+  });
+
   it('finds an effect from the given table before the built-ins', () => {
     const m = fresh();
     play(m, b, [{ text: 'I', hex: 0, effect: 'hold' }], { hold: { ...LEFT, name: 'mine' } });

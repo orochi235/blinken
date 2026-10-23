@@ -89,23 +89,26 @@ describe('createMarquee', () => {
     const frames: FrameRequestCallback[] = [];
     vi.stubGlobal('requestAnimationFrame', (f: FrameRequestCallback) => frames.push(f));
     vi.stubGlobal('cancelAnimationFrame', () => {});
-    let passes = 0;
-    const sign = createMarquee({} as HTMLCanvasElement, {
-      draw: false,
-      program: () => {
-        passes++;
-        return [{ effect: 'tile', text: 'I', hex: 0 }];
-      },
-    });
-    const settle = () => new Promise((r) => setTimeout(r, 0));
-    await settle();
-    expect(passes).toBe(1);
-    for (let i = 1; i <= 3; i++) {
-      (frames.shift() as FrameRequestCallback)(i * 16);
+    try {
+      let passes = 0;
+      const sign = createMarquee({} as HTMLCanvasElement, {
+        draw: false,
+        program: () => {
+          passes++;
+          return [{ effect: 'tile', text: 'I', hex: 0 }];
+        },
+      });
+      const settle = () => new Promise((r) => setTimeout(r, 0));
       await settle();
+      expect(passes).toBe(1);
+      for (let i = 1; i <= 3; i++) {
+        (frames.shift() as FrameRequestCallback)(i * 16);
+        await settle();
+      }
+      expect(passes).toBe(4);
+      sign.destroy();
+    } finally {
+      vi.unstubAllGlobals();
     }
-    expect(passes).toBe(4);
-    sign.destroy();
-    vi.unstubAllGlobals();
   });
 });

@@ -63,17 +63,6 @@ const swing = (s: Spec): Modulator => {
   });
 };
 
-/** Gain on and off: full, then dark for the other half of the cycle. */
-export const flash = swing({
-  name: 'flash',
-  about: 'Dots blink off and on.',
-  channel: 'gain',
-  of: (u, d) => 1 - d * (1 - u),
-  shape: 'square',
-  depth: 1,
-  phase: 0.02,
-});
-
 /** Gain easing down and back up. */
 export const pulse = swing({
   name: 'pulse',
