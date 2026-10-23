@@ -36,7 +36,7 @@
     "shots": "npm run lab:build && node scripts/shots.mjs"
   },
   "dependencies": {
-    "@msb235/blits": "0.12.0"
+    "@msb235/blits": "0.12.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.8",
