@@ -57,6 +57,7 @@ export {
   type StagedPiece,
   stagePiece,
   TOGETHER,
+  type Warning,
 } from './pieces.js';
 export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
 export { cueLayer, effectOf, fits, play, type Step } from './program.js';

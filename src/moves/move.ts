@@ -15,6 +15,8 @@ export interface Move<P extends Params = Params> {
   readonly about: string;
   readonly slot: Slot;
   readonly params: P;
+  /** Written for text wider than the board, so it never clips. Default false. */
+  readonly wide?: boolean;
   /** Whether the board has room for it. Default: always. */
   readonly fits?: (b: Board) => boolean;
   /** Writes `lit` only; its duration is one pass, before any order's delay. */

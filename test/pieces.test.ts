@@ -60,7 +60,7 @@ describe('pieces', () => {
   it('warns when a centered move clips a wide message', () => {
     const wide = { ...place(board(20, 7), rasterize('HELLO WORLD')), label: 'HELLO WORLD' };
     const { warnings } = stagePiece({ move: 'cut-on' }, 'enter', wide, wide.board.dots);
-    expect(warnings).toEqual(['cut-on clips HELLO WORLD']);
+    expect(warnings).toEqual([{ slot: 'enter', text: 'cut-on clips HELLO WORLD' }]);
     expect(stagePiece({ move: 'scroll-in' }, 'enter', wide, wide.board.dots).warnings).toEqual([]);
   });
 });

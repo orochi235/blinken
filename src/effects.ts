@@ -3,7 +3,14 @@ import type { Pose, Subject } from './board.js';
 import { MODULATORS } from './modulators/index.js';
 import { SLOTS, type Slot } from './moves/index.js';
 import { groupsOf, type Order, type Placed } from './orders.js';
-import { type Piece, piecesOf, type SlotPieces, type StagedPiece, stagePiece } from './pieces.js';
+import {
+  type Piece,
+  piecesOf,
+  type SlotPieces,
+  type StagedPiece,
+  stagePiece,
+  type Warning,
+} from './pieces.js';
 
 /** A message's coming on, standing and going, as pieces in each slot: plain data. */
 export interface EffectSpec {
@@ -28,7 +35,7 @@ export interface StagedEffect {
   readonly arcs: readonly { readonly spec: ArcSpec<Subject, Pose>; readonly start: number }[];
   /** How long it keeps the sign, from the owner's 0. */
   readonly ms: number;
-  readonly warnings: readonly string[];
+  readonly warnings: readonly Warning[];
 }
 
 /** A modulator setting `tint` outweighs the step color rather than averaging with it evenly. */
@@ -54,7 +61,7 @@ export function stageEffect(
   const groups = effect.order ? groupsOf(effect.order, at) : [at.board.dots];
   const lag = effect.order?.lag ?? 0;
   const given = hold ?? effect.hold;
-  const warnings = new Set<string>();
+  const warnings: Warning[] = [];
   // Staged once per group; part lengths come from the first, and every group shares them.
   const staged = groups.map((subjects, g) =>
     SLOTS.map((slot) =>
@@ -66,9 +73,11 @@ export function stageEffect(
   const first = staged[0] ?? [];
   SLOTS.forEach((slot, s) => {
     const pieces = first[s] ?? [];
-    for (const p of pieces) for (const w of p.warnings) warnings.add(w);
+    pieces.forEach((p, i) => {
+      for (const w of p.warnings) warnings.push({ ...w, piece: i });
+    });
     if (pieces.filter((p) => p.writes.includes('tint')).length > 1)
-      warnings.add(`two pieces in ${slot} set tint`);
+      warnings.push({ slot, text: `two pieces in ${slot} set tint` });
   });
   const lengths = first.map((pieces) => Math.max(0, ...pieces.map((p) => lengthOf(p.voice))));
   const active = first[1] ?? [];
@@ -101,7 +110,7 @@ export function stageEffect(
       start: g * lag,
     };
   });
-  return { arcs, ms, warnings: [...warnings] };
+  return { arcs, ms, warnings };
 }
 
 /** Cues a staged effect's arcs under `owner`, each at its start; one of several is named by its group. */

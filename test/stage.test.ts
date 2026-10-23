@@ -107,7 +107,9 @@ describe('stageEffect', () => {
       enter: { move: 'cut-on' },
       active: [{ move: 'stand' }, { mod: 'palette' }, { mod: 'two-color' }],
     };
-    expect(stageEffect(two, at, HEX).warnings).toEqual(['two pieces in active set tint']);
+    expect(stageEffect(two, at, HEX).warnings).toEqual([
+      { slot: 'active', text: 'two pieces in active set tint' },
+    ]);
     const one: EffectSpec = { name: 'one', active: [{ move: 'stand' }, { mod: 'palette' }] };
     expect(stageEffect(one, at, HEX).warnings).toEqual([]);
   });
@@ -116,10 +118,20 @@ describe('stageEffect', () => {
     const wide = { ...place(board(20, 7), rasterize('HELLO WORLD')), label: 'HELLO WORLD' };
     const { warnings } = stageEffect(flip, wide, HEX);
     expect(warnings).toEqual([
-      'unfold clips HELLO WORLD',
-      'tumble clips HELLO WORLD',
-      'fold clips HELLO WORLD',
+      { slot: 'enter', piece: 0, text: 'unfold clips HELLO WORLD' },
+      { slot: 'active', piece: 0, text: 'tumble clips HELLO WORLD' },
+      { slot: 'exit', piece: 0, text: 'fold clips HELLO WORLD' },
     ]);
+    const layered = stageEffect(
+      { ...flip, active: [{ mod: 'pulse' }, { move: 'tumble' }] },
+      wide,
+      HEX,
+    );
+    expect(layered.warnings[1]).toEqual({
+      slot: 'active',
+      piece: 1,
+      text: 'tumble clips HELLO WORLD',
+    });
   });
 
   it('round-trips an effect through JSON unchanged', () => {

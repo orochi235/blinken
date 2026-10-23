@@ -8,6 +8,7 @@ import {
   SLOTS,
   type Slot,
   stageEffect,
+  type Warning,
 } from '@/index.js';
 import { h, numberControl, options, orderControls } from './controls.js';
 import { pieceCard, pieceOf, pieceSelect } from './piece.js';
@@ -22,14 +23,6 @@ import {
   removePiece,
   setPiece,
 } from './state.js';
-
-/** The slot a stage warning is about: one it names, else one holding the move it names. */
-function slotOf(spec: EffectSpec, warning: string): Slot | undefined {
-  const named = SLOTS.find((slot) => warning.includes(` in ${slot} `));
-  if (named) return named;
-  const move = warning.split(' ')[0];
-  return SLOTS.find((slot) => piecesOf(spec[slot]).some((p) => 'move' in p && p.move === move));
-}
 
 /**
  * The effect designer: pick an effect, or start one, and edit its pieces, hold and blend. Every
@@ -55,14 +48,14 @@ export function mountDesigner(
     if (!s) return;
     const step = state.program[state.editing.step ?? 0];
     const text = step?.text ?? ' ';
-    let warnings: readonly string[];
+    let warnings: readonly Warning[];
     try {
       const at = { ...place(board, rasterize(text)), label: text };
       warnings = stageEffect(s, at, step?.hex ?? 0xffffff).warnings;
     } catch (e) {
-      warnings = [(e as Error).message];
+      warnings = [{ text: (e as Error).message }];
     }
-    for (const w of warnings) warnAt.get(slotOf(s, w) ?? 'effect')?.append(h('p', 'warning', w));
+    for (const w of warnings) warnAt.get(w.slot ?? 'effect')?.append(h('p', 'warning', w.text));
   };
 
   const edit = (fn: (s: EffectSpec) => EffectSpec, rebuild = false) => {

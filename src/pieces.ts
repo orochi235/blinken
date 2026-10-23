@@ -23,11 +23,19 @@ export interface ModPiece {
 export type Piece = MovePiece | ModPiece;
 export type SlotPieces = Piece | readonly Piece[];
 
+/** Something staging found worth saying, and the slot and piece it is about where it is about one. */
+export interface Warning {
+  readonly slot?: Slot;
+  /** The piece's index in its slot. */
+  readonly piece?: number;
+  readonly text: string;
+}
+
 /** A piece as a voice of an arc, with what it writes and what to warn about. */
 export interface StagedPiece {
   readonly voice: ArcVoice<Subject, Pose>;
   readonly writes: readonly Channel[];
-  readonly warnings: readonly string[];
+  readonly warnings: readonly Warning[];
 }
 
 /** Every subject at once: the order a piece plays in when it names none. */
@@ -89,7 +97,9 @@ export function stagePiece(
     duration: pass.duration + spanOf(order, at),
     ...(loop && { loop: true }),
   };
-  const clips = at.text.cols > at.board.cols && !piece.move.startsWith('scroll-');
-  const warnings = clips ? [`${piece.move} clips ${at.label ?? 'the message'}`] : [];
+  const clips = at.text.cols > at.board.cols && !move.wide;
+  const warnings = clips
+    ? [{ slot, text: `${piece.move} clips ${at.label ?? 'the message'}` }]
+    : [];
   return { voice, writes: ['lit'], warnings };
 }

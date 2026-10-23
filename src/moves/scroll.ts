@@ -43,6 +43,7 @@ export const scrollIn = move({
   about: 'Slides in from an edge and stops where the message stands.',
   slot: 'enter',
   params: PARAMS,
+  wide: true,
   patch: (at, p) => slide(at, p, edges(at, p).off, edges(at, p).rest),
 });
 
@@ -52,6 +53,7 @@ export const scrollOut = move({
   about: 'Slides out to an edge, starting where the message stands.',
   slot: 'exit',
   params: PARAMS,
+  wide: true,
   patch: (at, p) => slide(at, p, edges(at, p).rest, edges(at, p).away),
 });
 
@@ -61,5 +63,6 @@ export const scrollAcross = move({
   about: 'Crosses the sign, in at one edge and out at the other.',
   slot: 'active',
   params: PARAMS,
+  wide: true,
   patch: (at, p) => slide(at, p, edges(at, p).off, edges(at, p).away),
 });
