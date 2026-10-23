@@ -1,7 +1,7 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
+import { hash } from '../hash.js';
 import { layer } from './effect.js';
-import { hash } from './hash.js';
 
 /** Stray dots lighting for a moment, from a hash of where and when. Loops. */
 export const sparkle = layer({

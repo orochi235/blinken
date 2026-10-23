@@ -1,19 +1,9 @@
 import type { Patch } from '@msb235/blits';
 import type { Board, Cell, Led, Pose } from '../board.js';
 import type { Bitmap } from '../font.js';
+import type { Params, Values } from '../params.js';
 
-/** A number an effect is tuned by, with the range a control should offer and its default. */
-export interface Param {
-  readonly label: string;
-  readonly min: number;
-  readonly max: number;
-  readonly step: number;
-  readonly value: number;
-  readonly unit?: string;
-}
-
-export type Params = Readonly<Record<string, Param>>;
-export type Values<P extends Params> = { readonly [K in keyof P]: number };
+export { type Param, type Params, type Values, values } from '../params.js';
 
 /** A text effect ready to cue on the dots: its patch, the per-dot delay it plays with, and how long it lasts. */
 export interface Staged {
@@ -47,16 +37,6 @@ export interface Layer<P extends Params = Params> {
 }
 
 export type Effect = TextEffect | Layer;
-
-/** An effect's defaults with `given` laid over them. */
-export function values<P extends Params>(
-  effect: { readonly params: P },
-  given: Partial<Values<P>> = {},
-): Values<P> {
-  const out: Record<string, number> = {};
-  for (const [key, param] of Object.entries(effect.params)) out[key] = given[key] ?? param.value;
-  return out as Values<P>;
-}
 
 /** Declares a text effect, keeping its params' keys in the type `stage` sees. */
 export const textEffect = <P extends Params>(e: Omit<TextEffect<P>, 'kind'>): TextEffect<P> => ({

@@ -1,8 +1,8 @@
 import { oklab, patch } from '@msb235/blits';
 import { type Led, leftOf, type Pose } from '../board.js';
 import { ROWS } from '../font.js';
+import { hash } from '../hash.js';
 import { rowOf, textEffect } from './effect.js';
-import { hash } from './hash.js';
 
 /** How far a column falls from or to: past the text's top or bottom. */
 const DROP = ROWS + 1;

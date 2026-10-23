@@ -1,8 +1,8 @@
 import { oklab, patch } from '@msb235/blits';
 import { type Led, leftOf, type Pose } from '../board.js';
 import { ADVANCE, type Bitmap, FACE, ROWS, rasterize } from '../font.js';
+import { hash } from '../hash.js';
 import { rowOf, textEffect } from './effect.js';
-import { hash } from './hash.js';
 
 /** A reel's pitch: a glyph and the blank row under it. */
 const REEL = ROWS + 1;
