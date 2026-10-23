@@ -1,5 +1,7 @@
 import {
   type EffectSpec,
+  LAYERS,
+  type LayerName,
   type LayerSpec,
   type NumberParam,
   type Piece,
@@ -34,6 +36,10 @@ export const BLEND: NumberParam = {
   unit: 'ms',
 };
 export const LAG: NumberParam = { label: 'lag', min: 0, max: 400, step: 1, value: 0, unit: 'ms' };
+
+/** A layer as the state holds it, off and at its built-in settings until changed. */
+export const layerOf = (state: ComposeState, name: LayerName): LayerSpec & { on: boolean } =>
+  state.layers[name] ?? { ...LAYERS[name], on: false };
 
 /** The effect a step falls back to when the one it named is deleted. */
 export const FALLBACK = 'hold';

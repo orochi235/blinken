@@ -1,0 +1,29 @@
+.compose-share {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compose-share-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.compose-share-link,
+.compose-share-code {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm, 4px);
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm, 12px);
+}
+
+.compose-share-code {
+  resize: vertical;
+  font-family: ui-monospace, Menlo, monospace;
+}

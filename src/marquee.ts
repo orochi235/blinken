@@ -6,7 +6,15 @@ import { createSign, paintBulbs, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
 import type { Fade, Ghost } from './optics.js';
 import type { ParamValue } from './params.js';
-import { cueLayer, effectOf, play, type Step } from './program.js';
+import { layOut, type Pass, PassClock, type PassStep } from './pass.js';
+import {
+  cueLayer,
+  cueProgram,
+  effectOf,
+  type StagedStep,
+  type Step,
+  stageProgram,
+} from './program.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
 const AWAY_MS = 250;
@@ -49,6 +57,11 @@ export interface MarqueeOptions {
   readonly draw?: boolean;
   /** Called after every frame with what it cost. */
   readonly onFrame?: (cost: FrameCost) => void;
+  /**
+   * What debuggers call its mix. Default `marquee #<canvas id> <cols>×<rows>`, or without an id
+   * `marquee <cols>×<rows>`.
+   */
+  readonly name?: string;
 }
 
 export interface Marquee {
@@ -61,6 +74,13 @@ export interface Marquee {
   setEffects(effects: Readonly<Record<string, EffectSpec>>): void;
   /** Starts the program over at `fromStep`, fading the pass playing now at once. */
   restart(fromStep?: number): void;
+  /** Where the pass playing now stands, on the mix clock, so rate changes count; null while none plays. */
+  pass(): Pass | null;
+  /**
+   * Moves the pass playing now to `ms` from its start, clamped to its length. With `hold`, it stays
+   * at that moment until a seek without it, or the next restart.
+   */
+  seek(ms: number, opts?: { hold?: boolean }): void;
   /** Turns a layer on or off, or sets the weight it plays at; `params` re-cue it with them. */
   setLayer(name: string, on: boolean | number, params?: Readonly<Record<string, ParamValue>>): void;
   /** The color of a lit dot nothing has tinted. */
@@ -73,7 +93,7 @@ export interface Marquee {
   setFade(fade: Fade): void;
   /** Sets how much an unlit dot shows of its lit row and column. */
   setGhost(ghost: Ghost): void;
-  /** Stops the frame loop and lets go of the canvas. */
+  /** Stops the frame loop, lets go of the canvas, and takes its mix off the debuggers' list. */
   destroy(): void;
 }
 
@@ -86,7 +106,7 @@ const AMBER = 0xff9a2e;
 export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = {}): Marquee {
   const b = board(opts.cols ?? SIZE.cols, opts.rows ?? SIZE.rows);
   const m = mix<Subject, Pose>(KIT, {
-    name: 'marquee',
+    name: opts.name ?? `marquee ${canvas.id ? `#${canvas.id} ` : ''}${b.cols}×${b.rows}`,
     labelOf: (s: Subject) => (s.kind === 'cell' ? `cell ${s.i}` : `dot ${s.x},${s.y}`),
   });
   if (opts.rate !== undefined && opts.rate !== 1) m.ramp(opts.rate, 0);
@@ -105,18 +125,32 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   let effects = opts.effects ?? {};
   let live = true;
   let pass: Handle<Subject> | null = null;
+  let steps: readonly PassStep[] = [];
+  let length = 0;
+  const clock = new PassClock();
   /** A pass ended; the next starts at the next frame, so one that ends at once cannot spin. */
   let due = false;
+  let staged: readonly StagedStep[] = [];
+  /** Cues the staged pass afresh, from its start. */
+  const cue = () => {
+    const mine = cueProgram(m, staged);
+    clock.set(m.now);
+    pass = mine;
+    mine.done.then(() => {
+      if (pass === mine) due = true;
+    });
+    return mine;
+  };
   // Each pass reads the program and effects as they stand when it starts.
   const again = (from = 0) => {
     if (!live) return;
     const all = typeof program === 'function' ? program() : program;
-    const steps = from > 0 && from < all.length ? all.slice(from) : all;
-    const mine = steps.length > 0 ? play(m, b, steps, effects) : null;
-    pass = mine;
-    mine?.done.then(() => {
-      if (pass === mine) due = true;
-    });
+    const offset = from > 0 && from < all.length ? from : 0;
+    const chosen = offset ? all.slice(offset) : all;
+    staged = stageProgram(b, chosen, effects);
+    ({ steps, length } = layOut(staged, offset));
+    if (chosen.length > 0) cue();
+    else pass = null;
   };
   again();
 
@@ -169,6 +203,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     }
     const t0 = performance.now();
     m.sync(now);
+    clock.settle(m.now);
     m.pull(b.dots, cols);
     m.pull(b.cells, cells);
     paintBulbs(b, cells, cols);
@@ -200,6 +235,21 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       due = false;
       again(fromStep);
     },
+    pass() {
+      if (pass === null || length === 0) return null;
+      return { at: Math.min(length, Math.max(0, clock.read(m.now))), length, steps };
+    },
+    seek(ms, opts = {}) {
+      if (pass === null) return;
+      const at = Math.min(length, Math.max(0, ms));
+      const rate = opts.hold ? 0 : 1;
+      // A step that has ended has left the mix, so the pass is cued again and moved from its start.
+      pass.fade({ over: 0 });
+      const fresh = cue();
+      fresh.seek(at);
+      fresh.rate = rate;
+      clock.set(m.now, at, rate);
+    },
     setLayer(name, on, params) {
       const layer = layers.get(name);
       if (!layer) throw new Error(`bree: no layer named ${name}`);
@@ -230,6 +280,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       live = false;
       cancelAnimationFrame(raf);
       sign?.destroy();
+      m.close();
     },
   };
 }

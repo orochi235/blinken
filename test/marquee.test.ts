@@ -1,4 +1,4 @@
-import { mix } from '@msb235/blits';
+import { mix, watched } from '@msb235/blits';
 import { describe, expect, it, vi } from 'vitest';
 import { board, KIT, type Led, type Pose, SIZE, type Subject } from '@/board.js';
 import { EFFECTS, LAYERS } from '@/builtins.js';
@@ -328,5 +328,111 @@ describe('createMarquee', () => {
     } finally {
       error.mockRestore();
     }
+  });
+
+  describe('pass and seek', () => {
+    const two: Step[] = [
+      { effect: 'quick', text: 'WWWW', hex: 0xff9a2e },
+      { effect: 'quick', text: 'I', hex: 0x6dff5a },
+    ];
+    const quickMs = stageEffect(quick, place(b, rasterize('I')), 0).ms;
+
+    it('lays the steps end to end and reads where the pass is on the mix clock', async () => {
+      await withSign({ program: two, effects: { quick } }, (sign, step) => {
+        step(100);
+        const first = sign.pass();
+        expect(first?.length).toBe(2 * quickMs);
+        expect(first?.steps).toEqual([
+          { step: 0, start: 0, ms: quickMs },
+          { step: 1, start: quickMs, ms: quickMs },
+        ]);
+        const at = first?.at ?? Number.NaN;
+        step(300);
+        expect(sign.pass()?.at).toBe(at + 200);
+        sign.ramp(0.5, 0);
+        step(500);
+        expect(sign.pass()?.at).toBe(at + 300);
+      });
+    });
+
+    it('numbers the steps of a pass restarted partway by their place in the program', async () => {
+      await withSign({ program: two, effects: { quick } }, (sign, step) => {
+        step(100);
+        sign.restart(1);
+        expect(sign.pass()?.steps).toEqual([{ step: 1, start: 0, ms: quickMs }]);
+      });
+    });
+
+    it('seeks back into a step that has ended, and the sign shows it again', async () => {
+      await withSign({ program: two, effects: { quick } }, (sign, step) => {
+        step(quickMs + 200);
+        expect(litAmong(sign, 28, 36)).toBe(0);
+        sign.seek(100);
+        step(quickMs + 300);
+        expect(sign.pass()?.at).toBe(200);
+        expect(litAmong(sign, 28, 36)).toBeGreaterThan(0);
+      });
+    });
+
+    it('holds a seek with hold where it put the pass, until a seek without it', async () => {
+      await withSign({ program: two, effects: { quick } }, (sign, step) => {
+        step(100);
+        sign.seek(quickMs + 100, { hold: true });
+        step(3 * quickMs);
+        expect(sign.pass()?.at).toBe(quickMs + 100);
+        expect(litAmong(sign, 36, 44)).toBeGreaterThan(0);
+        sign.seek(quickMs + 100);
+        step(3 * quickMs + 100);
+        expect(sign.pass()?.at).toBe(quickMs + 200);
+      });
+    });
+
+    it('clamps a seek to the pass, and has no pass to report with nothing to play', async () => {
+      await withSign({ program: two, effects: { quick } }, (sign, step) => {
+        step(100);
+        sign.seek(-50, { hold: true });
+        expect(sign.pass()?.at).toBe(0);
+        sign.seek(1e9, { hold: true });
+        expect(sign.pass()?.at).toBe(2 * quickMs);
+      });
+      await withSign({ program: [] }, (sign, step) => {
+        step(100);
+        expect(sign.pass()).toBeNull();
+        expect(() => sign.seek(10)).not.toThrow();
+      });
+    });
+  });
+
+  describe("its mix on the debuggers' list", () => {
+    const listed = (name: string) =>
+      watched()
+        .entries()
+        .filter((e) => e.name === name).length;
+
+    it('is named for the canvas and the size, or as told', async () => {
+      await withSign({}, () => {
+        expect(listed(`marquee ${SIZE.cols}×${SIZE.rows}`)).toBeGreaterThan(0);
+      });
+      vi.stubGlobal('requestAnimationFrame', () => 0);
+      vi.stubGlobal('cancelAnimationFrame', () => {});
+      try {
+        const canvas = { id: 'hero' } as HTMLCanvasElement;
+        const named = createMarquee(canvas, { draw: false, cols: 20, rows: 7 });
+        expect(listed('marquee #hero 20×7')).toBe(1);
+        named.destroy();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+      await withSign({ name: 'lobby' }, () => {
+        expect(listed('lobby')).toBe(1);
+      });
+    });
+
+    it('leaves the list when the sign is destroyed', async () => {
+      await withSign({ name: 'short-lived' }, () => {
+        expect(listed('short-lived')).toBe(1);
+      });
+      expect(listed('short-lived')).toBe(0);
+    });
   });
 });

@@ -1,0 +1,48 @@
+.compose-scrubber {
+  position: relative;
+  flex: none;
+  display: grid;
+  grid-template-columns: var(--spans, 1fr);
+  height: 22px;
+  margin: 0 12px 12px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm, 4px);
+  background: var(--wzl-surface-sunken);
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.compose-scrubber:focus-visible {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: 1px;
+}
+
+.compose-scrubber-step {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 6px;
+  border-inline-end: 1px solid var(--wzl-border);
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-xs, 11px);
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.compose-scrubber-step:last-of-type {
+  border-inline-end: 0;
+}
+
+.compose-scrubber-head {
+  position: absolute;
+  inset-block: -3px;
+  left: calc(var(--at, 0) * 100%);
+  width: 2px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--wzl-accent);
+  box-shadow: 0 0 6px var(--wzl-accent);
+  pointer-events: none;
+}

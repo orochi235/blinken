@@ -7,26 +7,7 @@
     <link rel="icon" href="data:," />
   </head>
   <body>
-    <main id="root" class="compose">
-      <div class="sign"><canvas id="sign"></canvas></div>
-      <div class="panes">
-        <div class="pane side">
-          <section id="program" class="program"></section>
-          <section id="layers" class="layers"></section>
-          <section id="hardware" class="layers"></section>
-          <section id="share" class="share">
-            <header class="pane-head">
-              <h2>share</h2>
-              <button id="copy-link" type="button" class="small">copy link</button>
-              <button id="copy-code" type="button" class="small">copy as code</button>
-            </header>
-            <input id="link" type="text" readonly aria-label="link to this composition" placeholder="the link shows here" />
-            <textarea id="code" readonly aria-label="this composition as code" rows="12"></textarea>
-          </section>
-        </div>
-        <section id="designer" class="pane designer"></section>
-      </div>
-    </main>
-    <script type="module" src="./compose/main.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="./compose/main.tsx"></script>
   </body>
 </html>

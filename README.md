@@ -33,6 +33,9 @@ const sign = createMarquee(canvas, {
 sign.setLayer('rainbow', true);
 sign.setLayer('sparkle', true, { rate: 0.02 }); // new params re-cue the layer
 sign.restart(1); // play this pass from the second step; later passes start from the first
+sign.seek(1500, { hold: true }); // show the pass 1.5 s in, held there
+sign.seek(1500); // and play on from there
+sign.pass(); // { at, length, steps: [{ step, start, ms }, …] }, or null while nothing plays
 sign.destroy();
 ```
 
@@ -40,7 +43,15 @@ The canvas takes the largest size its parent element allows. `program` loops; gi
 it is read again at the start of every pass. `layers` takes the name of a built-in with on, off or
 a weight, or a full layer spec under a name of your own. `setEffects` replaces the effects steps
 can name from the next pass. `sign.mix` is the mix itself, for cueing voices of your own on
-`sign.board`'s dots and cells.
+`sign.board`'s dots and cells. `name` is what debuggers list that mix as, by default
+`marquee #<canvas id> <cols>×<rows>` (or `marquee <cols>×<rows>` for a canvas with no id), and
+`destroy` takes it off their list.
+
+`pass()` says where the pass playing now stands: `at` ms into it, its `length`, and each step it
+plays, end to end, with its index in the program, its `start` and its `ms`. It reads the mix clock,
+so `ramp` slows it with everything else. `seek(ms)` moves that pass to `ms` from its start, back
+into a step that has ended as readily as forward, and `{ hold: true }` keeps it there until a seek
+without it or the next restart.
 
 ## Pieces, effects and programs
 
