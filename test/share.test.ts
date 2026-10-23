@@ -72,7 +72,7 @@ describe('share', () => {
     data.effects['hold copy'].hold = -100;
     data.program[1].hold = 1e9;
     const { state: back } = decode(hashOf(data));
-    const exit = back.effects['hold copy']?.exit as { params: Record<string, number> }[];
+    const exit = back.effects['hold copy']?.exit as readonly { params: Record<string, number> }[];
     expect(exit[0]?.params).toEqual({ sweep: 0.95, ms: 100, depth: 0.5 });
     expect(back.effects['hold copy']?.hold).toBe(0);
     expect(back.program[1]?.hold).toBe(12000);

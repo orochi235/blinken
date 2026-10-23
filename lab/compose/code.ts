@@ -85,7 +85,7 @@ export function toCode(state: ComposeState): string {
     hold,
   }));
   const layers = Object.fromEntries(
-    Object.entries(state.layers).flatMap(([name, { on, ...spec }]) => {
+    Object.entries(state.layers).flatMap(([name, { on, ...spec }]): [string, unknown][] => {
       if (!on) return [];
       const base = LAYERS[name as LayerName];
       if (base && same(spec.params, base.params)) return [[name, true]];
