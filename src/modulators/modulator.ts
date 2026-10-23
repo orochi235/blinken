@@ -31,7 +31,7 @@ export const RATE: NumberParam = {
   max: 10,
   step: 0.1,
   value: 1,
-  unit: 'cycles/s',
+  unit: 'Hz',
 };
 
 /** How far a modulator swings its channel, as a fraction of its full range. */

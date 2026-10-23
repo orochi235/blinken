@@ -6,6 +6,8 @@ export interface NumberParam {
   readonly step: number;
   readonly value: number;
   readonly unit?: string;
+  /** What a control multiplies the value by to show it, such as 100 for a share shown in percent. */
+  readonly scale?: number;
 }
 
 /** A setting that is one of a fixed set of words. */
