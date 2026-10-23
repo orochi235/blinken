@@ -1,4 +1,4 @@
-import { Button, ControlPanel, f, isAuto, Select } from '@weasel-js/labkit';
+import { Button, type ConfigShape, ControlPanel, f, isAuto, Select } from '@weasel-js/labkit';
 import {
   MODULATORS,
   MOVES,
@@ -10,7 +10,7 @@ import {
   values,
 } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
-import { fieldOf, numberField, schemaFor } from '../schema.js';
+import { fieldOf, numberField, schemaFor, shownValues, storedValue } from '../schema.js';
 import { LAG } from '../state.js';
 import { keyOf, pieceOf, pieceOptions } from './edit.js';
 
@@ -35,7 +35,7 @@ const schemaOf = (slot: Slot, piece: Piece) =>
           : fieldOf(p),
       ]),
     );
-    const order =
+    const order: ConfigShape =
       'mod' in piece
         ? { spread: f.enum<OrderBy>('together', ORDERS).label('spread') }
         : { order: f.enum<OrderBy>('together', ORDERS).label('order'), lag: numberField(LAG) };
@@ -59,7 +59,7 @@ export function PieceCard({
     ...('mod' in piece
       ? { spread: piece.spread?.by ?? 'together' }
       : { order: piece.order?.by ?? 'together', lag: piece.order?.lag ?? 0 }),
-    ...(values(thing, piece.params as never) as Record<string, unknown>),
+    ...shownValues(thing.params, values(thing, piece.params as never)),
   };
   const set = (path: string, v: unknown) =>
     onEdit((now) => {
@@ -70,7 +70,7 @@ export function PieceCard({
       if ('move' in now && path === 'lag')
         return { ...now, order: { ...(now.order ?? { by: 'together' }), lag: Number(v) } };
       const { [path]: _, ...rest } = now.params ?? {};
-      const params = isAuto(v) ? rest : { ...rest, [path]: v };
+      const params = isAuto(v) ? rest : { ...rest, [path]: storedValue(thing.params, path, v) };
       const { params: __, ...bare } = now;
       return (Object.keys(params).length ? { ...bare, params } : bare) as Piece;
     });

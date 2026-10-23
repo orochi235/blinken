@@ -1,14 +1,14 @@
 import { ControlPanel, f } from '@weasel-js/labkit';
-import { LAYERS, type LayerName, MODULATORS, values } from '@/index.js';
+import { LAYERS, type LayerName, MODULATORS, type ParamValue, values } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
-import { fieldsOf, schemaFor } from '../schema.js';
+import { fieldsOf, schemaFor, shownValues, storedValue } from '../schema.js';
 import { layerOf } from '../state.js';
 import { compose, useCompose } from '../store.js';
 import './LayersPanel.css';
 
 const schemaOf = (name: LayerName) =>
   schemaFor(`layer:${name}`, () => ({
-    on: f.boolean(false).label('on'),
+    on: f.boolean(false).label(`${name} on`).heading(),
     ...fieldsOf(MODULATORS[LAYERS[name].mod].params),
   }));
 
@@ -17,14 +17,22 @@ function Layer({ name }: { name: LayerName }) {
   const state = useCompose();
   const layer = layerOf(state, name);
   const mod = MODULATORS[layer.mod];
-  const config = { on: layer.on, ...values(mod, layer.params as never) };
+  const config = {
+    on: layer.on,
+    ...shownValues(mod.params, values(mod, layer.params as never)),
+  };
   // Every write reads the layer as it stands now, so one setting's edit keeps the others'.
   const set = (path: string, v: unknown) =>
     compose.edit(
       (s) => {
         const l = layerOf(s, name);
         s.layers[name] =
-          path === 'on' ? { ...l, on: v === true } : { ...l, params: { ...l.params, [path]: v } };
+          path === 'on'
+            ? { ...l, on: v === true }
+            : {
+                ...l,
+                params: { ...l.params, [path]: storedValue(mod.params, path, v) as ParamValue },
+              };
       },
       { layer: name },
     );
@@ -40,6 +48,8 @@ function Layer({ name }: { name: LayerName }) {
       setConfig={set}
       draftConfig={set}
       renderers={RENDERERS}
+      collapsible
+      defaultCollapsed
       density="tight"
     />
   );

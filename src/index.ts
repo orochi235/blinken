@@ -29,8 +29,6 @@ export {
   type FrameCost,
   type Marquee,
   type MarqueeOptions,
-  type Pass,
-  type PassStep,
 } from './marquee.js';
 export { MODULATORS, type Modulator, type ModulatorName } from './modulators/index.js';
 export { MOVES, type Move, type MoveName, SLOTS, type Slot } from './moves/index.js';
@@ -54,6 +52,7 @@ export {
   type Values,
   values,
 } from './params.js';
+export type { Pass, PassStep } from './pass.js';
 export {
   type ModPiece,
   type MovePiece,

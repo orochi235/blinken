@@ -7,11 +7,34 @@ import {
 } from '@weasel-js/labkit';
 import type { NumberParam, Param, Params } from '@/index.js';
 
-/** The control a NumberParam asks for: a slider over its range, in its step and unit. */
+/** What a control multiplies a setting by to show it; 1 for any but a scaled number. */
+const scaleOf = (p: Param | undefined) => (p && 'min' in p && p.scale) || 1;
+const times = (n: number, by: number) => Number((n * by).toPrecision(12));
+
+/** The control a NumberParam asks for: a slider over its range, in its step and unit, scaled to show. */
 export const numberField = (p: NumberParam, label = p.label) => {
-  const node = f.number(p.value).range(p.min, p.max).step(p.step).label(label).slider();
+  const k = scaleOf(p);
+  const node = f
+    .number(times(p.value, k))
+    .range(times(p.min, k), times(p.max, k))
+    .step(times(p.step, k))
+    .label(label)
+    .slider();
   return p.unit ? node.suffix(p.unit) : node;
 };
+
+/** A thing's settings as its controls show them, each scaled number multiplied up. */
+export const shownValues = (params: Params, values: Readonly<Record<string, unknown>>) =>
+  Object.fromEntries(
+    Object.entries(values).map(([k, v]) => [
+      k,
+      typeof v === 'number' ? times(v, scaleOf(params[k])) : v,
+    ]),
+  );
+
+/** A value a control wrote, as the setting `key` stores it. */
+export const storedValue = (params: Params, key: string, v: unknown) =>
+  typeof v === 'number' ? Number((v / scaleOf(params[key])).toPrecision(12)) : v;
 
 /** The control for one Param: a slider, a choice, or a row of colors (the `colors` renderer). */
 export function fieldOf(p: Param): ConfigEntry {
