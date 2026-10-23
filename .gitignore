@@ -1,0 +1,8 @@
+.superpowers/
+.playwright-mcp/
+node_modules/
+dist/
+dist-lab/
+shots/
+test-results/
+playwright-report/

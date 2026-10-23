@@ -1,0 +1,48 @@
+{
+  "name": "bree",
+  "version": "0.0.0",
+  "private": true,
+  "description": "An old-fashioned LED marquee on a canvas, and the composable blits effects it plays",
+  "license": "MIT",
+  "author": "orochi235",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "dev": "vite lab",
+    "lab:build": "vite build lab",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "biome check .",
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "smoke": "npm run lab:build && node scripts/smoke.mjs",
+    "shots": "npm run lab:build && node scripts/shots.mjs"
+  },
+  "dependencies": {
+    "@msb235/blits": "0.11.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
+    "playwright": "1.63.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  }
+}

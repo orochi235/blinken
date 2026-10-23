@@ -1,0 +1,4 @@
+enlist: 6
+plugin: node
+run: node_modules/.bin/vitest run
+runner: vitest
