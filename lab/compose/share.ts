@@ -19,6 +19,8 @@ import { BLEND, type ComposeState, HOLD, LAG } from './state.js';
 
 /** The browser-storage key the current draft is kept under. */
 export const DRAFT = 'bree-compose-draft';
+/** Where the draft a link replaced is kept, so opening a link never loses one. */
+export const PREVIOUS = 'bree-compose-draft-previous';
 
 const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
 const ORDERS: readonly OrderBy[] = [
@@ -66,6 +68,26 @@ const isObj = (v: unknown): v is Record<string, unknown> =>
 const clamp = (v: unknown, p: NumberParam): number | undefined =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(p.max, Math.max(p.min, v)) : undefined;
 
+/** An optional number clamped to `p`; one given that isn't a number is named in `dropped`. */
+const optional = (v: unknown, p: NumberParam, what: string, dropped: string[]) => {
+  const n = clamp(v, p);
+  if (v !== undefined && n === undefined) dropped.push(what);
+  return n;
+};
+
+/** Whether a link's name can key a plain object: `__proto__` would set its prototype instead. */
+const safe = (name: string) => name !== '__proto__';
+
+/** A link's map: its entries, or none (named in `dropped`) when it is there but not a map. */
+const entriesOf = (v: unknown, what: string, dropped: string[]): [string, unknown][] => {
+  if (v === undefined) return [];
+  if (!isObj(v)) {
+    dropped.push(what);
+    return [];
+  }
+  return Object.entries(v);
+};
+
 /** A link's settings for `thing`, in its own key order, each kept only if it is one it has. */
 function paramsOf(
   thing: { readonly params: Params },
@@ -102,7 +124,7 @@ function orderOf(v: unknown, where: string, dropped: string[]): Order | undefine
     dropped.push(`order in ${where}`);
     return undefined;
   }
-  const lag = clamp(v.lag, LAG);
+  const lag = optional(v.lag, LAG, `lag in ${where}`, dropped);
   const seed = Number.isInteger(v.seed) ? (v.seed as number) : undefined;
   return {
     by: v.by as OrderBy,
@@ -154,7 +176,13 @@ function effectOf(name: string, v: unknown, dropped: string[]): EffectSpec | und
   const slots = isObj(v)
     ? SLOTS.map((slot) => (v[slot] === undefined ? [] : isObj(v[slot]) ? [v[slot]] : v[slot]))
     : [];
-  if (!isObj(v) || !name || Object.hasOwn(EFFECTS, name) || !slots.every(Array.isArray)) {
+  if (
+    !isObj(v) ||
+    !name ||
+    !safe(name) ||
+    Object.hasOwn(EFFECTS, name) ||
+    !slots.every(Array.isArray)
+  ) {
     dropped.push(`effect ${name}`);
     return undefined;
   }
@@ -166,9 +194,9 @@ function effectOf(name: string, v: unknown, dropped: string[]): EffectSpec | und
     const pieces = (slots[s] as unknown[]).flatMap((p) => pieceOf(p, slot, name, dropped) ?? []);
     if (pieces.length) out[slot] = pieces;
   });
-  const hold = clamp(v.hold, HOLD);
+  const hold = optional(v.hold, HOLD, `hold in ${name}`, dropped);
   if (hold !== undefined) out.hold = hold;
-  const blend = clamp(v.blend, BLEND);
+  const blend = optional(v.blend, BLEND, `blend in ${name}`, dropped);
   if (blend !== undefined) out.blend = blend;
   return out as unknown as EffectSpec;
 }
@@ -186,28 +214,40 @@ function stepOf(v: unknown, effects: ComposeState['effects'], dropped: string[])
     dropped.push(`step ${v.text}, its effect ${String(effect)}`);
     return undefined;
   }
-  const hold = clamp(v.hold, HOLD);
+  const hold = optional(v.hold, HOLD, `hold in step ${v.text}`, dropped);
+  const hex = optional(v.hex, HEX, `color in step ${v.text}`, dropped);
   return {
     text: v.text,
-    hex: Math.round(clamp(v.hex, HEX) ?? AMBER),
+    hex: Math.round(hex ?? AMBER),
     effect,
     ...(hold !== undefined && { hold }),
   };
 }
 
+/** What a link held: the composition, what of it was left out, and whether it read at all. */
+export interface Decoded {
+  state: ComposeState;
+  dropped: string[];
+  read: boolean;
+}
+
 /** A composition read from untrusted JSON, with everything it couldn't use named in `dropped`. */
-function parse(data: unknown): { state: ComposeState; dropped: string[] } {
+function parse(data: unknown): Decoded {
   const dropped: string[] = [];
   const state = defaultState();
-  if (!isObj(data)) return { state, dropped: ['the link could not be read'] };
+  if (!isObj(data)) return { state, dropped: [], read: false };
   state.effects = {};
-  for (const [name, v] of Object.entries(isObj(data.effects) ? data.effects : {})) {
+  for (const [name, v] of entriesOf(data.effects, 'the effects', dropped)) {
     const spec = effectOf(name, v, dropped);
     if (spec) state.effects[name] = spec;
   }
   if (Array.isArray(data.program))
     state.program = data.program.flatMap((v) => stepOf(v, state.effects, dropped) ?? []);
-  for (const [name, v] of Object.entries(isObj(data.layers) ? data.layers : {})) {
+  else {
+    state.program = [];
+    dropped.push('the program');
+  }
+  for (const [name, v] of entriesOf(data.layers, 'the layers', dropped)) {
     if (!Object.hasOwn(LAYERS, name) || !isObj(v)) {
       dropped.push(`layer ${name}`);
       continue;
@@ -221,19 +261,22 @@ function parse(data: unknown): { state: ComposeState; dropped: string[] } {
       on: v.on === true,
     };
   }
-  return { state, dropped };
+  return { state, dropped, read: true };
 }
 
-/** A composition from a URL hash; anything unknown is left out and named, never thrown. */
-export function decode(hash: string): { state: ComposeState; dropped: string[] } {
+/**
+ * A composition from a URL hash; anything unknown is left out and named, never thrown. `read` is
+ * false when the hash is no composition at all, and `state` is then the default.
+ */
+export function decode(hash: string): Decoded {
   const text = hash.replace(/^#/, '');
-  if (!text) return { state: defaultState(), dropped: [] };
+  if (!text) return { state: defaultState(), dropped: [], read: false };
   try {
     const bin = atob(text.replace(/-/g, '+').replace(/_/g, '/'));
     const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
     return parse(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)));
   } catch {
-    return { state: defaultState(), dropped: ['the link could not be read'] };
+    return { state: defaultState(), dropped: [], read: false };
   }
 }
 
@@ -244,14 +287,56 @@ export function save(state: ComposeState): void {
   } catch {}
 }
 
-/** The draft kept in browser storage, or null without one. */
-export function load(): ComposeState | null {
+const kept = (key: string): string | null => {
   try {
-    const kept = localStorage.getItem(DRAFT);
-    return kept ? decode(kept).state : null;
+    return localStorage.getItem(key);
   } catch {
     return null;
   }
+};
+
+/** The draft kept in browser storage, or null without one. */
+export function load(): ComposeState | null {
+  const draft = kept(DRAFT);
+  const d = draft ? decode(draft) : null;
+  return d?.read ? d.state : null;
+}
+
+/**
+ * The composition a page opens with: a readable link's, after moving any different draft aside to
+ * PREVIOUS; else the draft; else the default. `unreadable` says a link was there but read as none.
+ */
+export function open(hash: string): {
+  state: ComposeState;
+  dropped: string[];
+  unreadable: boolean;
+} {
+  const linked = hash.replace(/^#/, '') ? decode(hash) : null;
+  if (!linked?.read)
+    return { state: load() ?? defaultState(), dropped: [], unreadable: linked !== null };
+  const draft = kept(DRAFT);
+  try {
+    if (draft && draft !== encode(linked.state)) localStorage.setItem(PREVIOUS, draft);
+  } catch {}
+  save(linked.state);
+  return { state: linked.state, dropped: linked.dropped, unreadable: false };
+}
+
+/** Whether a draft a link replaced is kept. */
+export const hasPrevious = (): boolean => kept(PREVIOUS) !== null;
+
+/** Swaps the draft a link replaced back in, keeping the link's as the previous one. */
+export function restorePrevious(): ComposeState | null {
+  const previous = kept(PREVIOUS);
+  const d = previous ? decode(previous) : null;
+  if (!d?.read) return null;
+  const draft = kept(DRAFT);
+  try {
+    if (draft) localStorage.setItem(PREVIOUS, draft);
+    else localStorage.removeItem(PREVIOUS);
+  } catch {}
+  save(d.state);
+  return d.state;
 }
 
 export { toCode } from './code.js';

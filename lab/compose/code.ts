@@ -45,8 +45,7 @@ const effectCode = (spec: EffectSpec) => {
   return out;
 };
 
-const quote = (s: string) =>
-  `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`;
+const quote = (s: string) => JSON.stringify(s);
 const keyOf = (k: string) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : quote(k));
 const WIDTH = 100;
 

@@ -8,7 +8,7 @@ import { h } from './controls.js';
 import { mountDesigner } from './designer.js';
 import { layerOf, mountLayers } from './layers.js';
 import { mountProgram } from './program.js';
-import { decode, defaultState, encode, load, save, toCode } from './share.js';
+import { encode, hasPrevious, open, restorePrevious, save, toCode } from './share.js';
 
 const params = new URLSearchParams(location.search);
 if (import.meta.env.DEV && !params.has('nopanel')) mount();
@@ -16,10 +16,10 @@ if (import.meta.env.DEV && !params.has('nopanel')) mount();
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 // A link wins over the draft, then is taken out of the address so a reload keeps later edits.
-const linked = location.hash.length > 1 ? decode(location.hash) : null;
-if (linked) history.replaceState(null, '', location.pathname + location.search);
-const state = linked?.state ?? load() ?? defaultState();
-const at = () => Math.min(state.editing.step ?? 0, state.program.length - 1);
+const opened = open(location.hash);
+if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+const state = opened.state;
+const at = () => Math.max(0, Math.min(state.editing.step ?? 0, state.program.length - 1));
 
 let solo = false;
 const sign = createMarquee(el<HTMLCanvasElement>('sign'), {
@@ -32,10 +32,10 @@ const sign = createMarquee(el<HTMLCanvasElement>('sign'), {
 for (const [name, layer] of Object.entries(state.layers))
   sign.setLayer(name, layer.on, layer.params);
 
-/** Plays from the step being edited (or loops it, soloed) with the effects as they stand. */
-const replay = () => {
+/** Plays from step `from` (or loops the picked step, soloed) with the effects as they stand. */
+const replay = (from = at()) => {
   sign.setEffects(state.effects);
-  sign.restart(solo ? 0 : at());
+  sign.restart(solo ? 0 : from);
   save(state);
 };
 
@@ -49,7 +49,7 @@ const follow = () => {
 };
 
 const program = mountProgram(el('program'), state, {
-  edit: replay,
+  edit: (i) => replay(i),
   select() {
     follow();
     replay();
@@ -58,7 +58,7 @@ const program = mountProgram(el('program'), state, {
     solo = on;
     replay();
   },
-  restart: replay,
+  restart: () => replay(),
 });
 
 const designer = mountDesigner(el('designer'), state, sign.board, () => {
@@ -91,6 +91,18 @@ el('copy-code').addEventListener('click', () => {
   codeOut.classList.add('shown');
   copy(codeOut.value);
 });
-if (linked?.dropped.length)
-  el('share').append(h('p', 'warning', `Left out of the link: ${linked.dropped.join('; ')}.`));
+const share = el('share');
+if (opened.unreadable)
+  share.append(h('p', 'warning', 'This link could not be read; your draft is unchanged.'));
+if (opened.dropped.length)
+  share.append(h('p', 'warning', `Left out of the link: ${opened.dropped.join('; ')}.`));
+if (hasPrevious()) {
+  const back = h('button', 'small', 'restore previous draft');
+  back.type = 'button';
+  back.title = 'swap back the draft this link replaced; this one is kept as the previous';
+  back.addEventListener('click', () => {
+    if (restorePrevious()) location.reload();
+  });
+  share.querySelector('.pane-head')?.append(back);
+}
 save(state);

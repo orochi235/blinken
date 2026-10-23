@@ -122,7 +122,12 @@ export function mountDesigner(
   const rename = (input: HTMLInputElement, from: string) => {
     const to = input.value.trim();
     if (to === from) return;
-    if (!to || Object.hasOwn(state.effects, to) || Object.hasOwn(EFFECTS, to)) {
+    if (
+      !to ||
+      to === '__proto__' ||
+      Object.hasOwn(state.effects, to) ||
+      Object.hasOwn(EFFECTS, to)
+    ) {
       input.value = from;
       return;
     }
