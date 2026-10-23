@@ -15,7 +15,7 @@ const MS: NumberParam = {
 const SWEEP: NumberParam = {
   label: 'sweep',
   min: 0,
-  max: 1,
+  max: 0.95,
   step: 0.05,
   value: 0.5,
   unit: 'of the pass',
@@ -58,7 +58,7 @@ const eased = (s: Spec): Modulator =>
         p.ms,
         (phase, subject, setting) => {
           const start = maxRank > 0 ? (rank(subject) / maxRank) * p.sweep : 0;
-          const u = Math.min(1, Math.max(0, (phase - start) / (1 - p.sweep || 1)));
+          const u = Math.min(1, Math.max(0, (phase - start) / (1 - p.sweep)));
           return inner.at(u, subject, setting);
         },
         { writes: [s.channel] },

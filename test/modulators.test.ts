@@ -87,6 +87,18 @@ describe('modulators', () => {
     }
   });
 
+  it('at the largest sweep the last column still reaches the end value', () => {
+    for (const name of ['dim', 'desaturate', 'flare'] as const) {
+      const m = MODULATORS[name];
+      const ch = m.writes[0] as 'gain' | 'chroma' | 'glow';
+      const max = (m.params.sweep as { max: number }).max;
+      const given = { ms: 1000, depth: 0.5, sweep: max };
+      const [first, last] = [b.dots[0], b.dots[79]] as Subject[];
+      const end = poseAt(name, 999.999, first, given, column)[ch];
+      expect(poseAt(name, 999.999, last, given, column)[ch]).toBeCloseTo(end as number, 2);
+    }
+  });
+
   it('flare goes up to 1 + depth and back', () => {
     const g = (t: number) => poseAt('flare', t, undefined, { ms: 1000, depth: 2, sweep: 0 }).glow;
     expect(g(0)).toBe(1);
