@@ -1,6 +1,7 @@
-import { Button, ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
+import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
 import { useMemo } from 'react';
 import { EFFECTS } from '@/index.js';
+import { IconButton } from '../IconButton.js';
 import { hexOf, numberField, numOf } from '../schema.js';
 import { HOLD } from '../state.js';
 import { compose, useCompose } from '../store.js';
@@ -74,25 +75,24 @@ export function StepEditor({
         density="tight"
       />
       <div className="compose-step-tools">
-        <Button
-          size="sm"
-          tooltip="move this step up"
+        <IconButton
+          glyph="up"
+          label="move this step up"
           disabled={at === 0}
           onClick={() => onMove(-1)}
-        >
-          up
-        </Button>
-        <Button
-          size="sm"
-          tooltip="move this step down"
+        />
+        <IconButton
+          glyph="down"
+          label="move this step down"
           disabled={at === last}
           onClick={() => onMove(1)}
-        >
-          down
-        </Button>
-        <Button size="sm" tooltip="remove this step" disabled={last === 0} onClick={onRemove}>
-          remove
-        </Button>
+        />
+        <IconButton
+          glyph="remove"
+          label="remove this step"
+          disabled={last === 0}
+          onClick={onRemove}
+        />
       </div>
     </div>
   );

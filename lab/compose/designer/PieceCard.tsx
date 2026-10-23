@@ -1,4 +1,4 @@
-import { Button, type ConfigShape, ControlPanel, f, isAuto } from '@weasel-js/labkit';
+import { type ConfigShape, ControlPanel, f, isAuto } from '@weasel-js/labkit';
 import {
   MODULATORS,
   MOVES,
@@ -10,10 +10,12 @@ import {
   values,
 } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
+import { IconButton } from '../IconButton.js';
 import { PlainSelect } from '../PlainSelect.js';
 import { fieldOf, numberField, schemaFor, shownValues, storedValue } from '../schema.js';
 import { LAG } from '../state.js';
 import { keyOf, pieceOf, pieceOptions } from './edit.js';
+import './PieceCard.css';
 
 const NONE: ReadonlySet<string> = new Set();
 const PER_HOLD: ReadonlySet<string> = new Set(['ms']);
@@ -86,9 +88,7 @@ export function PieceCard({
           onSelectionChange={(key) => onEdit(() => pieceOf(key))}
         />
         <span className="compose-about">{thing.about}</span>
-        <Button size="sm" onClick={onRemove}>
-          remove
-        </Button>
+        <IconButton glyph="remove" label="remove this piece" onClick={onRemove} />
       </div>
       <ControlPanel
         schema={schemaOf(slot, piece)}
@@ -97,7 +97,9 @@ export function PieceCard({
         setConfig={set}
         draftConfig={set}
         renderers={RENDERERS}
-        density="tight"
+        className="compose-two-up"
+        pack="pairs"
+        layout="inline"
       />
     </div>
   );

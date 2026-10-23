@@ -1,6 +1,6 @@
-import { Button } from '@weasel-js/labkit';
 import { useMemo } from 'react';
 import { board, placeText, SIZE, SLOTS, type Slot, stageEffect, type Warning } from '@/index.js';
+import { IconButton } from '../IconButton.js';
 import { deleteEffect, FALLBACK } from '../state.js';
 import { pickedOf, useCompose } from '../store.js';
 import './DesignerPanel.css';
@@ -48,13 +48,11 @@ export function DesignerPanel() {
         <EffectPicker />
         {name !== undefined && spec && <NameField name={name} />}
         {name !== undefined && spec && (
-          <Button
-            size="sm"
-            tooltip={`delete this effect; steps playing it play ${FALLBACK} instead`}
+          <IconButton
+            glyph="remove"
+            label={`delete this effect; steps playing it play ${FALLBACK} instead`}
             onClick={() => designerEdit((s) => deleteEffect(s, name))}
-          >
-            delete
-          </Button>
+          />
         )}
         {spec?.about && <span className="compose-about">{spec.about}</span>}
       </header>

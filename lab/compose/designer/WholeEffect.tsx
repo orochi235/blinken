@@ -43,7 +43,9 @@ export function WholeEffect({ spec }: { spec: EffectSpec }) {
       auto={spec.hold === undefined ? OWN_HOLD : NONE}
       setConfig={set}
       draftConfig={set}
-      density="tight"
+      className="compose-two-up"
+      pack="pairs"
+      layout="inline"
     />
   );
 }

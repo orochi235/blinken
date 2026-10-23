@@ -30,31 +30,8 @@
   min-width: 0;
 }
 
-.compose-piece {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px 8px;
-  border: 1px solid var(--wzl-border);
-  border-left: 3px solid #fa8072;
-  border-radius: var(--wzl-radius-sm, 4px);
-  background: var(--wzl-surface-sunken);
-}
-
-.compose-piece.is-mod {
-  border-left-color: #5ab8ff;
-}
-
-.compose-piece-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.compose-piece-head .compose-about {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+/* Every designer panel: inline rows two up, one up where its box is narrow. labkit has no columns option yet. */
+.compose-two-up {
+  grid-template-columns: repeat(auto-fit, minmax(max(22ch, calc(50% - 6px)), 1fr));
+  column-gap: 12px;
 }
