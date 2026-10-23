@@ -1,0 +1,21 @@
+.compose-name {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dotted currentColor;
+  border-radius: 0;
+  background: none;
+  color: var(--wzl-fg);
+  font: inherit;
+}
+
+.compose-name:hover,
+.compose-name:focus {
+  border-bottom-style: solid;
+}
+
+.compose-name:focus-visible {
+  outline: 1px solid var(--wzl-focus-ring, var(--wzl-accent));
+  outline-offset: 2px;
+}

@@ -6,6 +6,7 @@ import { pickedOf, useCompose } from '../store.js';
 import './DesignerPanel.css';
 import { EffectPicker } from './EffectPicker.js';
 import { designerEdit } from './edit.js';
+import { NameField } from './NameField.js';
 import { SlotBox } from './SlotBox.js';
 import { WholeEffect } from './WholeEffect.js';
 
@@ -45,6 +46,7 @@ export function DesignerPanel() {
       <header className="compose-designer-head">
         <h2 className="compose-heading">effect</h2>
         <EffectPicker />
+        {name !== undefined && spec && <NameField name={name} />}
         {name !== undefined && spec && (
           <Button
             size="sm"
@@ -63,7 +65,7 @@ export function DesignerPanel() {
       ) : (
         <>
           <div className="compose-whole">
-            <WholeEffect name={name} spec={spec} />
+            <WholeEffect spec={spec} />
             {(warnings.get('effect') ?? []).map((w) => (
               <p key={w} className="compose-warning">
                 {w}
