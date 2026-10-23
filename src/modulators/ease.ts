@@ -1,4 +1,4 @@
-import { keys, patch } from '@msb235/blits';
+import { curve, type Easing, patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { ChoiceParam, NumberParam } from '../params.js';
 import type { Channel } from '../planes.js';
@@ -26,12 +26,14 @@ const EASE: ChoiceParam = {
   value: 'ease-in-out',
 };
 
+type Stop = { at: number; value: number };
+
 interface Spec {
   name: string;
   about: string;
   channel: Channel;
   /** Channel values at the start and end of a pass, and the peak between if it comes back. */
-  stops(depth: number): { at: number; value: number }[];
+  stops(depth: number): Stop[];
   depth: number;
 }
 
@@ -45,20 +47,22 @@ const eased = (s: Spec): Modulator =>
     on: 'dots',
     patch: (at, v, rank) => {
       const p = v as { ms: number; easing: string; depth: number; sweep: number };
-      const inner = keys<Subject, Pose>(
-        p.ms,
-        s
-          .stops(p.depth)
-          .map(({ at, value }) => ({ at, delta: { [s.channel]: value } as Partial<Pose> })),
-        { ease: p.easing as 'linear' },
-      );
+      const ease = curve(p.easing as Easing);
+      const stops = s.stops(p.depth);
+      const valueAt = (u: number): number => {
+        let i = 0;
+        while (i < stops.length - 2 && u > (stops[i + 1] as Stop).at) i++;
+        const a = stops[i] as Stop;
+        const b = stops[i + 1] as Stop;
+        return a.value + (b.value - a.value) * ease((u - a.at) / (b.at - a.at));
+      };
       const maxRank = at.board.dots.reduce((m, d) => Math.max(m, rank(d)), 0);
       return patch<Subject, Pose>(
         p.ms,
-        (phase, subject, setting) => {
+        (phase, subject) => {
           const start = maxRank > 0 ? (rank(subject) / maxRank) * p.sweep : 0;
           const u = Math.min(1, Math.max(0, (phase - start) / (1 - p.sweep)));
-          return inner.at(u, subject, setting);
+          return { [s.channel]: valueAt(u) } as Partial<Pose>;
         },
         { writes: [s.channel] },
       );

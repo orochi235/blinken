@@ -5,8 +5,6 @@
   compiles against the `../blits` checkout's `dist`, so blits has to be built first. Once it ships,
   pin to it, point the build back at the package, and put back `createMarquee`'s per-subject names
   (`dot 3,4`, `cell 1`) through the mix's `labelOf`.
-- **Use blits's `curve` in `src/modulators/ease.ts`** once blits exports it (in progress in blits,
-  2026-10-22). dim, desaturate and flare build an inner `keys()` just to get an eased ramp.
 - **CI on GitHub** fails until `@msb235/blits-panel` is published, since the lab imports it and
   the runner has no blits checkout beside it.
 
