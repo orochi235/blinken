@@ -113,12 +113,7 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
         if (now < 0.02) continue;
         const led = leds[i] as Led;
         const shine = now * Math.min(gain[i] ?? 1, 1);
-        const hex = dotColor(
-          tint.subarray(i * 4, i * 4 + 4),
-          hue[i] ?? 0,
-          chroma[i] ?? 1,
-          fallback,
-        );
+        const hex = dotColor(tint, i * 4, hue[i] ?? 0, chroma[i] ?? 1, fallback);
         const [x, y] = place(led);
         const r = radius(led);
         bctx.globalAlpha = shine;

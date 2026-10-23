@@ -6,23 +6,29 @@ const bytes = (hex: number) => [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
 
 describe('dotColor', () => {
   it('shows the tint unchanged at hue 0 and chroma 1', () => {
-    const got = bytes(dotColor(oklab(0xff9a2e), 0, 1, 0));
+    const got = bytes(dotColor(oklab(0xff9a2e), 0, 0, 1, 0));
     bytes(0xff9a2e).forEach((want, k) => {
       expect(Math.abs((got[k] as number) - want)).toBeLessThanOrEqual(1);
     });
   });
 
   it('turns the hue by the hue channel', () => {
-    const [r, g] = bytes(dotColor(oklab(0xff0000), 120, 1, 0));
+    const [r, g] = bytes(dotColor(oklab(0xff0000), 0, 120, 1, 0));
     expect(g).toBeGreaterThan(r as number);
   });
 
   it('goes gray at chroma 0', () => {
-    const [r, g] = bytes(dotColor(oklab(0xff4030), 0, 0, 0));
+    const [r, g] = bytes(dotColor(oklab(0xff4030), 0, 0, 0, 0));
     expect(Math.abs((r as number) - (g as number))).toBeLessThanOrEqual(2);
   });
 
+  it('reads the tint at an offset in a column of them', () => {
+    const column = [0, 0, 0, 0, ...oklab(0xff9a2e)];
+    expect(dotColor(column, 4, 0, 1, 0)).toBe(dotColor(oklab(0xff9a2e), 0, 0, 1, 0));
+    expect(dotColor(column, 0, 0, 1, 0x123456)).toBe(0x123456);
+  });
+
   it('falls back when nothing tinted the dot', () => {
-    expect(dotColor([0, 0, 0, 0], 0, 1, 0x123456)).toBe(0x123456);
+    expect(dotColor([0, 0, 0, 0], 0, 0, 1, 0x123456)).toBe(0x123456);
   });
 });
