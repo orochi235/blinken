@@ -97,5 +97,5 @@ npm run check    # lint, typecheck, tests
 ```
 
 With a blits checkout at `../blits`, the lab, tests and typecheck run on its source; `BLITS=npm`
-or no checkout runs them on the published package. Until blits publishes `mix.arc`, the build
-compiles against `../blits/dist`, so build blits first.
+or no checkout runs them on the published package. The build always compiles against the
+published package.

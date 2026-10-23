@@ -7,9 +7,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "types": [],
-    "paths": {
-      "@msb235/blits": ["../blits/dist/index.d.ts", "./node_modules/@msb235/blits"]
-    }
+    "paths": {}
   },
   "include": ["src"]
 }
