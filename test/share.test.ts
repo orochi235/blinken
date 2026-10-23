@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { board } from '@/board.js';
+import { EFFECTS } from '@/builtins.js';
+import { stageEffect } from '@/effects.js';
 import { MODULATORS } from '@/modulators/index.js';
+import { placeText } from '@/orders.js';
 import { values } from '@/params.js';
 import { decode, encode, toCode } from '../lab/compose/share.js';
 import type { ComposeState } from '../lab/compose/state.js';
@@ -168,6 +172,22 @@ describe('share', () => {
     };
     const code = toCode(s);
     expect(code).toContain('layers: { sparkle: true }');
+  });
+
+  it('rebuilds every built-in from a link: a copy decodes and stages as the built-in does', () => {
+    const s: ComposeState = { effects: {}, program: [], layers: {}, editing: {} };
+    for (const [name, spec] of Object.entries(EFFECTS))
+      s.effects[`${name} copy`] = { ...spec, name: `${name} copy` };
+    const { state: back, dropped } = decode(encode(s));
+    expect(dropped).toEqual([]);
+    const at = placeText(board(80, 15), 'HELLO');
+    for (const [name, spec] of Object.entries(EFFECTS)) {
+      const want = stageEffect(spec, at, 0xff9a2e);
+      const got = stageEffect(back.effects[`${name} copy`] as typeof spec, at, 0xff9a2e);
+      expect(got.ms, name).toBe(want.ms);
+      expect(JSON.stringify(got.arcs), name).toBe(JSON.stringify(want.arcs));
+      expect(got.warnings, name).toEqual(want.warnings);
+    }
   });
 
   it('escapes every control character in code strings', () => {
