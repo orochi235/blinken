@@ -18,7 +18,7 @@ const sign = createMarquee(canvas, {
     blink: {
       name: 'blink',
       about: 'Stands still and flashes.',
-      active: [{ move: 'stand' }, { mod: 'flash', params: { ms: 2000, flashes: 4 } }],
+      active: [{ move: 'stand' }, { mod: 'flash', params: { flashes: 4 } }],
       hold: 2000,
     },
   },
@@ -32,7 +32,7 @@ const sign = createMarquee(canvas, {
 
 sign.setLayer('rainbow', true);
 sign.setLayer('sparkle', true, { rate: 0.02 }); // new params re-cue the layer
-sign.restart(1); // start the program over at its second step
+sign.restart(1); // play this pass from the second step; later passes start from the first
 sign.destroy();
 ```
 
@@ -48,11 +48,13 @@ A piece is one thing happening to the dots. A move places the text: `stand` hold
 carries it over the sign, `tumble` turns each letter end over end. A modulator changes how the dots
 look while it plays: `flash`, `pulse`, `hue-cycle`, `sparkle`, `chase`. Each declares its tuning as
 `params`, plain data giving each number's label, range and default, for a control panel to be
-built from.
+built from. `flash` blinks a number of times within a window of each pass, `from` and `to` as
+shares of it, which is how `hold` flashes three times in the middle third of its hold.
 
 An effect is plain data made of pieces: an `enter`, an `active` and an `exit` slot, each holding a
 piece or several that play together, an optional `order` that staggers the dots (by column, by
-letter, at random), and a `hold` time. A program is a list of steps, each a message with its color
+letter, at random), and a `hold` time. In `active`, a piece whose `ms` is left unset plays one
+pass over the hold. A program is a list of steps, each a message with its color
 and the effect it plays; a step names an effect or carries one inline. Each step starts where the
 one before it ends.
 
@@ -95,5 +97,5 @@ npm run check    # lint, typecheck, tests
 ```
 
 With a blits checkout at `../blits`, the lab, tests and typecheck run on its source; `BLITS=npm`
-or no checkout runs them on the published package. The build always compiles against the published
-one.
+or no checkout runs them on the published package. Until blits publishes `mix.arc`, the build
+compiles against `../blits/dist`, so build blits first.

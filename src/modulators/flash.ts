@@ -10,7 +10,7 @@ const SHARE = { min: 0, max: 1, step: 0.01, unit: 'of the pass' };
  */
 export const flash = modulator({
   name: 'flash',
-  about: 'Dots blink off and on.',
+  about: 'Dots blink off and on, a number of times within a window of each pass.',
   params: {
     ms: { label: 'length', min: 100, max: 10000, step: 100, value: 1000, unit: 'ms' },
     flashes: { label: 'flashes', min: 0, max: 12, step: 1, value: 1 },
