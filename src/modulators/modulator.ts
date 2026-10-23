@@ -50,7 +50,7 @@ export const phasePerStep = (value: number): NumberParam => ({
   max: 0.25,
   step: 0.005,
   value,
-  unit: 'cycles',
+  unit: 'τ',
 });
 
 /** One cycle of a looping modulator at `rate`, in ms. */
