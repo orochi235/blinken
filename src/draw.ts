@@ -1,10 +1,8 @@
 import type { Board, Led } from './board.js';
 import { dotColor } from './color.js';
 import { type Afflictions, afflict, afflictions, type Defect } from './defects.js';
+import { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
 
-/** How long a dot takes to light and to go dark: a filament warms fast and cools slowly. */
-const RISE_MS = 12;
-const FALL_MS = 110;
 /** The margin round the dots, in pitches, which holds the border's bulbs. */
 const MARGIN = 3;
 
@@ -57,6 +55,10 @@ export interface Sign {
   render(cols: SignColumns, fallback: number, dt: number): void;
   /** Replaces the sign's broken lights. */
   setDefects(defects: readonly Defect[]): void;
+  /** Sets how fast its lights light and go dark. */
+  setFade(fade: Fade): void;
+  /** Sets how much an unlit dot shows of its lit row and column. */
+  setGhost(ghost: Ghost): void;
   /** Stops following its parent's size. */
   destroy(): void;
 }
@@ -80,7 +82,10 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
   const bctx = body.getContext('2d') as CanvasRenderingContext2D;
   const housing = document.createElement('canvas');
   const shown = new Float64Array(leds.length);
+  const ghost = new Float64Array(leds.length);
   let broken: Afflictions = afflictions(leds, []);
+  let fade: Fade = FADE;
+  let leak: Ghost = {};
   let clock = 0;
   let pitch = 0;
 
@@ -122,17 +127,17 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
 
   return {
     render({ lit, gain, tint, hue, chroma, glow: halo }, fallback, dt) {
-      const rise = 1 - Math.exp(-dt / RISE_MS);
-      const fall = 1 - Math.exp(-dt / FALL_MS);
       clock += dt;
       gctx.clearRect(0, 0, glow.width, glow.height);
       bctx.clearRect(0, 0, body.width, body.height);
       for (let i = 0; i < leds.length; i++) {
         const want = lit[i] ?? 0;
         const target = afflict(broken, i, want > 0 ? Math.min(want, 1) : 0, clock);
-        const was = shown[i] ?? 0;
-        const now = was + (target - was) * (target > was ? rise : fall);
-        shown[i] = now;
+        shown[i] = settle(shown[i] ?? 0, target, dt, fade);
+      }
+      ghosts(b, shown, leak, ghost);
+      for (let i = 0; i < leds.length; i++) {
+        const now = (shown[i] ?? 0) + (ghost[i] ?? 0) * (broken.scale[i] ?? 1);
         if (now < 0.02) continue;
         const led = leds[i] as Led;
         const shine = now * Math.min(gain[i] ?? 1, 1);
@@ -173,6 +178,12 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
     },
     setDefects(defects) {
       broken = afflictions(leds, defects);
+    },
+    setFade(next) {
+      fade = next;
+    },
+    setGhost(next) {
+      leak = next;
     },
     destroy() {
       watch.disconnect();

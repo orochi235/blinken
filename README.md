@@ -72,14 +72,27 @@ or let `scatter` break a share of the dots, the same ones for the same seed:
 
 ```ts
 const sign = createMarquee(canvas, {
-  defects: [{ kind: 'dead', at: { x: 12, y: 3 } }, { kind: 'stuck', at: { bulb: 5 } }],
+  defects: [
+    { kind: 'dead', at: { x: 12, y: 3 } },
+    { kind: 'stuck', at: { bulb: 5 } },
+  ],
 });
 sign.setDefects(scatter(sign.board, { dead: 0.03, dim: 0.05, flicker: 0.01 }, 7));
 ```
 
-Faults belong to the sign, not the mix, so a mix you pull yourself still reads every light as
-sound; `createSign` applies them as it draws. The compose lab's defects pane sets the shares and
-the seed.
+Two more settings mimic the hardware. `fade` is how long a light takes to light and to go dark,
+in ms; the default, 12 up and 110 down, is a filament's, and 0 for both is an LED's hard switch.
+`ghost` is how much an unlit dot shows of its lit neighbors, as a multiplexed sign leaks current
+along its drivers: `row` is the share of its row's mean brightness, `col` of its column's.
+
+```ts
+sign.setFade({ rise: 0, fall: 0 });
+sign.setGhost({ col: 0.08 });
+```
+
+Faults, fade, and ghosting belong to the sign, not the mix, so a mix you pull yourself still reads
+every light as sound; `createSign` applies them as it draws. The compose lab's sign pane sets all
+three.
 
 ## On your own mix
 

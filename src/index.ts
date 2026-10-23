@@ -32,6 +32,7 @@ export {
 } from './marquee.js';
 export { MODULATORS, type Modulator, type ModulatorName } from './modulators/index.js';
 export { MOVES, type Move, type MoveName, SLOTS, type Slot } from './moves/index.js';
+export { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
 export {
   ORDERS,
   type Order,

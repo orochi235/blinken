@@ -4,6 +4,7 @@ import { LAYERS, type LayerSpec } from './builtins.js';
 import type { Defect } from './defects.js';
 import { createSign, paintBulbs, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
+import type { Fade, Ghost } from './optics.js';
 import type { ParamValue } from './params.js';
 import { cueLayer, effectOf, play, type Step } from './program.js';
 
@@ -40,6 +41,10 @@ export interface MarqueeOptions {
   readonly rate?: number;
   /** Broken lights, which show their fault whatever the program asks; `scatter` makes some. Default none. */
   readonly defects?: readonly Defect[];
+  /** How fast its lights light and go dark, ms. Default 12 up, 110 down, like a filament. */
+  readonly fade?: Fade;
+  /** How much an unlit dot shows of its lit row and column, as a multiplexed sign does. Default none. */
+  readonly ghost?: Ghost;
   /** False runs the mix without drawing, for timing it alone. Default true. */
   readonly draw?: boolean;
   /** Called after every frame with what it cost. */
@@ -64,6 +69,10 @@ export interface Marquee {
   ramp(rate: number, ms?: number): void;
   /** Replaces the broken lights. */
   setDefects(defects: readonly Defect[]): void;
+  /** Sets how fast its lights light and go dark. */
+  setFade(fade: Fade): void;
+  /** Sets how much an unlit dot shows of its lit row and column. */
+  setGhost(ghost: Ghost): void;
   /** Stops the frame loop and lets go of the canvas. */
   destroy(): void;
 }
@@ -88,6 +97,8 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const drawing = opts.draw ?? true;
   const sign = drawing ? createSign(canvas, b, leds) : null;
   if (opts.defects) sign?.setDefects(opts.defects);
+  if (opts.fade) sign?.setFade(opts.fade);
+  if (opts.ghost) sign?.setGhost(opts.ghost);
   let color = opts.color ?? AMBER;
 
   let program = opts.program ?? [];
@@ -208,6 +219,12 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     },
     setDefects(defects) {
       sign?.setDefects(defects);
+    },
+    setFade(fade) {
+      sign?.setFade(fade);
+    },
+    setGhost(ghost) {
+      sign?.setGhost(ghost);
     },
     destroy() {
       live = false;
