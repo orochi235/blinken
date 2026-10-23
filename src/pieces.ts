@@ -3,7 +3,7 @@ import type { Pose, Subject } from './board.js';
 import { MODULATORS, type ModulatorName } from './modulators/index.js';
 import { MOVES, type MoveName, type Slot } from './moves/index.js';
 import { delayOf, type Order, type Placed, rankOf, spanOf } from './orders.js';
-import { type ParamValue, values } from './params.js';
+import { type Params, type ParamValue, values } from './params.js';
 import type { Channel } from './planes.js';
 
 /** A move played in an order. */
@@ -37,17 +37,38 @@ export const TOGETHER: Order = { by: 'together' };
 export const piecesOf = (p: SlotPieces | undefined): readonly Piece[] =>
   p === undefined ? [] : Array.isArray(p) ? (p as readonly Piece[]) : [p as Piece];
 
-/** A piece as the arc voice that plays it in `slot`; modulators and `active` moves loop. */
+/** A piece's settings; in `active` with a hold, an `ms` it leaves unset is one pass over the hold. */
+function settingsOf(
+  thing: { readonly params: Params },
+  piece: Piece,
+  slot: Slot,
+  hold: number | undefined,
+): never {
+  const p = values(thing, piece.params as never);
+  const perHold =
+    slot === 'active' &&
+    hold !== undefined &&
+    hold > 0 &&
+    'ms' in thing.params &&
+    piece.params?.ms === undefined;
+  return (perHold ? { ...p, ms: hold } : p) as never;
+}
+
+/**
+ * A piece as the arc voice that plays it in `slot`; modulators and `active` moves loop. `hold` is
+ * the effect's, where one is given.
+ */
 export function stagePiece(
   piece: Piece,
   slot: Slot,
   at: Placed,
   subjects: readonly Subject[],
+  hold?: number,
 ): StagedPiece {
   const loop = slot === 'active';
   if ('mod' in piece) {
     const mod = MODULATORS[piece.mod];
-    const p = values(mod, piece.params as never);
+    const p = settingsOf(mod, piece, slot, hold);
     const own = mod.on === 'cells' ? at.board.cells : subjects;
     const voice: ArcVoice<Subject, Pose> = {
       patch: mod.patch(at, p, rankOf(piece.spread ?? TOGETHER, at)),
@@ -58,7 +79,7 @@ export function stagePiece(
   }
   const move = MOVES[piece.move];
   if (move.slot !== slot) throw new Error(`bree: ${piece.move} is an ${move.slot} move`);
-  const p = values(move, piece.params as never);
+  const p = settingsOf(move, piece, slot, hold);
   const order = piece.order ?? TOGETHER;
   const pass = move.patch(at, p) as ArcVoice<Subject, Pose>['patch'];
   const voice: ArcVoice<Subject, Pose> = {

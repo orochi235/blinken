@@ -90,5 +90,35 @@ export function pieceCard(
       onEdit(now, false);
     }),
   );
-  return h('div', `piece ${'mod' in piece ? 'is-mod' : 'is-move'}`, head, ...order, ...settings);
+  const perHold = slot === 'active' && 'ms' in thing.params ? perHoldRow() : [];
+  return h(
+    'div',
+    `piece ${'mod' in piece ? 'is-mod' : 'is-move'}`,
+    head,
+    ...order,
+    ...perHold,
+    ...settings,
+  );
+
+  /** In `active`, a length left unset is one pass over the hold; a checkbox for that. */
+  function perHoldRow(): HTMLElement[] {
+    const msRow = settings.find((el) => el.dataset.key === 'ms');
+    const box = h('input');
+    box.type = 'checkbox';
+    box.checked = piece.params?.ms === undefined;
+    const sync = () => msRow?.classList.toggle('off', box.checked);
+    box.addEventListener('change', () => {
+      sync();
+      const { ms: _, ...rest } = now.params ?? {};
+      const ms = Number(msRow?.querySelector('input')?.value);
+      const params = box.checked ? rest : { ...rest, ms };
+      const { params: __, ...bare } = now;
+      now = Object.keys(params).length ? { ...bare, params } : bare;
+      onEdit(now, false);
+    });
+    sync();
+    return [
+      h('label', 'ctl', h('span', 'ctl-name', 'pass'), h('span', undefined, box, ' one per hold')),
+    ];
+  }
 }

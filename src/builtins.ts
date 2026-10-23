@@ -14,10 +14,7 @@ const effects = {
     order: { by: 'column', lag: 14 },
     enter: { move: 'cut-on' },
     // One flash pass over the whole hold: steady, three quick flashes in the middle third, steady.
-    active: [
-      { move: 'stand' },
-      { mod: 'flash', params: { ms: 3600, flashes: 3, from: 1 / 3, to: 2 / 3 } },
-    ],
+    active: [{ move: 'stand' }, { mod: 'flash', params: { flashes: 3, from: 1 / 3, to: 2 / 3 } }],
     exit: { move: 'cut-off' },
     hold: 3600,
   },
@@ -31,7 +28,7 @@ const effects = {
     about: 'Letters unfold, tumble end over end one after another, and fold away.',
     order: { by: 'letter', lag: 90 },
     enter: { move: 'unfold' },
-    active: { move: 'tumble', params: { ms: 3000, turns: 2 } },
+    active: { move: 'tumble', params: { turns: 2 } },
     exit: { move: 'fold' },
     hold: 3000,
   },

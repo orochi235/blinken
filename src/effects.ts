@@ -12,7 +12,10 @@ export interface EffectSpec {
   readonly enter?: SlotPieces;
   readonly active?: SlotPieces;
   readonly exit?: SlotPieces;
-  /** How long `active` plays, ms. Default: an active move's own length, else 0. */
+  /**
+   * How long `active` plays, ms; an active piece with an `ms` setting left unset plays one pass
+   * over it. Default: an active move's own length, else 0.
+   */
   readonly hold?: number;
   /** A crossfade across each boundary, ms. Default 0. */
   readonly blend?: number;
@@ -50,13 +53,14 @@ export function stageEffect(
 ): StagedEffect {
   const groups = effect.order ? groupsOf(effect.order, at) : [at.board.dots];
   const lag = effect.order?.lag ?? 0;
+  const given = hold ?? effect.hold;
   const warnings = new Set<string>();
   // Staged once per group; part lengths come from the first, and every group shares them.
   const staged = groups.map((subjects, g) =>
     SLOTS.map((slot) =>
       piecesOf(effect[slot])
         .filter((piece) => g === 0 || !onCells(piece))
-        .map((piece) => stagePiece(piece, slot, at, subjects)),
+        .map((piece) => stagePiece(piece, slot, at, subjects, given)),
     ),
   );
   const first = staged[0] ?? [];
@@ -72,7 +76,7 @@ export function stageEffect(
     const voice = active[i]?.voice;
     return 'move' in piece && voice ? [lengthOf(voice)] : [];
   });
-  const held = hold ?? effect.hold ?? Math.max(0, ...activeMoves);
+  const held = given ?? Math.max(0, ...activeMoves);
   const [enter = 0, , exit = 0] = lengths;
   const ms = (groups.length - 1) * lag + enter + held + exit;
 

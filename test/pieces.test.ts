@@ -41,6 +41,16 @@ describe('pieces', () => {
     expect(stagePiece({ mod: 'pulse' }, 'enter', at, b.dots).voice.loop).toBeUndefined();
   });
 
+  it('plays an active piece with no length of its own once over the hold', () => {
+    const ms = (piece: Parameters<typeof stagePiece>[0], slot: 'active' | 'enter', hold?: number) =>
+      stagePiece(piece, slot, at, b.dots, hold).voice.patch.duration;
+    expect(ms({ move: 'tumble' }, 'active', 5000)).toBe(5000);
+    expect(ms({ mod: 'flash' }, 'active', 5000)).toBe(5000);
+    expect(ms({ move: 'tumble', params: { ms: 800 } }, 'active', 5000)).toBe(800);
+    expect(ms({ move: 'tumble' }, 'active')).toBe(1200);
+    expect(ms({ mod: 'flare' }, 'enter', 5000)).toBe(1500);
+  });
+
   it('refuses a move in the wrong slot', () => {
     expect(() => stagePiece({ move: 'cut-on' }, 'exit', at, b.dots)).toThrow(
       'bree: cut-on is an enter move',

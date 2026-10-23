@@ -13,10 +13,10 @@ const b = board(80, 7);
 const HEX = 0xff9a2e;
 const at = (text: string) => ({ ...place(b, rasterize(text)), label: text });
 
-function cued(name: EffectName, text: string): Mix<Subject, Pose> {
+function cued(name: EffectName, text: string, hold?: number): Mix<Subject, Pose> {
   const m = mix<Subject, Pose>(KIT);
   m.sync(0);
-  cueEffect(m, m.owns({ name: 'step' }), stageEffect(EFFECTS[name], at(text), HEX), name);
+  cueEffect(m, m.owns({ name: 'step' }), stageEffect(EFFECTS[name], at(text), HEX, hold), name);
   return m;
 }
 
@@ -45,6 +45,36 @@ describe('EFFECTS', () => {
     const dark = [1500, 1900, 2300];
     for (const t of [...lit, ...dark].sort((p, q) => p - q))
       expect(gainAt(t), `${t}`).toBe(dark.includes(t) ? 0 : 1);
+  });
+
+  it('hold held 7200 by its step still flashes three times in its middle third', () => {
+    const m = cued('hold', 'HELLO', 7200);
+    const x = 40;
+    const dot = b.dots[x] as Subject;
+    const gainAt = (t: number) => {
+      m.sync(14 * x + 1 + t);
+      return m.probe(dot).gain;
+    };
+    const lit = [100, 2000, 2500, 3300, 4100, 5000, 7000];
+    const dark = [3000, 3800, 4600];
+    for (const t of [...lit, ...dark].sort((p, q) => p - q))
+      expect(gainAt(t), `${t}`).toBe(dark.includes(t) ? 0 : 1);
+  });
+
+  it('flip held 6000 still stands each letter upright either side of its tumble', () => {
+    const a = at('ABC');
+    const m = cued('flip', 'ABC', 6000);
+    const fold = 300;
+    const letter0 = b.dots.filter((d) => d.x >= a.left && d.x < a.left + 6);
+    const stand = MOVES.stand.patch(a, values(MOVES.stand));
+    const upright = letter0.map((d) => stand.at(0, d, {} as never).lit);
+    const litAt = (t: number) => {
+      m.sync(fold + t);
+      return letter0.map((d) => m.probe(d).lit);
+    };
+    expect(litAt(1500)).toEqual(upright);
+    expect(litAt(2250)).not.toEqual(upright);
+    expect(litAt(5000)).toEqual(upright);
   });
 
   it('flip overlaps letters', () => {
