@@ -21,6 +21,7 @@ function litAt(m: Move, t: number, where = at, given: Record<string, unknown> = 
 
 const shown = (left = at.left, text = at.text) =>
   b.dots.map((d) => (d.kind === 'dot' && d.row >= 0 && text.lit(d.x - left, d.row) ? 1 : 0));
+const STEP = (MOVES['scroll-across'].params.step as { value: number }).value;
 const length = (m: Move, where = at) => m.length(where, values(m));
 
 describe('moves', () => {
@@ -50,12 +51,12 @@ describe('moves', () => {
     const m = MOVES['scroll-across'];
     const end = length(m);
     expect(litAt(m, 0).every((v) => v === 0)).toBe(true);
-    const first = litAt(m, 1.5 * values(m).step);
+    const first = litAt(m, 1.5 * STEP);
     const lit = b.dots.filter((_, i) => first[i] === 1).map((d) => d.x);
     expect(lit.length).toBeGreaterThan(0);
     expect(Math.min(...lit)).toBe(b.cols - 1);
     expect(litAt(m, end).every((v) => v === 0)).toBe(true);
-    const last = litAt(m, end - 3.5 * values(m).step);
+    const last = litAt(m, end - 3.5 * STEP);
     const left = b.dots.filter((_, i) => last[i] === 1).map((d) => d.x);
     expect(left.length).toBeGreaterThan(0);
     expect(Math.max(...left)).toBeLessThan(5);
@@ -63,7 +64,7 @@ describe('moves', () => {
 
   it('scroll-across crosses the other way when rightward', () => {
     const m = MOVES['scroll-across'];
-    const step = values(m).step;
+    const step = STEP;
     const first = litAt(m, 3.5 * step, at, { direction: 'right' });
     const lit = b.dots.filter((_, i) => first[i] === 1).map((d) => d.x);
     expect(lit.length).toBeGreaterThan(0);
