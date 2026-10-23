@@ -16,3 +16,6 @@
 - Browsing an effect in the compose lab's designer reassigns the picked step to it.
 - `rate` means "lit at once" for `sparkle` but cycles per second for every other modulator.
 - `hue` and `chroma` do nothing on a dot nothing tinted: `dotColor` returns the fallback color first.
+- `src/modulators/flash.ts`'s header comment still says flash blinks once a second at its defaults; in an active slot with a hold it now flashes once per hold.
+- The compose lab shows "one pass per hold" on a piece even when the effect has no hold, where it does nothing.
+- The compose lab's "copy as code" prints link values as decoded, unclamped; staging clamps them.
