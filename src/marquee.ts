@@ -1,6 +1,6 @@
 import { type Handle, level, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
-import { createSign } from './draw.js';
+import { createSign, type SignColumns, signColumns } from './draw.js';
 import { LAYERS, type LayerName } from './effects/index.js';
 import { cueLayer, play, type Step } from './show.js';
 
@@ -64,17 +64,18 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   if (opts.rate !== undefined && opts.rate !== 1) m.ramp(opts.rate, 0);
 
   const leds: readonly Led[] = [...b.dots, ...b.bulbs];
-  const lit = new Float64Array(leds.length);
-  const tint = new Float64Array(leds.length * 4);
-  const cellLit = new Float64Array(b.cells.length);
-  const cellTint = new Float64Array(b.cells.length * 4);
+  const cols = signColumns(leds.length);
+  const cells = signColumns(b.cells.length);
   const bulbsAt = b.dots.length;
+  const CHANNELS = Object.keys(cols) as (keyof SignColumns)[];
   /** Paints each bulb with its cell's pose, after the dots in the columns the sign reads. */
   const paintBulbs = () => {
     for (let j = 0; j < b.bulbs.length; j++) {
       const c = b.cellOf[j] as number;
-      lit[bulbsAt + j] = cellLit[c] as number;
-      tint.set(cellTint.subarray(c * 4, c * 4 + 4), (bulbsAt + j) * 4);
+      for (const ch of CHANNELS) {
+        const n = ch === 'tint' ? 4 : 1;
+        cols[ch].set(cells[ch].subarray(c * n, c * n + n), (bulbsAt + j) * n);
+      }
     }
   };
   const drawing = opts.draw ?? true;
@@ -116,11 +117,11 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     }
     const t0 = performance.now();
     m.sync(now);
-    m.pull(b.dots, { lit, tint });
-    m.pull(b.cells, { lit: cellLit, tint: cellTint });
+    m.pull(b.dots, cols);
+    m.pull(b.cells, cells);
     paintBulbs();
     const t1 = performance.now();
-    sign?.render(lit, tint, color, gap);
+    sign?.render(cols, color, gap);
     const t2 = performance.now();
     mixMs += (t1 - t0 - mixMs) * 0.05;
     drawMs += (t2 - t1 - drawMs) * 0.05;

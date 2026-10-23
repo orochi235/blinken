@@ -1,5 +1,5 @@
-import { toHex } from '@msb235/blits';
 import type { Board, Led } from './board.js';
+import { dotColor } from './color.js';
 
 /** How long a dot takes to light and to go dark: a filament warms fast and cools slowly. */
 const RISE_MS = 12;
@@ -7,9 +7,31 @@ const FALL_MS = 110;
 /** The margin round the dots, in pitches, which holds the border's bulbs. */
 const MARGIN = 3;
 
+/** The mix's columns for each light, in the order the sign was given them; `tint` holds four per light. */
+export interface SignColumns {
+  lit: Float64Array;
+  gain: Float64Array;
+  tint: Float64Array;
+  hue: Float64Array;
+  chroma: Float64Array;
+  glow: Float64Array;
+}
+
+/** Fresh columns for `n` lights, every channel at rest. */
+export function signColumns(n: number): SignColumns {
+  return {
+    lit: new Float64Array(n),
+    gain: new Float64Array(n).fill(1),
+    tint: new Float64Array(n * 4),
+    hue: new Float64Array(n),
+    chroma: new Float64Array(n).fill(1),
+    glow: new Float64Array(n).fill(1),
+  };
+}
+
 export interface Sign {
   /** Draws one frame from the mix's columns, `dt` ms after the last. */
-  render(lit: Float64Array, tint: Float64Array, fallback: number, dt: number): void;
+  render(cols: SignColumns, fallback: number, dt: number): void;
   /** Stops following its parent's size. */
   destroy(): void;
 }
@@ -29,6 +51,8 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   const glow = document.createElement('canvas');
   const gctx = glow.getContext('2d') as CanvasRenderingContext2D;
+  const body = document.createElement('canvas');
+  const bctx = body.getContext('2d') as CanvasRenderingContext2D;
   const housing = document.createElement('canvas');
   const shown = new Float64Array(leds.length);
   let pitch = 0;
@@ -43,7 +67,7 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
     canvas.style.width = `${Math.floor(css * across)}px`;
     canvas.style.height = `${Math.floor(css * down)}px`;
     pitch = css * devicePixelRatio;
-    for (const c of [canvas, glow, housing]) {
+    for (const c of [canvas, glow, body, housing]) {
       c.width = Math.round(pitch * across);
       c.height = Math.round(pitch * down);
     }
@@ -69,12 +93,12 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
   watch.observe(box);
   resize();
 
-  const pose = new Float64Array(4);
   return {
-    render(lit, tint, fallback, dt) {
+    render({ lit, gain, tint, hue, chroma, glow: halo }, fallback, dt) {
       const rise = 1 - Math.exp(-dt / RISE_MS);
       const fall = 1 - Math.exp(-dt / FALL_MS);
       gctx.clearRect(0, 0, glow.width, glow.height);
+      bctx.clearRect(0, 0, body.width, body.height);
       for (let i = 0; i < leds.length; i++) {
         const want = lit[i] ?? 0;
         const target = want > 0 ? Math.min(want, 1) : 0;
@@ -83,21 +107,32 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
         shown[i] = now;
         if (now < 0.02) continue;
         const led = leds[i] as Led;
-        for (let k = 0; k < 4; k++) pose[k] = tint[i * 4 + k] ?? 0;
-        const hex = (pose[3] ?? 0) > 0 ? toHex(pose) : fallback;
+        const shine = now * Math.min(gain[i] ?? 1, 1);
+        const hex = dotColor(
+          tint.subarray(i * 4, i * 4 + 4),
+          hue[i] ?? 0,
+          chroma[i] ?? 1,
+          fallback,
+        );
         const [x, y] = place(led);
         const r = radius(led);
-        gctx.globalAlpha = now;
+        bctx.globalAlpha = shine;
+        bctx.fillStyle = css(hex);
+        bctx.beginPath();
+        bctx.arc(x, y, r, 0, Math.PI * 2);
+        bctx.fill();
+        bctx.globalAlpha = shine * 0.55;
+        bctx.fillStyle = '#fff4e0';
+        bctx.beginPath();
+        bctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
+        bctx.fill();
+        gctx.globalAlpha = Math.min(shine * (halo[i] ?? 1), 1);
         gctx.fillStyle = css(hex);
         gctx.beginPath();
         gctx.arc(x, y, r, 0, Math.PI * 2);
         gctx.fill();
-        gctx.globalAlpha = now * 0.55;
-        gctx.fillStyle = '#fff4e0';
-        gctx.beginPath();
-        gctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
-        gctx.fill();
       }
+      bctx.globalAlpha = 1;
       gctx.globalAlpha = 1;
 
       ctx.globalCompositeOperation = 'source-over';
@@ -107,7 +142,7 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
       ctx.filter = `blur(${(pitch * 0.9).toFixed(1)}px)`;
       ctx.drawImage(glow, 0, 0);
       ctx.filter = 'none';
-      ctx.drawImage(glow, 0, 0);
+      ctx.drawImage(body, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
     },
     destroy() {

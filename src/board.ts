@@ -1,13 +1,28 @@
-import { color, kit, max } from '@msb235/blits';
+import { angle, color, kit, max, mul } from '@msb235/blits';
 import { type Bitmap, ROWS } from './font.js';
 
-/** How bright a dot is, 0 to 1, and its color; the brightest voice on a dot wins. */
+/**
+ * What a dot shows. `lit` is how much it is on, 0 to 1, the brightest voice winning; `gain` scales
+ * its brightness; `tint` is its color, which `hue` (degrees) turns and `chroma` scales; `glow`
+ * scales its halo. The scaling channels rest at 1.
+ */
 export interface Pose {
   lit: number;
+  gain: number;
   tint: number[];
+  hue: number;
+  chroma: number;
+  glow: number;
 }
 
-export const KIT = kit<Pose>({ lit: max(), tint: color() });
+export const KIT = kit<Pose>({
+  lit: max(),
+  gain: mul(),
+  tint: color(),
+  hue: angle(),
+  chroma: mul(),
+  glow: mul(),
+});
 
 /** A dot of the sign, in dot pitches from its top left; a bulb of the border sits outside it. */
 export type Led =
