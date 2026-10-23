@@ -33,6 +33,14 @@ describe('moves', () => {
     });
   }
 
+  for (const name of slotted('enter').filter((n) => n !== 'unfold')) {
+    for (const direction of ['left', 'right']) {
+      it(`${name} shows no lit dots at phase 0 (${direction})`, () => {
+        expect(litAt(MOVES[name], 0, at, { direction }).every((v) => v === 0)).toBe(true);
+      });
+    }
+  }
+
   for (const name of slotted('exit')) {
     it(`${name} starts showing the message and ends blank`, () => {
       const m = MOVES[name];

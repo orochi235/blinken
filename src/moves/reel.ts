@@ -43,10 +43,12 @@ export const reelIn = move({
         const k = Math.floor(x / ADVANCE);
         if (row < 0 || k < 0 || k >= n) return on(false);
         const reel = reels[k] as Bitmap[];
-        const r = row + Math.floor(REEL * reel.length * easeOut(phase));
+        // The reel starts on a blank cell, so a letter waiting out its delay shows nothing.
+        const r = row - REEL + Math.floor(REEL * (reel.length + 1) * easeOut(phase));
         const j = Math.floor(r / REEL);
-        const y = r % REEL;
+        const y = ((r % REEL) + REEL) % REEL;
         const yes =
+          j >= 0 &&
           y < ROWS &&
           (j < reel.length ? (reel[j] as Bitmap).lit(x - k * ADVANCE, y) : text.lit(x, y));
         return on(yes);
