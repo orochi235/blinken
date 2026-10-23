@@ -3,7 +3,6 @@ import {
   EFFECTS,
   type EffectSpec,
   type NumberParam,
-  type Piece,
   piecesOf,
   place,
   rasterize,
@@ -13,18 +12,12 @@ import {
 } from '@/index.js';
 import { h, numberControl, options, orderControls } from './controls.js';
 import { pieceCard, pieceOf, pieceSelect } from './piece.js';
-import { type ComposeState, freeName } from './state.js';
+import { addPiece, type ComposeState, freeName, removePiece, setPiece } from './state.js';
 
 const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
 const HOLD: NumberParam = { label: 'hold', min: 0, max: 12000, step: 50, value: 0, unit: 'ms' };
 const BLEND: NumberParam = { label: 'blend', min: 0, max: 1000, step: 10, value: 0, unit: 'ms' };
 const PREVIEW = board(SIZE.cols, SIZE.rows);
-
-/** An effect with a slot's pieces replaced, the slot left out when it has none. */
-function withSlot(spec: EffectSpec, slot: Slot, pieces: readonly Piece[]): EffectSpec {
-  const { [slot]: _, ...rest } = spec;
-  return pieces.length ? { ...rest, [slot]: pieces } : rest;
-}
 
 /** The slot a stage warning is about: one it names, else one holding the move it names. */
 function slotOf(spec: EffectSpec, warning: string): Slot | undefined {
@@ -175,28 +168,18 @@ export function mountDesigner(root: HTMLElement, state: ComposeState, onChange: 
   };
 
   const slotBox = (s: EffectSpec, slot: Slot) => {
-    const pieces = piecesOf(s[slot]);
-    const set = (next: readonly Piece[], rebuild: boolean) =>
-      edit((e) => withSlot(e, slot, next), rebuild);
-    const cards = pieces.map((piece, i) =>
+    // Every write reads the slot as it stands now: cards edited without a rebuild leave `s` stale.
+    const cards = piecesOf(s[slot]).map((piece, i) =>
       pieceCard(
         slot,
         piece,
-        (next, rebuild) =>
-          set(
-            pieces.map((p, j) => (j === i ? next : p)),
-            rebuild,
-          ),
-        () =>
-          set(
-            pieces.filter((_, j) => j !== i),
-            true,
-          ),
+        (next, rebuild) => edit((e) => setPiece(e, slot, i, next), rebuild),
+        () => edit((e) => removePiece(e, slot, i), true),
       ),
     );
     const add = pieceSelect(slot, undefined, 'add a piece…');
     add.addEventListener('change', () => {
-      if (add.value) set([...pieces, pieceOf(add.value)], true);
+      if (add.value) edit((e) => addPiece(e, slot, pieceOf(add.value)), true);
     });
     const warn = h('div', 'warnings');
     warnAt.set(slot, warn);

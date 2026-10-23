@@ -17,7 +17,7 @@ export const choicesFor = (slot: Slot) => ({
 
 const MOD = 'mod:';
 
-/** A `<select>` over the pieces `slot` may hold, values `move` names and `mod:`-prefixed modulators. */
+/** A `<select>` over the pieces `slot` may hold: move names, and modulators prefixed `mod:`. */
 export function pieceSelect(slot: Slot, chosen?: Piece, first?: string): HTMLSelectElement {
   const select = h('select');
   if (first) {

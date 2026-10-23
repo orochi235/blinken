@@ -1,7 +1,8 @@
 // Loads the built marquee in headless Chromium at a desktop and a phone width, and stretched to
-// 320 × 63, printing what a frame costs in each, then the compose lab at both widths. Fails on any console or page error, a sign that
-// lit nothing, or a page wider than its viewport.
-// `--shots <dir>` keeps a screenshot per width, which otherwise go to a temp directory removed on exit.
+// 320 × 63, printing what a frame costs in each, then the compose lab at both widths. Fails on any
+// console or page error, a sign that lit nothing, or a page wider than its viewport.
+// `--shots <dir>` keeps a screenshot per width, which otherwise go to a temp directory removed on
+// exit.
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
