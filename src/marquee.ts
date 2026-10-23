@@ -60,10 +60,7 @@ const AMBER = 0xff9a2e;
  */
 export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = {}): Marquee {
   const b = board(opts.cols ?? SIZE.cols, opts.rows ?? SIZE.rows);
-  const m = mix<Subject, Pose>(KIT, {
-    name: 'marquee',
-    labelOf: (s: Subject) => (s.kind === 'cell' ? `cell ${s.i}` : `dot ${s.x},${s.y}`),
-  });
+  const m = mix<Subject, Pose>(KIT, { name: 'marquee' });
   if (opts.rate !== undefined && opts.rate !== 1) m.ramp(opts.rate, 0);
 
   const leds: readonly Led[] = [...b.dots, ...b.bulbs];
