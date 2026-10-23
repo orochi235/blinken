@@ -1,8 +1,5 @@
 # TODO
 
-- **CI on GitHub** fails until `@msb235/blits-panel` is published, since the lab imports it and
-  the runner has no blits checkout beside it.
-
 ## Known gaps
 
 - The compose lab's step controls have no accessible names.

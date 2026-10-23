@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.8",
+    "@msb235/blits-panel": "0.1.1",
     "@types/node": "^26.6.5",
     "playwright": "1.63.0",
     "typescript": "^7.0.2",

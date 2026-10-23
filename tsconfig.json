@@ -14,7 +14,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@msb235/blits": ["../blits/src/index.ts", "./node_modules/@msb235/blits"],
-      "@msb235/blits-panel": ["../blits/packages/panel/src/index.ts"]
+      "@msb235/blits-panel": ["../blits/packages/panel/src/index.ts", "./node_modules/@msb235/blits-panel"]
     }
   },
   "include": ["src", "test", "lab", "*.ts"]
