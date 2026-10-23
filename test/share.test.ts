@@ -1,19 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MODULATORS } from '@/modulators/index.js';
 import { values } from '@/params.js';
+import { decode, encode, toCode } from '../lab/compose/share.js';
+import type { ComposeState } from '../lab/compose/state.js';
 import {
   DRAFT,
-  decode,
-  encode,
   hasPrevious,
   load,
   open,
   PREVIOUS,
   restorePrevious,
   save,
-  toCode,
-} from '../lab/compose/share.js';
-import type { ComposeState } from '../lab/compose/state.js';
+} from '../lab/compose/storage.js';
 
 const state = (): ComposeState => ({
   effects: {

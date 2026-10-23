@@ -8,7 +8,8 @@ import { h } from './controls.js';
 import { mountDesigner } from './designer.js';
 import { layerOf, mountLayers } from './layers.js';
 import { mountProgram } from './program.js';
-import { encode, hasPrevious, open, restorePrevious, save, toCode } from './share.js';
+import { encode, toCode } from './share.js';
+import { hasPrevious, open, restorePrevious, save } from './storage.js';
 
 const params = new URLSearchParams(location.search);
 if (import.meta.env.DEV && !params.has('nopanel')) mount();
