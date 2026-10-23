@@ -10,21 +10,24 @@ const PARAMS = {
 } as const;
 type Scroll = Values<typeof PARAMS>;
 
-/** Where the message's left edge is, relative to column 0, at the start and end of each crossing. */
+/** Where the message's left edge is, in dot columns, off the sign at each end and standing. */
 const edges = (at: Placed, p: Scroll) => {
   const left = p.direction === 'left';
   return {
     off: left ? at.board.cols : -at.text.cols,
     away: left ? -at.text.cols : at.board.cols,
+    rest: at.left,
   };
 };
 
-/** The message sliding a whole column at a time from `from` to `to`, its left edge in dot columns. */
+const crossing = (p: Scroll, from: number, to: number) => Math.max(1, Math.abs(to - from)) * p.step;
+
+/** The message sliding a whole column at a time, its left edge going from `from` to `to`. */
 function slide(at: Placed, p: Scroll, from: number, to: number) {
   const steps = Math.abs(to - from);
   const sign = Math.sign(to - from);
   return patch<Led, Pose>(
-    Math.max(1, steps) * p.step,
+    crossing(p, from, to),
     (phase, led) => {
       const moved = Math.min(steps, Math.floor(phase * steps));
       const row = rowOf(led);
@@ -34,26 +37,24 @@ function slide(at: Placed, p: Scroll, from: number, to: number) {
   );
 }
 
-const crossing = (p: Scroll, from: number, to: number) => Math.max(1, Math.abs(to - from)) * p.step;
-
-/** The message sliding in from one edge to rest with its left edge at column 0. */
+/** The message sliding in from one edge to rest where `stand` shows it. */
 export const scrollIn = move({
   name: 'scroll-in',
-  about: 'Slides in from an edge, stopping with its left edge at column 0.',
+  about: 'Slides in from an edge and stops where the message stands.',
   slot: 'enter',
   params: PARAMS,
-  length: (at, p) => crossing(p, edges(at, p).off, 0),
-  patch: (at, p) => slide(at, p, edges(at, p).off, 0),
+  length: (at, p) => crossing(p, edges(at, p).off, edges(at, p).rest),
+  patch: (at, p) => slide(at, p, edges(at, p).off, edges(at, p).rest),
 });
 
-/** The message sliding out of an edge from column 0. */
+/** The message sliding out of an edge from where `stand` shows it. */
 export const scrollOut = move({
   name: 'scroll-out',
-  about: 'Slides out to an edge, starting with its left edge at column 0.',
+  about: 'Slides out to an edge, starting where the message stands.',
   slot: 'exit',
   params: PARAMS,
-  length: (at, p) => crossing(p, 0, edges(at, p).away),
-  patch: (at, p) => slide(at, p, 0, edges(at, p).away),
+  length: (at, p) => crossing(p, edges(at, p).rest, edges(at, p).away),
+  patch: (at, p) => slide(at, p, edges(at, p).rest, edges(at, p).away),
 });
 
 /** The message crossing the whole sign, in at one edge and out at the other. */

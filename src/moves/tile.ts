@@ -3,13 +3,12 @@ import type { Led, Pose } from '../board.js';
 import { ROWS } from '../font.js';
 import { move } from './move.js';
 
-/** The message repeated over the whole sign in tilted brick rows, neighbors scrolling opposite ways. */
+/** The message repeated over the whole sign in tilted brick rows, neighbors scrolling opposite ways; one pass is one period, so it loops without a seam. */
 export const tile = move({
   name: 'tile',
   about: 'Repeats the message in tilted brick rows, neighbors scrolling opposite ways.',
   slot: 'active',
   params: {
-    ms: { label: 'length', min: 2000, max: 20000, step: 500, value: 9000, unit: 'ms' },
     angle: { label: 'tilt', min: -60, max: 60, step: 1, value: 30, unit: '°' },
     step: { label: 'column time', min: 10, max: 300, step: 5, value: 60, unit: 'ms' },
     gap: { label: 'gap', min: 0, max: 30, step: 1, value: 6, unit: 'cols' },
@@ -17,10 +16,11 @@ export const tile = move({
     brick: { label: 'brick offset', min: 0, max: 1, step: 0.05, value: 0.5 },
   },
   fits: (b) => b.lines > 1,
-  length: (_, p) => p.ms,
+  length: (at, p) => Math.max(1, at.text.cols + p.gap) * p.step,
   patch(at, p) {
     const { board: b, text } = at;
     const period = text.cols + p.gap;
+    const ms = Math.max(1, period) * p.step;
     const pitch = ROWS + p.leading;
     const a = (p.angle * Math.PI) / 180;
     const c = Math.cos(a);
@@ -28,7 +28,7 @@ export const tile = move({
     const cx = b.cols / 2;
     const cy = b.rows / 2;
     return patch<Led, Pose>(
-      p.ms,
+      ms,
       (phase, led) => {
         if (period <= 0) return { lit: 0 };
         const dx = led.x - cx;
@@ -40,7 +40,7 @@ export const tile = move({
         const y = Math.floor(across - r * pitch);
         if (y >= ROWS) return { lit: 0 };
         const odd = r % 2 !== 0;
-        const moved = (phase * p.ms) / p.step;
+        const moved = phase * period;
         const col = Math.floor(along + (odd ? p.brick * period - moved : moved));
         const x = ((col % period) + period) % period;
         return { lit: text.lit(x, y) ? 1 : 0 };

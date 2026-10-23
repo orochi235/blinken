@@ -28,7 +28,7 @@ describe('moves', () => {
   for (const name of slotted('enter')) {
     it(`${name} ends showing the message`, () => {
       const m = MOVES[name];
-      const end = name === 'scroll-in' ? shown(0) : shown();
+      const end = shown();
       expect(litAt(m, length(m))).toEqual(end);
     });
   }
@@ -44,7 +44,7 @@ describe('moves', () => {
   for (const name of slotted('exit')) {
     it(`${name} starts showing the message and ends blank`, () => {
       const m = MOVES[name];
-      const start = name === 'scroll-out' ? shown(0) : shown();
+      const start = shown();
       expect(litAt(m, 0)).toEqual(start);
       expect(litAt(m, length(m)).every((v) => v === 0)).toBe(true);
     });
@@ -77,6 +77,15 @@ describe('moves', () => {
     const lit = b.dots.filter((_, i) => first[i] === 1).map((d) => d.x);
     expect(lit.length).toBeGreaterThan(0);
     expect(Math.max(...lit)).toBeLessThan(5);
+  });
+
+  it('tile draws the same frame at phase 0 and phase 1', () => {
+    const tall = board(80, 16);
+    const m = MOVES.tile;
+    const patch = m.patch(place(tall, at.text), values(m));
+    const frame = (phase: number) => tall.dots.map((d) => patch.at(phase, d, setting).lit ?? 0);
+    expect(frame(1)).toEqual(frame(0));
+    expect(frame(0).some((v) => v === 1)).toBe(true);
   });
 
   it('tile refuses a one-line board', () => {
