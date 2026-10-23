@@ -1,4 +1,4 @@
-import type { Patch } from '@msb235/blits';
+import { type Patch, type WaveShape, waveAt } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { NumberParam, Params, Values } from '../params.js';
@@ -57,3 +57,6 @@ export const phasePerStep = (value: number): NumberParam => ({
 
 /** One cycle of a looping modulator at `rate`, in ms. */
 export const cycleMs = (rate: number) => 1000 / rate;
+
+/** A wave's value at `x` cycles as 0..1, starting where it is lowest or at its midpoint rising. */
+export const unitAt = (shape: WaveShape, x: number) => (waveAt(shape, x) + 1) / 2;

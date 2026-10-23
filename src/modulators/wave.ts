@@ -1,8 +1,16 @@
-import { patch, type WaveShape, waveAt } from '@msb235/blits';
+import { patch, type WaveShape } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { ChoiceParam, Params } from '../params.js';
 import type { Channel } from '../planes.js';
-import { cycleMs, depth, type Modulator, modulator, phasePerStep, RATE } from './modulator.js';
+import {
+  cycleMs,
+  depth,
+  type Modulator,
+  modulator,
+  phasePerStep,
+  RATE,
+  unitAt,
+} from './modulator.js';
 
 const shapeParam = (choices: readonly string[], value: string): ChoiceParam => ({
   label: 'shape',
@@ -46,8 +54,8 @@ const swing = (s: Spec): Modulator => {
       return patch<Subject, Pose>(
         cycleMs(p.rate),
         (phase, subject) => {
-          const w = waveAt(shape, phase + rank(subject) * p.phase + start);
-          return { [s.channel]: s.of((w + 1) / 2, p.depth) } as Partial<Pose>;
+          const u = unitAt(shape, phase + rank(subject) * p.phase + start);
+          return { [s.channel]: s.of(u, p.depth) } as Partial<Pose>;
         },
         { writes: [s.channel] },
       );

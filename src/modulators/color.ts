@@ -1,9 +1,7 @@
 import { oklab, patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { ColorsParam } from '../params.js';
-import { cycleMs, depth, modulator, phasePerStep, RATE } from './modulator.js';
-
-const frac = (x: number) => x - Math.floor(x);
+import { cycleMs, depth, modulator, phasePerStep, RATE, unitAt } from './modulator.js';
 
 /** Tint stepping through its colors in order, each held for one step. */
 export const palette = modulator({
@@ -23,7 +21,10 @@ export const palette = modulator({
     return patch<Subject, Pose>(
       p.step * n,
       (phase, subject) => {
-        const tint = tints[Math.floor(frac(phase + rank(subject) * p.phase) * n)];
+        const tint =
+          tints[
+            Math.min(n - 1, Math.floor(unitAt('saw', phase + rank(subject) * p.phase - 0.5) * n))
+          ];
         return tint ? { tint } : {};
       },
       { writes: ['tint'] },
@@ -50,7 +51,7 @@ export const twoColor = modulator({
     return patch<Subject, Pose>(
       cycleMs(p.rate),
       (phase, subject) => {
-        const u = (Math.sin(2 * Math.PI * (phase + rank(subject) * p.phase)) + 1) / 2;
+        const u = unitAt('sine', phase + rank(subject) * p.phase);
         const k = u * p.depth;
         return { tint: a.map((v, i) => v + ((b[i] ?? v) - v) * k) };
       },

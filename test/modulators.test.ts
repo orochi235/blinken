@@ -67,13 +67,28 @@ describe('modulators', () => {
   });
 
   it('dim eases gain from 1 to 1 - depth over its length', () => {
-    const g = (t: number) => poseAt('dim', t, undefined, { ms: 1000, depth: 0.5 }).gain;
+    const g = (t: number) => poseAt('dim', t, undefined, { ms: 1000, depth: 0.5, sweep: 0 }).gain;
     expect(g(0)).toBe(1);
     expect(g(999.999)).toBeCloseTo(0.5, 3);
   });
 
+  it('one-shots sweep their starts over the pass and all end by phase 1', () => {
+    for (const name of ['dim', 'desaturate', 'flare'] as const) {
+      const m = MODULATORS[name];
+      const ch = m.writes[0] as 'gain' | 'chroma' | 'glow';
+      const given = { ms: 1000, depth: 0.5, sweep: 0.5 };
+      const [first, last] = [b.dots[0], b.dots[79]] as Subject[];
+      const end = poseAt(name, 999.999, first, given, column)[ch];
+      expect(poseAt(name, 999.999, last, given, column)[ch]).toBeCloseTo(end as number, 2);
+      if (name !== 'flare') {
+        expect(poseAt(name, 300, first, given, column)[ch]).not.toBe(1);
+        expect(poseAt(name, 300, last, given, column)[ch]).toBe(1);
+      }
+    }
+  });
+
   it('flare goes up to 1 + depth and back', () => {
-    const g = (t: number) => poseAt('flare', t, undefined, { ms: 1000, depth: 2 }).glow;
+    const g = (t: number) => poseAt('flare', t, undefined, { ms: 1000, depth: 2, sweep: 0 }).glow;
     expect(g(0)).toBe(1);
     expect(g(500)).toBeCloseTo(3);
     expect(g(999.999)).toBeCloseTo(1, 2);
@@ -84,6 +99,7 @@ describe('modulators', () => {
     expect(MODULATORS.sparkle.on).toBe('dots');
     const lit = [0, 1, 2].map((i) => poseAt('chase', 10, { kind: 'cell', i }).lit);
     expect(lit).toEqual([1, 0.1, 0.1]);
+    expect(poseAt('chase', 10, { kind: 'cell', i: 0 }).tint).toEqual(oklab(0xffe2b0));
   });
 
   for (const name of names) {

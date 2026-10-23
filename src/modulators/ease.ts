@@ -2,7 +2,7 @@ import { keys, patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { ChoiceParam, NumberParam } from '../params.js';
 import type { Channel } from '../planes.js';
-import { depth, type Modulator, modulator, phasePerStep } from './modulator.js';
+import { depth, type Modulator, modulator } from './modulator.js';
 
 const MS: NumberParam = {
   label: 'length',
@@ -11,6 +11,14 @@ const MS: NumberParam = {
   step: 100,
   value: 1500,
   unit: 'ms',
+};
+const SWEEP: NumberParam = {
+  label: 'sweep',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  value: 0.5,
+  unit: 'of the pass',
 };
 const EASE: ChoiceParam = {
   label: 'easing',
@@ -27,17 +35,17 @@ interface Spec {
   depth: number;
 }
 
-/** A modulator that plays its channel once along an easing over `length`, ranks shifting it later. */
+/** Plays its channel once along an easing: rank spreads the starts over `sweep` of the pass, every subject done by its end. */
 const eased = (s: Spec): Modulator =>
   modulator({
     name: s.name,
     about: s.about,
-    params: { ms: MS, easing: EASE, depth: depth(s.depth), phase: phasePerStep(0.01) },
+    params: { ms: MS, easing: EASE, depth: depth(s.depth), sweep: SWEEP },
     writes: [s.channel],
     on: 'dots',
     length: (_at, p) => p.ms as number,
-    patch: (_at, v, rank) => {
-      const p = v as { ms: number; easing: string; depth: number; phase: number };
+    patch: (at, v, rank) => {
+      const p = v as { ms: number; easing: string; depth: number; sweep: number };
       const inner = keys<Subject, Pose>(
         p.ms,
         s
@@ -45,10 +53,12 @@ const eased = (s: Spec): Modulator =>
           .map(({ at, value }) => ({ at, delta: { [s.channel]: value } as Partial<Pose> })),
         { ease: p.easing as 'linear' },
       );
+      const maxRank = at.board.dots.reduce((m, d) => Math.max(m, rank(d)), 0);
       return patch<Subject, Pose>(
         p.ms,
         (phase, subject, setting) => {
-          const u = Math.min(1, Math.max(0, phase - rank(subject) * p.phase));
+          const start = maxRank > 0 ? (rank(subject) / maxRank) * p.sweep : 0;
+          const u = Math.min(1, Math.max(0, (phase - start) / (1 - p.sweep || 1)));
           return inner.at(u, subject, setting);
         },
         { writes: [s.channel] },
