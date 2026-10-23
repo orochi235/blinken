@@ -17,6 +17,11 @@ export interface SignColumns {
   glow: Float64Array;
 }
 
+/** How far a dot's light blooms: its radius times `glow`, nothing at 0. */
+export function haloRadius(r: number, glow: number): number {
+  return r * Math.max(glow, 0);
+}
+
 /** Fresh columns for `n` lights, every channel at rest. */
 export function signColumns(n: number): SignColumns {
   return {
@@ -126,11 +131,14 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
         bctx.beginPath();
         bctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
         bctx.fill();
-        gctx.globalAlpha = Math.min(shine * (halo[i] ?? 1), 1);
-        gctx.fillStyle = css(hex);
-        gctx.beginPath();
-        gctx.arc(x, y, r, 0, Math.PI * 2);
-        gctx.fill();
+        const bloom = haloRadius(r, halo[i] ?? 1);
+        if (bloom > 0) {
+          gctx.globalAlpha = shine;
+          gctx.fillStyle = css(hex);
+          gctx.beginPath();
+          gctx.arc(x, y, bloom, 0, Math.PI * 2);
+          gctx.fill();
+        }
       }
       bctx.globalAlpha = 1;
       gctx.globalAlpha = 1;
