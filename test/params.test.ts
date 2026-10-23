@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MODULATORS } from '@/modulators/index.js';
 import { type Params, values } from '@/params.js';
 
 const params = {
@@ -15,5 +16,11 @@ describe('values', () => {
       mode: 'b',
       tints: [1],
     });
+  });
+
+  it('clamps a number setting to its range', () => {
+    expect(values(MODULATORS.dim, { sweep: 1 }).sweep).toBe(0.95);
+    expect(values({ params }, { speed: -3 }).speed).toBe(0);
+    expect(values({ params }, { speed: 11 }).speed).toBe(10);
   });
 });

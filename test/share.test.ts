@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MODULATORS } from '@/modulators/index.js';
+import { values } from '@/params.js';
 import {
   DRAFT,
   decode,
@@ -77,14 +79,18 @@ describe('share', () => {
     ]);
   });
 
-  it('clamps every number setting to its range', () => {
+  it('clamps holds to the lab’s range, and leaves settings for values to clamp', () => {
     const data = JSON.parse(Buffer.from(encode(state()), 'base64url').toString());
     data.effects['hold copy'].exit = [{ mod: 'dim', params: { sweep: 1, ms: -5, depth: 0.5 } }];
     data.effects['hold copy'].hold = -100;
     data.program[1].hold = 1e9;
     const { state: back } = decode(hashOf(data));
     const exit = back.effects['hold copy']?.exit as readonly { params: Record<string, number> }[];
-    expect(exit[0]?.params).toEqual({ sweep: 0.95, ms: 100, depth: 0.5 });
+    expect(exit[0]?.params).toEqual({ sweep: 1, ms: -5, depth: 0.5 });
+    expect(values(MODULATORS.dim, exit[0]?.params as never)).toMatchObject({
+      sweep: 0.95,
+      ms: 100,
+    });
     expect(back.effects['hold copy']?.hold).toBe(0);
     expect(back.program[1]?.hold).toBe(12000);
   });

@@ -80,7 +80,10 @@ const entriesOf = (v: unknown, what: string, dropped: string[]): [string, unknow
   return Object.entries(v);
 };
 
-/** A link's settings for `thing`, in its own key order, each kept only if it is one it has. */
+/**
+ * A link's settings for `thing`, in its own key order, each kept only if it is one it has, of its
+ * kind; `values` clamps the numbers when it is staged.
+ */
 function paramsOf(
   thing: { readonly params: Params },
   given: unknown,
@@ -101,7 +104,9 @@ function paramsOf(
           ? typeof v === 'string' && param.choices.includes(v)
             ? v
             : undefined
-          : clamp(v, param);
+          : typeof v === 'number' && Number.isFinite(v)
+            ? v
+            : undefined;
     if (kept === undefined) dropped.push(`setting ${key} in ${where}`);
     else out[key] = kept;
   }

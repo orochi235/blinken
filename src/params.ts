@@ -36,14 +36,16 @@ export type Values<P extends Params> = { readonly [K in keyof P]: ValueOf<P[K]> 
 
 const defaultOf = (param: Param): ParamValue => ('colors' in param ? param.colors : param.value);
 
-/** A thing's defaults with `given` laid over them. */
+/** A thing's defaults with `given` laid over them, each number clamped to its setting's range. */
 export function values<P extends Params>(
   of: { readonly params: P },
   given: Partial<Values<P>> = {},
 ): Values<P> {
   const out: Record<string, ParamValue> = {};
   for (const [key, param] of Object.entries(of.params)) {
-    out[key] = (given as Record<string, ParamValue | undefined>)[key] ?? defaultOf(param);
+    const v = (given as Record<string, ParamValue | undefined>)[key] ?? defaultOf(param);
+    out[key] =
+      'min' in param && typeof v === 'number' ? Math.min(param.max, Math.max(param.min, v)) : v;
   }
   return out as Values<P>;
 }
