@@ -12,7 +12,7 @@ export {
 export { EFFECTS, type EffectName, LAYERS, type LayerName, type LayerSpec } from './builtins.js';
 export { dotColor } from './color.js';
 export { createSign, paintBulbs, type Sign, type SignColumns, signColumns } from './draw.js';
-export { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
+export { type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 export { ADVANCE, type Bitmap, FACE, ROWS, rasterize } from './font.js';
 export {
   createMarquee,
@@ -20,23 +20,15 @@ export {
   type Marquee,
   type MarqueeOptions,
 } from './marquee.js';
+export { MODULATORS, type Modulator, type ModulatorName } from './modulators/index.js';
+export { MOVES, type Move, type MoveName, SLOTS, type Slot } from './moves/index.js';
 export {
-  MODULATORS,
-  type Modulator,
-  type ModulatorName,
-  modulator,
-} from './modulators/index.js';
-export { MOVES, type Move, type MoveName, move, rowOf, SLOTS, type Slot } from './moves/index.js';
-export {
-  delayOf,
-  groupsOf,
   ORDERS,
   type Order,
   type OrderBy,
   type Placed,
   place,
   rankOf,
-  spanOf,
 } from './orders.js';
 export {
   type ChoiceParam,
@@ -54,9 +46,6 @@ export {
   type Piece,
   piecesOf,
   type SlotPieces,
-  type StagedPiece,
-  stagePiece,
-  TOGETHER,
   type Warning,
 } from './pieces.js';
 export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
