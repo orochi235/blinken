@@ -1,5 +1,5 @@
 // Loads the built marquee in headless Chromium at a desktop and a phone width, and stretched to
-// 320 × 63, printing what a frame costs in each. Fails on any console or page error, a sign that
+// 320 × 63, printing what a frame costs in each, then the compose lab at both widths. Fails on any console or page error, a sign that
 // lit nothing, or a page wider than its viewport.
 // `--shots <dir>` keeps a screenshot per width, which otherwise go to a temp directory removed on exit.
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
@@ -19,6 +19,8 @@ const widths = [
   { name: 'desktop', width: 1280, height: 800, query: '' },
   { name: 'phone', width: 390, height: 844, query: '' },
   { name: 'stretched', width: 1280, height: 800, query: '?cols=320&rows=63' },
+  { name: 'compose', width: 1280, height: 800, query: 'compose.html' },
+  { name: 'compose-phone', width: 390, height: 844, query: 'compose.html' },
 ];
 const browser = await chromium.launch({ headless: true });
 let failed = 0;
@@ -38,7 +40,7 @@ try {
       for (let k = 0; k < d.length; k += 4) if (d[k] > 160) n++;
       return n;
     });
-    const cost = await page.evaluate(() => document.getElementById('cost').value);
+    const cost = await page.evaluate(() => document.getElementById('cost')?.value ?? '');
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     await page.screenshot({ path: join(shots, `${w.name}.png`) });
     const problems = [...errors];
