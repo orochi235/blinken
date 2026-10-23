@@ -1,9 +1,12 @@
 import type { Patch } from '@msb235/blits';
 import type { Board, Cell, Led, Pose } from '../board.js';
 import type { Bitmap } from '../font.js';
-import type { Params, Values } from '../params.js';
+import type { NumberParam, Params, Values } from '../params.js';
 
 export { type Param, type Params, type Values, values } from '../params.js';
+
+/** The all-numbers settings every effect here declares. */
+export type NumberParams = Readonly<Record<string, NumberParam>>;
 
 /** A text effect ready to cue on the dots: its patch, the per-dot delay it plays with, and how long it lasts. */
 export interface Staged {
@@ -13,7 +16,7 @@ export interface Staged {
 }
 
 /** A message coming on, standing and going; a program plays these one after another. */
-export interface TextEffect<P extends Params = Params> {
+export interface TextEffect<P extends Params = NumberParams> {
   readonly kind: 'text';
   readonly name: string;
   readonly about: string;
@@ -24,7 +27,7 @@ export interface TextEffect<P extends Params = Params> {
 }
 
 /** A loop running over whatever else is on, for as long as it is cued. */
-export interface Layer<P extends Params = Params> {
+export interface Layer<P extends Params = NumberParams> {
   readonly kind: 'layer';
   readonly name: string;
   readonly about: string;
