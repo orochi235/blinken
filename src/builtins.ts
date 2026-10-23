@@ -48,6 +48,15 @@ const effects = {
     exit: { move: 'drop-out', order: { by: 'random', lag: 9, seed: 2 } },
     hold: 1700,
   },
+  'mater matris': {
+    name: 'mater matris',
+    about:
+      'Streams of dots rain down every column and leave the message behind, then wash it away.',
+    enter: { move: 'rain-in' },
+    active: { move: 'stand' },
+    exit: { move: 'rain-out' },
+    hold: 2000,
+  },
   tile: {
     name: 'tile',
     about: 'Repeats the message in tilted brick rows, neighbors scrolling opposite ways.',

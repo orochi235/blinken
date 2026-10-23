@@ -17,4 +17,5 @@ export const demo = (message: string, hex: number): Step[] => [
     hex: GREEN,
   },
   { effect: 'fall', text: 'TONIGHT!', hex: AMBER },
+  { effect: 'mater matris', text: 'WAKE UP', hex: GREEN },
 ];
