@@ -25,6 +25,8 @@ export interface Placed {
   readonly board: Board;
   readonly text: Bitmap;
   readonly left: number;
+  /** The message as typed, for warnings. */
+  readonly label?: string;
 }
 
 /** The message standing centered on the board. */
