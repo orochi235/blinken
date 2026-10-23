@@ -1,4 +1,4 @@
-import { Button, type ConfigShape, ControlPanel, f, isAuto, Select } from '@weasel-js/labkit';
+import { Button, type ConfigShape, ControlPanel, f, isAuto } from '@weasel-js/labkit';
 import {
   MODULATORS,
   MOVES,
@@ -10,6 +10,7 @@ import {
   values,
 } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
+import { PlainSelect } from '../PlainSelect.js';
 import { fieldOf, numberField, schemaFor, shownValues, storedValue } from '../schema.js';
 import { LAG } from '../state.js';
 import { keyOf, pieceOf, pieceOptions } from './edit.js';
@@ -78,7 +79,7 @@ export function PieceCard({
   return (
     <div className={'mod' in piece ? 'compose-piece is-mod' : 'compose-piece is-move'}>
       <div className="compose-piece-head">
-        <Select
+        <PlainSelect
           aria-label="piece"
           options={pieceOptions(slot)}
           selectedKey={keyOf(piece)}

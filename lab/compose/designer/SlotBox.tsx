@@ -1,5 +1,5 @@
-import { Select } from '@weasel-js/labkit';
 import { type EffectSpec, piecesOf, type Slot } from '@/index.js';
+import { PlainSelect } from '../PlainSelect.js';
 import { addPiece, removePiece, setPiece } from '../state.js';
 import { editEffect, pieceOf, pieceOptions } from './edit.js';
 import { PieceCard } from './PieceCard.js';
@@ -33,7 +33,7 @@ export function SlotBox({
           onRemove={() => editEffect((e) => removePiece(e, slot, i))}
         />
       ))}
-      <Select
+      <PlainSelect
         aria-label={`add a piece to ${slot}`}
         placeholder="add a piece…"
         options={pieceOptions(slot)}

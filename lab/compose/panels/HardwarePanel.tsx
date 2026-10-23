@@ -14,7 +14,6 @@ export function HardwarePanel({
   return (
     <ControlPanel
       title="sign"
-      collapsible
       schema={hardwareSchema()}
       config={hardware}
       setConfig={set}

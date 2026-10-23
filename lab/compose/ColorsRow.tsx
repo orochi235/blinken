@@ -4,7 +4,7 @@ import { hexOf, numOf } from './schema.js';
 
 /** A ColorsParam's control: a swatch per color, and buttons to add one or drop the last. */
 export const colorsRow: ControlRenderer = Object.assign(
-  ({ value, setValue, pref }: Parameters<ControlRenderer>[0]) => {
+  ({ value, setValue, pref, disabled }: Parameters<ControlRenderer>[0]) => {
     const colors = (value as readonly number[] | undefined) ?? [];
     const set = (next: number[]) => setValue(next);
     return (
@@ -16,6 +16,7 @@ export const colorsRow: ControlRenderer = Object.assign(
             type="color"
             aria-label={`${pref.name ?? 'color'} ${i + 1}`}
             value={hexOf(c)}
+            disabled={disabled}
             onChange={(e) => set(colors.map((x, j) => (j === i ? numOf(e.target.value) : x)))}
           />
         ))}
@@ -23,6 +24,7 @@ export const colorsRow: ControlRenderer = Object.assign(
           type="button"
           className="colors-row-btn"
           title="add a color"
+          disabled={disabled}
           onClick={() => set([...colors, colors.at(-1) ?? 0xffffff])}
         >
           +
@@ -31,7 +33,7 @@ export const colorsRow: ControlRenderer = Object.assign(
           type="button"
           className="colors-row-btn"
           title="remove the last color"
-          disabled={colors.length <= 1}
+          disabled={disabled || colors.length <= 1}
           onClick={() => set(colors.slice(0, -1))}
         >
           −

@@ -3,3 +3,8 @@
   flex-direction: column;
   gap: 8px;
 }
+
+/* A layer switched off: its title stays live, its rows read as idle. */
+.compose-layer-rows.is-off {
+  opacity: 0.45;
+}

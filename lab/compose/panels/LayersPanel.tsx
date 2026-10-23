@@ -1,15 +1,16 @@
 import { ControlPanel, f } from '@weasel-js/labkit';
 import { LAYERS, type LayerName, MODULATORS, type ParamValue, values } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
-import { fieldsOf, schemaFor, shownValues, storedValue } from '../schema.js';
+import { fieldsOf, schemaFor, shownValues, storedValue, whileOn } from '../schema.js';
 import { layerOf } from '../state.js';
 import { compose, useCompose } from '../store.js';
 import './LayersPanel.css';
 
 const schemaOf = (name: LayerName) =>
   schemaFor(`layer:${name}`, () => ({
-    on: f.boolean(false).label(`${name} on`).heading(),
-    ...fieldsOf(MODULATORS[LAYERS[name].mod].params),
+    // Drawn in the title, not as a row; here so the settings can be disabled by it.
+    on: f.boolean(false).hidden(),
+    ...whileOn(fieldsOf(MODULATORS[LAYERS[name].mod].params)),
   }));
 
 /** One built-in layer: whether it is on, and its modulator's settings. */
@@ -38,18 +39,23 @@ function Layer({ name }: { name: LayerName }) {
     );
   return (
     <ControlPanel
+      className={layer.on ? 'compose-layer-rows' : 'compose-layer-rows is-off'}
       title={
-        <span className="compose-title">
+        <label className="compose-title">
+          <input
+            type="checkbox"
+            aria-label={`${name} on`}
+            checked={layer.on}
+            onChange={(e) => set('on', e.target.checked)}
+          />
           {name} <span className="compose-about">{mod.about}</span>
-        </span>
+        </label>
       }
       schema={schemaOf(name)}
       config={config}
       setConfig={set}
       draftConfig={set}
       renderers={RENDERERS}
-      collapsible
-      defaultCollapsed
       density="tight"
     />
   );

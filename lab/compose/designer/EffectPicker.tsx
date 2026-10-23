@@ -1,5 +1,5 @@
-import { Select } from '@weasel-js/labkit';
 import { EFFECTS } from '@/index.js';
+import { PlainSelect } from '../PlainSelect.js';
 import { freeName } from '../state.js';
 import { useCompose } from '../store.js';
 import { designerEdit, openEffect } from './edit.js';
@@ -20,7 +20,7 @@ export function EffectPicker() {
   ];
   const open = state.editing.effect;
   return (
-    <Select
+    <PlainSelect
       aria-label="effect"
       placeholder="pick an effect…"
       options={options}

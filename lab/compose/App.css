@@ -74,3 +74,9 @@ body {
   gap: 4px;
   font-size: var(--wzl-font-size-sm, 12px);
 }
+
+.compose-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
