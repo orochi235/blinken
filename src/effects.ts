@@ -60,17 +60,17 @@ export function stageEffect(
 ): StagedEffect {
   const groups = effect.order ? groupsOf(effect.order, at) : [at.board.dots];
   const lag = effect.order?.lag ?? 0;
+  const span = (groups.length - 1) * lag;
   const given = hold ?? effect.hold;
+  const lists = SLOTS.map((slot) => piecesOf(effect[slot]));
+  const pieceAt = (s: number, i: number) => (lists[s] ?? [])[i] as Piece;
+  const stageAll = (subjects: readonly Subject[], keep: (piece: Piece) => boolean) =>
+    SLOTS.map((slot, s) =>
+      (lists[s] ?? []).filter(keep).map((piece) => stagePiece(piece, slot, at, subjects, given)),
+    );
+  // Every piece staged once on the first group gives the warnings and the part lengths.
+  const first = stageAll(groups[0] ?? [], () => true);
   const warnings: Warning[] = [];
-  // Staged once per group; part lengths come from the first, and every group shares them.
-  const staged = groups.map((subjects, g) =>
-    SLOTS.map((slot) =>
-      piecesOf(effect[slot])
-        .filter((piece) => g === 0 || !onCells(piece))
-        .map((piece) => stagePiece(piece, slot, at, subjects, given)),
-    ),
-  );
-  const first = staged[0] ?? [];
   SLOTS.forEach((slot, s) => {
     const pieces = first[s] ?? [];
     pieces.forEach((p, i) => {
@@ -80,40 +80,55 @@ export function stageEffect(
       warnings.push({ slot, text: `two pieces in ${slot} set tint` });
   });
   const lengths = first.map((pieces) => Math.max(0, ...pieces.map((p) => lengthOf(p.voice))));
-  const active = first[1] ?? [];
-  const activeMoves = piecesOf(effect.active).flatMap((piece, i) => {
-    const voice = active[i]?.voice;
-    return 'move' in piece && voice ? [lengthOf(voice)] : [];
-  });
+  const activeMoves = (first[1] ?? []).flatMap((p, i) =>
+    'move' in pieceAt(1, i) ? [lengthOf(p.voice)] : [],
+  );
   const held = given ?? Math.max(0, ...activeMoves);
   const [enter = 0, , exit = 0] = lengths;
-  const ms = (groups.length - 1) * lag + enter + held + exit;
+  const ms = span + enter + held + exit;
+
+  /** An arc of `parts`, a `pin` voice in every part the effect has holding it to the shared lengths. */
+  const arcOf = (
+    parts: readonly (readonly StagedPiece[])[],
+    pin: Omit<ArcVoice<Subject, Pose>, 'duration'>,
+    active: number,
+    start: number,
+  ) => {
+    const spec: { -readonly [K in Slot]?: ArcVoice<Subject, Pose>[] } = {};
+    SLOTS.forEach((slot, s) => {
+      if (lists[s]?.length === 0) return;
+      const duration = s === 1 ? active : (lengths[s] as number);
+      spec[slot] = [{ ...pin, duration }, ...(parts[s] ?? []).map(weighed)];
+    });
+    return {
+      spec: { ...spec, hold: active, blend: effect.blend ?? 0 } as ArcSpec<Subject, Pose>,
+      start,
+    };
+  };
 
   const tint = oklab(hex);
   const color = patch<Subject, Pose>(Math.max(1, ms), () => ({ tint }), { writes: ['tint'] });
-  const arcs = staged.map((parts, g) => {
-    const spec: { -readonly [K in Slot]?: ArcVoice<Subject, Pose>[] } = {};
-    SLOTS.forEach((slot, s) => {
-      if (piecesOf(effect[slot]).length === 0) return;
-      const pieces = parts[s] ?? [];
-      // The step color spans the arc as one voice layered into every part, its duration pinning
-      // each group's part to the same length.
-      const step: ArcVoice<Subject, Pose> = {
-        patch: color,
-        subjects: groups[g] as readonly Subject[],
-        duration: s === 1 ? held : (lengths[s] as number),
-      };
-      spec[slot] = [step, ...pieces.map(weighed)];
-    });
-    return {
-      spec: { ...spec, hold: held, blend: effect.blend ?? 0 } as ArcSpec<Subject, Pose>,
-      start: g * lag,
-    };
-  });
+  const dots = (pieces: readonly StagedPiece[], s: number) =>
+    pieces.filter((_, i) => !onCells(pieceAt(s, i)));
+  // The step color spans each group's arc as one voice layered into every part.
+  const arcs = groups.map((subjects, g) =>
+    arcOf(
+      g === 0 ? first.map(dots) : stageAll(subjects, (piece) => !onCells(piece)),
+      { patch: color, subjects },
+      held,
+      g * lag,
+    ),
+  );
+  // Border cells are one subject set for the whole effect: one arc, its active over every group's.
+  const cells = first.map((pieces, s) => pieces.filter((_, i) => onCells(pieceAt(s, i))));
+  if (cells.some((pieces) => pieces.length > 0)) {
+    const blank = patch<Subject, Pose>(Math.max(1, ms), () => ({}), { writes: [] });
+    arcs.push(arcOf(cells, { patch: blank, subjects: at.board.cells }, held + span, 0));
+  }
   return { arcs, ms, warnings };
 }
 
-/** Cues a staged effect's arcs under `owner`, each at its start; one of several is named by its group. */
+/** Cues a staged effect's arcs under `owner`, each at its start; one of several is named by its index. */
 export function cueEffect(
   m: Mix<Subject, Pose>,
   owner: Handle<Subject>,

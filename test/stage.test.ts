@@ -208,15 +208,22 @@ describe('what an effect draws', () => {
     expect(m.probe(b.dots[0] as Subject).glow).toBeCloseTo(2);
   });
 
-  it('puts a modulator on the border cells in the first group’s arc only', () => {
-    const staged = stageEffect(
-      { ...flip, active: [{ move: 'tumble' }, { mod: 'chase' }] },
-      at,
-      HEX,
+  it('plays a border-cell modulator on one arc of its own, across every group', () => {
+    const effect: EffectSpec = { ...flip, active: [{ move: 'tumble' }, { mod: 'chase' }] };
+    const staged = stageEffect(effect, at, HEX);
+    const onCells = staged.arcs.filter((a) =>
+      voicesOf(a.spec.active).some((v) => v.subjects === b.cells),
     );
-    const chases = staged.arcs.map(
-      (a) => voicesOf(a.spec.active).filter((v) => v.subjects === b.cells).length,
-    );
-    expect(chases).toEqual([1, 0, 0]);
+    expect(staged.arcs).toHaveLength(4);
+    expect(onCells).toHaveLength(1);
+    expect(onCells[0]?.start).toBe(0);
+    expect(onCells[0]?.spec.hold).toBe(180 + TUMBLE);
+    expect(staged.ms).toBe(180 + FOLD + TUMBLE + FOLD);
+    // Still lit while the last letter tumbles, past where letter 0's active ends.
+    const m = cued(effect);
+    m.sync(180 + FOLD + TUMBLE - 10);
+    expect(m.probe(b.cells[0] as Subject).lit).toBeGreaterThan(0);
+    const out = m.marks(0, 10_000).filter((k) => k.mark === 'out' && k.name?.startsWith('flip'));
+    expect(Math.max(...out.map((k) => k.timestamp))).toBe(180 + FOLD + TUMBLE);
   });
 });
