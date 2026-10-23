@@ -4,7 +4,7 @@ import { LAYERS, type LayerSpec } from './builtins.js';
 import { createSign, paintBulbs, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
 import type { ParamValue } from './params.js';
-import { cueLayer, play, type Step } from './program.js';
+import { cueLayer, effectOf, play, type Step } from './program.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
 const AWAY_MS = 250;
@@ -47,9 +47,9 @@ export interface Marquee {
   readonly board: Board;
   /** The mix lighting it, for cueing voices of your own on its dots and border cells. */
   readonly mix: Mix<Subject, Pose>;
-  /** Replaces the program from the next pass. */
+  /** Replaces the program from the next pass; throws on a step naming no effect. */
   setProgram(program: readonly Step[] | (() => readonly Step[])): void;
-  /** Replaces the effects steps can name, from the next pass. */
+  /** Replaces the effects steps can name, from the next pass; throws if a step names none of them. */
   setEffects(effects: Readonly<Record<string, EffectSpec>>): void;
   /** Starts the program over at `fromStep`, fading the pass playing now at once. */
   restart(fromStep?: number): void;
@@ -100,6 +100,11 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   };
   again();
 
+  /** Throws on a step naming no effect; a program given as a function is checked as each pass starts. */
+  const check = (p: typeof program, e: typeof effects) => {
+    if (typeof p !== 'function') for (const step of p) effectOf(step, e);
+  };
+
   type Weight = ReturnType<typeof level<Subject>>;
   const weightOf = (spec: LayerSpec, on: boolean | number) =>
     on === true ? (spec.weight ?? 1) : on === false ? 0 : on;
@@ -133,7 +138,14 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     }
     if (due) {
       due = false;
-      again();
+      // A pass that cannot start leaves the sign idle, its layers playing, until setProgram or
+      // setEffects.
+      try {
+        again();
+      } catch (e) {
+        pass = null;
+        console.error(e);
+      }
     }
     const t0 = performance.now();
     m.sync(now);
@@ -153,12 +165,15 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     board: b,
     mix: m,
     setProgram(next) {
+      check(next, effects);
       const idle = pass === null;
       program = next;
       if (idle) again();
     },
     setEffects(next) {
+      check(program, next);
       effects = next;
+      if (pass === null) again();
     },
     restart(fromStep = 0) {
       pass?.fade({ over: 0 });

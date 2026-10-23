@@ -287,4 +287,46 @@ describe('createMarquee', () => {
       },
     );
   });
+
+  it('setProgram and setEffects refuse a step naming no effect, at the call', async () => {
+    await withSign(
+      { program: [{ effect: 'quick', text: 'I', hex: 0 }], effects: { quick } },
+      (sign) => {
+        expect(() => sign.setProgram([{ effect: 'nope', text: 'I', hex: 0 }])).toThrow(
+          'bree: no effect named nope',
+        );
+        expect(() => sign.setEffects({})).toThrow('bree: no effect named quick');
+      },
+    );
+  });
+
+  it('a pass that fails to start is logged, and the sign plays on', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let passes = 0;
+    try {
+      await withSign(
+        {
+          program: () => {
+            passes++;
+            if (passes === 2) throw new Error('bad pass');
+            return [{ effect: 'quick', text: 'I', hex: 0 }];
+          },
+          effects: { quick },
+          layers: { chase: true },
+        },
+        async (sign, step) => {
+          step(400);
+          await settle();
+          expect(() => step(600)).not.toThrow();
+          expect(error).toHaveBeenCalledTimes(1);
+          expect(Math.max(...sign.board.cells.map((c) => sign.mix.probe(c).lit))).toBe(1);
+          sign.setProgram([{ effect: 'quick', text: 'I', hex: 0 }]);
+          step(700);
+          expect(litAmong(sign, 36, 44)).toBeGreaterThan(0);
+        },
+      );
+    } finally {
+      error.mockRestore();
+    }
+  });
 });
