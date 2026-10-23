@@ -1,8 +1,8 @@
 import { type Handle, level, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
+import { LAYERS, type LayerName } from './builtins.js';
 import { createSign, type SignColumns, signColumns } from './draw.js';
-import { LAYERS, type LayerName } from './effects/index.js';
-import { cueLayer, play, type Step } from './show.js';
+import { cueLayer, play, type Step } from './program.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
 const AWAY_MS = 250;

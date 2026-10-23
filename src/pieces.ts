@@ -30,7 +30,12 @@ export interface StagedPiece {
   readonly warnings: readonly string[];
 }
 
-const TOGETHER: Order = { by: 'together' };
+/** Every subject at once: the order a piece plays in when it names none. */
+export const TOGETHER: Order = { by: 'together' };
+
+/** A slot's pieces as a list. */
+export const piecesOf = (p: SlotPieces | undefined): readonly Piece[] =>
+  p === undefined ? [] : Array.isArray(p) ? (p as readonly Piece[]) : [p as Piece];
 
 /** A piece as the arc voice that plays it in `slot`; modulators and `active` moves loop. */
 export function stagePiece(

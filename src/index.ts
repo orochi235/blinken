@@ -9,33 +9,10 @@ export {
   SIZE,
   type Subject,
 } from './board.js';
+export { EFFECTS, type EffectName, LAYERS, type LayerName, type LayerSpec } from './builtins.js';
+export { dotColor } from './color.js';
 export { createSign, type Sign } from './draw.js';
-export {
-  chase,
-  type Effect,
-  fall,
-  flip,
-  hold,
-  LAYERS,
-  type Layer,
-  type LayerName,
-  layer,
-  type Param,
-  type Params,
-  rainbow,
-  roll,
-  rowOf,
-  type Staged,
-  scroll,
-  sparkle,
-  TEXT,
-  type TextEffect,
-  type TextName,
-  textEffect,
-  tile,
-  type Values,
-  values,
-} from './effects/index.js';
+export { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 export { ADVANCE, type Bitmap, FACE, ROWS, rasterize } from './font.js';
 export {
   createMarquee,
@@ -43,4 +20,42 @@ export {
   type Marquee,
   type MarqueeOptions,
 } from './marquee.js';
-export { cueLayer, fits, play, type Step, stage } from './show.js';
+export {
+  MODULATORS,
+  type Modulator,
+  type ModulatorName,
+  modulator,
+} from './modulators/index.js';
+export { MOVES, type Move, type MoveName, move, rowOf, type Slot } from './moves/index.js';
+export {
+  delayOf,
+  groupsOf,
+  type Order,
+  type OrderBy,
+  type Placed,
+  place,
+  rankOf,
+  spanOf,
+} from './orders.js';
+export {
+  type ChoiceParam,
+  type ColorsParam,
+  type NumberParam,
+  type Param,
+  type Params,
+  type ParamValue,
+  type Values,
+  values,
+} from './params.js';
+export {
+  type ModPiece,
+  type MovePiece,
+  type Piece,
+  piecesOf,
+  type SlotPieces,
+  type StagedPiece,
+  stagePiece,
+  TOGETHER,
+} from './pieces.js';
+export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
+export { cueLayer, effectOf, fits, play, type Step } from './program.js';

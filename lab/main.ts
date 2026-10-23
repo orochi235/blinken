@@ -1,6 +1,6 @@
 import './app.css';
 import { mount } from '@msb235/blits-panel';
-import { createMarquee, LAYERS, type LayerName, type Step, TEXT, type TextName } from '@/index.js';
+import { createMarquee, EFFECTS, LAYERS, type LayerName, type Step } from '@/index.js';
 
 function el<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -33,20 +33,20 @@ const userHex = () => Number.parseInt(hue.value, 16);
 /** `?show=flip` loops that one effect on the message, for looking at it alone. */
 const only = params.get('show');
 const program = (): Step[] =>
-  only !== null && only in TEXT
-    ? [{ how: only as TextName, text: message.value || ' ', hex: userHex() }]
+  only !== null && only in EFFECTS
+    ? [{ effect: only, text: message.value || ' ', hex: userHex() }]
     : [
-        { how: 'hold', text: 'BLITS', hex: AMBER },
-        { how: 'scroll', text: message.value || ' ', hex: userHex() },
-        { how: 'flip', text: 'NOW SHOWING', hex: RED },
-        { how: 'tile', text: message.value || ' ', hex: userHex() },
-        { how: 'roll', text: 'JACKPOT', hex: GREEN },
+        { effect: 'hold', text: 'BLITS', hex: AMBER },
+        { effect: 'scroll', text: message.value || ' ', hex: userHex() },
+        { effect: 'flip', text: 'NOW SHOWING', hex: RED },
+        { effect: 'tile', text: message.value || ' ', hex: userHex() },
+        { effect: 'roll', text: 'JACKPOT', hex: GREEN },
         {
-          how: 'scroll',
+          effect: 'scroll',
           text: 'CONCURRENT EFFECTS, FOLDED INTO ONE VALUE PER DOT PER FRAME',
           hex: GREEN,
         },
-        { how: 'fall', text: 'TONIGHT!', hex: AMBER },
+        { effect: 'fall', text: 'TONIGHT!', hex: AMBER },
       ];
 
 // Each layer's checkbox shares its name.

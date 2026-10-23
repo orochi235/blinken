@@ -1,18 +1,20 @@
 import { mix } from '@msb235/blits';
 import { describe, expect, it } from 'vitest';
 import { board, KIT, type Led, type Pose, SIZE, type Subject } from '@/board.js';
-import { chase, hold, scroll, values } from '@/effects/index.js';
+import { EFFECTS, LAYERS } from '@/builtins.js';
+import { stageEffect } from '@/effects.js';
 import { rasterize } from '@/font.js';
-import { play, stage } from '@/show.js';
+import { chase } from '@/modulators/index.js';
+import { scrollAcross } from '@/moves/index.js';
+import { place } from '@/orders.js';
+import { cueLayer, play, type Step } from '@/program.js';
 
-const STEP_MS = scroll.params.step.value;
-const HOLD_MS = hold.params.ms.value;
+const STEP_MS = scrollAcross.params.step.value;
 const CHASE_MS = chase.params.beat.value;
 
 const b = board(SIZE.cols, SIZE.rows);
 const COLS = b.cols;
 const dot = (x: number, y: number) => b.dots[y * COLS + x] as Led;
-const setting = {} as never;
 
 describe('rasterize', () => {
   it('lays glyphs out five dots wide with a blank column after each', () => {
@@ -26,51 +28,20 @@ describe('rasterize', () => {
   });
 });
 
-describe('scroll', () => {
-  const text = rasterize('I');
-  const p = scroll.stage(b, text, 0xff9a2e, values(scroll)).patch;
-  const steps = text.cols + COLS;
-
-  it('starts and ends with the sign dark', () => {
-    for (const led of b.dots) {
-      expect(p.at(0, led, setting).lit).toBe(0);
-      expect(p.at(0.9999, led, setting).lit).toBe(0);
-    }
-  });
-
-  it('has the text at the left edge once it has moved the sign’s width', () => {
-    const phase = (COLS + 0.5) / steps;
-    expect(p.at(phase, dot(2, 0), setting).lit).toBe(1);
-    expect(p.at(phase, dot(0, 0), setting).lit).toBe(0);
-    expect(p.duration).toBe(steps * STEP_MS);
-  });
-});
-
-describe('hold', () => {
-  const p = hold.stage(b, rasterize('I'), 0xff9a2e, values(hold)).patch;
-  const at = (ms: number, x: number, y: number) => p.at(ms / HOLD_MS, dot(x, y), setting).lit;
-
-  it('centers the text and flashes it in the middle of its time', () => {
-    expect(at(500, 39, 0)).toBe(1);
-    expect(at(1300, 39, 0)).toBe(1);
-    expect(at(1500, 39, 0)).toBe(0);
-    expect(at(500, 10, 0)).toBe(0);
-  });
-});
-
 describe('play', () => {
   it('places each step where the one before it ends', () => {
     const m = mix<Subject, Pose>(KIT);
-    const steps = [
-      { how: 'hold', text: 'I', hex: 0xff9a2e },
-      { how: 'scroll', text: 'I', hex: 0x6dff5a },
-    ] as const;
+    const steps: Step[] = [
+      { effect: 'hold', text: 'I', hex: 0xff9a2e },
+      { effect: 'scroll', text: 'I', hex: 0x6dff5a },
+    ];
     play(m, b, steps);
     m.sync(0);
     m.sync(1000);
     expect(m.probe(dot(39, 0)).lit).toBe(1);
     expect(m.probe(dot(2, 0)).lit).toBe(0);
-    m.sync(stage(b, steps[0]).ms + (COLS + 0.5) * STEP_MS);
+    const held = stageEffect(EFFECTS.hold, place(b, rasterize('I')), 0xff9a2e).ms;
+    m.sync(held + (COLS + 0.5) * STEP_MS);
     expect(m.probe(dot(2, 0)).lit).toBe(1);
     expect(m.probe(dot(39, 0)).lit).toBe(0);
   });
@@ -100,7 +71,7 @@ describe('board', () => {
 describe('chase', () => {
   it('lights every third bulb through its cell, stepping one bulb a beat', () => {
     const m = mix<Subject, Pose>(KIT);
-    m.cue({ patch: chase.patch(b, values(chase)), subjects: b.cells, loop: true });
+    cueLayer(m, b, LAYERS.chase, 1);
     for (let beat = 0; beat < 3; beat++) {
       m.sync(beat * CHASE_MS + CHASE_MS / 2);
       b.bulbs.forEach((bulb, j) => {

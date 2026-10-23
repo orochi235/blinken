@@ -3,7 +3,7 @@ import type { Pose, Subject } from './board.js';
 import { MODULATORS } from './modulators/index.js';
 import type { Slot } from './moves/index.js';
 import { groupsOf, type Order, type Placed } from './orders.js';
-import { type Piece, type SlotPieces, type StagedPiece, stagePiece } from './pieces.js';
+import { type Piece, piecesOf, type SlotPieces, type StagedPiece, stagePiece } from './pieces.js';
 
 /** A message's coming on, standing and going, as pieces in each slot: plain data. */
 export interface EffectSpec {
@@ -31,9 +31,6 @@ export interface StagedEffect {
 const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
 /** A modulator setting `tint` outweighs the step color rather than averaging with it evenly. */
 const TINT_WEIGHT = 3;
-
-const piecesOf = (p: SlotPieces | undefined): readonly Piece[] =>
-  p === undefined ? [] : Array.isArray(p) ? (p as readonly Piece[]) : [p as Piece];
 
 const lengthOf = (v: ArcVoice<Subject, Pose>) => v.duration ?? v.patch.duration;
 
