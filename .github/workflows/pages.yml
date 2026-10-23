@@ -4,13 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - 'lab/**'
-      - 'src/**'
-      - 'blits.config.ts'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.nvmrc'
-      - '.github/workflows/pages.yml'
+      - "lab/**"
+      - "src/**"
+      - "blits.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".nvmrc"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
