@@ -21,7 +21,7 @@ klieg's `fire({ enter, active, exit })` has the same shape, and bree lines up wi
 |---|---|---|---|
 | **piece** | One thing dots do, in one order, during one part of an arc | one `ArcVoice`: a patch, a `stagger`, a `duration` | letters unfold, one letter after the next |
 | **effect** | Pieces placed in `enter`, `active` and `exit`, with a hold and a blend | one `ArcSpec` | `flip` = unfold · tumble · fold |
-| **program** | Messages, each played with an effect, one after another, under layers | a `span({ order: 'queue' })` of arcs, plus looping layer voices | the lab's seven-message show |
+| **program** | Messages, each played with an effect, one after another, under layers | an owner holding one owner per step, each holding that step's arcs, plus looping layer voices | the lab's seven-message show |
 
 ### Pieces
 
@@ -82,7 +82,7 @@ slot set `tint` outright, since averaging two colors is rarely what was meant.
 ### Two kinds of piece
 
 - **Moves** draw the message on the shape plane, as in the table above. They know the bitmap.
-- **Modulators** drive one channel by a **curve** over time, **spread** over the sign by an order.
+- **Modulators** drive one channel, `lit` included (sparkle and chase light dots nothing else does) by a **curve** over time, **spread** over the sign by an order.
   They don't know the message; they change whatever is drawn. A modulator is a channel, a curve
   (blits's `wave` shapes, sine, triangle, saw and square, with cycles and phase; or a named easing
   curve for one-way ramps), a depth, and an order, which here gives each dot its phase.
@@ -97,8 +97,8 @@ slot set `tint` outright, since averaging two colors is rarely what was meant.
 | two-color pulse | `tint` | sine between two colors | any |
 | fade to gray, flare | `chroma` | easing | together |
 | bloom pulse, flare | `glow` | sine / easing | together, or by letter |
-| chase (today's layer) | `gain` | square | by border cell |
-| sparkle (today's layer) | `gain` | random flicker | random |
+| chase (today's layer) | `lit` | square | by border cell |
+| sparkle (today's layer) | `lit` | random flicker | random |
 
 Today's three layers are modulators that happen to loop under the whole program. So a **layer**
 becomes a place a modulator plays, under the program or inside one effect's slot, not a separate
@@ -138,8 +138,11 @@ interface Step {
 }
 ```
 
-`play(mix, board, steps)` cues a queued span and one arc per step that fits the board. It replaces
-`show.ts` adding up start times. Under the program play any number of modulators looping as
+`play(mix, board, steps)` cues a program owner, and under it one owner per step that fits the
+board, each placed where the step before it ends and holding that step's arcs. Not a queued span
+(2026-10-22): a span places its children itself, so it cannot hold the per-letter arcs a
+whole-effect order starts a lag apart. Every step's hold is finite, so its length is known when
+it is staged. Under the program play any number of modulators looping as
 layers, each with a weight and its settings; the built-in layers are `sparkle`, `chase` and
 `rainbow`. `createMarquee` takes `effects` (a name
 → `EffectSpec` table added to the built-ins), so a program can name effects designed elsewhere.
