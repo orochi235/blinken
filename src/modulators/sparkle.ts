@@ -13,7 +13,6 @@ export const sparkle = modulator({
   },
   writes: ['lit'],
   on: 'dots',
-  length: (_at, p) => Math.max(1, Math.round(1000 / p.frame)) * p.frame,
   patch: (_at, p) => {
     const below = 1 - p.rate;
     const frames = Math.max(1, Math.round(1000 / p.frame));

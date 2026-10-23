@@ -17,13 +17,11 @@ export interface Move<P extends Params = Params> {
   readonly params: P;
   /** Whether the board has room for it. Default: always. */
   readonly fits?: (b: Board) => boolean;
-  /** One pass in ms, before any order's delay. */
-  length(at: Placed, p: Values<P>): number;
-  /** Writes `lit` only. */
+  /** Writes `lit` only; its duration is one pass, before any order's delay. */
   patch(at: Placed, p: Values<P>): Patch<Led, Pose>;
 }
 
-/** Declares a move, keeping its params' keys in the type `length` and `patch` see. */
+/** Declares a move, keeping its params' keys in the type `patch` sees. */
 export const move = <P extends Params>(m: Omit<Move<P>, 'kind'>): Move<P> => ({
   kind: 'move',
   ...m,

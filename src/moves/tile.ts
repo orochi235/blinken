@@ -16,7 +16,6 @@ export const tile = move({
     brick: { label: 'brick offset', min: 0, max: 1, step: 0.05, value: 0.5 },
   },
   fits: (b) => b.lines > 1,
-  length: (at, p) => Math.max(1, at.text.cols + p.gap) * p.step,
   patch(at, p) {
     const { board: b, text } = at;
     const period = text.cols + p.gap;

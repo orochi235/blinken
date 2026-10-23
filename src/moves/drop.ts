@@ -13,7 +13,6 @@ export const dropIn = move({
   about: 'The message drops in from above.',
   slot: 'enter',
   params: { ms: DROP_PARAM },
-  length: (_, p) => p.ms,
   patch: (at, p) =>
     patch<Led, Pose>(
       p.ms,
@@ -28,7 +27,6 @@ export const dropOut = move({
   about: 'The message falls out the bottom.',
   slot: 'exit',
   params: { ms: DROP_PARAM },
-  length: (_, p) => p.ms,
   patch: (at, p) =>
     patch<Led, Pose>(p.ms, (phase, led) => on(litAt(at, led, 0, Math.round(DROP * phase ** 2))), {
       writes: ['lit'],

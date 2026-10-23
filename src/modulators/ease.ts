@@ -43,7 +43,6 @@ const eased = (s: Spec): Modulator =>
     params: { ms: MS, easing: EASE, depth: depth(s.depth), sweep: SWEEP },
     writes: [s.channel],
     on: 'dots',
-    length: (_at, p) => p.ms as number,
     patch: (at, v, rank) => {
       const p = v as { ms: number; easing: string; depth: number; sweep: number };
       const inner = keys<Subject, Pose>(

@@ -98,7 +98,7 @@ describe('stageEffect', () => {
   it('holds a scroll-across for its crossing with no hold given', () => {
     const across = MOVES['scroll-across'];
     const staged = stageEffect({ name: 's', active: { move: 'scroll-across' } }, at, HEX);
-    expect(staged.ms).toBe(across.length(at, values(across)));
+    expect(staged.ms).toBe(across.patch(at, values(across)).duration);
   });
 
   it('warns when two pieces in one slot set tint', () => {

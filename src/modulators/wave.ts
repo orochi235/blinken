@@ -46,7 +46,6 @@ const swing = (s: Spec): Modulator => {
     params,
     writes: [s.channel],
     on: 'dots',
-    length: (_at, p) => cycleMs(p.rate as number),
     patch: (_at, v, rank) => {
       const p = v as { rate: number; depth: number; phase: number; shape?: string };
       const shape = (typeof s.shape === 'string' ? s.shape : p.shape) as WaveShape;

@@ -15,14 +15,14 @@ const slotted = (slot: string) => names.filter((n) => MOVES[n].slot === slot);
 function litAt(m: Move, t: number, where = at, given: Record<string, unknown> = {}) {
   const p = { ...values(m), ...given } as never;
   const patch = m.patch(where, p);
-  const phase = Math.min(1, t / m.length(where, p));
+  const phase = Math.min(1, t / patch.duration);
   return b.dots.map((d) => patch.at(phase, d, setting).lit ?? 0);
 }
 
 const shown = (left = at.left, text = at.text) =>
   b.dots.map((d) => (d.kind === 'dot' && d.row >= 0 && text.lit(d.x - left, d.row) ? 1 : 0));
 const STEP = (MOVES['scroll-across'].params.step as { value: number }).value;
-const length = (m: Move, where = at) => m.length(where, values(m));
+const length = (m: Move, where = at) => m.patch(where, values(m)).duration;
 
 describe('moves', () => {
   for (const name of slotted('enter')) {

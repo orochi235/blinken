@@ -14,7 +14,6 @@ export const chase = modulator({
   },
   writes: ['lit', 'tint'],
   on: 'cells',
-  length: (_at, p) => p.beat * 3,
   patch: (_at, p) =>
     patch<Subject, Pose>(
       p.beat * 3,

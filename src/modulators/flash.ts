@@ -21,7 +21,6 @@ export const flash = modulator({
   },
   writes: ['gain'],
   on: 'dots',
-  length: (_at, p) => p.ms,
   patch: (_at, p, rank) => {
     const window = p.to - p.from;
     return patch<Subject, Pose>(

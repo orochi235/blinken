@@ -26,7 +26,6 @@ export const reelIn = move({
     ms: { label: 'spin', min: 200, max: 3000, step: 50, value: 900, unit: 'ms' },
     glyphs: { label: 'glyphs passed', min: 1, max: 30, step: 1, value: 6 },
   },
-  length: (_, p) => p.ms,
   patch(at, p) {
     const { text } = at;
     const n = text.cols / ADVANCE;
@@ -64,7 +63,6 @@ export const rollAway = move({
   about: 'The message rolls up and away.',
   slot: 'exit',
   params: { ms: { label: 'roll time', min: 100, max: 3000, step: 50, value: 500, unit: 'ms' } },
-  length: (_, p) => p.ms,
   patch: (at, p) =>
     patch<Led, Pose>(
       p.ms,

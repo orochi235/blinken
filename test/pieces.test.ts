@@ -19,7 +19,7 @@ describe('pieces', () => {
       at,
       b.dots,
     );
-    const length = MOVES['scroll-in'].length(at, values(MOVES['scroll-in']));
+    const length = MOVES['scroll-in'].patch(at, values(MOVES['scroll-in'])).duration;
     expect(voice.duration).toBe(length + 39 * 10);
     expect(voice.stagger?.(b.dots[39] as Subject)).toBe(390);
     expect(voice.loop).toBeUndefined();

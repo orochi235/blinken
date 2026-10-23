@@ -30,7 +30,6 @@ export const unfold = move({
   about: 'Letters unfold from edge on to flat.',
   slot: 'enter',
   params: { ms: FOLD_PARAM },
-  length: (_, p) => p.ms,
   patch(at, p) {
     const draw = turned(at);
     return patch<Led, Pose>(p.ms, (phase, led) => draw(led, QUARTER * (1 - phase)), {
@@ -45,7 +44,6 @@ export const fold = move({
   about: 'Letters fold from flat to edge on and vanish.',
   slot: 'exit',
   params: { ms: FOLD_PARAM },
-  length: (_, p) => p.ms,
   patch(at, p) {
     const draw = turned(at);
     return patch<Led, Pose>(
@@ -67,7 +65,6 @@ export const tumble = move({
     ms: { label: 'length', min: 200, max: 10000, step: 100, value: 1200, unit: 'ms' },
     turns: { label: 'turns', min: 0, max: 6, step: 1, value: 2 },
   },
-  length: (_, p) => p.ms,
   patch(at, p) {
     const draw = turned(at);
     // Tumbling in the middle third only, upright either side.

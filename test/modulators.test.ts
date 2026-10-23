@@ -23,7 +23,8 @@ function poseAt(
 ): Partial<Pose> {
   const m = MODULATORS[name];
   const p = { ...values(m), ...given } as never;
-  return m.patch(at, p, rank).at((t / m.length(at, p)) % 1, s, setting);
+  const cycle = m.patch(at, p, rank);
+  return cycle.at((t / cycle.duration) % 1, s, setting);
 }
 
 describe('modulators', () => {

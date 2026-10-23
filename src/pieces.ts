@@ -60,11 +60,12 @@ export function stagePiece(
   if (move.slot !== slot) throw new Error(`bree: ${piece.move} is an ${move.slot} move`);
   const p = values(move, piece.params as never);
   const order = piece.order ?? TOGETHER;
+  const pass = move.patch(at, p) as ArcVoice<Subject, Pose>['patch'];
   const voice: ArcVoice<Subject, Pose> = {
-    patch: move.patch(at, p) as ArcVoice<Subject, Pose>['patch'],
+    patch: pass,
     subjects,
     stagger: delayOf(order, at),
-    duration: move.length(at, p) + spanOf(order, at),
+    duration: pass.duration + spanOf(order, at),
     ...(loop && { loop: true }),
   };
   const clips = at.text.cols > at.board.cols && !piece.move.startsWith('scroll-');

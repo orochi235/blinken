@@ -14,7 +14,6 @@ export const palette = modulator({
   },
   writes: ['tint'],
   on: 'dots',
-  length: (_at, p) => p.step * Math.max(1, p.colors.length),
   patch: (_at, p, rank) => {
     const tints = p.colors.map(oklab);
     const n = Math.max(1, tints.length);
@@ -44,7 +43,6 @@ export const twoColor = modulator({
   },
   writes: ['tint'],
   on: 'dots',
-  length: (_at, p) => cycleMs(p.rate),
   patch: (_at, p, rank) => {
     const a = oklab(p.colors[0] ?? 0xffffff);
     const b = oklab(p.colors[1] ?? p.colors[0] ?? 0xffffff);

@@ -10,7 +10,6 @@ export const cutOn = move({
   about: 'Dots switch on to the message at once.',
   slot: 'enter',
   params: {},
-  length: () => CUT_MS,
   patch: (at) =>
     patch<Led, Pose>(CUT_MS, (phase, led) => on(phase >= 0.5 && litAt(at, led)), {
       writes: ['lit'],
@@ -23,7 +22,6 @@ export const cutOff = move({
   about: 'Dots switch off at once.',
   slot: 'exit',
   params: {},
-  length: () => CUT_MS,
   patch: (at) =>
     patch<Led, Pose>(CUT_MS, (phase, led) => on(phase < 0.5 && litAt(at, led)), {
       writes: ['lit'],
@@ -36,6 +34,5 @@ export const stand = move({
   about: 'The message stands still.',
   slot: 'active',
   params: { ms: { label: 'length', min: 100, max: 10000, step: 100, value: 1000, unit: 'ms' } },
-  length: (_, p) => p.ms,
   patch: (at, p) => patch<Led, Pose>(p.ms, (_, led) => on(litAt(at, led)), { writes: ['lit'] }),
 });

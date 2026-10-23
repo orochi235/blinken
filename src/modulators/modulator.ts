@@ -14,13 +14,11 @@ export interface Modulator<P extends Params = Params> {
   readonly writes: readonly Channel[];
   /** What it plays on: the dots of the sign, or the three cells of the border. */
   readonly on: 'dots' | 'cells';
-  /** One cycle (or one pass) in ms. */
-  length(at: Placed, p: Values<P>): number;
-  /** `rank` gives each subject a phase shift, never a start delay, so a loop has no warm-up. */
+  /** Its duration is one cycle (or one pass). `rank` gives each subject a phase shift, never a start delay, so a loop has no warm-up. */
   patch(at: Placed, p: Values<P>, rank: (s: Subject) => number): Patch<Subject, Pose>;
 }
 
-/** Declares a modulator, keeping its params' keys in the type `length` and `patch` see. */
+/** Declares a modulator, keeping its params' keys in the type `patch` sees. */
 export const modulator = <P extends Params>(m: Omit<Modulator<P>, 'kind'>): Modulator<P> => ({
   kind: 'modulator',
   ...m,
