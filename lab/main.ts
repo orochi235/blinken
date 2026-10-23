@@ -1,6 +1,7 @@
 import './app.css';
 import { mount } from '@msb235/blits-panel';
 import { createMarquee, EFFECTS, LAYERS, type LayerName, type Step } from '@/index.js';
+import { demo } from './demo.js';
 
 function el<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -15,10 +16,6 @@ const cost = el<HTMLOutputElement>('cost');
 const colsIn = el<HTMLInputElement>('cols');
 const rowsIn = el<HTMLInputElement>('rows');
 const sizeForm = el<HTMLFormElement>('size');
-
-const AMBER = 0xff9a2e;
-const RED = 0xff4030;
-const GREEN = 0x6dff5a;
 
 const params = new URLSearchParams(location.search);
 if (import.meta.env.DEV && !params.has('nopanel')) mount();
@@ -35,19 +32,7 @@ const only = params.get('show');
 const program = (): Step[] =>
   only !== null && Object.hasOwn(EFFECTS, only)
     ? [{ effect: only, text: message.value || ' ', hex: userHex() }]
-    : [
-        { effect: 'hold', text: 'BLITS', hex: AMBER },
-        { effect: 'scroll', text: message.value || ' ', hex: userHex() },
-        { effect: 'flip', text: 'NOW SHOWING', hex: RED },
-        { effect: 'tile', text: message.value || ' ', hex: userHex() },
-        { effect: 'roll', text: 'JACKPOT', hex: GREEN },
-        {
-          effect: 'scroll',
-          text: 'CONCURRENT EFFECTS, FOLDED INTO ONE VALUE PER DOT PER FRAME',
-          hex: GREEN,
-        },
-        { effect: 'fall', text: 'TONIGHT!', hex: AMBER },
-      ];
+    : demo(message.value || ' ', userHex());
 
 // Each layer's checkbox shares its name.
 const boxes = (Object.keys(LAYERS) as LayerName[]).map((name) => ({

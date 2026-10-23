@@ -1,23 +1,28 @@
 import {
-  board,
+  type Board,
   EFFECTS,
   type EffectSpec,
-  type NumberParam,
   piecesOf,
   place,
   rasterize,
-  SIZE,
   type Slot,
   stageEffect,
 } from '@/index.js';
 import { h, numberControl, options, orderControls } from './controls.js';
 import { pieceCard, pieceOf, pieceSelect } from './piece.js';
-import { addPiece, type ComposeState, freeName, removePiece, setPiece } from './state.js';
+import {
+  addPiece,
+  BLEND,
+  type ComposeState,
+  deleteEffect,
+  FALLBACK,
+  freeName,
+  HOLD,
+  removePiece,
+  setPiece,
+} from './state.js';
 
 const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
-const HOLD: NumberParam = { label: 'hold', min: 0, max: 12000, step: 50, value: 0, unit: 'ms' };
-const BLEND: NumberParam = { label: 'blend', min: 0, max: 1000, step: 10, value: 0, unit: 'ms' };
-const PREVIEW = board(SIZE.cols, SIZE.rows);
 
 /** The slot a stage warning is about: one it names, else one holding the move it names. */
 function slotOf(spec: EffectSpec, warning: string): Slot | undefined {
@@ -29,9 +34,15 @@ function slotOf(spec: EffectSpec, warning: string): Slot | undefined {
 
 /**
  * The effect designer: pick an effect, or start one, and edit its pieces, hold and blend. Every
- * edit lands in `state.effects`, then `onChange` runs.
+ * edit lands in `state.effects`, then `onChange` runs. Its warnings are for `board`. `render`
+ * redraws it after something else changed what is open.
  */
-export function mountDesigner(root: HTMLElement, state: ComposeState, onChange: () => void): void {
+export function mountDesigner(
+  root: HTMLElement,
+  state: ComposeState,
+  board: Board,
+  onChange: () => void,
+): { render(): void } {
   const name = () => state.editing.effect;
   const spec = () => {
     const n = name();
@@ -47,7 +58,7 @@ export function mountDesigner(root: HTMLElement, state: ComposeState, onChange: 
     const text = step?.text ?? ' ';
     let warnings: readonly string[];
     try {
-      const at = { ...place(PREVIEW, rasterize(text)), label: text };
+      const at = { ...place(board, rasterize(text)), label: text };
       warnings = stageEffect(s, at, step?.hex ?? 0xffffff).warnings;
     } catch (e) {
       warnings = [(e as Error).message];
@@ -198,10 +209,20 @@ export function mountDesigner(root: HTMLElement, state: ComposeState, onChange: 
       );
       return;
     }
+    const remove = h('button', 'small', 'delete');
+    remove.type = 'button';
+    remove.title = `delete this effect; steps playing it play ${FALLBACK} instead`;
+    remove.addEventListener('click', () => {
+      deleteEffect(state, n);
+      render();
+      onChange();
+    });
+    head.append(remove);
     if (s.about) head.append(h('span', 'about', s.about));
     root.replaceChildren(head, whole(s, n), ...SLOTS.map((slot) => slotBox(s, slot)));
     refreshWarnings();
   };
 
   render();
+  return { render };
 }

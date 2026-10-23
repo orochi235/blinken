@@ -7,6 +7,7 @@ import type {
   Param,
   ParamValue,
 } from '@/index.js';
+import { LAG } from './state.js';
 
 /** An element of `tag` with `cls`, holding `children`. */
 export function h<K extends keyof HTMLElementTagNameMap>(
@@ -35,7 +36,8 @@ const decimals = (step: number) => {
   return s.includes('.') ? s.length - s.indexOf('.') - 1 : 0;
 };
 
-const hexOf = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
+/** A 0xRRGGBB number as a color input's `#rrggbb`. */
+export const hexOf = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 
 /** A control's row: its name, then the input, then a readout or the input's extras. */
 function row(name: string, unit: string | undefined, ...rest: Node[]): HTMLElement {
@@ -139,8 +141,6 @@ const BY: Record<OrderBy, true> = {
   random: true,
 };
 const ORDERS = Object.keys(BY) as OrderBy[];
-
-const LAG: NumberParam = { label: 'lag', min: 0, max: 400, step: 1, value: 0, unit: 'ms' };
 
 /**
  * An order's controls: which order, and with `lag` its delay per rank. With `none`, a first

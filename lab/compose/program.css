@@ -1,0 +1,58 @@
+.program {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #3a2b25;
+  border-left: 3px solid #3a2b25;
+  border-radius: 4px;
+  background: #14100f;
+}
+
+.step.on {
+  border-left-color: #fa8072;
+}
+
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.step-head .step-text {
+  flex: 1;
+  text-transform: uppercase;
+}
+
+.step-head input[type="color"] {
+  flex: none;
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #5a4339;
+  background: none;
+}
+
+.step-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.step-own {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-end: auto;
+  font-size: 12px;
+}
+
+.pane-head .step-own {
+  margin-inline-end: 0;
+}

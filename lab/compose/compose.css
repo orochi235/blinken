@@ -27,6 +27,24 @@
   background: #1a1412;
 }
 
+.side {
+  flex: 0 1 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Narrow screens stack the panes, each scrolling in its share of the height. */
+@media (max-width: 760px) {
+  .panes {
+    flex-direction: column;
+  }
+
+  .side {
+    flex: 1;
+  }
+}
+
 .designer {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -39,15 +57,16 @@
   grid-column: 1 / -1;
 }
 
-.designer-head {
+.designer-head,
+.pane-head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 8px 12px;
 }
 
-.designer h2,
-.designer h3 {
+.pane h2,
+.pane h3 {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
@@ -56,7 +75,7 @@
   color: #fa8072;
 }
 
-.designer .about,
+.pane .about,
 .designer .hint {
   color: #b3a5a1;
 }
@@ -110,6 +129,10 @@
   gap: 8px;
 }
 
+.ctl.dim {
+  opacity: 0.45;
+}
+
 .ctl.off {
   display: none;
 }
@@ -142,8 +165,9 @@
   background: none;
 }
 
-.designer select,
-.designer input[type="text"] {
+.pane select,
+.pane input[type="text"],
+.pane textarea {
   min-width: 0;
   padding: 3px 6px;
   border: 1px solid #5a4339;
@@ -153,7 +177,7 @@
   font: inherit;
 }
 
-.designer button.small {
+.pane button.small {
   padding: 2px 8px;
   border: 1px solid #5a4339;
   border-radius: 4px;
@@ -164,7 +188,7 @@
   cursor: pointer;
 }
 
-.designer button.small:disabled {
+.pane button.small:disabled {
   opacity: 0.4;
   cursor: default;
 }
@@ -178,4 +202,30 @@
 .ctl-buttons {
   display: flex;
   gap: 4px;
+}
+
+.share {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.share #link {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.share #code {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font:
+    12px ui-monospace,
+    Menlo,
+    monospace;
+}
+
+.share #code.shown {
+  display: block;
 }
