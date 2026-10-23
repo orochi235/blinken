@@ -34,6 +34,23 @@ export function signColumns(n: number): SignColumns {
   };
 }
 
+const CHANNELS = Object.keys(signColumns(0)) as (keyof SignColumns)[];
+
+/**
+ * Copies each border bulb's cell's pose from `cells`, the mix's columns for `b.cells`, into `cols`,
+ * where the bulbs follow the dots as `createSign` was given them.
+ */
+export function paintBulbs(b: Board, cells: SignColumns, cols: SignColumns): void {
+  const after = b.dots.length;
+  for (let j = 0; j < b.bulbs.length; j++) {
+    const c = b.cellOf[j] as number;
+    for (const ch of CHANNELS) {
+      const n = ch === 'tint' ? 4 : 1;
+      cols[ch].set(cells[ch].subarray(c * n, c * n + n), (after + j) * n);
+    }
+  }
+}
+
 export interface Sign {
   /** Draws one frame from the mix's columns, `dt` ms after the last. */
   render(cols: SignColumns, fallback: number, dt: number): void;

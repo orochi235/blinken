@@ -63,10 +63,27 @@ are in `LAYERS`.
 
 ## On your own mix
 
-`board(cols, rows)` lays out the dots and the border, `KIT` is the pose they fold to (`lit` by
-`max`, `tint` by color), and `play(mix, board, steps, effects?)` cues one pass of a program on an
-owner of its own. `cueLayer` cues a layer looping. `createSign` draws a board from the mix's pulled
-columns, or pull them yourself and draw them however you like.
+`board(cols, rows)` lays out the dots and the border. `KIT` is the pose they fold to: `lit` by
+`max`, `gain` by `mul`, `tint` by color, `hue` as an angle that adds and wraps, and `chroma` and
+`glow` by `mul`. `play(mix, board, steps, effects?)` cues one pass of a program on an owner of its
+own, and `cueLayer` cues a layer looping. To draw it, pull the mix's columns every frame and hand
+them to `createSign`; the border's bulbs take their cells' poses through `paintBulbs`:
+
+```ts
+const leds = [...b.dots, ...b.bulbs];
+const cols = signColumns(leds.length);
+const cells = signColumns(b.cells.length);
+const sign = createSign(canvas, b, leds);
+
+// every frame:
+m.sync(now);
+m.pull(b.dots, cols);
+m.pull(b.cells, cells);
+paintBulbs(b, cells, cols);
+sign.render(cols, 0xff9a2e, dt);
+```
+
+Or pull the columns and draw them however you like.
 
 ## Development
 

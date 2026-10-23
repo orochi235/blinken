@@ -1,7 +1,7 @@
 import { type Handle, level, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
 import { LAYERS, type LayerSpec } from './builtins.js';
-import { createSign, type SignColumns, signColumns } from './draw.js';
+import { createSign, paintBulbs, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
 import type { ParamValue } from './params.js';
 import { cueLayer, play, type Step } from './program.js';
@@ -77,18 +77,6 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const leds: readonly Led[] = [...b.dots, ...b.bulbs];
   const cols = signColumns(leds.length);
   const cells = signColumns(b.cells.length);
-  const bulbsAt = b.dots.length;
-  const CHANNELS = Object.keys(cols) as (keyof SignColumns)[];
-  /** Paints each bulb with its cell's pose, after the dots in the columns the sign reads. */
-  const paintBulbs = () => {
-    for (let j = 0; j < b.bulbs.length; j++) {
-      const c = b.cellOf[j] as number;
-      for (const ch of CHANNELS) {
-        const n = ch === 'tint' ? 4 : 1;
-        cols[ch].set(cells[ch].subarray(c * n, c * n + n), (bulbsAt + j) * n);
-      }
-    }
-  };
   const drawing = opts.draw ?? true;
   const sign = drawing ? createSign(canvas, b, leds) : null;
   let color = opts.color ?? AMBER;
@@ -151,7 +139,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     m.sync(now);
     m.pull(b.dots, cols);
     m.pull(b.cells, cells);
-    paintBulbs();
+    paintBulbs(b, cells, cols);
     const t1 = performance.now();
     sign?.render(cols, color, gap);
     const t2 = performance.now();
