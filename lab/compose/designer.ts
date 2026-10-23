@@ -5,6 +5,7 @@ import {
   piecesOf,
   place,
   rasterize,
+  SLOTS,
   type Slot,
   stageEffect,
 } from '@/index.js';
@@ -21,8 +22,6 @@ import {
   removePiece,
   setPiece,
 } from './state.js';
-
-const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
 
 /** The slot a stage warning is about: one it names, else one holding the move it names. */
 function slotOf(spec: EffectSpec, warning: string): Slot | undefined {

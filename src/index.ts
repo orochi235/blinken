@@ -26,10 +26,11 @@ export {
   type ModulatorName,
   modulator,
 } from './modulators/index.js';
-export { MOVES, type Move, type MoveName, move, rowOf, type Slot } from './moves/index.js';
+export { MOVES, type Move, type MoveName, move, rowOf, SLOTS, type Slot } from './moves/index.js';
 export {
   delayOf,
   groupsOf,
+  ORDERS,
   type Order,
   type OrderBy,
   type Placed,

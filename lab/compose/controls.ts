@@ -1,11 +1,12 @@
-import type {
-  ChoiceParam,
-  ColorsParam,
-  NumberParam,
-  Order,
-  OrderBy,
-  Param,
-  ParamValue,
+import {
+  type ChoiceParam,
+  type ColorsParam,
+  type NumberParam,
+  ORDERS,
+  type Order,
+  type OrderBy,
+  type Param,
+  type ParamValue,
 } from '@/index.js';
 import { LAG } from './state.js';
 
@@ -129,18 +130,6 @@ export function controlFor(
   el.dataset.key = key;
   return el;
 }
-
-// A record, so a new OrderBy fails to compile until it is listed here.
-const BY: Record<OrderBy, true> = {
-  together: true,
-  column: true,
-  'column-reverse': true,
-  center: true,
-  row: true,
-  letter: true,
-  random: true,
-};
-const ORDERS = Object.keys(BY) as OrderBy[];
 
 /**
  * An order's controls: which order, and with `lag` its delay per rank. With `none`, a first

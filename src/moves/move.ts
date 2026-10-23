@@ -5,6 +5,8 @@ import type { Params, Values } from '../params.js';
 
 /** Which third of an effect a move plays in. */
 export type Slot = 'enter' | 'active' | 'exit';
+/** The slots in the order they play. */
+export const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
 
 /** One thing the message's dots do over a stretch of time, written for one slot of an effect. */
 export interface Move<P extends Params = Params> {

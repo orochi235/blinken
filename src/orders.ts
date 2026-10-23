@@ -11,6 +11,19 @@ export type OrderBy =
   | 'letter'
   | 'random';
 
+// A record, so a new OrderBy fails to compile until it is listed here.
+const BY: Record<OrderBy, true> = {
+  together: true,
+  column: true,
+  'column-reverse': true,
+  center: true,
+  row: true,
+  letter: true,
+  random: true,
+};
+/** Every order, by name. */
+export const ORDERS = Object.keys(BY) as readonly OrderBy[];
+
 /** When, or at what phase, each dot of the sign does something: a rank per subject, spread by `lag`. */
 export interface Order {
   readonly by: OrderBy;

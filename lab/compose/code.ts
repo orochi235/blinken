@@ -6,11 +6,10 @@ import {
   MOVES,
   type Params,
   type Piece,
+  SLOTS,
   type Slot,
 } from '@/index.js';
 import type { ComposeState } from './state.js';
-
-const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
 
 /** A number written as a 0xRRGGBB literal. */
 class Hex {

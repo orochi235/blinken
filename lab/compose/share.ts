@@ -6,11 +6,13 @@ import {
   MODULATORS,
   MOVES,
   type NumberParam,
+  ORDERS,
   type Order,
   type OrderBy,
   type Params,
   type ParamValue,
   type Piece,
+  SLOTS,
   type Slot,
   type Step,
 } from '@/index.js';
@@ -22,16 +24,6 @@ export const DRAFT = 'bree-compose-draft';
 /** Where the draft a link replaced is kept, so opening a link never loses one. */
 export const PREVIOUS = 'bree-compose-draft-previous';
 
-const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
-const ORDERS: readonly OrderBy[] = [
-  'together',
-  'column',
-  'column-reverse',
-  'center',
-  'row',
-  'letter',
-  'random',
-];
 const HEX: NumberParam = { label: 'color', min: 0, max: 0xffffff, step: 1, value: 0 };
 
 /** A fresh composition: no designed effects, no layers on, and the demo page's program. */

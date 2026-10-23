@@ -1,7 +1,7 @@
 import { type ArcSpec, type ArcVoice, type Handle, type Mix, oklab, patch } from '@msb235/blits';
 import type { Pose, Subject } from './board.js';
 import { MODULATORS } from './modulators/index.js';
-import type { Slot } from './moves/index.js';
+import { SLOTS, type Slot } from './moves/index.js';
 import { groupsOf, type Order, type Placed } from './orders.js';
 import { type Piece, piecesOf, type SlotPieces, type StagedPiece, stagePiece } from './pieces.js';
 
@@ -28,7 +28,6 @@ export interface StagedEffect {
   readonly warnings: readonly string[];
 }
 
-const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
 /** A modulator setting `tint` outweighs the step color rather than averaging with it evenly. */
 const TINT_WEIGHT = 3;
 
