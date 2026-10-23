@@ -69,8 +69,12 @@ piece says which planes it writes. The sign's kit grows from two channels to the
 | color | `tint` | color average by weight | its color, set outright |
 | color | `hue` (new) | `sum`, rest 0, wrapping | a turn of the hue, relative to `tint` |
 | color | `chroma` (new) | `mul`, rest 1 | how saturated, relative to `tint` |
+| glow | `glow` (new) | `mul`, rest 1 | how far a dot's light blooms around it |
 
-A dot shows `tint`, turned by `hue` and saturated by `chroma`, at `lit × gain`. Pieces on
+A dot shows `tint`, turned by `hue` and saturated by `chroma`, at `lit × gain`, with a halo
+scaled by `glow`. Today the renderer blurs every lit dot alike; a per-dot `glow` means drawing
+each dot's halo into the blurred layer at its own strength. Dot size stays fixed (Mike,
+2026-10-22). Pieces on
 different planes layer without colliding: `stand` with `flash` in `active` gives today's hold. Two
 pieces on the same channel fold by its rule; the staging function warns where two pieces in one
 slot set `tint` outright, since averaging two colors is rarely what was meant.
@@ -92,6 +96,7 @@ slot set `tint` outright, since averaging two colors is rarely what was meant.
 | palette step | `tint` | stepped through a list of colors | together, by letter, random |
 | two-color pulse | `tint` | sine between two colors | any |
 | fade to gray, flare | `chroma` | easing | together |
+| bloom pulse, flare | `glow` | sine / easing | together, or by letter |
 | chase (today's layer) | `gain` | square | by border cell |
 | sparkle (today's layer) | `gain` | random flicker | random |
 
