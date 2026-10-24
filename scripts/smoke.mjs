@@ -17,11 +17,11 @@ if (kept) mkdirSync(kept, { recursive: true });
 const shots = kept ?? mkdtempSync(join(tmpdir(), 'marquee-smoke-'));
 
 const widths = [
-  { name: 'desktop', width: 1280, height: 800, query: '' },
-  { name: 'phone', width: 390, height: 844, query: '' },
-  { name: 'stretched', width: 1280, height: 800, query: '?cols=320&rows=63' },
-  { name: 'compose', width: 1280, height: 800, query: 'compose.html' },
-  { name: 'compose-phone', width: 390, height: 844, query: 'compose.html' },
+  { name: 'desktop', width: 1280, height: 800, query: 'play' },
+  { name: 'phone', width: 390, height: 844, query: 'play' },
+  { name: 'stretched', width: 1280, height: 800, query: 'play?cols=320&rows=63' },
+  { name: 'compose', width: 1280, height: 800, query: 'compose' },
+  { name: 'compose-phone', width: 390, height: 844, query: 'compose' },
 ];
 const browser = await chromium.launch({ headless: true });
 let failed = 0;

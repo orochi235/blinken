@@ -148,7 +148,7 @@ layers, each with a weight and its settings; the built-in layers are `sparkle`, 
 
 ## The compose lab
 
-A second lab page, `lab/compose.html`, beside the current demo page, which stays as it is.
+The lab serves two pages: the composer at `/compose` (`lab/compose.html`) and the player at `/play` (`lab/play.html`); `/` sends a visitor on to the player.
 - **Effect designer.** Pick an effect to edit, or start a new one. Each slot (enter, active,
   exit) lists its pieces. A move shows its order, lag and settings; a modulator shows its channel,
   curve, depth and spread. All of the controls are built from the pieces' `params` data. Add a piece to layer it. Hold and blend are

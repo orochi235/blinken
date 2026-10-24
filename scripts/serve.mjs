@@ -12,6 +12,7 @@ export async function serve() {
   const server = createServer((req, res) => {
     let path = join(root, decodeURIComponent(new URL(req.url, 'http://x').pathname));
     if (existsSync(path) && statSync(path).isDirectory()) path = join(path, 'index.html');
+    else if (!existsSync(path) && existsSync(`${path}.html`)) path = `${path}.html`;
     if (!existsSync(path)) {
       res.writeHead(404).end();
       return;

@@ -14,7 +14,9 @@ export default defineConfig({
   build: {
     outDir: '../dist-lab',
     emptyOutDir: true,
-    rollupOptions: { input: { main: page('index.html'), compose: page('compose.html') } },
+    rollupOptions: {
+      input: { main: page('index.html'), play: page('play.html'), compose: page('compose.html') },
+    },
   },
   server: {
     host: '::',
