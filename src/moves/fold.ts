@@ -1,7 +1,7 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
-import { move, rowOf } from './move.js';
+import { move } from './move.js';
 
 const QUARTER = Math.PI / 2;
 const FOLD_PARAM = {
@@ -22,7 +22,7 @@ function turned(at: Placed) {
     Array.from({ length: text.rows }, (_, y) => text.lit(x, y)).some(Boolean),
   );
   return (led: Led, angle: number) => {
-    const row = rowOf(led);
+    const row = at.rowOf(led);
     const x = led.x - at.left;
     if (row < 0) return { lit: 0 };
     const s = Math.cos(angle);

@@ -58,28 +58,31 @@ CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?-:'&*#$"
 entries = []
 for f in faces:
     slug, about, credit = META[f["name"]]
-    w = f["width"]
-    hexes = []
+    packed = {}
     for ch in CHARS:
-        rows = f["glyphs"].get(ch) or ["." * w] * 7
-        gw = len(rows[0])
-        left = (w - gw) // 2
-        rows = ["." * left + r + "." * (w - gw - left) for r in rows]
-        for x in range(w):
-            hexes.append(f"{sum(1 << y for y in range(7) if rows[y][x] == '#'):02x}")
-    entries.append((slug, about, credit, w, "".join(hexes)))
+        dots = {tuple(d) for d in f["lit"].get(ch, [])}
+        if not dots:
+            continue
+        xs, ys = [x for x, _ in dots], [y for _, y in dots]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        w, h = x1 - x0 + 1, y1 - y0 + 1
+        assert w <= 15 and h <= 15 and -8 <= y0 <= 7, (slug, ch, w, h, y0)
+        digits = (h + 3) // 4
+        cols = "".join(
+            f"{sum(1 << k for k in range(h) if (x, y1 - k) in dots):0{digits}x}" for x in range(x0, x1 + 1)
+        )
+        packed[ch] = f"{w:x}{h:x}{y0 + 8:x}{cols}"
+    entries.append((slug, about, credit, f["cap"], packed))
 
 idx = [
-    "import { hexFace } from '../table.js';",
-    "",
-    "/** The characters every face below draws, in the order its data packs them. */",
-    f"const CHARS = {json.dumps(CHARS)};",
+    "import { packedFace } from '../table.js';",
     "",
     "/** Faces converted from published pixel fonts; CREDITS.md names each one's source and license. */",
     "export const IMPORTED = {",
 ]
-for slug, about, _, w, data in entries:
-    idx.append(f"  '{slug}': hexFace('{slug}', {json.dumps(about)}, CHARS, {w}, '{data}'),")
+for slug, about, _, cap, packed in entries:
+    glyphs = ", ".join(f"{json.dumps(ch) if not ch.isalnum() else repr(ch)}: '{v}'" for ch, v in packed.items())
+    idx.append(f"  '{slug}': packedFace('{slug}', {json.dumps(about)}, {cap}, {{ {glyphs} }}),")
 idx.append("};")
 open(f"{OUT}/index.ts", "w").write("\n".join(idx) + "\n")
 for slug, *_ in entries:

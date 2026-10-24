@@ -2,7 +2,7 @@ import { type ArcSpec, type ArcVoice, type Handle, type Mix, oklab, patch } from
 import type { Pose, Subject } from './board.js';
 import { MODULATORS } from './modulators/index.js';
 import { SLOTS, type Slot } from './moves/index.js';
-import { groupsOf, type Order, type Placed } from './orders.js';
+import { groupsOf, type Order, type Placed, rowsToShow } from './orders.js';
 import {
   type Piece,
   piecesOf,
@@ -71,10 +71,13 @@ export function stageEffect(
   // Every piece staged once on the first group gives the warnings and the part lengths.
   const first = stageAll(groups[0] ?? [], () => true);
   const warnings: Warning[] = [];
-  if (at.text.rows > at.board.line)
+  if (at.cut.length > 0) {
+    const rows = rowsToShow(at.board, at.text);
     warnings.push({
-      text: `the ${at.text.face.name} face is ${at.text.rows} rows tall, taller than the sign's ${at.board.line}-row lines, so the scene is skipped`,
+      text: `${at.label ?? 'the message'} in the ${at.text.face.name} face runs off a ${at.board.rows}-row sign; a sign ${rows} rows tall shows all of it`,
+      rows,
     });
+  }
   SLOTS.forEach((slot, s) => {
     const pieces = first[s] ?? [];
     pieces.forEach((p, i) => {

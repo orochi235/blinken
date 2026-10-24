@@ -19,8 +19,10 @@ function litAt(m: Move, t: number, where = at, given: Record<string, unknown> = 
   return b.dots.map((d) => patch.at(phase, d, setting).lit ?? 0);
 }
 
-const shown = (left = at.left, text = at.text) =>
-  b.dots.map((d) => (d.kind === 'dot' && d.row >= 0 && text.lit(d.x - left, d.row) ? 1 : 0));
+const shown = (left = at.left, text = at.text) => {
+  const rowOf = place(b, text).rowOf;
+  return b.dots.map((d) => (rowOf(d) >= 0 && text.lit(d.x - left, rowOf(d)) ? 1 : 0));
+};
 const STEP = (MOVES['scroll-across'].params.step as { value: number }).value;
 const length = (m: Move, where = at) => m.patch(where, values(m)).duration;
 
@@ -114,7 +116,7 @@ describe('moves', () => {
     const b7 = board(80, 7);
     const at = place(b7, rasterize('HI'));
     const tiled = MOVES.tile.patch(at, values(MOVES.tile));
-    expect(b7.dots.some((d) => tiled.at(0, d).lit === 1)).toBe(true);
+    expect(b7.dots.some((d) => tiled.at(0, d, setting).lit === 1)).toBe(true);
   });
 
   it('every move stages an empty message without throwing', () => {

@@ -23,7 +23,7 @@ const reshape = (next: Scene[], keep?: Scene) =>
   );
 
 /** The program: its scenes in order, and the picked one's editor. */
-export function ProgramPanel() {
+export function ProgramPanel({ setRows }: { setRows: (rows: number) => void }) {
   const state = useCompose();
   const [solo, setSolo] = useState(false);
   const picked = pickedOf(state);
@@ -144,7 +144,7 @@ export function ProgramPanel() {
           onClick={() => remove(picked)}
         />
       </div>
-      <SceneEditor at={picked} />
+      <SceneEditor at={picked} setRows={setRows} />
     </section>
   );
 }

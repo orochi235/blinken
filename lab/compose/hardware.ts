@@ -43,7 +43,7 @@ const GROUPS = {
       step: 1,
       value: SIZE.rows,
       about:
-        'How many dots down the sign is. Every 8 rows fit another line of the same message; below 7 the message shows its top.',
+        'How many dots down the sign is. Each line of the message takes its letters\u2019 height and a dot between, so a taller sign stacks more lines; one too short shows the top of the letters.',
     },
   },
   fade: {

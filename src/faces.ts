@@ -10,8 +10,14 @@ import { tableFace } from './glyphs/table.js';
 export interface Face {
   readonly name: string;
   readonly about?: string;
-  /** How many dots tall every glyph is. */
+  /** How many dots tall every glyph is, ghost rows included. */
   readonly rows: number;
+  /**
+   * Ghost rows: glyph rows above and below the body, the letters' own height that lines are spaced
+   * by. They draw into the gap between lines or the sign's margin. Default 0.
+   */
+  readonly above?: number;
+  readonly below?: number;
   /** How many dots wide its widest glyph is; a fixed-pitch letter takes this and a blank. */
   readonly width: number;
   glyph(ch: string): readonly string[] | undefined;

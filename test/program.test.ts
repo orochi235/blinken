@@ -3,14 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { board, KIT, type Pose, type Subject } from '@/board.js';
 import { EFFECTS } from '@/builtins.js';
 import { type EffectSpec, stageEffect } from '@/effects.js';
-import type { Face } from '@/faces.js';
 import { rasterize } from '@/font.js';
 import { place } from '@/orders.js';
 import { play, type Scene } from '@/program.js';
 
 const b = board(80, 7);
-/** A face taller than the board's lines, so a scene in it never fits. */
-const tall: Face = { name: 'tall', rows: 9, width: 5, glyph: () => Array(9).fill('#####') };
 const msOf = (scene: Scene) =>
   stageEffect(
     typeof scene.effect === 'string' ? EFFECTS[scene.effect as 'hold'] : scene.effect,
@@ -88,18 +85,9 @@ describe('play', () => {
     expect(done).toBe(true);
   });
 
-  it('skips a scene that does not fit the board', () => {
+  it('resolves done after a sync when no scene plays', async () => {
     const m = fresh();
-    const scene: Scene = { text: 'I', hex: 0xff9a2e, effect: LEFT };
-    play(m, b, [scene, { text: 'I', hex: 0, effect: 'hold', face: tall }, scene]);
-    const starts = m.marks(0, 100_000).filter((k) => k.mark === 'start' && k.name === 'left I');
-    expect(new Set(starts.map((k) => k.timestamp))).toEqual(new Set([0, msOf(scene)]));
-    expect(sceneNames(m).some((n) => n?.startsWith('hold'))).toBe(false);
-  });
-
-  it('resolves done after a sync when no scene fits', async () => {
-    const m = fresh();
-    const program = play(m, b, [{ text: 'I', hex: 0, effect: 'hold', face: tall }]);
+    const program = play(m, b, [{ text: 'I', hex: 0, effect: EMPTY }]);
     let done = false;
     void program.done.then(() => {
       done = true;

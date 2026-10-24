@@ -3,6 +3,7 @@
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
   "javascript": { "formatter": { "quoteStyle": "single" } },
   "linter": { "enabled": true, "rules": { "preset": "recommended" } },
+  "overrides": [{ "includes": ["src/glyphs/fonts/index.ts"], "formatter": { "enabled": false } }],
   "files": {
     "includes": [
       "**",

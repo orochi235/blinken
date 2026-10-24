@@ -30,8 +30,6 @@ export type Led =
       readonly kind: 'dot';
       readonly x: number;
       readonly y: number;
-      /** The row of the text this dot shows, or -1 between lines. */
-      readonly row: number;
     }
   | { readonly kind: 'bulb'; readonly i: number; readonly x: number; readonly y: number };
 
@@ -48,10 +46,6 @@ export type Subject = Led | Cell;
 export interface Board {
   readonly cols: number;
   readonly rows: number;
-  /** How many lines of text fit, each showing the same message. */
-  readonly lines: number;
-  /** How many rows each line of text has; a taller face does not fit. */
-  readonly line: number;
   readonly dots: readonly Led[];
   readonly bulbs: readonly Led[];
   readonly cells: readonly Cell[];
@@ -62,28 +56,18 @@ export interface Board {
 /** The 80 × 7 of a shopfront sign. */
 export const SIZE = { cols: 80, rows: ROWS } as const;
 
-/**
- * A sign of any size. Past one line of text it stacks lines a dot apart, centered, every line
- * showing the same message; below one line it shows the top of the text.
- */
+/** A sign of any size; where its text stands is up to each placement (`place`). */
 export function board(cols: number, rows: number): Board {
-  const pitch = ROWS + 1;
-  const lines = Math.max(1, Math.floor((rows + 1) / pitch));
-  const top = Math.max(0, Math.floor((rows - (lines * pitch - 1)) / 2));
-  const rowOf = (y: number) => {
-    const k = y - top;
-    if (k < 0 || k >= lines * pitch) return -1;
-    return k % pitch < ROWS ? k % pitch : -1;
-  };
-  const dots: Led[] = Array.from({ length: cols * rows }, (_, k) => {
-    const y = Math.floor(k / cols);
-    return { kind: 'dot', x: k % cols, y, row: rowOf(y) };
-  });
+  const dots: Led[] = Array.from({ length: cols * rows }, (_, k) => ({
+    kind: 'dot',
+    x: k % cols,
+    y: Math.floor(k / cols),
+  }));
   const at = border(cols + 2, rows + 2);
   const bulbs: Led[] = at.map(([x, y], i) => ({ kind: 'bulb', i, x, y }));
   const cells: Cell[] = [0, 1, 2].map((i) => ({ kind: 'cell', i }));
   const cellOf = Uint8Array.from(bulbs, (_, i) => i % 3);
-  return { cols, rows, lines, line: ROWS, dots, bulbs, cells, cellOf };
+  return { cols, rows, dots, bulbs, cells, cellOf };
 }
 
 /**

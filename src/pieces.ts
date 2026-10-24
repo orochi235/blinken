@@ -29,6 +29,8 @@ export interface Warning {
   /** The piece's index in its slot. */
   readonly piece?: number;
   readonly text: string;
+  /** For dots the sign cuts off: how many rows a sign needs to show all of them. */
+  readonly rows?: number;
 }
 
 /** A piece as a voice of an arc, with what it writes and what to warn about. */

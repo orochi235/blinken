@@ -2,7 +2,7 @@ import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { Values } from '../params.js';
-import { move, rowOf } from './move.js';
+import { move } from './move.js';
 
 const PARAMS = {
   direction: {
@@ -43,7 +43,7 @@ function slide(at: Placed, p: Scroll, from: number, to: number) {
     crossing(p, from, to),
     (phase, led) => {
       const moved = Math.min(steps, Math.floor(phase * steps));
-      const row = rowOf(led);
+      const row = at.rowOf(led);
       return { lit: row >= 0 && at.text.lit(led.x - (from + sign * moved), row) ? 1 : 0 };
     },
     { writes: ['lit'] },

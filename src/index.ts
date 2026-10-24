@@ -54,6 +54,7 @@ export {
   place,
   placeText,
   rankOf,
+  rowsToShow,
 } from './orders.js';
 export {
   type ChoiceParam,

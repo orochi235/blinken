@@ -1,4 +1,4 @@
-import { type Board, type Led, leftOf, type Subject } from './board.js';
+import { type Board, board as boardOf, type Led, leftOf, type Subject } from './board.js';
 import { type Bitmap, type Look, rasterize } from './font.js';
 import { hash } from './hash.js';
 
@@ -38,16 +38,58 @@ export interface Placed {
   readonly board: Board;
   readonly text: Bitmap;
   readonly left: number;
+  /** How many lines of the message the board stacks, each showing the same text. */
+  readonly lines: number;
+  /** The row of the text a dot shows, or -1 for one no line reaches, or a bulb. */
+  rowOf(led: Led): number;
+  /** Rows of the text with a lit dot that no dot of the board shows. */
+  readonly cut: readonly number[];
   /** The message as typed, for warnings. */
   readonly label?: string;
 }
 
-/** The message standing centered on the board. */
-export const place = (board: Board, text: Bitmap): Placed => ({
-  board,
-  text,
-  left: leftOf(board, text),
-});
+/**
+ * The message standing centered on the board, its lines a dot apart by its letters' body height
+ * and as many as fit, each showing the same text. Ghost rows reach into the gap between lines or
+ * the board's margin; what runs past the board's edge is cut, and named in `cut`. A board shorter
+ * than one line shows the top of it.
+ */
+export function place(board: Board, text: Bitmap): Placed {
+  const body = text.rows - text.above - text.below;
+  const pitch = body + 1;
+  const lines = Math.max(1, Math.floor((board.rows + 1) / pitch));
+  const top = Math.max(0, Math.floor((board.rows - (lines * pitch - 1)) / 2));
+  const rowAt = (y: number) => {
+    const n = Math.min(lines - 1, Math.max(0, Math.floor((y - top) / pitch)));
+    for (const k of [n, n + 1, n - 1]) {
+      if (k < 0 || k >= lines) continue;
+      const r = y - (top + k * pitch) + text.above;
+      if (r >= 0 && r < text.rows) return r;
+    }
+    return -1;
+  };
+  const shown = new Set(Array.from({ length: board.rows }, (_, y) => rowAt(y)));
+  const cut = Array.from({ length: text.rows }, (_, r) => r).filter(
+    (r) =>
+      !shown.has(r) && Array.from({ length: text.cols }, (_, x) => x).some((x) => text.lit(x, r)),
+  );
+  return {
+    board,
+    text,
+    left: leftOf(board, text),
+    lines,
+    rowOf: (led) => (led.kind === 'dot' ? rowAt(led.y) : -1),
+    cut,
+  };
+}
+
+/** The fewest rows a board as wide as `board` needs to show every dot of `text`. */
+export function rowsToShow(board: Board, text: Bitmap): number {
+  let rows = board.rows;
+  const most = board.rows + 2 * text.rows + 2;
+  while (rows < most && place(boardOf(board.cols, rows), text).cut.length > 0) rows++;
+  return rows;
+}
 
 /** A message as typed, rasterized in `look` and standing centered on the board, labeled for warnings. */
 export const placeText = (board: Board, text: string, look?: Look): Placed => ({

@@ -40,8 +40,8 @@ export interface StagedScene {
 }
 
 /**
- * Stages each scene of a program that fits the board and plays for some time, in order: a scene
- * whose face is taller than the board's lines is left out. Throws on a scene naming no effect or face, before anything is cued.
+ * Stages each scene of a program that plays for some time, in order; one taller than the board
+ * shows what fits. Throws on a scene naming no effect or face, before anything is cued.
  */
 export function stageProgram(
   b: Board,
@@ -51,7 +51,6 @@ export function stageProgram(
   return scenes.flatMap((scene, i) => {
     const effect = effectOf(scene, effects);
     const at = placeText(b, scene.text, scene);
-    if (at.text.rows > b.line) return [];
     const s = stageEffect(effect, at, scene.hex, scene.hold);
     return s.ms > 0 ? [{ scene: i, staged: s, name: `${effect.name} ${scene.text}` }] : [];
   });

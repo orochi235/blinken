@@ -22,7 +22,7 @@ const flip: EffectSpec = {
 };
 
 const shown = () =>
-  b.dots.map((d) => (d.kind === 'dot' && d.row >= 0 && at.text.lit(d.x - at.left, d.row) ? 1 : 0));
+  b.dots.map((d) => (at.rowOf(d) >= 0 && at.text.lit(d.x - at.left, at.rowOf(d)) ? 1 : 0));
 
 /** A mix at 0 with the effect cued under an owner there. */
 function cued(effect: EffectSpec, hold?: number): Mix<Subject, Pose> {

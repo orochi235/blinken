@@ -15,16 +15,18 @@ const picture = (text: string, look = {}) => {
 };
 
 describe('faces', () => {
-  it('give every built-in face 7 rows and a glyph for every character', () => {
+  it('give every built-in face a glyph of its own height for every character', () => {
     expect(FACE_NAMES.slice(0, 4)).toEqual(['standard', 'slim', 'wide', 'bold']);
     const widths: Record<string, number> = { standard: 5, slim: 3, wide: 10, bold: 6 };
     for (const name of FACE_NAMES) {
       const face = FACES[name];
-      expect(face.rows, name).toBe(7);
-      if (name in widths) expect(face.width).toBe(widths[name]);
+      if (name in widths) {
+        expect(face.rows).toBe(7);
+        expect(face.width).toBe(widths[name]);
+      }
       for (const ch of [...CHARS, ' ']) {
         const g = face.glyph(ch) as readonly string[];
-        expect(g, `${name} ${ch}`).toHaveLength(7);
+        expect(g, `${name} ${ch}`).toHaveLength(face.rows);
         for (const row of g) expect(row.length, `${name} ${ch}`).toBe(face.width);
       }
     }
@@ -140,23 +142,45 @@ describe('styles', () => {
   });
 });
 
-describe('a face that does not fit', () => {
+describe('a face taller than the sign', () => {
   const tall: Face = { name: 'tall', rows: 9, width: 5, glyph: () => Array(9).fill('#####') };
 
-  it('is left out of the program, as a move without room is', () => {
+  it('still plays, showing the top of its letters', () => {
     const b = board(80, 7);
     const staged = stageProgram(b, [
       { text: 'A', hex: 0, effect: 'hold', face: tall },
       { text: 'B', hex: 0, effect: 'hold', face: 'slim' },
     ]);
-    expect(staged.map((s) => s.scene)).toEqual([1]);
+    expect(staged.map((s) => s.scene)).toEqual([0, 1]);
+    expect(placeText(b, 'A', { face: tall }).cut).toEqual([7, 8]);
   });
 
-  it('warns when the effect is staged for it', () => {
+  it('warns how tall a sign shows all of it', () => {
     const at = placeText(board(80, 7), 'A', { face: tall });
     expect(stageEffect(EFFECTS.hold, at, 0).warnings).toContainEqual({
-      text: "the tall face is 9 rows tall, taller than the sign's 7-row lines, so the scene is skipped",
+      text: 'A in the tall face runs off a 7-row sign; a sign 9 rows tall shows all of it',
+      rows: 9,
     });
+  });
+
+  it('spaces lines by its body, with ghost rows in the gap between them', () => {
+    const tailed: Face = {
+      name: 'tailed',
+      rows: 8,
+      below: 1,
+      width: 1,
+      glyph: () => ['#', '.', '.', '.', '.', '.', '.', '#'],
+    };
+    const text = rasterize('A', { face: tailed });
+    expect(placeText(board(80, 7), 'A', { face: tailed }).cut).toEqual([7]);
+    const two = placeText(board(10, 15), 'A', { face: tailed });
+    expect(two.lines).toBe(2);
+    expect(two.cut).toEqual([]);
+    const rows = board(10, 15)
+      .dots.filter((d) => d.x === 0)
+      .map((d) => two.rowOf(d));
+    expect(rows).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6]);
+    expect(text.rows).toBe(8);
   });
 
   it('fits a board whose lines are as tall as it', () => {

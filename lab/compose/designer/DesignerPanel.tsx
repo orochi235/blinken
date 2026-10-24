@@ -38,7 +38,8 @@ export function DesignerPanel() {
     } catch (e) {
       found = [{ text: (e as Error).message }];
     }
-    for (const w of found)
+    // A scene running off the sign is the scene editor's to say, beside the face that does it.
+    for (const w of found.filter((w) => w.rows === undefined))
       at.set(w.slot ?? 'effect', [...(at.get(w.slot ?? 'effect') ?? []), w.text]);
     return at;
   }, [spec, scene, b]);

@@ -100,7 +100,7 @@ describe('EFFECTS', () => {
     const a = at(text);
     const m = cued('roll', text);
     const want = (d: Subject) =>
-      d.kind === 'dot' && d.row >= 0 && a.text.lit(d.x - a.left, d.row) ? 1 : 0;
+      d.kind === 'dot' && a.rowOf(d) >= 0 && a.text.lit(d.x - a.left, a.rowOf(d)) ? 1 : 0;
     const letter = (k: number) => b.dots.filter((d) => Math.floor((d.x - a.left) / 6) === k);
     m.sync(900 + 10);
     expect(letter(0).map((d) => m.probe(d).lit)).toEqual(letter(0).map(want));

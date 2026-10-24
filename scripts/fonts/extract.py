@@ -187,7 +187,8 @@ for name, kind, rel, cap, lic, pick in FACES:
         continue
     rows, width, table, clipped = face_rows(glyphs, cap)
     missing = [c for c in CHARS if c != " " and c not in glyphs]
-    result.append({"name": name, "license": lic, "pick": pick, "cap": cap, "rows": rows, "width": width, "glyphs": table, "missing": missing, "clipped": clipped})
+    lit = {ch: sorted(g) for ch, g in glyphs.items()}
+    result.append({"name": name, "license": lic, "pick": pick, "cap": cap, "rows": rows, "width": width, "glyphs": table, "lit": lit, "missing": missing, "clipped": clipped})
     print(f"{len(result):2d}/{len(FACES)} {name}: {rows} rows, {width} wide, missing {''.join(missing) or '-'}, clipped {''.join(clipped) or '-'}")
 
 json.dump(result, open(OUT_JSON, "w"))

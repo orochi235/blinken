@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { board, KIT, type Led, type Pose, SIZE, type Subject } from '@/board.js';
 import { EFFECTS, LAYERS } from '@/builtins.js';
 import { stageEffect } from '@/effects.js';
-import type { Face } from '@/faces.js';
 import { rasterize } from '@/font.js';
 import { createMarquee } from '@/marquee.js';
 import { chase } from '@/modulators/index.js';
@@ -17,9 +16,6 @@ const CHASE_MS = chase.params.beat.value;
 const b = board(SIZE.cols, SIZE.rows);
 const COLS = b.cols;
 const dot = (x: number, y: number) => b.dots[y * COLS + x] as Led;
-
-/** A face taller than the sign's lines, so a scene in it cues nothing. */
-const TALL: Face = { name: 'tall', rows: 9, width: 5, glyph: () => Array(9).fill('#####') };
 
 describe('rasterize', () => {
   it('lays glyphs out five dots wide with a blank column after each', () => {
@@ -55,10 +51,9 @@ describe('play', () => {
 describe('board', () => {
   it('stacks lines of text a dot apart, centered, past one line', () => {
     const big = board(20, 17);
-    const rowAt = (y: number) => {
-      const led = big.dots[y * 20] as Led;
-      return led.kind === 'dot' ? led.row : Number.NaN;
-    };
+    const at = place(big, rasterize('A'));
+    const rowAt = (y: number) => at.rowOf(big.dots[y * 20] as Led);
+    expect(at.lines).toBe(2);
     expect(big.dots).toHaveLength(340);
     expect([0, 1, 7, 8, 9, 15, 16].map(rowAt)).toEqual([-1, 0, 6, -1, 0, 6, -1]);
   });
@@ -99,7 +94,7 @@ describe('createMarquee', () => {
         draw: false,
         program: () => {
           passes++;
-          return [{ effect: 'hold', text: 'I', hex: 0, face: TALL }];
+          return [{ effect: { name: 'empty' }, text: 'I', hex: 0 }];
         },
       });
       const settle = () => new Promise((r) => setTimeout(r, 0));

@@ -2,7 +2,7 @@ import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import { type Bitmap, CHARS, rasterize } from '../font.js';
 import { hash } from '../hash.js';
-import { litAt, move, on, rowOf } from './move.js';
+import { litAt, move, on } from './move.js';
 
 const glyphs = new Map<string, Bitmap>();
 /** One letter alone in the look of `text`, which draws it where `text` draws its letters. */
@@ -54,7 +54,7 @@ export const reelIn = move({
     return patch<Led, Pose>(
       p.ms,
       (phase, led) => {
-        const row = rowOf(led);
+        const row = at.rowOf(led);
         const x = led.x - at.left;
         const k = text.letterAt(x);
         if (row < 0 || k < 0) return on(false);

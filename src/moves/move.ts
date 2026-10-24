@@ -27,12 +27,9 @@ export const move = <P extends Params>(m: Omit<Move<P>, 'kind'>): Move<P> => ({
   ...m,
 });
 
-/** The row of the text a dot shows, or -1 for one between lines or a bulb. */
-export const rowOf = (led: Led) => (led.kind === 'dot' ? led.row : -1);
-
 /** Whether the message, shifted `dx` dots right of where it stands, lights this dot. */
 export const litAt = (at: Placed, led: Led, dx = 0, dy = 0) => {
-  const row = rowOf(led);
+  const row = at.rowOf(led);
   return row >= 0 && at.text.lit(led.x - at.left - dx, row - dy);
 };
 

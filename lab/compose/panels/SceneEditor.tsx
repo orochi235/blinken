@@ -1,17 +1,21 @@
-import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
+import { Button, ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
 import { useMemo } from 'react';
-import { EFFECTS, FACE_NAMES, FACES } from '@/index.js';
+import { EFFECTS, FACE_NAMES, FACES, placeText, rowsToShow } from '@/index.js';
 import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
-import { compose, useCompose } from '../store.js';
+import { compose, useBoard, useCompose } from '../store.js';
 import './SceneEditor.css';
 
 const NONE: ReadonlySet<string> = new Set();
 const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
 
-/** The picked scene's text, color, effect, hold, face and style. */
-export function SceneEditor({ at }: { at: number }) {
+/**
+ * The picked scene's text, color, effect, hold, face and style, and a warning, with a fix, when its
+ * letters run off the sign.
+ */
+export function SceneEditor({ at, setRows }: { at: number; setRows: (rows: number) => void }) {
   const state = useCompose();
+  const b = useBoard();
   const scene = state.program[at];
   const names = [...Object.keys(state.effects), ...Object.keys(EFFECTS)];
   const key = names.join('\n');
@@ -99,6 +103,32 @@ export function SceneEditor({ at }: { at: number }) {
         draftConfig={set}
         density={DENSITY}
       />
+      <Fit board={b} at={at} setRows={setRows} />
     </div>
+  );
+}
+
+/** Says when the scene's letters run off the sign, and offers the height that shows all of them. */
+function Fit({
+  board,
+  at,
+  setRows,
+}: {
+  board: ReturnType<typeof useBoard>;
+  at: number;
+  setRows: (rows: number) => void;
+}) {
+  const scene = useCompose().program[at];
+  const placed = useMemo(() => scene && placeText(board, scene.text, scene), [board, scene]);
+  if (!placed || placed.cut.length === 0) return null;
+  const rows = rowsToShow(board, placed.text);
+  return (
+    <p className="compose-warning">
+      The {placed.text.face.name} letters run off this {board.rows}-row sign, so some of their dots
+      don't show.{' '}
+      <Button size="sm" onClick={() => setRows(rows)}>
+        make the sign {rows} rows
+      </Button>
+    </p>
   );
 }

@@ -22,7 +22,14 @@ function Compose() {
       <Scrubber />
       <div className="compose-panes">
         <div className="compose-pane">
-          <ProgramPanel />
+          <ProgramPanel
+            setRows={(rows) =>
+              setKept((h) => {
+                const now = hardwareOf(h);
+                return { ...now, size: { ...now.size, rows } };
+              })
+            }
+          />
         </div>
         <div className="compose-pane compose-pane-wide">
           <DesignerPanel />

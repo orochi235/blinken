@@ -1,6 +1,6 @@
 import { type Face, type FaceName, faceOf } from './faces.js';
 
-/** How many rows a line of text takes on a board: every built-in face's height. */
+/** The sign's default height, and the body height of the drawn faces. */
 export const ROWS = 7;
 
 /**
@@ -28,6 +28,9 @@ export interface Span {
 /** Text laid out as lit dots, `cols` × `rows`; a glyph the face lacks is a blank. */
 export interface Bitmap {
   readonly cols: number;
+  /** Ghost rows at the top and bottom of `rows`: drawn, but not counted when lines are spaced. */
+  readonly above: number;
+  readonly below: number;
   readonly rows: number;
   /**
    * Each letter's columns, in order: its glyph and a blank beside it. One letter of the same look
@@ -79,6 +82,8 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
   return {
     cols,
     rows,
+    above: face.above ?? 0,
+    below: face.below ?? 0,
     letters,
     face,
     style,
