@@ -141,11 +141,10 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
 
 /** A face row's dot pitch, px: every row's dots are this size, so a row is as tall as its face. */
 const PITCH = 3;
-/** How much faster a row scrolls on its way back to rest, reached over `RAMP_MS`. */
-const EXIT_RATE = 20;
-const RAMP_MS = 250;
-/** How far from rest, on the scroll's own clock, the way back slows again. */
-const BRAKE_MS = 2500;
+/** How long a row takes to run back to rest across the whole sign, ms, ramps included. */
+const EXIT_MS = 400;
+/** How long the way back takes to speed up, and again to slow down, ms. */
+const RAMP_MS = 80;
 /** The width the glyph metrics take at a row's right end, px. */
 const METRICS_PX = 44;
 
@@ -176,7 +175,7 @@ function FaceRow({
   const thumb = useRef<Handle | null>(null);
   // Let go mid-scroll, the scroll carries on and another copy of the name follows in to rest by
   // `end`; hovered again on the way, it plays on from there.
-  const leaving = useRef<{ end: number; braking: boolean } | null>(null);
+  const leaving = useRef<{ end: number; brake: number; braking: boolean } | null>(null);
 
   useEffect(() => {
     const t = thumb.current;
@@ -194,7 +193,7 @@ function FaceRow({
       const at = m.pass()?.at ?? reel.from;
       const exit = leaving.current;
       // Slowing again for the last stretch, so the name lands without overshooting its rest.
-      if (exit && !exit.braking && exit.end - at < BRAKE_MS) {
+      if (exit && !exit.braking && exit.end - at < exit.brake) {
         exit.braking = true;
         m.ramp(1, RAMP_MS);
       }
@@ -214,9 +213,11 @@ function FaceRow({
       const at = m.pass()?.at ?? reel.from;
       if (at <= reel.from) return;
       const out = exitOf(name, cols, style, reel.text, at);
-      leaving.current = { end: out.end, braking: false };
+      // Up from 1 over the ramp, on at `rate`, and down again covers `RAMP_MS + rate * (EXIT_MS - RAMP_MS)`.
+      const rate = Math.max(1, (out.end - at - RAMP_MS) / (EXIT_MS - RAMP_MS));
+      leaving.current = { end: out.end, brake: (RAMP_MS * (1 + rate)) / 2, braking: false };
       swap(out.text, at);
-      m.ramp(EXIT_RATE, RAMP_MS);
+      m.ramp(rate, RAMP_MS);
     }
     raf = requestAnimationFrame(turn);
     return () => cancelAnimationFrame(raf);
