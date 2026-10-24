@@ -111,4 +111,20 @@ export function decode(hash: string): Decoded {
   }
 }
 
+/** What a saved file says it is, so any other JSON reads as no composition. */
+const FILE_KIND = 'composition';
+
+/** The composition as a JSON file's text, readable by hand and by `fromJson`. */
+export const toJson = (state: ComposeState): string =>
+  `${JSON.stringify({ bree: FILE_KIND, ...shareOf(state) }, null, 2)}\n`;
+
+/** A composition from a saved file's text, read as forgivingly as a link. */
+export function fromJson(text: string): Decoded {
+  try {
+    const data: unknown = JSON.parse(text);
+    if (isObj(data) && data.bree === FILE_KIND) return parse(data);
+  } catch {}
+  return { state: defaultState(), dropped: [], read: false };
+}
+
 export { toCode } from './code.js';

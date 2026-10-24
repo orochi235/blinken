@@ -162,8 +162,10 @@ The lab serves two pages: the composer at `/compose` (`lab/compose.html`) and th
 - **Export:** "copy as code" gives the effects and the program as a `createMarquee` call. "Copy
   link" puts the whole composition in the URL hash, as klieg's `/show/` page does, and "copy player
   link" puts on `/play` only what plays: the effects the program names, without their about text,
-  and the layers that are on. The current draft is kept in browser storage, so a reload doesn't
-  lose it; it is a convenience, not a save.
+  and the layers that are on. "Save" downloads the composition as a JSON file marked
+  `"bree": "composition"`, and "load" opens one in place of it as an undoable edit, read as
+  forgivingly as a link. The current draft is kept in browser storage, so a reload doesn't lose
+  it; it is a convenience, not a save.
 - **The hash is packed bits** (`lab/compose/codec.ts`): each move, modulator, order, face,
   built-in effect and layer is written as its place in its registry, each number as a count of
   its setting's steps, and settings at their defaults not at all. Reordering a registry or
@@ -177,7 +179,8 @@ The lab serves two pages: the composer at `/compose` (`lab/compose.html`) and th
 - **Goal:** every built-in is reproducible in the lab from pieces, and a new effect needs no code.
 - **Goal:** an effect is plain JSON-able data, so it round-trips through a link and through code.
 - **Non-goal:** user-written moves in the lab. New moves are code; the lab composes existing ones.
-- **Non-goal:** saving compositions anywhere but the link, the clipboard and the browser's storage.
+- **Non-goal:** saving compositions anywhere but a link, the clipboard, a JSON file, and the
+  browser's storage.
 - **Anti-goal:** the lab and `createMarquee` reading effects two different ways. One staging
   function serves both.
 - **Anti-goal:** a hand-written patch surviving beside its piece version.

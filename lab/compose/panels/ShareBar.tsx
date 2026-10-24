@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { encode, playable, toCode } from '../share.js';
 import { hasPrevious, restorePrevious } from '../storage.js';
 import { compose, opened } from '../store.js';
+import { FileButtons } from './FileButtons.js';
 import './ShareBar.css';
 
 // The clipboard may refuse (a headless browser, an insecure origin), so each also shows.
@@ -11,7 +12,7 @@ const copy = (text: string) => navigator.clipboard?.writeText(text).catch(() => 
 
 type Shown = { title: string; text: string; code: boolean } | null;
 
-/** Export in the lab's top bar: the composition as a link, or as a `createMarquee` call. */
+/** Export in the lab's top bar: the composition as a file, a link, or a `createMarquee` call. */
 export function ShareBar() {
   const [shown, setShown] = useState<Shown>(null);
   const show = (title: string, text: string, code: boolean) => {
@@ -28,6 +29,7 @@ export function ShareBar() {
       {opened.dropped.length > 0 && (
         <span className="compose-warning">Left out of the link: {opened.dropped.join('; ')}.</span>
       )}
+      <FileButtons />
       <Button
         size="sm"
         onClick={() =>
