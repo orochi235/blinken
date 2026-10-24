@@ -130,6 +130,8 @@ describe('styles', () => {
     expect(nj.letters.map((l) => l.x)).toEqual([0, 7]);
     expect(nj.letterAt(7, 8)).toBe(1);
     expect(nj.letterAt(7, 0)).toBe(0);
+    // Nor may ink come within a dot diagonally: slim's O keeps clear of the L's foot.
+    expect(rasterize('LO', { face: 'slim' }).letters.map((l) => l.x)).toEqual([0, 4]);
     // A space keeps its width: nothing slides into it.
     expect(rasterize('I I').letters.map((l) => l.x)).toEqual([0, 4, 8]);
   });

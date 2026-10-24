@@ -119,7 +119,7 @@ its body, the height of its capitals: 7 dots for the drawn four, 3 to 7 for the 
 glyph that reaches above or below the body, such as a comma's tail, draws there in a ghost row,
 into the gap between lines or the sign's margin; only the sign's edge cuts it. `style.reverse` is inverse video: the message's box lit and its letters dark.
 Each letter is kerned by its shape, sliding left until its ink is a blank from the ink before it in
-every row they share, so an I takes three columns and nj serif's J tucks its tail under an N.
+its own row and the rows either side, so letters never touch, even at a corner; so an I takes three columns and nj serif's J tucks its tail under an N.
 `style.monospace` gives every letter the face's widest instead, five columns for the same I. A face can also be given in full, as a `Face` with `rows`,
 `width` and a `glyph` for each character, and its ghost rows as `above` and `below`. A scene that
 runs off the sign still plays, showing what fits, and staging it warns with the height of sign

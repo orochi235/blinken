@@ -5,8 +5,8 @@ export const ROWS = 7;
 
 /**
  * How text is drawn besides its face. `reverse` lights the message's box and leaves the glyphs
- * dark. Each glyph is kerned by its shape: it slides left until, in every row they share, its ink is
- * a blank from the ink before it. `monospace` advances every glyph by the face's widest instead.
+ * dark. Each glyph is kerned by its shape: it slides left until its ink is a blank from the ink
+ * before it in the same row and the rows either side, so no two letters touch, even at a corner. `monospace` advances every glyph by the face's widest instead.
  */
 export interface TextStyle {
   readonly reverse?: boolean;
@@ -76,9 +76,10 @@ function layout(glyphs: readonly Cut[], rows: number, monospace: boolean): numbe
     });
     let x = next;
     if (!monospace && ink.some((i) => i >= 0)) {
-      const fits = ink.map((i, y) =>
-        i < 0 ? Number.NEGATIVE_INFINITY : (reach[y] as number) + 2 - i,
-      );
+      // A blank to the ink before in the rows above and below too, so letters never touch corners.
+      const near = (y: number) =>
+        Math.max(...[y - 1, y, y + 1].map((r) => reach[r] ?? Number.NEGATIVE_INFINITY));
+      const fits = ink.map((i, y) => (i < 0 ? Number.NEGATIVE_INFINITY : near(y) + 2 - i));
       x = Math.max(start, Math.min(next, Math.max(...fits)));
     }
     xs.push(x);
