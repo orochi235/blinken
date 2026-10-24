@@ -8,40 +8,25 @@ import {
   type Piece,
   type Slot,
 } from '@/index.js';
-import { type ComposeState, freeName } from '../state.js';
-import { compose, pickedOf } from '../store.js';
+import { freeLibraryName, library } from '../library.js';
+import { designer } from './open.js';
 
-/** The picked scene plays whatever the designer has open, so an edit there is heard at once. */
-function playOpen(s: ComposeState): void {
-  const i = pickedOf(s);
-  const scene = s.program[i];
-  const open = s.editing.effect;
-  if (scene && open !== undefined) s.program[i] = { ...scene, effect: open };
-}
-
-/** Changes the state from the designer, then plays the picked scene on the open effect. */
-export const designerEdit = (fn: (s: ComposeState) => void) =>
-  compose.edit((s) => {
-    fn(s);
-    playOpen(s);
-  });
-
-/** Replaces the open effect with `fn` of it. */
+/** Replaces the open effect with `fn` of it; a built-in is copied into the library first. */
 export const editEffect = (fn: (spec: EffectSpec) => EffectSpec) =>
-  designerEdit((s) => {
-    const n = s.editing.effect;
+  designer.change(() => {
+    const n = designer.open();
     if (n === undefined) return;
-    const own = s.effects[n];
+    const own = library.get()[n];
     if (own) {
-      s.effects[n] = fn(own);
+      library.put(fn(own));
       return;
     }
-    // A built-in is never changed: the first edit makes a copy, which the picked scene then plays.
+    // A built-in is never changed: the first edit makes a copy, which is then what is open.
     const built = builtinOf(n);
     if (!built) return;
-    const name = freeName(s, `${n} copy`);
-    s.effects[name] = fn({ ...built, name });
-    s.editing.effect = name;
+    const name = freeLibraryName(`${n} copy`);
+    library.put(fn({ ...built, name }));
+    designer.setOpen(name);
   });
 
 /** The built-in effect named `name`, if there is one. */
@@ -49,27 +34,24 @@ export const builtinOf = (name: string): EffectSpec | undefined =>
   Object.hasOwn(EFFECTS, name) ? EFFECTS[name as keyof typeof EFFECTS] : undefined;
 
 /** Opens `name` in the designer, or nothing. */
-export const openEffect = (name: string | undefined) =>
-  designerEdit((s) => {
-    s.editing.effect = name;
+export const openEffect = (name: string | undefined) => designer.setOpen(name);
+
+/** Starts a new effect in the library, standing still for two seconds, and opens it. */
+export const newEffect = () =>
+  designer.change(() => {
+    const name = freeLibraryName('effect');
+    library.put({ name, active: [{ move: 'stand' }], hold: 2000 });
+    designer.setOpen(name);
   });
 
-/**
- * Opens an effect by its picker key: `y:` and a name opens one of yours, `b:` and a name a copy of
- * that built-in, and `n:` a new effect.
- */
-export const pickEffect = (key: string) => {
-  const [kind, n] = [key.slice(0, 2), key.slice(2)];
-  if (kind === 'y:') return openEffect(n);
-  designerEdit((s) => {
-    const name = freeName(s, kind === 'b:' ? `${n} copy` : 'effect');
-    s.effects[name] =
-      kind === 'b:'
-        ? { ...EFFECTS[n as keyof typeof EFFECTS], name }
-        : { name, active: [{ move: 'stand' }], hold: 2000 };
-    s.editing.effect = name;
+/** Takes the open effect out of the library; a composition playing it keeps its own copy. */
+export const deleteOpen = () =>
+  designer.change(() => {
+    const n = designer.open();
+    if (n === undefined || !Object.hasOwn(library.get(), n)) return;
+    library.remove(n);
+    designer.setOpen(undefined);
   });
-};
 
 const MOD = 'mod:';
 
@@ -98,31 +80,20 @@ export const pieceOf = (key: string): Piece =>
   key.startsWith(MOD) ? { mod: key.slice(MOD.length) as ModulatorName } : { move: key as MoveName };
 
 /**
- * Gives the open effect another name, which the scenes playing it follow; a built-in is copied
- * under it instead. Says false, changing nothing, when the name is empty or taken.
+ * Gives the open effect another name; a built-in is copied under it instead. Says false, changing
+ * nothing, when the name is empty or taken. A composition playing it keeps its copy under the old.
  */
 export function renameEffect(from: string, to: string): boolean {
   if (to === from) return true;
-  const taken =
-    !to ||
-    to === '__proto__' ||
-    Object.hasOwn(EFFECTS, to) ||
-    Object.hasOwn(compose.get().effects, to);
-  if (taken) return false;
-  designerEdit((s) => {
-    if (!Object.hasOwn(s.effects, from)) {
+  if (!to || to === '__proto__' || freeLibraryName(to) !== to) return false;
+  designer.change(() => {
+    if (Object.hasOwn(library.get(), from)) library.rename(from, to);
+    else {
       const built = builtinOf(from);
       if (!built) return;
-      s.effects = { ...s.effects, [to]: { ...built, name: to } };
-      s.editing.effect = to;
-      return;
+      library.put({ ...built, name: to });
     }
-    const { [from]: spec, ...rest } = s.effects;
-    s.effects = { ...rest, [to]: { ...(spec as EffectSpec), name: to } };
-    s.program = s.program.map((scene) =>
-      scene.effect === from ? { ...scene, effect: to } : scene,
-    );
-    s.editing.effect = to;
+    designer.setOpen(to);
   });
   return true;
 }

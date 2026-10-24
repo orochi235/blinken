@@ -76,3 +76,8 @@ body {
   align-items: baseline;
   gap: 6px;
 }
+
+.compose-link {
+  color: var(--wzl-accent);
+  font-size: var(--wzl-font-size-sm, 12px);
+}

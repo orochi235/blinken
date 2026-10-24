@@ -1,38 +1,41 @@
 import { EFFECTS } from '@/index.js';
+import { useLibrary } from '../library.js';
 import { PlainSelect } from '../PlainSelect.js';
 import { effectTitle } from '../schema.js';
-import { useCompose } from '../store.js';
-import { pickEffect } from './edit.js';
+import { newEffect, openEffect } from './edit.js';
+import { designer, useDesk } from './open.js';
 
-/** Opens one of your effects, a copy of a built-in, or a fresh one. */
+/** Opens one of the library's effects, a built-in (copied on its first edit), or a fresh one. */
 export function EffectPicker() {
-  const state = useCompose();
-  const yours = Object.keys(state.effects);
+  useDesk();
+  const yours = Object.keys(useLibrary());
   const options = [
     ...(yours.length
       ? [
           {
-            title: 'yours',
+            title: 'library',
             options: yours.map((n) => ({ value: `y:${n}`, label: effectTitle(n) })),
           },
         ]
       : []),
     {
-      title: 'built-in, as a copy',
+      title: 'built-in, copied when changed',
       options: Object.keys(EFFECTS).map((n) => ({ value: `b:${n}`, label: effectTitle(n) })),
     },
     { title: 'start', options: [{ value: 'n:', label: 'new effect' }] },
   ];
-  const open = state.editing.effect;
+  const open = designer.open();
   return (
     <PlainSelect
       aria-label="effect"
       placeholder="pick an effect…"
       options={options}
-      selectedKey={
-        open === undefined ? null : Object.hasOwn(state.effects, open) ? `y:${open}` : `b:${open}`
-      }
-      onSelectionChange={(key) => pickEffect(String(key))}
+      selectedKey={open === undefined ? null : yours.includes(open) ? `y:${open}` : `b:${open}`}
+      onSelectionChange={(key) => {
+        const k = String(key);
+        if (k === 'n:') newEffect();
+        else openEffect(k.slice(2));
+      }}
     />
   );
 }

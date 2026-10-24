@@ -5,7 +5,7 @@ import { createUndo, editingIds, editingOf } from '../lab/compose/undo.js';
 const start = (): ComposeState => ({
   effects: {},
   program: [{ text: 'HI', hex: 0xffffff, effect: 'hold' }],
-  editing: { scene: 0, effect: 'hold' },
+  editing: { scene: 0 },
 });
 
 /** A store as small as the lab's: `edit` copies, changes, then records. */
@@ -58,7 +58,7 @@ describe('compose undo', () => {
   it('records nothing for a change to what is open alone', () => {
     const s = store();
     s.edit((x) => {
-      x.editing = { scene: 0, effect: 'rain' };
+      x.editing = { scene: 1 };
     });
     expect(s.undo.history.canUndo()).toBe(false);
   });
@@ -67,24 +67,22 @@ describe('compose undo', () => {
     const s = store();
     s.edit((x) => {
       x.effects['hold copy'] = { name: 'hold copy' };
-      x.editing.effect = 'hold copy';
+      x.program.push({ text: 'B', hex: 0xffffff, effect: 'hold copy' });
+      x.editing.scene = 1;
     });
     s.edit((x) => {
-      x.editing.effect = 'rain';
+      x.editing.scene = 0;
     });
     s.undo.history.undo();
-    expect(s.get().editing).toEqual({ scene: 0, effect: 'hold' });
+    expect(s.get().editing).toEqual({ scene: 0 });
     expect(s.get().effects).toEqual({});
     s.undo.history.redo();
-    expect(s.get().editing).toEqual({ scene: 0, effect: 'rain' });
+    expect(s.get().editing).toEqual({ scene: 0 });
     expect(Object.keys(s.get().effects)).toEqual(['hold copy']);
   });
 
   it('round-trips what is open through the ids a history keeps', () => {
-    expect(editingOf(editingIds({ scene: 3, effect: 'scene: odd' }))).toEqual({
-      scene: 3,
-      effect: 'scene: odd',
-    });
+    expect(editingOf(editingIds({ scene: 3 }))).toEqual({ scene: 3 });
     expect(editingOf(editingIds({}))).toEqual({});
   });
 });

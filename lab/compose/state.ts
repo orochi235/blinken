@@ -16,7 +16,7 @@ import {
 export interface ComposeState {
   effects: Record<string, EffectSpec>;
   program: Scene[];
-  editing: { effect?: string; scene?: number };
+  editing: { scene?: number };
 }
 
 /** A scene's layer as the lab keeps it: on or off, and the settings it changed. */
@@ -71,15 +71,6 @@ export const withLayer = (scene: Scene, name: LayerName, layer: LabLayer): Scene
   layers: { ...scene.layers, [name]: layer },
 });
 
-/** The effect a scene falls back to when the one it named is deleted. */
-export const FALLBACK = 'hold';
-
-/** `base`, or `base 2`, `base 3`… whichever no effect in `state` is named yet. */
-export function freeName(state: ComposeState, base: string): string {
-  if (!Object.hasOwn(state.effects, base)) return base;
-  for (let n = 2; ; n++) if (!Object.hasOwn(state.effects, `${base} ${n}`)) return `${base} ${n}`;
-}
-
 /** An effect with a slot's pieces replaced, the slot left out when it has none. */
 export function withSlot(spec: EffectSpec, slot: Slot, pieces: readonly Piece[]): EffectSpec {
   const { [slot]: _, ...rest } = spec;
@@ -114,16 +105,6 @@ export function moveScene(program: readonly Scene[], i: number, by: number): Sce
   const [scene] = out.splice(i, 1);
   out.splice(to, 0, scene as Scene);
   return out;
-}
-
-/** Deletes a designed effect; the scenes that played it play the fallback built-in instead. */
-export function deleteEffect(state: ComposeState, name: string): void {
-  const { [name]: _, ...rest } = state.effects;
-  state.effects = rest;
-  state.program = state.program.map((scene) =>
-    scene.effect === name ? { ...scene, effect: FALLBACK } : scene,
-  );
-  if (state.editing.effect === name) state.editing.effect = undefined;
 }
 
 /** A scene with its face or one of its style switches set, the default left out. */

@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { EffectSpec } from '@/index.js';
 import {
   addPiece,
-  type ComposeState,
-  deleteEffect,
   moveScene,
   removePiece,
   setPiece,
@@ -52,18 +50,6 @@ describe('compose state program edits', () => {
     expect(moveScene(scenes, 1, 1).map((s) => s.text)).toEqual(['A', 'C', 'B']);
     expect(moveScene(scenes, 0, -1)).toEqual(scenes);
     expect(moveScene(scenes, 2, 1)).toEqual(scenes);
-  });
-
-  it('deletes a designed effect, its scenes falling back to hold', () => {
-    const state: ComposeState = {
-      effects: { mine: { name: 'mine', active: { move: 'stand' } } },
-      program: scenes,
-      editing: { effect: 'mine', scene: 1 },
-    };
-    deleteEffect(state, 'mine');
-    expect(state.effects).toEqual({});
-    expect(state.program[1]?.effect).toBe('hold');
-    expect(state.editing.effect).toBeUndefined();
   });
 });
 

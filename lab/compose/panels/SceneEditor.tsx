@@ -4,7 +4,7 @@ import { EFFECTS } from '@/index.js';
 import { Panel } from '../Panel.js';
 import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD } from '../state.js';
-import { compose, pickedOf, useCompose } from '../store.js';
+import { compose, pickedOf, playEffect, useCompose, useEffects } from '../store.js';
 import './SceneEditor.css';
 
 const NONE: ReadonlySet<string> = new Set();
@@ -18,7 +18,11 @@ export function SceneEditor() {
   const state = useCompose();
   const at = pickedOf(state);
   const scene = state.program[at];
-  const names = [...Object.keys(state.effects), ...Object.keys(EFFECTS)];
+  const effects = useEffects();
+  const names = [
+    ...Object.keys(effects),
+    ...Object.keys(EFFECTS).filter((n) => !Object.hasOwn(effects, n)),
+  ];
   const key = names.join('\n');
   // biome-ignore lint/correctness/useExhaustiveDependencies: `key` stands for `names`
   const schema = useMemo(
@@ -49,21 +53,25 @@ export function SceneEditor() {
   );
   if (!scene) return null;
 
-  const set = (path: string, v: unknown) =>
+  const set = (path: string, v: unknown) => {
+    if (path === 'effect') {
+      playEffect(String(v));
+      return;
+    }
     compose.edit(
       (s) => {
         const was = s.program[at];
         if (!was) return;
         if (path === 'text') s.program[at] = { ...was, text: String(v) || ' ' };
         else if (path === 'color') s.program[at] = { ...was, hex: numOf(String(v)) };
-        else if (path === 'effect') s.program[at] = { ...was, effect: String(v) };
         else if (isAuto(v)) {
           const { hold: _, ...rest } = was;
           s.program[at] = rest;
         } else s.program[at] = { ...was, hold: Number(v) };
       },
-      path === 'effect' ? { follow: true } : { replay: at },
+      { replay: at },
     );
+  };
 
   return (
     <Panel title={`scene ${at + 1}`} className="compose-scene-editor" tint={ACCENT}>

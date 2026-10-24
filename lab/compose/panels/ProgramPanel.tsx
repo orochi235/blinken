@@ -20,7 +20,7 @@ const reshape = (next: Scene[], keep?: Scene) =>
       s.editing.scene = at >= 0 ? at : Math.min(pickedOf(s), next.length - 1);
       s.program = next;
     },
-    { follow: true },
+    { replay: 'picked' },
   );
 
 /** The program: its scenes in order, and the picked one's editor. */
@@ -44,7 +44,7 @@ export function ProgramPanel() {
       (s) => {
         s.editing.scene = i;
       },
-      { follow: true },
+      { replay: 'picked' },
     );
   const remove = (i: number) => {
     if (state.program.length < 2) return;

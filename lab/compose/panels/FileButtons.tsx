@@ -1,5 +1,6 @@
 import { Button } from '@weasel-js/labkit';
 import { useRef, useState } from 'react';
+import { download } from '../download.js';
 import { fromJson, toJson } from '../share.js';
 import { compose } from '../store.js';
 
@@ -14,14 +15,7 @@ const fileName = () => {
   return `${slug || 'composition'}.json`;
 };
 
-function save(): void {
-  const url = URL.createObjectURL(new Blob([toJson(compose.get())], { type: 'application/json' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName();
-  a.click();
-  URL.revokeObjectURL(url);
-}
+const save = () => download(fileName(), toJson(compose.get()));
 
 /** Saves the composition as a JSON file, and loads one back in place of it, as one undoable edit. */
 export function FileButtons() {
@@ -40,7 +34,7 @@ export function FileButtons() {
         s.program = state.program;
         s.editing = { scene: 0 };
       },
-      { follow: true },
+      { replay: 'picked' },
     );
   };
   return (

@@ -15,7 +15,12 @@ export default defineConfig({
     outDir: '../dist-lab',
     emptyOutDir: true,
     rollupOptions: {
-      input: { main: page('index.html'), play: page('play.html'), compose: page('compose.html') },
+      input: {
+        main: page('index.html'),
+        play: page('play.html'),
+        compose: page('compose.html'),
+        effects: page('effects.html'),
+      },
     },
   },
   server: {

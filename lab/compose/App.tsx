@@ -1,7 +1,6 @@
 import { LabShell, localStorageAdapter, Persistence, usePersistedState } from '@weasel-js/labkit';
 import { useMemo } from 'react';
 import './App.css';
-import { DesignerPanel } from './designer/DesignerPanel.js';
 import { HARDWARE, type Hardware, hardwareOf } from './hardware.js';
 import { FontPanel } from './panels/FontPanel.js';
 import { GalleryPanel } from './panels/GalleryPanel.js';
@@ -15,7 +14,7 @@ import { UndoBar } from './panels/UndoBar.js';
 import { Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
 
-/** The lab: the sign on top; under it playback and the program, the designer, and the sign's hardware and faces. */
+/** The lab: the sign on top; under it playback and the program, the effects and layers, and the sign's hardware and faces. */
 function Compose() {
   // The hardware belongs to the sign, not the composition, so it stays out of drafts and links.
   const [kept, setKept] = usePersistedState<Hardware>('sign', HARDWARE, { scope: 'lab' });
@@ -32,7 +31,6 @@ function Compose() {
         </div>
         <div className="compose-pane compose-pane-wide">
           <GalleryPanel />
-          <DesignerPanel />
           <LayersPanel />
         </div>
         <div className="compose-pane">
@@ -63,6 +61,13 @@ export function App() {
         <>
           <UndoBar />
           <ShareBar />
+          <a
+            className="compose-link"
+            href="./effects.html"
+            title="Design effects on a page of their own; what you save there is offered here."
+          >
+            effects
+          </a>
         </>
       }
     >

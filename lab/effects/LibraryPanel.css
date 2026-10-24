@@ -1,0 +1,14 @@
+.effects-library-row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+.effects-library-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.effects-library-row .compose-thumbnail {
+  height: 30px;
+}

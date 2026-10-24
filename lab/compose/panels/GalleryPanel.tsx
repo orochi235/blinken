@@ -7,13 +7,12 @@ import {
   useState,
 } from 'react';
 import type { FaceName } from '@/index.js';
-import { type GalleryTile, useGalleryTiles } from '../designer/EffectGallery.js';
-import { pickEffect } from '../designer/edit.js';
 import { useLive } from '../live.js';
 import { Panel } from '../Panel.js';
 import { effectTitle } from '../schema.js';
-import { pickedOf, useCompose } from '../store.js';
+import { pickedOf, playEffect, useCompose, useEffects } from '../store.js';
 import { Thumbnail } from '../Thumbnail.js';
+import { type EffectTile, tilesOf } from '../tiles.js';
 import './GalleryPanel.css';
 
 /** What a tile's sign shows: the picked scene's message, in its face and color. */
@@ -26,9 +25,9 @@ interface Message {
 /** Every tile's sign is this many dots across, whatever the message: it scrolls or clips as its effect does. */
 const COLS = 32;
 
-/** Every effect in one scrolling strip, held still until the strip is hovered; picking one opens it. */
+/** Every effect in one scrolling strip, held still until the strip is hovered; picking one plays it on the picked scene. */
 export function GalleryPanel() {
-  const tiles = useGalleryTiles();
+  const tiles = tilesOf(useEffects());
   const state = useCompose();
   const scene = state.program[pickedOf(state)];
   const text = scene?.text.trim() || 'OPEN';
@@ -242,7 +241,7 @@ function StripTile({
   copy,
   live,
 }: {
-  tile: GalleryTile;
+  tile: EffectTile;
   message: Message;
   copy: boolean;
   live: boolean;
@@ -251,9 +250,9 @@ function StripTile({
     <button
       type="button"
       className="compose-strip-tile"
-      title={tile.tip}
+      title={`Play ${tile.name} on the scene you are editing.${tile.about ? ` ${tile.about}` : ''}`}
       tabIndex={copy ? -1 : undefined}
-      onClick={() => pickEffect(tile.key)}
+      onClick={() => playEffect(tile.name)}
     >
       <Thumbnail
         effect={tile.name}

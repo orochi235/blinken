@@ -10,13 +10,11 @@ export const compositionOf = ({ program, effects }: ComposeState): Composition =
 });
 
 const SCENE = 'scene:';
-const EFFECT = 'effect:';
 
 /** What is open, as the ids a history keeps for a selection. */
 export function editingIds(editing: ComposeState['editing']): string[] {
   const ids: string[] = [];
   if (editing.scene !== undefined) ids.push(SCENE + editing.scene);
-  if (editing.effect !== undefined) ids.push(EFFECT + editing.effect);
   return ids;
 }
 
@@ -24,7 +22,6 @@ export function editingOf(ids: readonly string[]): ComposeState['editing'] {
   const editing: ComposeState['editing'] = {};
   for (const id of ids) {
     if (id.startsWith(SCENE)) editing.scene = Number(id.slice(SCENE.length));
-    else if (id.startsWith(EFFECT)) editing.effect = id.slice(EFFECT.length);
   }
   return editing;
 }
