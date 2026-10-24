@@ -48,8 +48,8 @@ const effects = {
     exit: { move: 'drop-out', order: { by: 'random', lag: 9, seed: 2 } },
     hold: 1700,
   },
-  'mater matris': {
-    name: 'mater matris',
+  matris: {
+    name: 'matris',
     about:
       'Streams of dots rain down every column and leave the message behind, then wash it away.',
     enter: { move: 'rain-in' },
