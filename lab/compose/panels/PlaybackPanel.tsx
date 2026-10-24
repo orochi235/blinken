@@ -91,7 +91,11 @@ export function PlaybackPanel() {
   };
 
   return (
-    <Panel title="playback" className="compose-playback">
+    <Panel
+      title="playback"
+      className="compose-playback"
+      actions={<span ref={readout} className="compose-playback-time" aria-live="off" />}
+    >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: the keys only repeat the buttons below */}
       <div
         className="compose-playback-row"
@@ -146,7 +150,6 @@ export function PlaybackPanel() {
             </option>
           ))}
         </select>
-        <span ref={readout} className="compose-playback-time" aria-live="off" />
       </div>
       <div className="compose-playback-focus" role="radiogroup" aria-label="focus">
         {FOCI.map((f) => (

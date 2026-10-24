@@ -10,7 +10,11 @@
   gap: 6px;
 }
 
-/* The readout changes every frame, so it sits last and grows into the slack. */
+/* The readout changes every frame, so it sits at the bar's far end and grows into the slack. */
+.compose-panel-actions:has(.compose-playback-time) {
+  flex: 1;
+}
+
 .compose-playback-time {
   min-width: 13ch;
   margin-inline-start: auto;
