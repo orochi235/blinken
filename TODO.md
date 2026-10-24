@@ -14,3 +14,4 @@
 - Reverse text has no lit row above or below its letters, since every face fills the sign's 7-row line, so reversed 5 × 7 letters read poorly; a border row would need a taller line.
 - In the compose lab's narrow sign pane, a setting's value runs into the next setting's label ("140ROWS").
 - Holding the scrubber on a resized sign plays on after the resize rather than staying held.
+- `biome check lab/compose` fails on `ShareBar.tsx`'s `role="group"` div (`lint/a11y/useSemanticElements` wants a `<fieldset>`).

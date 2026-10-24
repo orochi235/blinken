@@ -78,5 +78,8 @@ export const whileOn = (shape: ConfigShape): ConfigShape =>
     ]),
   );
 
+/** How an effect's name reads wherever the lab shows it. */
+export const effectTitle = (name: string) => name.toUpperCase();
+
 /** How much room every settings panel in the lab gives its rows. */
 export const DENSITY = 'roomy' as const;

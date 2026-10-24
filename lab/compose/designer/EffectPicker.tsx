@@ -1,5 +1,6 @@
 import { EFFECTS } from '@/index.js';
 import { PlainSelect } from '../PlainSelect.js';
+import { effectTitle } from '../schema.js';
 import { useCompose } from '../store.js';
 import { pickEffect } from './edit.js';
 
@@ -9,11 +10,16 @@ export function EffectPicker() {
   const yours = Object.keys(state.effects);
   const options = [
     ...(yours.length
-      ? [{ title: 'yours', options: yours.map((n) => ({ value: `y:${n}`, label: n })) }]
+      ? [
+          {
+            title: 'yours',
+            options: yours.map((n) => ({ value: `y:${n}`, label: effectTitle(n) })),
+          },
+        ]
       : []),
     {
       title: 'built-in, as a copy',
-      options: Object.keys(EFFECTS).map((n) => ({ value: `b:${n}`, label: n })),
+      options: Object.keys(EFFECTS).map((n) => ({ value: `b:${n}`, label: effectTitle(n) })),
     },
     { title: 'start', options: [{ value: 'n:', label: 'new effect' }] },
   ];

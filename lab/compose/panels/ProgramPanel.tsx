@@ -4,7 +4,7 @@ import type { Step } from '@/index.js';
 import { AMBER } from '../../demo.js';
 import { stepAt, watchPass } from '../clock.js';
 import { IconButton } from '../IconButton.js';
-import { hexOf } from '../schema.js';
+import { effectTitle, hexOf } from '../schema.js';
 import { moveStep } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
 import './ProgramPanel.css';
@@ -119,7 +119,7 @@ export function ProgramPanel() {
                 style={{ '--step-color': hexOf(step.hex) } as CSSProperties}
               />
               <span className="compose-step-text">{step.text}</span>
-              <span className="compose-step-effect">{String(step.effect)}</span>
+              <span className="compose-step-effect">{effectTitle(String(step.effect))}</span>
             </button>
           </li>
         ))}

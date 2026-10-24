@@ -9,3 +9,10 @@
 .compose-layer-rows.is-off {
   opacity: 0.45;
 }
+
+/* labkit frames a titled panel as a card; a layer reads as plain rows under its title. */
+.compose-layers .lk-control-panel-frame {
+  padding: 0;
+  border: 0;
+  background: none;
+}

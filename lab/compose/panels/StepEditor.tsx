@@ -1,7 +1,7 @@
 import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
 import { useMemo } from 'react';
 import { EFFECTS, FACE_NAMES, FACES } from '@/index.js';
-import { DENSITY, hexOf, numberField, numOf } from '../schema.js';
+import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
 import { compose, useCompose } from '../store.js';
 import './StepEditor.css';
@@ -27,6 +27,7 @@ export function StepEditor({ at }: { at: number }) {
             .describe('The color the message lights in, unless its effect recolors it.'),
           effect: f
             .enum(names[0] ?? 'hold', names)
+            .labels(names.map((n) => ({ value: n, label: effectTitle(n) })))
             .label('effect')
             .describe(
               'How the message comes on, stands, and goes: a built-in effect or one you designed.',

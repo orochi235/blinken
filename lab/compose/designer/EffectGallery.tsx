@@ -1,4 +1,5 @@
 import { EFFECTS } from '@/index.js';
+import { effectTitle } from '../schema.js';
 import { useCompose } from '../store.js';
 import { Thumbnail } from '../Thumbnail.js';
 import './EffectGallery.css';
@@ -38,7 +39,7 @@ export function EffectGallery({ onPick }: { onPick: () => void }) {
             }}
           >
             <Thumbnail effect={t.name} effects={t.effects} />
-            <span className="compose-gallery-name">{t.name}</span>
+            <span className="compose-gallery-name">{effectTitle(t.name)}</span>
           </button>
         </li>
       ))}
