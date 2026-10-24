@@ -63,7 +63,7 @@ describe('faces', () => {
   });
 
   it('lights each lit dot and the one to its right for bold, a column wider', () => {
-    expect(picture('I', { face: 'bold' })).toEqual([
+    expect(picture('I', { face: 'bold', style: { monospace: true } })).toEqual([
       '.####..',
       '..##...',
       '..##...',
@@ -72,7 +72,7 @@ describe('faces', () => {
       '..##...',
       '.####..',
     ]);
-    expect(rasterize('II', { face: 'bold' }).cols).toBe(14);
+    expect(rasterize('II', { face: 'bold', style: { monospace: true } }).cols).toBe(14);
   });
 
   it('lays slim letters four columns apart', () => {
@@ -88,7 +88,7 @@ describe('faces', () => {
 
 describe('styles', () => {
   it('reverse lights the box and leaves the glyphs dark, with a lit column either side', () => {
-    expect(picture('I', { style: { reverse: true } })).toEqual([
+    expect(picture('I', { style: { reverse: true, monospace: true } })).toEqual([
       '##...##',
       '###.###',
       '###.###',
@@ -100,8 +100,8 @@ describe('styles', () => {
     expect(rasterize('', { style: { reverse: true } }).cols).toBe(0);
   });
 
-  it('proportional advances each glyph by its inked width and a blank', () => {
-    expect(picture('I1', { style: { proportional: true } })).toEqual([
+  it('advances each glyph by its inked width and a blank', () => {
+    expect(picture('I1')).toEqual([
       '###..#..',
       '.#..##..',
       '.#...#..',
@@ -111,12 +111,17 @@ describe('styles', () => {
       '###.###.',
     ]);
     // A space has no ink, so it takes half the face's width.
-    expect(rasterize(' ', { style: { proportional: true } }).cols).toBe(4);
-    expect(rasterize('MI', { style: { proportional: true } }).cols).toBe(6 + 4);
+    expect(rasterize(' ').cols).toBe(4);
+    expect(rasterize('MI').cols).toBe(6 + 4);
+  });
+
+  it('monospace advances every glyph by the face’s widest and a blank', () => {
+    expect(rasterize('MI', { style: { monospace: true } }).cols).toBe(6 + 6);
+    expect(rasterize(' ', { style: { monospace: true } }).cols).toBe(6);
   });
 
   it('spans each letter, so a letter rasterized alone lines up inside its span', () => {
-    for (const style of [{}, { reverse: true }, { proportional: true }]) {
+    for (const style of [{}, { reverse: true }, { monospace: true }]) {
       const text = rasterize('WIN', { style });
       expect(text.letters.reduce((n, l) => n + l.width, 0)).toBe(text.cols);
       text.letters.forEach((span, k) => {
@@ -133,7 +138,7 @@ describe('styles', () => {
 
   it('orders letter by letter by each letter’s own span when proportional', () => {
     const b = board(40, 7);
-    const at = placeText(b, 'MI', { style: { proportional: true } });
+    const at = placeText(b, 'MI');
     const rank = rankOf({ by: 'letter' }, at);
     const dot = (x: number) => b.dots[x] as never;
     expect(rank(dot(at.left + 5))).toBe(0);

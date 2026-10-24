@@ -30,8 +30,8 @@ const length = (m: Move, where = at) => m.patch(where, values(m)).duration;
 const LOOKS: readonly Look[] = [
   ...FACE_NAMES.map((face) => ({ face })),
   { style: { reverse: true } },
-  { style: { proportional: true } },
-  { face: 'bold', style: { reverse: true, proportional: true } },
+  { style: { monospace: true } },
+  { face: 'bold', style: { reverse: true, monospace: true } },
 ];
 const lookName = (look: Look) =>
   [look.face ?? 'standard', ...Object.keys(look.style ?? {})].join(' ');

@@ -177,10 +177,12 @@ export function effectOf(name: string, v: unknown, dropped: string[]): EffectSpe
   return out as unknown as EffectSpec;
 }
 
+/** `legacy` reads a scene written while letters were monospace unless `proportional` was set. */
 export function sceneOf(
   v: unknown,
   effects: ComposeState['effects'],
   dropped: string[],
+  legacy = false,
 ): Scene | undefined {
   if (!isObj(v) || typeof v.text !== 'string') {
     dropped.push('a scene');
@@ -197,7 +199,7 @@ export function sceneOf(
   const hold = optional(v.hold, HOLD, `hold in scene ${v.text}`, dropped);
   const hex = optional(v.hex, HEX, `color in scene ${v.text}`, dropped);
   const face = faceIn(v.face, `face in scene ${v.text}`, dropped);
-  const style = styleIn(v.style, `style in scene ${v.text}`, dropped);
+  const style = styleIn(v.style, `style in scene ${v.text}`, dropped, legacy);
   const layers = layersIn(v.layers, `scene ${v.text}`, dropped);
   return {
     text: v.text,
@@ -240,20 +242,30 @@ function faceIn(v: unknown, what: string, dropped: string[]): FaceName | undefin
   return undefined;
 }
 
-const STYLES = ['reverse', 'proportional'] as const;
+const STYLES = ['reverse', 'monospace'] as const;
+const LEGACY_STYLES = ['reverse', 'proportional'] as const;
 
-/** A link's style for a scene: each switch it knows that is true, the rest named in `dropped`. */
-function styleIn(v: unknown, what: string, dropped: string[]): TextStyle | undefined {
-  if (v === undefined) return undefined;
-  if (!isObj(v)) {
-    dropped.push(what);
-    return undefined;
-  }
+/**
+ * A link's style for a scene: each switch it knows that is true, the rest named in `dropped`. A
+ * `legacy` style's `proportional` is read as the absence of `monospace`.
+ */
+function styleIn(
+  v: unknown,
+  what: string,
+  dropped: string[],
+  legacy: boolean,
+): TextStyle | undefined {
+  const known: readonly string[] = legacy ? LEGACY_STYLES : STYLES;
   const out: Record<string, boolean> = {};
-  for (const [key, on] of Object.entries(v)) {
-    if (!STYLES.includes(key as (typeof STYLES)[number]) || typeof on !== 'boolean')
-      dropped.push(`${key} in ${what}`);
-    else if (on) out[key] = true;
+  if (v !== undefined && !isObj(v)) dropped.push(what);
+  else
+    for (const [key, on] of Object.entries(v ?? {})) {
+      if (!known.includes(key) || typeof on !== 'boolean') dropped.push(`${key} in ${what}`);
+      else if (on) out[key] = true;
+    }
+  if (legacy) {
+    if (out.proportional) delete out.proportional;
+    else out.monospace = true;
   }
   return Object.keys(out).length ? out : undefined;
 }

@@ -18,8 +18,8 @@ const COLS = b.cols;
 const dot = (x: number, y: number) => b.dots[y * COLS + x] as Led;
 
 describe('rasterize', () => {
-  it('lays glyphs out five dots wide with a blank column after each', () => {
-    const text = rasterize('ii');
+  it('lays monospace glyphs out five dots wide with a blank column after each', () => {
+    const text = rasterize('ii', { style: { monospace: true } });
     expect(text.cols).toBe(12);
     expect(text.lit(2, 0)).toBe(true);
     expect(text.lit(0, 0)).toBe(false);

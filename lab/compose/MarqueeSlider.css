@@ -45,10 +45,8 @@
   cursor: text;
 }
 
-.marquee-readout-field:focus-visible,
 .marquee-readout-field:focus {
-  outline: 1px solid var(--wzl-focus-ring, var(--wzl-accent));
-  outline-offset: 1px;
+  outline: none;
 }
 
 .marquee-readout-field::selection {

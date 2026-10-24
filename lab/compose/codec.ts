@@ -32,7 +32,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 3;
+export const VERSION = 4;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -228,7 +228,7 @@ function writeScene(w: BitWriter, scene: Scene, mine: string[]): void {
   w.flag(face >= 0);
   if (face >= 0) w.uint(face, widthOf(FACE_NAMES.length));
   w.flag(scene.style?.reverse === true);
-  w.flag(scene.style?.proportional === true);
+  w.flag(scene.style?.monospace === true);
   writeLayers(w, (scene.layers ?? {}) as Record<string, LinkLayer>);
 }
 
@@ -241,8 +241,9 @@ function readScene(r: BitReader, mine: string[], version: number): Scene {
   const hold = r.flag() ? readNumber(r, HOLD) : undefined;
   const face = r.flag() ? (FACE_NAMES[r.index(FACE_NAMES.length)] as FaceName) : undefined;
   const reverse = r.flag();
-  const proportional = r.flag();
-  const style = { ...(reverse && { reverse }), ...(proportional && { proportional }) };
+  // Before version 4 the bit was `proportional`, and a scene without it was monospace.
+  const monospace = version >= 4 ? r.flag() : !r.flag();
+  const style = { ...(reverse && { reverse }), ...(monospace && { monospace }) };
   const layers = version >= 3 ? readLayers(r) : version === 2 ? readLayers(r, V2_LAYERS) : {};
   return {
     text,

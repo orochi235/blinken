@@ -191,14 +191,14 @@ describe('share', () => {
   it('round-trips a scene’s face and style, and writes them as code', () => {
     const s = state();
     s.program[0] = { ...(s.program[0] as Scene), face: 'slim', style: { reverse: true } };
-    s.program[1] = { ...(s.program[1] as Scene), style: { proportional: true } };
+    s.program[1] = { ...(s.program[1] as Scene), style: { monospace: true } };
     const { state: back, dropped } = decode(`#${encode(s)}`);
     expect(dropped).toEqual([]);
     expect(back.program).toEqual(s.program);
     const code = toCode(s);
     expect(code).toContain('face: "slim"');
     expect(code).toContain('style: { reverse: true }');
-    expect(code).toContain('style: { proportional: true }');
+    expect(code).toContain('style: { monospace: true }');
   });
 
   it('puts the layers of a link from before scenes had their own on every scene', () => {
@@ -226,7 +226,19 @@ describe('share', () => {
     });
     const { state: back, dropped } = decode(old);
     expect(dropped).toEqual([]);
-    expect(back.program).toEqual([{ text: 'HI', hex: 0xff9a2e, effect: 'hold', hold: 1500 }]);
+    expect(back.program).toEqual([
+      { text: 'HI', hex: 0xff9a2e, effect: 'hold', hold: 1500, style: { monospace: true } },
+    ]);
+  });
+
+  it('reads a JSON link’s proportional scene as one without monospace', () => {
+    const old = hashOf({
+      effects: {},
+      program: [{ text: 'HI', hex: 0xff9a2e, effect: 'hold', style: { proportional: true } }],
+    });
+    const { state: back, dropped } = decode(old);
+    expect(dropped).toEqual([]);
+    expect(back.program[0]?.style).toBeUndefined();
   });
 
   it('names a face no built-in has and style switches it does not know', () => {
@@ -235,7 +247,7 @@ describe('share', () => {
     data.program[1].style = { reverse: true, blink: true, proportional: 'yes' };
     const { state: back, dropped } = decode(hashOf(data));
     expect(back.program[0]?.face).toBeUndefined();
-    expect(back.program[1]?.style).toEqual({ reverse: true });
+    expect(back.program[1]?.style).toEqual({ reverse: true, monospace: true });
     expect(dropped).toEqual([
       'face in scene HI',
       'blink in style in scene THERE',

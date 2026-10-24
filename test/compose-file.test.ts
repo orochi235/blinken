@@ -35,6 +35,18 @@ describe('saved composition files', () => {
     expect(json).toContain('\n  "program": [');
   });
 
+  it('reads a file saved before it had a format as monospace unless it set proportional', () => {
+    const { format: _, ...old } = JSON.parse(toJson(state()));
+    old.program[0].style = { proportional: true };
+    const { state: back, dropped } = fromJson(JSON.stringify(old));
+    expect(dropped).toEqual([]);
+    expect(back.program.map((s) => s.style)).toEqual([undefined, { monospace: true }]);
+    expect(fromJson(toJson(state())).state.program.map((s) => s.style)).toEqual([
+      undefined,
+      undefined,
+    ]);
+  });
+
   it('reads anything that is not a saved composition as unread', () => {
     for (const text of ['', 'not json', '[]', '{"name":"bree","version":"0.0.0"}'])
       expect(fromJson(text).read, text).toBe(false);

@@ -7,7 +7,7 @@ import { litAt, move, on } from './move.js';
 const glyphs = new Map<string, Bitmap>();
 /** One letter alone in the look of `text`, which draws it where `text` draws its letters. */
 const glyph = (text: Bitmap, ch: string) => {
-  const key = `${text.face.name} ${text.style.reverse ? 'r' : ''}${text.style.proportional ? 'p' : ''} ${ch}`;
+  const key = `${text.face.name} ${text.style.reverse ? 'r' : ''}${text.style.monospace ? 'm' : ''} ${ch}`;
   let g = glyphs.get(key);
   if (g === undefined) {
     g = rasterize(ch, text);

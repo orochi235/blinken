@@ -212,6 +212,27 @@ describe('packed links', () => {
     expect(state.program.map((s) => s.layers)).toEqual([{ invert: { on: true } }]);
   });
 
+  it('opens a version 3 link as monospace unless it set proportional', () => {
+    const w = new BitWriter();
+    w.uint(3, 8);
+    w.count(0);
+    w.count(2);
+    for (const proportional of [false, true]) {
+      w.text('A');
+      w.flag(false);
+      w.flag(false);
+      w.uint(Object.keys(EFFECTS).indexOf('hold'), widthOf(Object.keys(EFFECTS).length));
+      w.flag(false);
+      w.flag(false);
+      w.flag(false);
+      w.flag(proportional);
+      for (const _ of Object.keys(LAYERS)) w.flag(false);
+    }
+    const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
+    expect(read).toBe(true);
+    expect(state.program.map((s) => s.style)).toEqual([{ monospace: true }, undefined]);
+  });
+
   it('opens a version 1 link with its layers on every scene', () => {
     const w = new BitWriter();
     w.uint(1, 8);
@@ -252,7 +273,7 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 3, digest: '75147cfac27a' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 4, digest: '75147cfac27a' });
   });
 });
 

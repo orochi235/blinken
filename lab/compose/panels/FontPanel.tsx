@@ -37,7 +37,7 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
   const scene = state.program[at];
   if (!scene) return null;
   const face = typeof scene.face === 'string' ? scene.face : 'standard';
-  const set = (what: 'face' | 'reverse' | 'proportional', v: unknown) =>
+  const set = (what: 'face' | 'reverse' | 'monospace', v: unknown) =>
     compose.edit(
       (s) => {
         const was = s.program[at];
@@ -75,14 +75,14 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
         </label>
         <label
           className="compose-check"
-          title="Spaces each letter by its own width, so narrow letters like I sit closer to their neighbors. Off, every letter takes the same width."
+          title="Gives every letter the same width, the face’s widest, as on a fixed-pitch sign. Off, each letter takes its own width, so narrow letters like I sit closer to their neighbors."
         >
           <input
             type="checkbox"
-            checked={scene.style?.proportional === true}
-            onChange={(e) => set('proportional', e.target.checked)}
+            checked={scene.style?.monospace === true}
+            onChange={(e) => set('monospace', e.target.checked)}
           />
-          proportional
+          monospace
         </label>
         <span
           className="compose-font-height"

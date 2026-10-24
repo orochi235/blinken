@@ -14,6 +14,8 @@ import { STILL } from './Thumbnail.js';
 
 /** The face a readout's numbers are set in: the sign's own 5 × 7, the clearest digits it has. */
 const FACE = 'standard';
+/** Fixed pitch, so a character is a run of columns and a space is a digit's width. */
+const STYLE = { monospace: true } as const;
 const ROWS = FACES[FACE].rows;
 const times = (n: number, by: number) => Number((n * by).toPrecision(12));
 
@@ -44,6 +46,7 @@ function Readout({
       effects: {},
       text: shown.current,
       face: FACE,
+      style: STYLE,
       cols,
       rows: ROWS,
       still: 100,
@@ -57,7 +60,7 @@ function Readout({
   useEffect(() => {
     const t = sign.current;
     if (!t) return;
-    t.marquee.setProgram([{ effect: STILL, text, face: FACE, hex: 0xff9a2e }]);
+    t.marquee.setProgram([{ effect: STILL, text, face: FACE, style: STYLE, hex: 0xff9a2e }]);
     t.marquee.restart();
     t.play(false, 100);
   }, [text]);
@@ -72,15 +75,15 @@ function Readout({
       t.marquee.setHighlight(null);
       return;
     }
-    // A fixed-pitch face gives every character the same advance, so a character is a run of columns.
     const advance = FACES[FACE].width + 1;
-    const left = Math.floor((cols - rasterize(text, { face: FACE }).cols) / 2);
+    const left = Math.floor((cols - rasterize(text, { face: FACE, style: STYLE }).cols) / 2);
     const from = left + marked.from * advance;
     const to = left + marked.to * advance - 1;
+    // A selection inverts a column of padding either side of its digits.
     t.marquee.setHighlight(
       marked.from === marked.to
         ? (dot) => dot.x === Math.max(0, from - 1)
-        : (dot) => dot.x >= from && dot.x < to,
+        : (dot) => dot.x >= from - 1 && dot.x <= to,
     );
   }, [marked?.from, marked?.to, text, cols]);
   return (
@@ -199,9 +202,9 @@ export function marqueeSlider(p: NumberParam): ControlRenderer {
   const max = times(p.max, k);
   const step = times(p.step, k);
   // Wide enough for the widest value the param can hold, so the readout never resizes; a
-  // shorter one is padded on the left, and in a fixed-pitch face a space is a digit's width.
+  // shorter one is padded on the left. Two columns a side leave a dark one beyond a selection's padding.
   const chars = Math.max(...[min, max].map((v) => textOf(p, v).length));
-  const cols = rasterize('0'.repeat(chars), { face: FACE }).cols + 2;
+  const cols = rasterize('0'.repeat(chars), { face: FACE, style: STYLE }).cols + 4;
   return Object.assign(
     ({ value, setValue, pref, disabled }: Parameters<ControlRenderer>[0]) => {
       const v = typeof value === 'number' ? value : min;

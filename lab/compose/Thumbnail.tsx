@@ -94,7 +94,7 @@ export function Thumbnail({
     text,
     face,
     style?.reverse,
-    style?.proportional,
+    style?.monospace,
     cols,
     rows,
     still,

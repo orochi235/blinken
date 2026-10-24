@@ -63,8 +63,11 @@ export interface Decoded {
   read: boolean;
 }
 
-/** A composition read from untrusted JSON, with everything it couldn't use named in `dropped`. */
-function parse(data: unknown): Decoded {
+/**
+ * A composition read from untrusted JSON, with everything it couldn't use named in `dropped`.
+ * `legacy` is JSON written before FORMAT 2, whose scenes were monospace by default.
+ */
+function parse(data: unknown, legacy = false): Decoded {
   const dropped: string[] = [];
   const state = defaultState();
   if (!isObj(data)) return { state, dropped: [], read: false };
@@ -74,7 +77,7 @@ function parse(data: unknown): Decoded {
     if (spec) state.effects[name] = spec;
   }
   if (Array.isArray(data.program))
-    state.program = data.program.flatMap((v) => sceneOf(v, state.effects, dropped) ?? []);
+    state.program = data.program.flatMap((v) => sceneOf(v, state.effects, dropped, legacy) ?? []);
   else {
     state.program = [];
     dropped.push('the program');
@@ -101,11 +104,10 @@ export function decode(hash: string): Decoded {
   if (!text) return { state: defaultState(), dropped: [], read: false };
   try {
     const bytes = fromBase64url(text);
-    return parse(
-      JSON_LINK.test(text)
-        ? JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes))
-        : unpack(bytes),
-    );
+    // JSON links stopped being written before FORMAT 2, so every one is legacy.
+    return JSON_LINK.test(text)
+      ? parse(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)), true)
+      : parse(unpack(bytes));
   } catch {
     return { state: defaultState(), dropped: [], read: false };
   }
@@ -113,16 +115,18 @@ export function decode(hash: string): Decoded {
 
 /** What a saved file says it is, so any other JSON reads as no composition. */
 const FILE_KIND = 'composition';
+/** A saved file's format; one without is format 1, from when scenes were monospace by default. */
+const FORMAT = 2;
 
 /** The composition as a JSON file's text, readable by hand and by `fromJson`. */
 export const toJson = (state: ComposeState): string =>
-  `${JSON.stringify({ bree: FILE_KIND, ...shareOf(state) }, null, 2)}\n`;
+  `${JSON.stringify({ bree: FILE_KIND, format: FORMAT, ...shareOf(state) }, null, 2)}\n`;
 
 /** A composition from a saved file's text, read as forgivingly as a link. */
 export function fromJson(text: string): Decoded {
   try {
     const data: unknown = JSON.parse(text);
-    if (isObj(data) && data.bree === FILE_KIND) return parse(data);
+    if (isObj(data) && data.bree === FILE_KIND) return parse(data, data.format === undefined);
   } catch {}
   return { state: defaultState(), dropped: [], read: false };
 }

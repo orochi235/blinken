@@ -104,7 +104,7 @@ A scene can name the face its message is drawn in and a style for it, as `face` 
 ```ts
 program: [
   { effect: 'hold', text: 'NOW SHOWING', hex: 0xff4030, face: 'bold' },
-  { effect: 'scroll', text: 'ALL NIGHT', hex: 0x6dff5a, face: 'slim', style: { proportional: true } },
+  { effect: 'scroll', text: 'ALL NIGHT', hex: 0x6dff5a, face: 'slim', style: { monospace: true } },
   { effect: 'flip', text: 'OPEN', hex: 0xff9a2e, style: { reverse: true } },
 ],
 ```
@@ -118,8 +118,8 @@ published pixel fonts, from the 3 × 5 `tom-thumb` to the italic `monogram-itali
 its body, the height of its capitals: 7 dots for the drawn four, 3 to 7 for the converted ones. A
 glyph that reaches above or below the body, such as a comma's tail, draws there in a ghost row,
 into the gap between lines or the sign's margin; only the sign's edge cuts it. `style.reverse` is inverse video: the message's box lit and its letters dark.
-`style.proportional` spaces each letter by its own width and a blank, so an I takes three columns
-where a fixed-pitch one takes five. A face can also be given in full, as a `Face` with `rows`,
+Each letter takes its own width and a blank, so an I takes three columns where `style.monospace`,
+giving every letter the face's widest, takes five. A face can also be given in full, as a `Face` with `rows`,
 `width` and a `glyph` for each character, and its ghost rows as `above` and `below`. A scene that
 runs off the sign still plays, showing what fits, and staging it warns with the height of sign
 that shows all of it.

@@ -5,12 +5,12 @@ export const ROWS = 7;
 
 /**
  * How text is drawn besides its face. `reverse` lights the message's box and leaves the glyphs
- * dark; `proportional` advances each glyph by its own inked width and a blank instead of the
- * face's widest.
+ * dark. Each glyph advances by its own inked width and a blank; `monospace` advances every glyph by
+ * the face's widest instead.
  */
 export interface TextStyle {
   readonly reverse?: boolean;
-  readonly proportional?: boolean;
+  readonly monospace?: boolean;
 }
 
 /** A face and a style; a program scene is one. Default: the standard face, plain. */
@@ -46,9 +46,9 @@ export interface Bitmap {
 }
 
 /** A glyph's dots and the columns of it that are drawn. */
-function cut(face: Face, ch: string, proportional: boolean) {
+function cut(face: Face, ch: string, monospace: boolean) {
   const rows = face.glyph(ch) ?? face.glyph(' ') ?? [];
-  if (!proportional) return { rows, from: 0, width: face.width };
+  if (monospace) return { rows, from: 0, width: face.width };
   const inked = Array.from({ length: face.width }, (_, x) => rows.some((r) => r[x] === '#'));
   const from = inked.indexOf(true);
   if (from < 0) return { rows, from: 0, width: Math.ceil(face.width / 2) };
@@ -59,7 +59,7 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
   const face = faceOf(look.face);
   const style = look.style ?? {};
   const rows = face.rows;
-  const glyphs = [...text.toUpperCase()].map((ch) => cut(face, ch, style.proportional ?? false));
+  const glyphs = [...text.toUpperCase()].map((ch) => cut(face, ch, style.monospace ?? false));
   // Reversed, a blank column leads so the first glyph has a lit edge before it as the last has after.
   const pad = style.reverse && glyphs.length > 0 ? 1 : 0;
   const plain = glyphs.reduce((n, g) => n + g.width + 1, 0);

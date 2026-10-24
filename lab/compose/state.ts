@@ -108,11 +108,7 @@ export function moveScene(program: readonly Scene[], i: number, by: number): Sce
 }
 
 /** A scene with its face or one of its style switches set, the default left out. */
-export function withLook(
-  scene: Scene,
-  what: 'face' | 'reverse' | 'proportional',
-  v: unknown,
-): Scene {
+export function withLook(scene: Scene, what: 'face' | 'reverse' | 'monospace', v: unknown): Scene {
   if (what === 'face') {
     const { face: _, ...rest } = scene;
     return v === 'standard' ? rest : { ...rest, face: v as FaceName };
