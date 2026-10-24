@@ -113,7 +113,7 @@ The faces are `standard`, the classic 5 × 7 letters and the default; `slim`, 3 
 across the sign; `wide`, the standard letters with every column doubled; and `bold`, the standard
 letters with each lit dot also lighting the one to its right. Beside them are faces converted from
 published pixel fonts, from the 3 × 5 `tom-thumb` to the italic `monogram-italic`, the handwritten
-`notjam-manuscript` and the extended `kenney-rocket`; `FACE_NAMES` lists them all, and
+`nj manuscript` and the extended `kenney-rocket`; `FACE_NAMES` lists them all, and
 `src/glyphs/fonts/CREDITS.md` names each one's source and license. A face's lines are spaced by
 its body, the height of its capitals: 7 dots for the drawn four, 3 to 7 for the converted ones. A
 glyph that reaches above or below the body, such as a comma's tail, draws there in a ghost row,

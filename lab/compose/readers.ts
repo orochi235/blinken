@@ -233,7 +233,9 @@ export function layersIn(
 /** A link's face for a scene: a built-in's name, or none (named in `dropped`) when it is another. */
 function faceIn(v: unknown, what: string, dropped: string[]): FaceName | undefined {
   if (v === undefined) return undefined;
-  if (typeof v === 'string' && FACE_NAMES.includes(v as FaceName)) return v as FaceName;
+  // The Not Jam faces were named `notjam-…` until 2026-10-24.
+  const name = typeof v === 'string' ? v.replace(/^notjam-/, 'nj ') : v;
+  if (typeof name === 'string' && FACE_NAMES.includes(name as FaceName)) return name as FaceName;
   dropped.push(what);
   return undefined;
 }

@@ -13,19 +13,19 @@ The faces in this directory are converted from these fonts. The OFL 1.1 text is 
 - `kenney-rocket-square`: Kenney Rocket Square, Kenney (https://kenney.nl), CC0
 - `kenney-mini`: Kenney Mini, Kenney (https://kenney.nl), CC0
 - `kenney-mini-square`: Kenney Mini Square, Kenney (https://kenney.nl), CC0
-- `notjam-chunky-sans`: Not Jam Chunky Sans 6, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj chunky-sans`: Not Jam Chunky Sans 6, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
 - `undead-pixel`: Undead Pixel 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
 - `m3x6`: m3x6 by Daniel Linssen (https://managore.itch.io/m3x6), free to use with attribution
-- `notjam-chunky`: Not Jam Chunky 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj chunky`: Not Jam Chunky 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
 - `ggbot-slab`: Derived from Cairopixel, Copyright © 2025 GGBotNet (https://ggbot.net), with Reserved Font Name "Cairopixel", OFL 1.1
-- `notjam-serif`: Not Jam Serif 11, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj serif`: Not Jam Serif 11, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
 - `monogram-italic`: monogram extended italic, datagoblin (https://datagoblin.itch.io/monogram), CC0
 - `scientifica-italic`: Scientifica Italic, Copyright (c) 2021, Akshay Oppiliappan; Copyright (c) 2015, romeovs (https://github.com/oppiliappan/scientifica), OFL 1.1
-- `notjam-manuscript`: Not Jam Mono Manuscript 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
-- `notjam-old-peculiar`: Not Jam Mono Old Peculiar 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
-- `notjam-prophet`: Not Jam Mono Prophet 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
-- `notjam-casual`: Not Jam Mono Casual 10, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
-- `notjam-crooked`: Not Jam Mono Crooked 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj manuscript`: Not Jam Mono Manuscript 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj old-peculiar`: Not Jam Mono Old Peculiar 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj prophet`: Not Jam Mono Prophet 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj casual`: Not Jam Mono Casual 10, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj crooked`: Not Jam Mono Crooked 8, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
 - `kenney-blocks`: Kenney Blocks, Kenney (https://kenney.nl), CC0
 - `public-pixel`: Public Pixel, GGBotNet (https://ggbot.itch.io/public-pixel-font), CC0
 - `m5x7`: m5x7 by Daniel Linssen (https://managore.itch.io/m5x7), CC0
@@ -33,10 +33,10 @@ The faces in this directory are converted from these fonts. The OFL 1.1 text is 
 - `galmuri7`: Galmuri7, Copyright (c) 2019–2025 Lee Minseo (quiple@quiple.dev), OFL 1.1
 - `kenney-pixel`: Kenney Pixel, Kenney (https://kenney.nl), CC0
 - `spleen`: Spleen 5x8, Copyright (c) 2018-2026 Frederic Cambus, BSD 2-Clause
-- `notjam-slab`: Not Jam Slab Serif 11, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj slab`: Not Jam Slab Serif 11, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
 - `jacquarda-bastarda`: Jacquarda Bastarda 9, Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jacquarda-bastarda), OFL 1.1
 - `ggbot-humanist`: Derived from Pixelbasel, Copyright © 2025 GGBotNet (https://ggbot.net), with Reserved Font Name "Pixelbasel", OFL 1.1
-- `notjam-blackletter`: Not Jam Blackletter 13, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
+- `nj blackletter`: Not Jam Blackletter 13, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0
 - `delta-block-italic`: Delta Block Italic, GGBotNet (https://ggbot.itch.io/delta-block-font), CC0
 - `jersey-10`: Jersey 10, Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey), OFL 1.1
 

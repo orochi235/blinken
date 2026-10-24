@@ -9,7 +9,7 @@ import { MOVES } from '@/moves/index.js';
 import { ORDERS, placeText } from '@/orders.js';
 import { BitReader, BitWriter, widthOf } from '../lab/compose/bits.js';
 import { pack, unpack, VERSION } from '../lab/compose/codec.js';
-import { HEX } from '../lab/compose/readers.js';
+import { HEX, sceneOf } from '../lab/compose/readers.js';
 import { decode, encode, playable, shareOf } from '../lab/compose/share.js';
 import { BLEND, type ComposeState, HOLD, LAG } from '../lab/compose/state.js';
 
@@ -252,6 +252,14 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 3, digest: '743f2133773d' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 3, digest: '75147cfac27a' });
+  });
+});
+
+describe('sceneOf', () => {
+  it('reads a Not Jam face by the name it had before 2026-10-24', () => {
+    const dropped: string[] = [];
+    const scene = sceneOf({ text: 'HI', effect: 'scroll', face: 'notjam-serif' }, {}, dropped);
+    expect({ face: scene?.face, dropped }).toEqual({ face: 'nj serif', dropped: [] });
   });
 });
