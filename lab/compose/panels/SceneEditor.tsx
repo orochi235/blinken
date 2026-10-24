@@ -1,17 +1,19 @@
 import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
 import { useMemo } from 'react';
 import { EFFECTS } from '@/index.js';
+import { Panel, tintOf } from '../Panel.js';
 import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD } from '../state.js';
-import { compose, useCompose } from '../store.js';
+import { compose, pickedOf, useCompose } from '../store.js';
 import './SceneEditor.css';
 
 const NONE: ReadonlySet<string> = new Set();
 const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
 
-/** The picked scene's text, color, effect and hold; its face and style are the font panel's. */
-export function SceneEditor({ at }: { at: number }) {
+/** The picked scene's own panel: its text, color, effect and hold; its face and style are the font panel's. */
+export function SceneEditor() {
   const state = useCompose();
+  const at = pickedOf(state);
   const scene = state.program[at];
   const names = [...Object.keys(state.effects), ...Object.keys(EFFECTS)];
   const key = names.join('\n');
@@ -61,9 +63,8 @@ export function SceneEditor({ at }: { at: number }) {
     );
 
   return (
-    <div className="compose-scene-editor">
+    <Panel title={`scene ${at + 1}`} className="compose-scene-editor" tint={tintOf(scene.hex)}>
       <ControlPanel
-        title={`scene ${at + 1}`}
         schema={schema}
         config={{
           text: scene.text,
@@ -76,6 +77,6 @@ export function SceneEditor({ at }: { at: number }) {
         draftConfig={set}
         density={DENSITY}
       />
-    </div>
+    </Panel>
   );
 }

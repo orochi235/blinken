@@ -7,6 +7,7 @@ import { FontPanel } from './panels/FontPanel.js';
 import { HardwarePanel } from './panels/HardwarePanel.js';
 import { LayersPanel } from './panels/LayersPanel.js';
 import { ProgramPanel } from './panels/ProgramPanel.js';
+import { SceneEditor } from './panels/SceneEditor.js';
 import { ShareBar } from './panels/ShareBar.js';
 import { UndoBar } from './panels/UndoBar.js';
 import { Scrubber } from './Scrubber.js';
@@ -24,6 +25,7 @@ function Compose() {
       <div className="compose-panes">
         <div className="compose-pane">
           <ProgramPanel />
+          <SceneEditor />
           <FontPanel
             setRows={(rows) =>
               setKept((h) => {

@@ -9,7 +9,6 @@ import { moveScene } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
 import { NO_EFFECTS, STILL, Thumbnail } from '../Thumbnail.js';
 import './ProgramPanel.css';
-import { SceneEditor } from './SceneEditor.js';
 
 /** Reshapes the list, keeping `keep` picked wherever it lands, and opens its effect. */
 const reshape = (next: Scene[], keep?: Scene) =>
@@ -198,7 +197,6 @@ export function ProgramPanel() {
           onClick={() => remove(picked)}
         />
       </div>
-      <SceneEditor at={picked} />
     </Panel>
   );
 }
