@@ -3,8 +3,24 @@ import { stereo } from '@weasel-js/ui/components/MotifFrame';
 import { FADE, type NumberParam } from '@/index.js';
 import { numberField, schemaFor } from './schema.js';
 
-const share = (label: string): NumberParam => ({ label, min: 0, max: 0.2, step: 0.005, value: 0 });
-const leak = (label: string): NumberParam => ({ label, min: 0, max: 0.3, step: 0.005, value: 0 });
+const share = (label: string): NumberParam => ({
+  label,
+  min: 0,
+  max: 0.2,
+  step: 0.001,
+  value: 0,
+  unit: '%',
+  scale: 100,
+});
+const leak = (label: string): NumberParam => ({
+  label,
+  min: 0,
+  max: 0.3,
+  step: 0.005,
+  value: 0,
+  unit: '%',
+  scale: 100,
+});
 
 /** Each group of the sign's hardware settings. */
 const GROUPS = {
