@@ -1,5 +1,6 @@
 import { Button } from '@weasel-js/labkit';
-import { useMemo } from 'react';
+import { Input, RangeSlider } from '@weasel-js/ui';
+import { useMemo, useState } from 'react';
 import {
   type EffectSpec,
   FACE_NAMES,
@@ -18,9 +19,20 @@ import './FontPanel.css';
 const STILL: EffectSpec = { name: 'still', active: { move: 'stand' } };
 const NO_EFFECTS = {};
 
+/** A face's body height: the rows its lines are spaced by, ghost rows aside. */
+const bodyOf = (name: FaceName) => {
+  const f = FACES[name];
+  return f.rows - (f.above ?? 0) - (f.below ?? 0);
+};
+const BODIES = FACE_NAMES.map(bodyOf);
+const SHORTEST = Math.min(...BODIES);
+const TALLEST = Math.max(...BODIES);
+
 /** The picked scene's face, each one previewed on its text, and its style. */
 export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
   const state = useCompose();
+  const [search, setSearch] = useState('');
+  const [heights, setHeights] = useState<number[]>([SHORTEST, TALLEST]);
   const at = pickedOf(state);
   const scene = state.program[at];
   if (!scene) return null;
@@ -62,8 +74,35 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
           proportional
         </label>
       </div>
+      <div
+        className="compose-font-filter"
+        title="Narrow the faces by name, and by how many rows tall their letters are."
+      >
+        <Input
+          aria-label="find a face"
+          placeholder="find a face"
+          value={search}
+          onChange={setSearch}
+        />
+        <RangeSlider
+          label="height"
+          minValue={SHORTEST}
+          maxValue={TALLEST}
+          step={1}
+          value={heights}
+          onChange={(v) => setHeights(Array.isArray(v) ? v : [v, v])}
+          formatOutput={(v) => (Array.isArray(v) ? `${v[0]}–${v[1]} rows` : `${v} rows`)}
+        />
+      </div>
       <div className="compose-font-faces" role="radiogroup" aria-label="face">
-        {FACE_NAMES.map((name: FaceName) => (
+        {FACE_NAMES.filter((name) => {
+          const body = bodyOf(name);
+          return (
+            name.includes(search.trim().toLowerCase()) &&
+            body >= (heights[0] ?? SHORTEST) &&
+            body <= (heights[1] ?? TALLEST)
+          );
+        }).map((name: FaceName) => (
           <label key={name} className="compose-font-face" title={FACES[name].about}>
             <input
               type="radio"

@@ -9,6 +9,12 @@
   gap: 12px;
 }
 
+.compose-font-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .compose-font-faces {
   max-height: 320px;
   overflow-y: auto;
