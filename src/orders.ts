@@ -132,7 +132,8 @@ export function rankOf(order: Order, at: Placed): (s: Subject) => number {
       const last = Math.max(0, text.letters.length - 1);
       return pick((s) => {
         const x = Math.floor(s.x - at.left);
-        return x < 0 ? 0 : x >= text.cols ? last : Math.max(0, text.letterAt(x));
+        const y = s.kind === 'dot' ? at.rowOf(s) : undefined;
+        return x < 0 ? 0 : x >= text.cols ? last : Math.max(0, text.letterAt(x, y));
       });
     }
     case 'random': {

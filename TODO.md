@@ -2,7 +2,6 @@
 
 ## Asked for, not built yet
 
-- Kern by shape in proportional mode: slide each letter left until its nearest ink in any row is one blank from the letter before, so "NJ" in nj serif tucks the J under the N (asked 2026-10-24).
 - A tracking lever on the font panel. Proportional spacing already fixes most of the faces' own spacing, so ask whether it is still wanted before building it (asked 2026-10-24).
 - Outlines and block shadows as font layers, added around or behind the letters programmatically (asked 2026-10-24).
 

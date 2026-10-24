@@ -56,7 +56,7 @@ export const reelIn = move({
       (phase, led) => {
         const row = at.rowOf(led);
         const x = led.x - at.left;
-        const k = text.letterAt(x);
+        const k = text.letterAt(x, row);
         if (row < 0 || k < 0) return on(false);
         const reel = reels[k] as Bitmap[];
         // The reel starts on a blank cell, so a letter waiting out its delay shows nothing.

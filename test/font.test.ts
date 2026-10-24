@@ -75,8 +75,8 @@ describe('faces', () => {
     expect(rasterize('II', { face: 'bold', style: { monospace: true } }).cols).toBe(14);
   });
 
-  it('lays slim letters four columns apart', () => {
-    expect(rasterize('HELLO', { face: 'slim' }).cols).toBe(20);
+  it('lays monospace slim letters four columns apart', () => {
+    expect(rasterize('HELLO', { face: 'slim', style: { monospace: true } }).cols).toBe(20);
   });
 
   it('takes a face given in full, and throws on a name no face has', () => {
@@ -113,6 +113,25 @@ describe('styles', () => {
     // A space has no ink, so it takes half the face's width.
     expect(rasterize(' ').cols).toBe(4);
     expect(rasterize('MI').cols).toBe(6 + 4);
+  });
+
+  it('kerns each glyph left until its ink is a blank from the ink before it in every shared row', () => {
+    expect(picture('LT')).toEqual([
+      '#...#####.',
+      '#.....#...',
+      '#.....#...',
+      '#.....#...',
+      '#.....#...',
+      '#.....#...',
+      '#####.#...',
+    ]);
+    // The serif J's descender tucks under the N, sharing three of its columns.
+    const nj = rasterize('NJ', { face: 'nj serif' });
+    expect(nj.letters.map((l) => l.x)).toEqual([0, 7]);
+    expect(nj.letterAt(7, 8)).toBe(1);
+    expect(nj.letterAt(7, 0)).toBe(0);
+    // A space keeps its width: nothing slides into it.
+    expect(rasterize('I I').letters.map((l) => l.x)).toEqual([0, 4, 8]);
   });
 
   it('monospace advances every glyph by the face’s widest and a blank', () => {
