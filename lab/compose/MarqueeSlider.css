@@ -1,0 +1,25 @@
+.marquee-slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.marquee-slider > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The canvas sizes itself to this box, which is its dots at one pitch. */
+.marquee-readout {
+  --pitch: 3px;
+  display: flex;
+  flex: none;
+  width: calc(var(--cols) * var(--pitch));
+  height: calc(var(--rows) * var(--pitch));
+}
+
+.marquee-readout canvas {
+  display: block;
+  border-radius: 3px;
+}

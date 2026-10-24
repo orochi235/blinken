@@ -1,5 +1,11 @@
 import { ControlPanel, withValueAtPath } from '@weasel-js/labkit';
-import { type Hardware, hardwareSchema, shownHardware, storedHardware } from '../hardware.js';
+import {
+  HARDWARE_RENDERERS,
+  type Hardware,
+  hardwareSchema,
+  shownHardware,
+  storedHardware,
+} from '../hardware.js';
 import { Panel } from '../Panel.js';
 import { DENSITY } from '../schema.js';
 import './HardwarePanel.css';
@@ -18,6 +24,7 @@ export function HardwarePanel({
     <Panel title="sign" className="compose-hardware">
       <ControlPanel
         schema={hardwareSchema()}
+        renderers={HARDWARE_RENDERERS}
         config={shownHardware(hardware)}
         setConfig={set}
         draftConfig={set}

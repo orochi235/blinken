@@ -1,6 +1,7 @@
 import { f } from '@weasel-js/labkit';
 import { stereo } from '@weasel-js/ui/components/MotifFrame';
 import { type ChoiceParam, FADE, MODULATORS, type NumberParam, SIZE } from '@/index.js';
+import { marqueeSlider } from './MarqueeSlider.js';
 import { fieldOf, schemaFor, shownValues, storedValue } from './schema.js';
 
 const share = (label: string, about: string): NumberParam => ({
@@ -125,6 +126,17 @@ export const HARDWARE: Hardware = Object.fromEntries(
   ]),
 ) as Hardware;
 
+const readoutKey = (g: string, k: string) => `readout:${g}.${k}`;
+
+/** The hardware panel's rows that draw their number on a small sign: one per number setting. */
+export const HARDWARE_RENDERERS = Object.fromEntries(
+  entries(GROUPS).flatMap(([g, params]) =>
+    entries(params).flatMap(([k, p]) =>
+      'choices' in p ? [] : [[readoutKey(g, k), marqueeSlider(p as NumberParam)]],
+    ),
+  ),
+);
+
 /** The hardware panel's schema: a group per card, so a value sits at `fade.rise`. */
 export const hardwareSchema = () =>
   schemaFor('hardware', () =>
@@ -133,7 +145,14 @@ export const hardwareSchema = () =>
         g,
         f
           .group(
-            Object.fromEntries(entries(params).map(([k, p]) => [k, fieldOf(p as NumberParam)])),
+            Object.fromEntries(
+              entries(params).map(([k, param]) => {
+                const p = param as NumberParam | ChoiceParam;
+                if ('choices' in p) return [k, fieldOf(p)];
+                const shown = p.value * (p.scale ?? 1);
+                return [k, f.custom(readoutKey(g, k), shown).label(p.label).describe(p.about)];
+              }),
+            ),
           )
           .label(g)
           .motif(stereo()),
