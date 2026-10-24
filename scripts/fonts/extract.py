@@ -1,6 +1,6 @@
 """Turns candidate pixel fonts into bree-style glyph rows and draws a specimen sheet in LED dots.
 
-usage: extract.py <fonts dir> <out json> <out png>
+usage: extract.py <fonts dir> <out json> <out png> [name,name…]
 """
 import json
 import re
@@ -13,7 +13,7 @@ from fontTools.ttLib import TTFont
 
 FONTS, OUT_JSON, OUT_PNG = sys.argv[1:4]
 CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?-:'&*#$"
-MAX_ROWS = 7
+MAX_ROWS = 16
 
 # name, kind, path under FONTS, cap height in px, license, top-8 pick
 NJ = "itch-notjam/pack-x/NotJamFontPack/"
@@ -51,10 +51,20 @@ FACES = [
     ("Galmuri7", "bdf", "galmuri/Galmuri7.bdf", 7, "OFL", False),
     ("Kenney Pixel", "ttf", KEN + "Kenney Pixel.ttf", 7, "CC0", False),
     ("Spleen 5x8", "bdf", "spleen/spleen-5x8.bdf", 6, "BSD-2", False),
+    ("Not Jam Slab Serif 11", "ttf", NJ + "NotJamSlabSerif11/NotJamSlabSerif11.ttf", 8, "CC0", False),
+    ("Jacquarda Bastarda 9", "ttf", "gf-jacquardabastarda9/JacquardaBastarda9-Regular.ttf", 9, "OFL", False),
+    ("Pixelbasel", "ttf", "itch-pixelbasel-font/Pixelbasel_Font_1_00-x/Pixelbasel.ttf", 9, "OFL", False),
+    ("Not Jam Blackletter 13", "ttf", NJ + "NotJamBlackletter13/NotJamBlkltr13.ttf", 10, "CC0", False),
+    ("Delta Block Italic", "ttf", "itch-deltablock/DeltaBlock_Font_1_0-x/TrueType (.ttf)/DeltaBlock-Italic.ttf", 10, "CC0", False),
+    ("Jersey 10", "ttf", "gf-jersey10/Jersey10-Regular.ttf", 10, "OFL", False),
 ]
 
 
-def ttf_grid(path, cap):
+# The glyph a face's pixel grid is measured from, where its H has a flourish.
+REF = {"Jacquarda Bastarda 9": "I"}
+
+
+def ttf_grid(path, cap, ref="H"):
     """Each char's lit pixels as {(x, y)}, y up from the baseline, sampled at pixel centers."""
     f = TTFont(path)
     cmap, gs = f.getBestCmap(), f.getGlyphSet()
@@ -85,7 +95,7 @@ def ttf_grid(path, cap):
                     n -= 1
         return n != 0
 
-    hs = contours(cmap[ord("H")])
+    hs = contours(cmap[ord(ref)])
     ys = [p[1] for c in hs for p in c]
     base, unit = min(ys), (max(ys) - min(ys)) / cap
     glyphs = {}
@@ -181,7 +191,7 @@ READ = {"ttf": ttf_grid, "bdf": bdf_grid, "gfx": gfx_grid}
 result = []
 for name, kind, rel, cap, lic, pick in FACES:
     try:
-        glyphs = READ[kind](f"{FONTS}/{rel}", cap)
+        glyphs = READ[kind](f"{FONTS}/{rel}", cap, *([REF[name]] if name in REF else []))
     except Exception as e:  # noqa: BLE001 - a broken candidate is reported, not fatal
         print(f"{name}: failed ({e})")
         continue
@@ -225,8 +235,10 @@ def label_cols(text):
     return text_cols(label_face, text.upper())
 
 
+# An optional fourth argument draws only the faces whose names contain it, comma-separated.
+only = sys.argv[4].split(",") if len(sys.argv) > 4 else None
 blocks = []
-for face in result:
+for face in [f for f in result if not only or any(o in f["name"] for o in only)]:
     tag = ("PICK - " if face["pick"] else "") + f"{face['name']} - {face['license']}"
     blocks.append(("pick" if face["pick"] else "label", label_cols(tag), label_face["rows"] if label_face else 0))
     for line in LINES:

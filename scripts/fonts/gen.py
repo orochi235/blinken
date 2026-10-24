@@ -41,6 +41,12 @@ META = {
     "Pixeloid Sans": ("ggbot-sans", "Plain, even 7-row sans.", "Derived from Pixeloid Sans, Copyright © 2020-2025 GGBotNet (https://ggbot.net/fonts/), with Reserved Font Name \"Pixeloid\", OFL 1.1"),
     "Galmuri7": ("galmuri7", "Neat 5 × 7 sans.", "Galmuri7, Copyright (c) 2019–2025 Lee Minseo (quiple@quiple.dev), OFL 1.1"),
     "Kenney Pixel": ("kenney-pixel", "Plain 7-row letters.", "Kenney Pixel, Kenney (https://kenney.nl), CC0"),
+    "Not Jam Slab Serif 11": ("notjam-slab", "Heavy slab serif, 8 rows.", "Not Jam Slab Serif 11, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0"),
+    "Jacquarda Bastarda 9": ("jacquarda-bastarda", "Blackletter with flourishes, 9 rows.", "Jacquarda Bastarda 9, Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jacquarda-bastarda), OFL 1.1"),
+    "Pixelbasel": ("ggbot-humanist", "Thin, elegant humanist letters, 9 rows.", "Derived from Pixelbasel, Copyright © 2025 GGBotNet (https://ggbot.net), with Reserved Font Name \"Pixelbasel\", OFL 1.1"),
+    "Not Jam Blackletter 13": ("notjam-blackletter", "Blackletter, 10 rows.", "Not Jam Blackletter 13, Not Jam (https://not-jam.itch.io/not-jam-font-pack), CC0"),
+    "Delta Block Italic": ("delta-block-italic", "Chunky, slanted blocks, 10 rows.", "Delta Block Italic, GGBotNet (https://ggbot.itch.io/delta-block-font), CC0"),
+    "Jersey 10": ("jersey-10", "Varsity sports lettering, 10 rows.", "Jersey 10, Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey), OFL 1.1"),
     "Spleen 5x8": ("spleen", "Terminal 5 × 6 letters.", "Spleen 5x8, Copyright (c) 2018-2026 Frederic Cambus, BSD 2-Clause"),
 }
 
