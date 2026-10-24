@@ -12,13 +12,15 @@ export function HardwarePanel({
   const set = (path: string, value: unknown) =>
     setHardware((h) => withValueAtPath(h, path, value) as Hardware);
   return (
-    <ControlPanel
-      title="sign"
-      schema={hardwareSchema()}
-      config={hardware}
-      setConfig={set}
-      draftConfig={set}
-      density="tight"
-    />
+    <section className="compose-hardware" aria-label="sign">
+      <h2 className="compose-heading">sign</h2>
+      <ControlPanel
+        schema={hardwareSchema()}
+        config={hardware}
+        setConfig={set}
+        draftConfig={set}
+        density="tight"
+      />
+    </section>
   );
 }

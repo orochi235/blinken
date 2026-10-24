@@ -1,4 +1,5 @@
-.compose-layers {
+.compose-layers,
+.compose-hardware {
   display: flex;
   flex-direction: column;
   gap: 8px;
