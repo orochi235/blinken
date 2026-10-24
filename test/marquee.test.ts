@@ -516,3 +516,33 @@ describe('follow', () => {
     for (const m of [main, mine, own]) m.destroy();
   });
 });
+
+describe('setHighlight', () => {
+  it('swaps the marked dots over what the mix gives, and puts them back when cleared', () => {
+    const fns: ((now: number) => void)[] = [];
+    const ticker = {
+      add(fn: (now: number) => void) {
+        fns.push(fn);
+        return () => {};
+      },
+      size: 0,
+    };
+    const m = createMarquee({} as HTMLCanvasElement, {
+      draw: false,
+      ticker,
+      cols: 10,
+      rows: 7,
+      program: [{ effect: 'hold', text: 'I', hex: 0xffffff }],
+    });
+    for (let now = 0; now <= 800; now += 100) for (const fn of fns) fn(now);
+    const before = [...m.columns.invert];
+    m.setHighlight((dot) => dot.x < 2);
+    m.setHighlight((dot) => dot.x < 2);
+    m.board.dots.forEach((dot, i) => {
+      expect(m.columns.invert[i]).toBe(dot.x < 2 ? 1 - (before[i] ?? 0) : before[i]);
+    });
+    m.setHighlight(null);
+    expect([...m.columns.invert]).toEqual(before);
+    m.destroy();
+  });
+});

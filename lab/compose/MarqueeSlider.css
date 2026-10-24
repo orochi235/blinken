@@ -10,9 +10,11 @@
   min-width: 0;
 }
 
-/* The canvas sizes itself to this box, which is its dots at one pitch. */
+/* The canvas sizes itself to this box, which is its dots at one pitch. It also holds the field
+   laid over it, so it is that field's containing block. */
 .marquee-readout {
   --pitch: 2px;
+  position: relative;
   display: flex;
   flex: none;
   width: calc(var(--cols) * var(--pitch));
@@ -22,4 +24,30 @@
 .marquee-readout canvas {
   display: block;
   border-radius: 3px;
+}
+
+/* The field is there to type into; the sign under it shows what is typed. */
+.marquee-readout-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font: inherit;
+  cursor: text;
+}
+
+.marquee-readout-field:focus-visible,
+.marquee-readout-field:focus {
+  outline: 1px solid var(--wzl-focus-ring, var(--wzl-accent));
+  outline-offset: 1px;
+}
+
+.marquee-readout-field::selection {
+  background: transparent;
 }

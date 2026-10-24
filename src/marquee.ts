@@ -95,6 +95,11 @@ export interface Marquee {
    * still that follows a moving sign.
    */
   repaint(): void;
+  /**
+   * Marks dots to draw swapped, lit for dark and dark for lit, over whatever the mix gives them:
+   * a text selection or a caret on a sign that is being typed into. Null marks none.
+   */
+  setHighlight(marked: ((dot: Led) => boolean) | null): void;
   /** The mix lighting it, for cueing voices of your own on its dots and border cells. */
   readonly mix: Mix<Subject, Pose>;
   /** Replaces the program from the next pass; throws on a scene naming no effect or face. */
@@ -246,6 +251,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     m.pull(b.cells, cells);
     paintBulbs(b, cells, cols);
     follow();
+    highlight();
     const t1 = performance.now();
     sign?.render(cols, color, gap);
     const t2 = performance.now();
@@ -273,11 +279,29 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     }
   }
 
+  let marked: ((dot: Led) => boolean) | null = null;
+  /** The invert each marked dot had from the mix, so marking it again doesn't swap it back. */
+  let mixed: Float64Array | null = null;
+  function highlight(): void {
+    if (!marked) return;
+    mixed = Float64Array.from(cols.invert.subarray(0, b.dots.length));
+    for (let i = 0; i < b.dots.length; i++)
+      if (marked(b.dots[i] as Led)) cols.invert[i] = 1 - Math.min(1, Math.max(0, mixed[i] ?? 0));
+  }
+
   const self: Marquee = {
     board: b,
     columns: cols,
     repaint() {
       follow();
+      sign?.render(cols, color, 0);
+    },
+    setHighlight(next) {
+      // A held sign won't pull again, so the mix's own invert comes back from what was kept.
+      if (mixed) cols.invert.set(mixed);
+      mixed = null;
+      marked = next;
+      highlight();
       sign?.render(cols, color, 0);
     },
     mix: m,
