@@ -4,7 +4,7 @@ type IconName = Parameters<typeof Icon>[0]['name'];
 
 /** The glyphs the lab's icon buttons draw, from the kit's icon table. */
 export const GLYPHS = {
-  remove: 'ui:close' as IconName,
+  remove: 'trash',
   up: 'ui:arrowUp' as IconName,
   down: 'ui:arrowDown' as IconName,
 };
@@ -31,7 +31,26 @@ export function IconButton({
       disabled={disabled}
       onClick={onClick}
     >
-      <Icon name={GLYPHS[glyph]} size={14} />
+      {glyph === 'remove' ? <Trash /> : <Icon name={GLYPHS[glyph] as IconName} size={14} />}
     </Button>
+  );
+}
+
+/** A trash can, which the kit's icon table lacks. */
+function Trash() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.8 6.5v5M9.2 6.5v5" />
+    </svg>
   );
 }
