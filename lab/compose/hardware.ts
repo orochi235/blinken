@@ -46,7 +46,7 @@ export const hardwareSchema = () =>
             Object.fromEntries(entries(params).map(([k, p]) => [k, numberField(p as NumberParam)])),
           )
           .label(g)
-          .motif(stereo()),
+          .motif(stereo({ invert: true })),
       ]),
     ),
   );
