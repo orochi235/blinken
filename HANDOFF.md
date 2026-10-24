@@ -5,7 +5,7 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 
 ## State
 
-- `main` is 16 commits ahead of `origin/main`, unpushed: the labkit compose lab's later polish
+- `main` is 19 commits ahead of `origin/main`, unpushed: the labkit compose lab's later polish
   (stereo sign groups, inverted designer bar, share and undo in the top bar, scrubber fill),
   undo/redo, tooltips on every setting, sign size, and faces and text styles.
 - **It can't push yet.** CI and Pages install `@weasel-js/*` from npm, and the lab uses API that
@@ -16,6 +16,9 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 - weasel `main` holds this work (labkit motif option, inline two-up default, stereo invert and
   spacing, `useUndoKeys`, row help on labels) on top of 100+ other sessions' unpushed commits.
   Releasing it is the user's call.
+- Effect thumbnails (2026-10-24): a thumbnail picks its rows once, when made, so one of your
+  effects edited to need two lines of text (a `tile` move) stays on one line, playing nothing,
+  until the designer's browse grid is reopened.
 
 ## How the lab runs
 
