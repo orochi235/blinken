@@ -1,6 +1,5 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
-import { ROWS } from '../font.js';
 import { move } from './move.js';
 
 /** The message repeated over the whole sign in tilted brick rows, neighbors scrolling opposite ways; one pass is one period, so it loops without a seam. */
@@ -61,7 +60,7 @@ export const tile = move({
     const { board: b, text } = at;
     const period = text.cols + p.gap;
     const ms = Math.max(1, period) * p.step;
-    const pitch = ROWS + p.leading;
+    const pitch = text.rows + p.leading;
     const a = (p.angle * Math.PI) / 180;
     const c = Math.cos(a);
     const s = Math.sin(a);
@@ -78,7 +77,7 @@ export const tile = move({
         const across = dx * s + dy * c;
         const r = Math.floor(across / pitch);
         const y = Math.floor(across - r * pitch);
-        if (y >= ROWS) return { lit: 0 };
+        if (y >= text.rows) return { lit: 0 };
         const odd = r % 2 !== 0;
         const moved = phase * period;
         const col = Math.floor(along + (odd ? p.brick * period - moved : moved));

@@ -27,7 +27,11 @@ export function DesignerPanel() {
     if (!spec) return at;
     let found: readonly Warning[];
     try {
-      found = stageEffect(spec, placeText(b, step?.text ?? ' '), step?.hex ?? 0xffffff).warnings;
+      found = stageEffect(
+        spec,
+        placeText(b, step?.text ?? ' ', step),
+        step?.hex ?? 0xffffff,
+      ).warnings;
     } catch (e) {
       found = [{ text: (e as Error).message }];
     }

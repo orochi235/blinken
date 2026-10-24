@@ -75,6 +75,29 @@ built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the bo
 stepping around; and `rainbow`, a hue running across the sign that recolors whatever is lit. They
 are in `LAYERS`.
 
+## Faces and styles
+
+A step can name the face its message is drawn in and a style for it, as `face` and `style`:
+
+```ts
+program: [
+  { effect: 'hold', text: 'NOW SHOWING', hex: 0xff4030, face: 'bold' },
+  { effect: 'scroll', text: 'ALL NIGHT', hex: 0x6dff5a, face: 'slim', style: { proportional: true } },
+  { effect: 'flip', text: 'OPEN', hex: 0xff9a2e, style: { reverse: true } },
+],
+```
+
+The faces are `standard`, the classic 5 × 7 letters and the default; `slim`, 3 × 7, fitting more
+across the sign; `wide`, the standard letters with every column doubled; and `bold`, the standard
+letters with each lit dot also lighting the one to its right. All four are 7 dots tall, one line of
+the sign. `style.reverse` is inverse video: the message's box lit and its letters dark.
+`style.proportional` spaces each letter by its own width and a blank, so an I takes three columns
+where a fixed-pitch one takes five. A face can also be given in full, as a `Face` with `rows`,
+`width` and a `glyph` for each character; a step whose face is taller than the sign's lines is
+left out of the program, as one whose effect lacks room is, and staging it warns.
+`rasterize(text, { face, style })` lays text out as a `Bitmap` of its own `cols` and `rows`, with
+each letter's columns in `letters`.
+
 ## Broken lights
 
 A sign can have broken lights, which show their fault whatever the program asks of them: `dead`

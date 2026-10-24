@@ -76,11 +76,13 @@ export function toCode(state: ComposeState): string {
   const effects = Object.fromEntries(
     Object.entries(state.effects).map(([name, spec]) => [name, effectCode(spec)]),
   );
-  const program = state.program.map(({ text, hex, effect, hold }) => ({
+  const program = state.program.map(({ text, hex, effect, hold, face, style }) => ({
     text,
     hex: new Hex(hex),
     effect,
     hold,
+    face,
+    style,
   }));
   const layers = Object.fromEntries(
     Object.entries(state.layers).flatMap(([name, { on, ...spec }]): [string, unknown][] => {

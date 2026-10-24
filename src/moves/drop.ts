@@ -1,10 +1,11 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
-import { ROWS } from '../font.js';
+import type { Placed } from '../orders.js';
 import { litAt, move, on } from './move.js';
 
 /** How far a dot falls from or to: past the text's top or bottom. */
-const DROP = ROWS + 1;
+const fall = (at: Placed) => at.text.rows + 1;
+
 const DROP_PARAM = {
   label: 'drop time',
   min: 100,
@@ -21,12 +22,14 @@ export const dropIn = move({
   about: 'The message drops in from above.',
   slot: 'enter',
   params: { ms: DROP_PARAM },
-  patch: (at, p) =>
-    patch<Led, Pose>(
+  patch(at, p) {
+    const drop = fall(at);
+    return patch<Led, Pose>(
       p.ms,
-      (phase, led) => on(litAt(at, led, 0, Math.round(-DROP * (1 - phase ** 2)))),
+      (phase, led) => on(litAt(at, led, 0, Math.round(-drop * (1 - phase ** 2)))),
       { writes: ['lit'] },
-    ),
+    );
+  },
 });
 
 /** The message falling out of the bottom under gravity. */
@@ -35,8 +38,12 @@ export const dropOut = move({
   about: 'The message falls out the bottom.',
   slot: 'exit',
   params: { ms: DROP_PARAM },
-  patch: (at, p) =>
-    patch<Led, Pose>(p.ms, (phase, led) => on(litAt(at, led, 0, Math.round(DROP * phase ** 2))), {
-      writes: ['lit'],
-    }),
+  patch(at, p) {
+    const drop = fall(at);
+    return patch<Led, Pose>(
+      p.ms,
+      (phase, led) => on(litAt(at, led, 0, Math.round(drop * phase ** 2))),
+      { writes: ['lit'] },
+    );
+  },
 });

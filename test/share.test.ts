@@ -5,6 +5,7 @@ import { stageEffect } from '@/effects.js';
 import { MODULATORS } from '@/modulators/index.js';
 import { placeText } from '@/orders.js';
 import { values } from '@/params.js';
+import type { Step } from '@/program.js';
 import { decode, encode, toCode } from '../lab/compose/share.js';
 import type { ComposeState } from '../lab/compose/state.js';
 import {
@@ -188,6 +189,44 @@ describe('share', () => {
       expect(JSON.stringify(got.arcs), name).toBe(JSON.stringify(want.arcs));
       expect(got.warnings, name).toEqual(want.warnings);
     }
+  });
+
+  it('round-trips a step’s face and style, and writes them as code', () => {
+    const s = state();
+    s.program[0] = { ...(s.program[0] as Step), face: 'slim', style: { reverse: true } };
+    s.program[1] = { ...(s.program[1] as Step), style: { proportional: true } };
+    const { state: back, dropped } = decode(`#${encode(s)}`);
+    expect(dropped).toEqual([]);
+    expect(back.program).toEqual(s.program);
+    const code = toCode(s);
+    expect(code).toContain('face: "slim"');
+    expect(code).toContain('style: { reverse: true }');
+    expect(code).toContain('style: { proportional: true }');
+  });
+
+  it('reads a link written before steps had faces, dropping nothing', () => {
+    const old = hashOf({
+      effects: {},
+      program: [{ text: 'HI', hex: 0xff9a2e, effect: 'hold', hold: 1500 }],
+      layers: {},
+    });
+    const { state: back, dropped } = decode(old);
+    expect(dropped).toEqual([]);
+    expect(back.program).toEqual([{ text: 'HI', hex: 0xff9a2e, effect: 'hold', hold: 1500 }]);
+  });
+
+  it('names a face no built-in has and style switches it does not know', () => {
+    const data = JSON.parse(Buffer.from(encode(state()), 'base64url').toString());
+    data.program[0].face = 'gothic';
+    data.program[1].style = { reverse: true, blink: true, proportional: 'yes' };
+    const { state: back, dropped } = decode(hashOf(data));
+    expect(back.program[0]?.face).toBeUndefined();
+    expect(back.program[1]?.style).toEqual({ reverse: true });
+    expect(dropped).toEqual([
+      'face in step HI',
+      'blink in style in step THERE',
+      'proportional in style in step THERE',
+    ]);
   });
 
   it('escapes every control character in code strings', () => {

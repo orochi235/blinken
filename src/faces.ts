@@ -1,0 +1,89 @@
+import { SLIM } from './glyphs/slim.js';
+import { STANDARD } from './glyphs/standard.js';
+
+/**
+ * A dot-matrix face: each character's dots, top row first, `#` lit, every row as wide as the
+ * glyph. A character the face lacks is drawn as its space.
+ */
+export interface Face {
+  readonly name: string;
+  readonly about?: string;
+  /** How many dots tall every glyph is. */
+  readonly rows: number;
+  /** How many dots wide its widest glyph is; a fixed-pitch letter takes this and a blank. */
+  readonly width: number;
+  glyph(ch: string): readonly string[] | undefined;
+}
+
+const tableFace = (
+  name: string,
+  about: string,
+  table: Readonly<Record<string, readonly string[]>>,
+): Face => {
+  const all = Object.values(table);
+  return {
+    name,
+    about,
+    rows: Math.max(0, ...all.map((g) => g.length)),
+    width: Math.max(0, ...all.flatMap((g) => g.map((row) => row.length))),
+    glyph: (ch) => (Object.hasOwn(table, ch) ? table[ch] : undefined),
+  };
+};
+
+/** A face derived from `base`, each glyph's rows passed through `row`, its widest `width`. */
+const derived = (
+  base: Face,
+  name: string,
+  about: string,
+  width: number,
+  row: (r: string) => string,
+): Face => {
+  const cache = new Map<string, readonly string[] | undefined>();
+  return {
+    name,
+    about,
+    rows: base.rows,
+    width,
+    glyph(ch) {
+      if (!cache.has(ch)) cache.set(ch, base.glyph(ch)?.map(row));
+      return cache.get(ch);
+    },
+  };
+};
+
+const standard = tableFace('standard', 'The classic 5 × 7 dot-matrix letters.', STANDARD);
+
+const lit = (r: string, x: number) => r[x] === '#';
+
+const faces = {
+  standard,
+  slim: tableFace('slim', 'Narrow 3 × 7 letters, fitting more text across the sign.', SLIM),
+  wide: derived(standard, 'wide', 'The standard letters with every column doubled.', 10, (r) =>
+    [...r].map((c) => c + c).join(''),
+  ),
+  bold: derived(
+    standard,
+    'bold',
+    'The standard letters drawn with a double stroke, each lit dot also lighting the one to its right.',
+    6,
+    (r) =>
+      Array.from({ length: r.length + 1 }, (_, x) => (lit(r, x) || lit(r, x - 1) ? '#' : '.')).join(
+        '',
+      ),
+  ),
+};
+
+export type FaceName = keyof typeof faces;
+/** The built-in faces, by name. */
+export const FACES: Readonly<Record<FaceName, Face>> = faces;
+/** Every character the built-in faces draw something for. */
+export const CHARS: readonly string[] = Object.keys(STANDARD).filter((ch) => ch !== ' ');
+/** Every built-in face's name. */
+export const FACE_NAMES = Object.keys(faces) as readonly FaceName[];
+
+/** A face given by name or in full; throws on a name no built-in has. */
+export function faceOf(face: FaceName | Face = 'standard'): Face {
+  if (typeof face !== 'string') return face;
+  if (!Object.hasOwn(FACES, face)) throw new Error(`bree: no face named ${face}`);
+  return FACES[face];
+}

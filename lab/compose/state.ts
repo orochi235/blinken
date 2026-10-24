@@ -1,5 +1,6 @@
 import {
   type EffectSpec,
+  type FaceName,
   LAYERS,
   type LayerName,
   type LayerSpec,
@@ -107,4 +108,16 @@ export function deleteEffect(state: ComposeState, name: string): void {
     step.effect === name ? { ...step, effect: FALLBACK } : step,
   );
   if (state.editing.effect === name) state.editing.effect = undefined;
+}
+
+/** A step with its face or one of its style switches set, the default left out. */
+export function withLook(step: Step, what: 'face' | 'reverse' | 'proportional', v: unknown): Step {
+  if (what === 'face') {
+    const { face: _, ...rest } = step;
+    return v === 'standard' ? rest : { ...rest, face: v as FaceName };
+  }
+  const { style: _, ...rest } = step;
+  const { [what]: __, ...others } = step.style ?? {};
+  const style = v === true ? { ...others, [what]: true } : others;
+  return Object.keys(style).length ? { ...rest, style } : rest;
 }

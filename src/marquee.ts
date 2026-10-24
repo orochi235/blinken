@@ -3,6 +3,7 @@ import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from 
 import type { Defect } from './defects.js';
 import { createSign, paintBulbs, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
+import { faceOf } from './font.js';
 import { cueLayers, type LayerOption } from './layers.js';
 import type { Fade, Ghost } from './optics.js';
 import type { ParamValue } from './params.js';
@@ -61,7 +62,7 @@ export interface Marquee {
   readonly board: Board;
   /** The mix lighting it, for cueing voices of your own on its dots and border cells. */
   readonly mix: Mix<Subject, Pose>;
-  /** Replaces the program from the next pass; throws on a step naming no effect. */
+  /** Replaces the program from the next pass; throws on a step naming no effect or face. */
   setProgram(program: readonly Step[] | (() => readonly Step[])): void;
   /** Replaces the effects steps can name, from the next pass; throws if a step names none of them. */
   setEffects(effects: Readonly<Record<string, EffectSpec>>): void;
@@ -160,9 +161,16 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     clock.set(m.now, at, rate);
   };
 
-  /** Throws on a step naming no effect; a program given as a function is checked as each pass starts. */
+  /**
+   * Throws on a step naming no effect or face; a program given as a function is checked as each
+   * pass starts.
+   */
   const check = (p: typeof program, e: typeof effects) => {
-    if (typeof p !== 'function') for (const step of p) effectOf(step, e);
+    if (typeof p !== 'function')
+      for (const step of p) {
+        effectOf(step, e);
+        faceOf(step.face);
+      }
   };
 
   const layers = cueLayers(m, b, opts.layers);

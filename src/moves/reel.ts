@@ -1,17 +1,17 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
-import { ADVANCE, type Bitmap, FACE, ROWS, rasterize } from '../font.js';
+import { type Bitmap, CHARS, rasterize } from '../font.js';
 import { hash } from '../hash.js';
 import { litAt, move, on, rowOf } from './move.js';
 
-/** A reel's pitch: a glyph and the blank row under it. */
-const REEL = ROWS + 1;
 const glyphs = new Map<string, Bitmap>();
-const glyph = (ch: string) => {
-  let g = glyphs.get(ch);
+/** One letter alone in the look of `text`, which draws it where `text` draws its letters. */
+const glyph = (text: Bitmap, ch: string) => {
+  const key = `${text.face.name} ${text.style.reverse ? 'r' : ''}${text.style.proportional ? 'p' : ''} ${ch}`;
+  let g = glyphs.get(key);
   if (g === undefined) {
-    g = rasterize(ch);
-    glyphs.set(ch, g);
+    g = rasterize(ch, text);
+    glyphs.set(key, g);
   }
   return g;
 };
@@ -43,10 +43,12 @@ export const reelIn = move({
   },
   patch(at, p) {
     const { text } = at;
-    const n = text.cols / ADVANCE;
+    const n = text.letters.length;
+    // A reel's pitch: a glyph and the blank row under it.
+    const pitch = text.rows + 1;
     const reels = Array.from({ length: n }, (_, k) =>
       Array.from({ length: p.glyphs }, (_, j) =>
-        glyph(FACE[Math.floor(hash(k, j, text.cols) * FACE.length)] as string),
+        glyph(text, CHARS[Math.floor(hash(k, j, text.cols) * CHARS.length)] as string),
       ),
     );
     return patch<Led, Pose>(
@@ -54,17 +56,18 @@ export const reelIn = move({
       (phase, led) => {
         const row = rowOf(led);
         const x = led.x - at.left;
-        const k = Math.floor(x / ADVANCE);
-        if (row < 0 || k < 0 || k >= n) return on(false);
+        const k = text.letterAt(x);
+        if (row < 0 || k < 0) return on(false);
         const reel = reels[k] as Bitmap[];
         // The reel starts on a blank cell, so a letter waiting out its delay shows nothing.
-        const r = row - REEL + Math.floor(REEL * (reel.length + 1) * easeOut(phase));
-        const j = Math.floor(r / REEL);
-        const y = ((r % REEL) + REEL) % REEL;
+        const r = row - pitch + Math.floor(pitch * (reel.length + 1) * easeOut(phase));
+        const j = Math.floor(r / pitch);
+        const y = ((r % pitch) + pitch) % pitch;
+        const u = x - (text.letters[k] as { x: number }).x;
         const yes =
           j >= 0 &&
-          y < ROWS &&
-          (j < reel.length ? (reel[j] as Bitmap).lit(x - k * ADVANCE, y) : text.lit(x, y));
+          y < text.rows &&
+          (j < reel.length ? (reel[j] as Bitmap).lit(u, y) : text.lit(x, y));
         return on(yes);
       },
       { writes: ['lit'] },
@@ -91,9 +94,7 @@ export const rollAway = move({
   patch: (at, p) =>
     patch<Led, Pose>(
       p.ms,
-      (phase, led) => on(litAt(at, led, 0, -Math.floor(REEL * 2 * phase ** 2))),
-      {
-        writes: ['lit'],
-      },
+      (phase, led) => on(litAt(at, led, 0, -Math.floor((at.text.rows + 1) * 2 * phase ** 2))),
+      { writes: ['lit'] },
     ),
 });

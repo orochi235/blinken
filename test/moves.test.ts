@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { board } from '@/board.js';
-import { rasterize } from '@/font.js';
+import { FACE_NAMES, type Look, rasterize } from '@/font.js';
 import { MOVES, type Move, type MoveName } from '@/moves/index.js';
 import { place } from '@/orders.js';
 import { values } from '@/params.js';
@@ -24,35 +24,57 @@ const shown = (left = at.left, text = at.text) =>
 const STEP = (MOVES['scroll-across'].params.step as { value: number }).value;
 const length = (m: Move, where = at) => m.patch(where, values(m)).duration;
 
-describe('moves', () => {
-  for (const name of slotted('enter')) {
-    it(`${name} ends showing the message`, () => {
-      const m = MOVES[name];
-      const end = shown();
-      expect(litAt(m, length(m))).toEqual(end);
-    });
-  }
+/** Every face plain, and the standard face in each style. */
+const LOOKS: readonly Look[] = [
+  ...FACE_NAMES.map((face) => ({ face })),
+  { style: { reverse: true } },
+  { style: { proportional: true } },
+  { face: 'bold', style: { reverse: true, proportional: true } },
+];
+const lookName = (look: Look) =>
+  [look.face ?? 'standard', ...Object.keys(look.style ?? {})].join(' ');
 
-  for (const name of slotted('enter').filter((n) => n !== 'unfold')) {
-    for (const direction of ['left', 'right']) {
-      it(`${name} shows no lit dots at phase 0 (${direction})`, () => {
-        expect(litAt(MOVES[name], 0, at, { direction }).every((v) => v === 0)).toBe(true);
+describe('moves in every look', () => {
+  for (const look of LOOKS) {
+    const at = place(b, rasterize('HI', look));
+    describe(lookName(look), () => {
+      for (const name of slotted('enter')) {
+        it(`${name} ends showing the message`, () => {
+          const m = MOVES[name];
+          expect(litAt(m, length(m, at), at)).toEqual(shown(at.left, at.text));
+        });
+      }
+
+      for (const name of slotted('enter').filter((n) => n !== 'unfold')) {
+        for (const direction of ['left', 'right']) {
+          it(`${name} shows no lit dots at phase 0 (${direction})`, () => {
+            expect(litAt(MOVES[name], 0, at, { direction }).every((v) => v === 0)).toBe(true);
+          });
+        }
+      }
+
+      for (const name of slotted('exit')) {
+        it(`${name} starts showing the message and ends blank`, () => {
+          const m = MOVES[name];
+          expect(litAt(m, 0, at)).toEqual(shown(at.left, at.text));
+          expect(litAt(m, length(m, at), at).every((v) => v === 0)).toBe(true);
+        });
+      }
+
+      it('stand shows the message the whole time', () => {
+        const m = MOVES.stand;
+        for (const f of [0, 0.3, 0.99])
+          expect(litAt(m, f * length(m, at), at)).toEqual(shown(at.left, at.text));
       });
-    }
-  }
-
-  for (const name of slotted('exit')) {
-    it(`${name} starts showing the message and ends blank`, () => {
-      const m = MOVES[name];
-      const start = shown();
-      expect(litAt(m, 0)).toEqual(start);
-      expect(litAt(m, length(m)).every((v) => v === 0)).toBe(true);
     });
   }
+});
 
+describe('moves', () => {
   it('stand shows the message the whole time', () => {
     const m = MOVES.stand;
-    for (const f of [0, 0.3, 0.99]) expect(litAt(m, f * length(m))).toEqual(shown());
+    for (const f of [0, 0.3, 0.99])
+      expect(litAt(m, f * length(m))).toEqual(shown(at.left, at.text));
   });
 
   it('scroll-across enters at the right edge and leaves at the left', () => {

@@ -7,6 +7,7 @@ import {
   moveStep,
   removePiece,
   setPiece,
+  withLook,
   withSlot,
 } from '../lab/compose/state.js';
 
@@ -64,5 +65,17 @@ describe('compose state program edits', () => {
     expect(state.effects).toEqual({});
     expect(state.program[1]?.effect).toBe('hold');
     expect(state.editing.effect).toBeUndefined();
+  });
+});
+
+describe('withLook', () => {
+  const step = { text: 'HI', hex: 0, effect: 'hold' };
+  it('sets a face and style switches, leaving the defaults out', () => {
+    const slim = withLook(step, 'face', 'slim');
+    expect(slim).toEqual({ ...step, face: 'slim' });
+    expect(withLook(slim, 'face', 'standard')).toEqual(step);
+    const both = withLook(withLook(step, 'reverse', true), 'proportional', true);
+    expect(both.style).toEqual({ reverse: true, proportional: true });
+    expect(withLook(withLook(both, 'reverse', false), 'proportional', false)).toEqual(step);
   });
 });

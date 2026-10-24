@@ -23,7 +23,20 @@ export {
 } from './defects.js';
 export { createSign, paintBulbs, type Sign, type SignColumns, signColumns } from './draw.js';
 export { type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
-export { ADVANCE, type Bitmap, FACE, ROWS, rasterize } from './font.js';
+export {
+  type Bitmap,
+  CHARS,
+  FACE_NAMES,
+  FACES,
+  type Face,
+  type FaceName,
+  faceOf,
+  type Look,
+  ROWS,
+  rasterize,
+  type Span,
+  type TextStyle,
+} from './font.js';
 export {
   createMarquee,
   type FrameCost,

@@ -1,5 +1,5 @@
 import { type Board, type Led, leftOf, type Subject } from './board.js';
-import { ADVANCE, type Bitmap, rasterize } from './font.js';
+import { type Bitmap, type Look, rasterize } from './font.js';
 import { hash } from './hash.js';
 
 export type OrderBy =
@@ -49,9 +49,9 @@ export const place = (board: Board, text: Bitmap): Placed => ({
   left: leftOf(board, text),
 });
 
-/** A message as typed, rasterized and standing centered on the board, labeled for warnings. */
-export const placeText = (board: Board, text: string): Placed => ({
-  ...place(board, rasterize(text)),
+/** A message as typed, rasterized in `look` and standing centered on the board, labeled for warnings. */
+export const placeText = (board: Board, text: string, look?: Look): Placed => ({
+  ...place(board, rasterize(text, look)),
   label: text,
 });
 
@@ -86,8 +86,12 @@ export function rankOf(order: Order, at: Placed): (s: Subject) => number {
     case 'row':
       return pick((s) => s.y);
     case 'letter': {
-      const letters = Math.max(1, at.text.cols / ADVANCE);
-      return pick((s) => Math.min(letters - 1, Math.max(0, Math.floor((s.x - at.left) / ADVANCE))));
+      const { text } = at;
+      const last = Math.max(0, text.letters.length - 1);
+      return pick((s) => {
+        const x = Math.floor(s.x - at.left);
+        return x < 0 ? 0 : x >= text.cols ? last : Math.max(0, text.letterAt(x));
+      });
     }
     case 'random': {
       const ranks = shuffle(cols, order.seed ?? 1);

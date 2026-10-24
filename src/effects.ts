@@ -71,6 +71,10 @@ export function stageEffect(
   // Every piece staged once on the first group gives the warnings and the part lengths.
   const first = stageAll(groups[0] ?? [], () => true);
   const warnings: Warning[] = [];
+  if (at.text.rows > at.board.line)
+    warnings.push({
+      text: `the ${at.text.face.name} face is ${at.text.rows} rows tall, taller than the sign's ${at.board.line}-row lines, so the step is skipped`,
+    });
   SLOTS.forEach((slot, s) => {
     const pieces = first[s] ?? [];
     pieces.forEach((p, i) => {

@@ -50,6 +50,8 @@ export interface Board {
   readonly rows: number;
   /** How many lines of text fit, each showing the same message. */
   readonly lines: number;
+  /** How many rows each line of text has; a taller face does not fit. */
+  readonly line: number;
   readonly dots: readonly Led[];
   readonly bulbs: readonly Led[];
   readonly cells: readonly Cell[];
@@ -81,7 +83,7 @@ export function board(cols: number, rows: number): Board {
   const bulbs: Led[] = at.map(([x, y], i) => ({ kind: 'bulb', i, x, y }));
   const cells: Cell[] = [0, 1, 2].map((i) => ({ kind: 'cell', i }));
   const cellOf = Uint8Array.from(bulbs, (_, i) => i % 3);
-  return { cols, rows, lines, dots, bulbs, cells, cellOf };
+  return { cols, rows, lines, line: ROWS, dots, bulbs, cells, cellOf };
 }
 
 /**

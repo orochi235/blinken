@@ -1,0 +1,233 @@
+import {
+  EFFECTS,
+  type EffectSpec,
+  FACE_NAMES,
+  type FaceName,
+  MODULATORS,
+  MOVES,
+  type NumberParam,
+  ORDERS,
+  type Order,
+  type OrderBy,
+  type Params,
+  type ParamValue,
+  type Piece,
+  SLOTS,
+  type Slot,
+  type Step,
+  type TextStyle,
+} from '@/index.js';
+import { AMBER } from '../demo.js';
+import { BLEND, type ComposeState, HOLD, LAG } from './state.js';
+
+/* Readers for each part of a link, each keeping only what it knows and naming the rest in `dropped`. */
+
+const HEX: NumberParam = {
+  label: 'color',
+  min: 0,
+  max: 0xffffff,
+  step: 1,
+  value: 0,
+  about: 'The color the message lights in.',
+};
+
+export const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
+const clamp = (v: unknown, p: NumberParam): number | undefined =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.min(p.max, Math.max(p.min, v)) : undefined;
+
+/** An optional number clamped to `p`; one given that isn't a number is named in `dropped`. */
+const optional = (v: unknown, p: NumberParam, what: string, dropped: string[]) => {
+  const n = clamp(v, p);
+  if (v !== undefined && n === undefined) dropped.push(what);
+  return n;
+};
+
+/** Whether a link's name can key a plain object: `__proto__` would set its prototype instead. */
+const safe = (name: string) => name !== '__proto__';
+
+/** A link's map: its entries, or none (named in `dropped`) when it is there but not a map. */
+export const entriesOf = (v: unknown, what: string, dropped: string[]): [string, unknown][] => {
+  if (v === undefined) return [];
+  if (!isObj(v)) {
+    dropped.push(what);
+    return [];
+  }
+  return Object.entries(v);
+};
+
+/**
+ * A link's settings for `thing`, in its own key order, each kept only if it is one it has, of its
+ * kind; `values` clamps the numbers when it is staged.
+ */
+export function paramsOf(
+  thing: { readonly params: Params },
+  given: unknown,
+  where: string,
+  dropped: string[],
+): Record<string, ParamValue> | undefined {
+  if (!isObj(given)) return undefined;
+  const out: Record<string, ParamValue> = {};
+  for (const [key, param] of Object.entries(thing.params)) {
+    const v = given[key];
+    if (v === undefined) continue;
+    const kept =
+      'colors' in param
+        ? Array.isArray(v) && v.length > 0 && v.every((c) => clamp(c, HEX) !== undefined)
+          ? v.map((c) => Math.round(clamp(c, HEX) as number))
+          : undefined
+        : 'choices' in param
+          ? typeof v === 'string' && param.choices.includes(v)
+            ? v
+            : undefined
+          : typeof v === 'number' && Number.isFinite(v)
+            ? v
+            : undefined;
+    if (kept === undefined) dropped.push(`setting ${key} in ${where}`);
+    else out[key] = kept;
+  }
+  for (const key of Object.keys(given))
+    if (!Object.hasOwn(thing.params, key)) dropped.push(`setting ${key} in ${where}`);
+  return Object.keys(out).length ? out : undefined;
+}
+
+function orderOf(v: unknown, where: string, dropped: string[]): Order | undefined {
+  if (v === undefined) return undefined;
+  if (!isObj(v) || !ORDERS.includes(v.by as OrderBy)) {
+    dropped.push(`order in ${where}`);
+    return undefined;
+  }
+  const lag = optional(v.lag, LAG, `lag in ${where}`, dropped);
+  const seed = Number.isInteger(v.seed) ? (v.seed as number) : undefined;
+  return {
+    by: v.by as OrderBy,
+    ...(lag !== undefined && { lag }),
+    ...(seed !== undefined && { seed }),
+  };
+}
+
+function pieceOf(v: unknown, slot: Slot, where: string, dropped: string[]): Piece | undefined {
+  if (!isObj(v)) {
+    dropped.push(`a piece in ${where}`);
+    return undefined;
+  }
+  if (typeof v.move === 'string') {
+    const move = Object.hasOwn(MOVES, v.move) ? MOVES[v.move as keyof typeof MOVES] : undefined;
+    if (!move || move.slot !== slot) {
+      dropped.push(`move ${v.move} in ${where}`);
+      return undefined;
+    }
+    const order = orderOf(v.order, where, dropped);
+    const params = paramsOf(move, v.params, where, dropped);
+    return {
+      move: v.move as keyof typeof MOVES,
+      ...(order && { order }),
+      ...(params && { params }),
+    };
+  }
+  if (typeof v.mod === 'string') {
+    const mod = Object.hasOwn(MODULATORS, v.mod)
+      ? MODULATORS[v.mod as keyof typeof MODULATORS]
+      : undefined;
+    if (!mod) {
+      dropped.push(`modulator ${v.mod} in ${where}`);
+      return undefined;
+    }
+    const spread = orderOf(v.spread, where, dropped);
+    const params = paramsOf(mod, v.params, where, dropped);
+    return {
+      mod: v.mod as keyof typeof MODULATORS,
+      ...(spread && { spread }),
+      ...(params && { params }),
+    };
+  }
+  dropped.push(`a piece in ${where}`);
+  return undefined;
+}
+
+export function effectOf(name: string, v: unknown, dropped: string[]): EffectSpec | undefined {
+  const slots = isObj(v)
+    ? SLOTS.map((slot) => (v[slot] === undefined ? [] : isObj(v[slot]) ? [v[slot]] : v[slot]))
+    : [];
+  if (
+    !isObj(v) ||
+    !name ||
+    !safe(name) ||
+    Object.hasOwn(EFFECTS, name) ||
+    !slots.every(Array.isArray)
+  ) {
+    dropped.push(`effect ${name}`);
+    return undefined;
+  }
+  const out: Record<string, unknown> = { name };
+  if (typeof v.about === 'string') out.about = v.about;
+  const order = orderOf(v.order, name, dropped);
+  if (order) out.order = order;
+  SLOTS.forEach((slot, s) => {
+    const pieces = (slots[s] as unknown[]).flatMap((p) => pieceOf(p, slot, name, dropped) ?? []);
+    if (pieces.length) out[slot] = pieces;
+  });
+  const hold = optional(v.hold, HOLD, `hold in ${name}`, dropped);
+  if (hold !== undefined) out.hold = hold;
+  const blend = optional(v.blend, BLEND, `blend in ${name}`, dropped);
+  if (blend !== undefined) out.blend = blend;
+  return out as unknown as EffectSpec;
+}
+
+export function stepOf(
+  v: unknown,
+  effects: ComposeState['effects'],
+  dropped: string[],
+): Step | undefined {
+  if (!isObj(v) || typeof v.text !== 'string') {
+    dropped.push('a step');
+    return undefined;
+  }
+  const effect = v.effect;
+  if (
+    typeof effect !== 'string' ||
+    !(Object.hasOwn(effects, effect) || Object.hasOwn(EFFECTS, effect))
+  ) {
+    dropped.push(`step ${v.text}, its effect ${String(effect)}`);
+    return undefined;
+  }
+  const hold = optional(v.hold, HOLD, `hold in step ${v.text}`, dropped);
+  const hex = optional(v.hex, HEX, `color in step ${v.text}`, dropped);
+  const face = faceIn(v.face, `face in step ${v.text}`, dropped);
+  const style = styleIn(v.style, `style in step ${v.text}`, dropped);
+  return {
+    text: v.text,
+    hex: Math.round(hex ?? AMBER),
+    effect,
+    ...(hold !== undefined && { hold }),
+    ...(face !== undefined && { face }),
+    ...(style !== undefined && { style }),
+  };
+}
+
+/** A link's face for a step: a built-in's name, or none (named in `dropped`) when it is another. */
+function faceIn(v: unknown, what: string, dropped: string[]): FaceName | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v === 'string' && FACE_NAMES.includes(v as FaceName)) return v as FaceName;
+  dropped.push(what);
+  return undefined;
+}
+
+const STYLES = ['reverse', 'proportional'] as const;
+
+/** A link's style for a step: each switch it knows that is true, the rest named in `dropped`. */
+function styleIn(v: unknown, what: string, dropped: string[]): TextStyle | undefined {
+  if (v === undefined) return undefined;
+  if (!isObj(v)) {
+    dropped.push(what);
+    return undefined;
+  }
+  const out: Record<string, boolean> = {};
+  for (const [key, on] of Object.entries(v)) {
+    if (!STYLES.includes(key as (typeof STYLES)[number]) || typeof on !== 'boolean')
+      dropped.push(`${key} in ${what}`);
+    else if (on) out[key] = true;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
