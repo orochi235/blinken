@@ -28,6 +28,15 @@ export function ProgramPanel() {
   const state = useCompose();
   const [solo, setSolo] = useState(false);
   const [thumbs, setThumbs] = useState(false);
+  // The row being dragged, and where a drop would put it: before the row at `to`, or at the end.
+  const [drag, setDrag] = useState<{ from: number; to: number } | null>(null);
+  const drop = () => {
+    if (!drag) return;
+    const { from, to } = drag;
+    setDrag(null);
+    const at = to > from ? to - 1 : to;
+    if (at !== from) reshape(moveScene(state.program, from, at - from), state.program[from]);
+  };
   const picked = pickedOf(state);
   const rows = useRef<(HTMLButtonElement | null)[]>([]);
   const pick = (i: number) =>
@@ -95,8 +104,37 @@ export function ProgramPanel() {
     >
       <ol className="compose-scenes">
         {state.program.map((scene, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: a scene is its place in the program
-          <li key={i} className={i === picked ? 'compose-scene is-picked' : 'compose-scene'}>
+          <li
+            // biome-ignore lint/suspicious/noArrayIndexKey: a scene is its place in the program
+            key={i}
+            className={[
+              'compose-scene',
+              i === picked && 'is-picked',
+              drag?.from === i && 'is-dragged',
+              drag && drag.to === i && 'is-drop-before',
+              drag && drag.to === i + 1 && i === state.program.length - 1 && 'is-drop-after',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.effectAllowed = 'move';
+              e.dataTransfer.setData('text/plain', String(i));
+              setDrag({ from: i, to: i });
+            }}
+            onDragOver={(e) => {
+              if (!drag) return;
+              e.preventDefault();
+              const box = e.currentTarget.getBoundingClientRect();
+              const to = e.clientY > box.top + box.height / 2 ? i + 1 : i;
+              if (to !== drag.to) setDrag({ ...drag, to });
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              drop();
+            }}
+            onDragEnd={() => setDrag(null)}
+          >
             <button
               ref={(el) => {
                 rows.current[i] = el;

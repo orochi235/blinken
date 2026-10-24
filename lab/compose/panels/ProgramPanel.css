@@ -83,3 +83,20 @@
   height: 28px;
   justify-content: start;
 }
+
+/* Dragging a row: it dims, and a line marks where it would land. */
+.compose-scene {
+  cursor: grab;
+}
+
+.compose-scene.is-dragged {
+  opacity: 0.4;
+}
+
+.compose-scene.is-drop-before {
+  box-shadow: 0 -2px 0 var(--wzl-accent);
+}
+
+.compose-scene.is-drop-after {
+  box-shadow: 0 2px 0 var(--wzl-accent);
+}
