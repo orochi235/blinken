@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import type { LayerName, Marquee, Pass, PassStep } from '@/index.js';
+import { EFFECTS, type LayerName, type Marquee, type Pass, type PassStep } from '@/index.js';
 import { type ComposeState, layerOf } from './state.js';
 import { open, save } from './storage.js';
 
@@ -27,11 +27,14 @@ const copy = (s: ComposeState): ComposeState => ({
   editing: { ...s.editing },
 });
 
-/** Opens the picked step's effect in the designer when it is one of yours. */
+/** Opens the picked step's effect in the designer, yours or a built-in. */
 function follow(s: ComposeState): void {
   const effect = s.program[pickedOf(s)]?.effect;
   s.editing.effect =
-    typeof effect === 'string' && Object.hasOwn(s.effects, effect) ? effect : undefined;
+    typeof effect === 'string' &&
+    (Object.hasOwn(s.effects, effect) || Object.hasOwn(EFFECTS, effect))
+      ? effect
+      : undefined;
 }
 
 /** Plays the whole program again from step `from`, so the pass always spans every step. */

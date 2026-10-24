@@ -1,4 +1,5 @@
 import {
+  EFFECTS,
   type EffectSpec,
   MODULATORS,
   MOVES,
@@ -7,7 +8,7 @@ import {
   type Piece,
   type Slot,
 } from '@/index.js';
-import type { ComposeState } from '../state.js';
+import { type ComposeState, freeName } from '../state.js';
 import { compose, pickedOf } from '../store.js';
 
 /** The picked step plays whatever the designer has open, so an edit there is heard at once. */
@@ -29,9 +30,23 @@ export const designerEdit = (fn: (s: ComposeState) => void) =>
 export const editEffect = (fn: (spec: EffectSpec) => EffectSpec) =>
   designerEdit((s) => {
     const n = s.editing.effect;
-    const spec = n === undefined ? undefined : s.effects[n];
-    if (n !== undefined && spec) s.effects[n] = fn(spec);
+    if (n === undefined) return;
+    const own = s.effects[n];
+    if (own) {
+      s.effects[n] = fn(own);
+      return;
+    }
+    // A built-in is never changed: the first edit makes a copy, which the picked step then plays.
+    const built = builtinOf(n);
+    if (!built) return;
+    const name = freeName(s, `${n} copy`);
+    s.effects[name] = fn({ ...built, name });
+    s.editing.effect = name;
   });
+
+/** The built-in effect named `name`, if there is one. */
+export const builtinOf = (name: string): EffectSpec | undefined =>
+  Object.hasOwn(EFFECTS, name) ? EFFECTS[name as keyof typeof EFFECTS] : undefined;
 
 /** Opens `name` in the designer, or nothing. */
 export const openEffect = (name: string | undefined) =>

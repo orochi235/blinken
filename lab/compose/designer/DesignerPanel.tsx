@@ -5,7 +5,7 @@ import { deleteEffect, FALLBACK } from '../state.js';
 import { pickedOf, useCompose } from '../store.js';
 import './DesignerPanel.css';
 import { EffectPicker } from './EffectPicker.js';
-import { designerEdit } from './edit.js';
+import { builtinOf, designerEdit } from './edit.js';
 import { NameField } from './NameField.js';
 import { SlotBox } from './SlotBox.js';
 import { WholeEffect } from './WholeEffect.js';
@@ -20,7 +20,8 @@ const BOARD = board(SIZE.cols, SIZE.rows);
 export function DesignerPanel() {
   const state = useCompose();
   const name = state.editing.effect;
-  const spec = name === undefined ? undefined : state.effects[name];
+  const own = name !== undefined && Object.hasOwn(state.effects, name);
+  const spec = name === undefined ? undefined : own ? state.effects[name] : builtinOf(name);
   const step = state.program[pickedOf(state)];
 
   const warnings = useMemo(() => {
@@ -46,8 +47,8 @@ export function DesignerPanel() {
       <header className="compose-designer-head">
         <h2 className="compose-heading">effect</h2>
         <EffectPicker />
-        {name !== undefined && spec && <NameField name={name} />}
-        {name !== undefined && spec && (
+        {name !== undefined && own && <NameField name={name} />}
+        {name !== undefined && own && (
           <IconButton
             glyph="remove"
             label={`delete this effect; steps playing it play ${FALLBACK} instead`}
@@ -58,7 +59,8 @@ export function DesignerPanel() {
       </header>
       {name === undefined || !spec ? (
         <p className="compose-hint">
-          Pick an effect to edit, or start a new one. A built-in opens as a copy.
+          Pick a step or an effect to edit, or start a new one. A built-in is copied when you first
+          change it.
         </p>
       ) : (
         <>

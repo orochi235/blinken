@@ -24,7 +24,9 @@ export function EffectPicker() {
       aria-label="effect"
       placeholder="pick an effect…"
       options={options}
-      selectedKey={open === undefined ? null : `y:${open}`}
+      selectedKey={
+        open === undefined ? null : Object.hasOwn(state.effects, open) ? `y:${open}` : `b:${open}`
+      }
       onSelectionChange={(key) => {
         const [kind, n] = [key.slice(0, 2), key.slice(2)];
         if (kind === 'y:') return openEffect(n);
