@@ -141,6 +141,11 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
 
 /** A face row's dot pitch, px: every row's dots are this size, so a row is as tall as its face. */
 const PITCH = 3;
+/** How much faster a row scrolls on its way back to rest, reached over `RAMP_MS`. */
+const EXIT_RATE = 20;
+const RAMP_MS = 250;
+/** How far from rest, on the scroll's own clock, the way back slows again. */
+const BRAKE_MS = 2500;
 /** The width the glyph metrics take at a row's right end, px. */
 const METRICS_PX = 44;
 
@@ -171,7 +176,7 @@ function FaceRow({
   const thumb = useRef<Handle | null>(null);
   // Let go mid-scroll, the scroll carries on and another copy of the name follows in to rest by
   // `end`; hovered again on the way, it plays on from there.
-  const leaving = useRef<{ end: number } | null>(null);
+  const leaving = useRef<{ end: number; braking: boolean } | null>(null);
 
   useEffect(() => {
     const t = thumb.current;
@@ -188,8 +193,14 @@ function FaceRow({
     const turn = () => {
       const at = m.pass()?.at ?? reel.from;
       const exit = leaving.current;
+      // Slowing again for the last stretch, so the name lands without overshooting its rest.
+      if (exit && !exit.braking && exit.end - at < BRAKE_MS) {
+        exit.braking = true;
+        m.ramp(1, RAMP_MS);
+      }
       if (exit && at >= exit.end) {
         leaving.current = null;
+        m.ramp(1, 0);
         swap(reel.text, reel.from);
         if (!live) {
           t.play(false, reel.from);
@@ -203,8 +214,9 @@ function FaceRow({
       const at = m.pass()?.at ?? reel.from;
       if (at <= reel.from) return;
       const out = exitOf(name, cols, style, reel.text, at);
-      leaving.current = { end: out.end };
+      leaving.current = { end: out.end, braking: false };
       swap(out.text, at);
+      m.ramp(EXIT_RATE, RAMP_MS);
     }
     raf = requestAnimationFrame(turn);
     return () => cancelAnimationFrame(raf);
