@@ -4,7 +4,7 @@ import { createUndo, editingIds, editingOf } from '../lab/compose/undo.js';
 
 const start = (): ComposeState => ({
   effects: {},
-  program: [{ text: 'HI', effect: 'hold' }],
+  program: [{ text: 'HI', hex: 0xffffff, effect: 'hold' }],
   layers: {},
   editing: { step: 0, effect: 'hold' },
 });
@@ -32,7 +32,7 @@ describe('compose undo', () => {
   it('undoes and redoes an edit to the composition', () => {
     const s = store();
     s.edit((x) => {
-      x.program[0] = { text: 'YO', effect: 'hold' };
+      x.program[0] = { text: 'YO', hex: 0xffffff, effect: 'hold' };
     });
     s.undo.history.undo();
     expect(text(s.get())).toBe('HI');
@@ -44,10 +44,10 @@ describe('compose undo', () => {
     const s = store();
     for (const t of ['A', 'AB', 'ABC'])
       s.edit((x) => {
-        x.program[0] = { text: t, effect: 'hold' };
+        x.program[0] = { text: t, hex: 0xffffff, effect: 'hold' };
       }, 'press:1');
     s.edit((x) => {
-      x.program[0] = { text: 'Z', effect: 'hold' };
+      x.program[0] = { text: 'Z', hex: 0xffffff, effect: 'hold' };
     }, 'press:2');
     expect(s.undo.history.undoDepth()).toBe(2);
     s.undo.history.undo();
