@@ -1,5 +1,11 @@
-import { LabShell, localStorageAdapter, Persistence, usePersistedState } from '@weasel-js/labkit';
-import { useMemo } from 'react';
+import {
+  LabShell,
+  localStorageAdapter,
+  Persistence,
+  Split,
+  usePersistedState,
+} from '@weasel-js/labkit';
+import { useMemo, useSyncExternalStore } from 'react';
 import './App.css';
 import { HARDWARE, type Hardware, hardwareOf } from './hardware.js';
 import { FontPanel } from './panels/FontPanel.js';
@@ -13,38 +19,99 @@ import { UndoBar } from './panels/UndoBar.js';
 import { Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
 
+/** The side columns' widths, px, until they are dragged. */
+const PANES = { left: 300, right: 320 };
+/** How narrow a drag may make each column, px. */
+const LEFT_MIN = 240;
+const MIDDLE_MIN = 360;
+const RIGHT_MIN = 260;
+/** Too narrow for every column's minimum, they stack, each scrolling in its share of the height. */
+const NARROW = `(max-width: ${LEFT_MIN + MIDDLE_MIN + RIGHT_MIN + 24}px)`;
+
+const narrowQuery = () => window.matchMedia(NARROW);
+const useNarrow = () =>
+  useSyncExternalStore(
+    (on) => {
+      const q = narrowQuery();
+      q.addEventListener('change', on);
+      return () => q.removeEventListener('change', on);
+    },
+    () => narrowQuery().matches,
+  );
+
 /** The lab: the sign on top; under it playback and the program, the effects and the picked scene, and the sign's hardware and faces. */
 function Compose() {
   // The hardware belongs to the sign, not the composition, so it stays out of drafts and links.
   const [kept, setKept] = usePersistedState<Hardware>('sign', HARDWARE, { scope: 'lab' });
   const hardware = useMemo(() => hardwareOf(kept), [kept]);
+  const [widths, setWidths] = usePersistedState('panes', PANES, { scope: 'lab' });
+  const narrow = useNarrow();
+  const left = (
+    <>
+      <PlaybackPanel />
+      <ProgramPanel />
+    </>
+  );
+  const middle = (
+    <>
+      <GalleryPanel />
+      <SceneEditor />
+    </>
+  );
+  const right = (
+    <>
+      <HardwarePanel hardware={hardware} setHardware={(fn) => setKept((h) => fn(hardwareOf(h)))} />
+      <FontPanel
+        setRows={(rows) =>
+          setKept((h) => {
+            const now = hardwareOf(h);
+            return { ...now, size: { ...now.size, rows } };
+          })
+        }
+      />
+    </>
+  );
   return (
     <div className="compose">
       <Sign hardware={hardware} />
       <Scrubber />
-      <div className="compose-panes">
-        <div className="compose-pane">
-          <PlaybackPanel />
-          <ProgramPanel />
-        </div>
-        <div className="compose-pane compose-pane-wide">
-          <GalleryPanel />
-          <SceneEditor />
-        </div>
-        <div className="compose-pane">
-          <HardwarePanel
-            hardware={hardware}
-            setHardware={(fn) => setKept((h) => fn(hardwareOf(h)))}
-          />
-          <FontPanel
-            setRows={(rows) =>
-              setKept((h) => {
-                const now = hardwareOf(h);
-                return { ...now, size: { ...now.size, rows } };
-              })
-            }
-          />
-        </div>
+      <div className="compose-columns" data-stacked={narrow || undefined}>
+        {narrow ? (
+          <>
+            <div className="compose-pane">{left}</div>
+            <div className="compose-pane">{middle}</div>
+            <div className="compose-pane">{right}</div>
+          </>
+        ) : (
+          <Split
+            className="compose-panes"
+            label="playback and program"
+            sidebarClassName="compose-pane"
+            contentClassName="compose-panes-rest"
+            width={widths.left}
+            defaultWidth={PANES.left}
+            minWidth={LEFT_MIN}
+            contentMinWidth={MIDDLE_MIN + RIGHT_MIN}
+            onWidthChange={(w) => setWidths((was) => ({ ...was, left: w }))}
+            sidebar={left}
+          >
+            <Split
+              className="compose-panes"
+              side="end"
+              label="sign and font"
+              sidebarClassName="compose-pane"
+              contentClassName="compose-pane"
+              width={widths.right}
+              defaultWidth={PANES.right}
+              minWidth={RIGHT_MIN}
+              contentMinWidth={MIDDLE_MIN}
+              onWidthChange={(w) => setWidths((was) => ({ ...was, right: w }))}
+              sidebar={right}
+            >
+              {middle}
+            </Split>
+          </Split>
+        )}
       </div>
     </div>
   );
