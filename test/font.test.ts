@@ -16,12 +16,12 @@ const picture = (text: string, look = {}) => {
 
 describe('faces', () => {
   it('give every built-in face 7 rows and a glyph for every character', () => {
-    expect(FACE_NAMES).toEqual(['standard', 'slim', 'wide', 'bold']);
-    const widths = { standard: 5, slim: 3, wide: 10, bold: 6 };
+    expect(FACE_NAMES.slice(0, 4)).toEqual(['standard', 'slim', 'wide', 'bold']);
+    const widths: Record<string, number> = { standard: 5, slim: 3, wide: 10, bold: 6 };
     for (const name of FACE_NAMES) {
       const face = FACES[name];
-      expect(face.rows).toBe(7);
-      expect(face.width).toBe(widths[name]);
+      expect(face.rows, name).toBe(7);
+      if (name in widths) expect(face.width).toBe(widths[name]);
       for (const ch of [...CHARS, ' ']) {
         const g = face.glyph(ch) as readonly string[];
         expect(g, `${name} ${ch}`).toHaveLength(7);

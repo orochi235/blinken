@@ -1,5 +1,7 @@
+import { IMPORTED } from './glyphs/fonts/index.js';
 import { SLIM } from './glyphs/slim.js';
 import { STANDARD } from './glyphs/standard.js';
+import { tableFace } from './glyphs/table.js';
 
 /**
  * A dot-matrix face: each character's dots, top row first, `#` lit, every row as wide as the
@@ -14,21 +16,6 @@ export interface Face {
   readonly width: number;
   glyph(ch: string): readonly string[] | undefined;
 }
-
-const tableFace = (
-  name: string,
-  about: string,
-  table: Readonly<Record<string, readonly string[]>>,
-): Face => {
-  const all = Object.values(table);
-  return {
-    name,
-    about,
-    rows: Math.max(0, ...all.map((g) => g.length)),
-    width: Math.max(0, ...all.flatMap((g) => g.map((row) => row.length))),
-    glyph: (ch) => (Object.hasOwn(table, ch) ? table[ch] : undefined),
-  };
-};
 
 /** A face derived from `base`, each glyph's rows passed through `row`, its widest `width`. */
 const derived = (
@@ -71,6 +58,7 @@ const faces = {
         '',
       ),
   ),
+  ...IMPORTED,
 };
 
 export type FaceName = keyof typeof faces;

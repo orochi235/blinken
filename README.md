@@ -107,12 +107,15 @@ program: [
 
 The faces are `standard`, the classic 5 × 7 letters and the default; `slim`, 3 × 7, fitting more
 across the sign; `wide`, the standard letters with every column doubled; and `bold`, the standard
-letters with each lit dot also lighting the one to its right. All four are 7 dots tall, one line of
-the sign. `style.reverse` is inverse video: the message's box lit and its letters dark.
+letters with each lit dot also lighting the one to its right. Beside them are faces converted from
+published pixel fonts, from the 3 × 5 `tom-thumb` to the italic `monogram-italic`, the handwritten
+`notjam-manuscript` and the extended `kenney-rocket`; `FACE_NAMES` lists them all, and
+`src/glyphs/fonts/CREDITS.md` names each one's source and license. Every face is 7 dots tall, one
+line of the sign. `style.reverse` is inverse video: the message's box lit and its letters dark.
 `style.proportional` spaces each letter by its own width and a blank, so an I takes three columns
 where a fixed-pitch one takes five. A face can also be given in full, as a `Face` with `rows`,
 `width` and a `glyph` for each character; a scene whose face is taller than the sign's lines is
-left out of the program, as one whose effect lacks room is, and staging it warns.
+left out of the program, and staging it warns.
 `rasterize(text, { face, style })` lays text out as a `Bitmap` of its own `cols` and `rows`, with
 each letter's columns in `letters`.
 
