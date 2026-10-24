@@ -53,45 +53,44 @@ def ident(slug):
     return "".join([head] + [w.capitalize() for w in rest]).replace("5", "Five").replace("1", "One") if slug[0].isdigit() else "".join([head] + [w.capitalize() for w in rest])
 
 
+CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?-:'&*#$"
+
 entries = []
 for f in faces:
     slug, about, credit = META[f["name"]]
     w = f["width"]
-    table = {}
-    for ch, rows in f["glyphs"].items():
-        if ch == " ":
-            continue
+    hexes = []
+    for ch in CHARS:
+        rows = f["glyphs"].get(ch) or ["." * w] * 7
         gw = len(rows[0])
         left = (w - gw) // 2
-        table[ch] = ["." * left + r + "." * (w - gw - left) for r in rows]
-    table[" "] = ["." * w] * len(next(iter(table.values())))
-    const = ident(slug).upper().replace("-", "_")
-    const = "".join(c if c.isalnum() else "_" for c in slug.upper())
-    lines = [f"/** {credit} */", f"export const {const}: Record<string, readonly string[]> = {{"]
-    for ch, rows in table.items():
-        key = ch if ch.isalnum() and not ch.isdigit() else json.dumps(ch).replace('"', "'")
-        if ch.isdigit():
-            key = f"'{ch}'"
-        if ch == "'":
-            key = '"\'"'
-        lines.append(f"  {key}: [{', '.join(repr(r) for r in rows)}],")
-    lines.append("};")
-    open(f"{OUT}/{slug}.ts", "w").write("\n".join(lines) + "\n")
-    entries.append((slug, const, about, credit))
+        rows = ["." * left + r + "." * (w - gw - left) for r in rows]
+        for x in range(w):
+            hexes.append(f"{sum(1 << y for y in range(7) if rows[y][x] == '#'):02x}")
+    entries.append((slug, about, credit, w, "".join(hexes)))
 
 idx = [
-    "import { tableFace } from '../table.js';",
-    *[f"import {{ {c} }} from './{s}.js';" for s, c, _, _ in entries],
+    "import { hexFace } from '../table.js';",
     "",
-    "/** Faces converted from published pixel fonts; each module's header names its source and license. */",
+    "/** The characters every face below draws, in the order its data packs them. */",
+    f"const CHARS = {json.dumps(CHARS)};",
+    "",
+    "/** Faces converted from published pixel fonts; CREDITS.md names each one's source and license. */",
     "export const IMPORTED = {",
-    *[f"  '{s}': tableFace('{s}', {json.dumps(a)}, {c})," for s, c, a, _ in entries],
-    "};",
 ]
+for slug, about, _, w, data in entries:
+    idx.append(f"  '{slug}': hexFace('{slug}', {json.dumps(about)}, CHARS, {w}, '{data}'),")
+idx.append("};")
 open(f"{OUT}/index.ts", "w").write("\n".join(idx) + "\n")
+for slug, *_ in entries:
+    path = f"{OUT}/{slug}.ts"
+    if os.path.exists(path):
+        os.remove(path)
+credits = open(f"{OUT}/CREDITS.md").read() if os.path.exists(f"{OUT}/CREDITS.md") else ""
+tail = credits[credits.index("\nThe tables are generated"):] if "The tables are generated" in credits else ""
 open(f"{OUT}/CREDITS.md", "w").write(
     "# Font credits\n\nThe faces in this directory are converted from these fonts. The OFL 1.1 text is in `OFL.txt` beside this file; the BSD 2-Clause notice for Spleen is in `spleen.LICENSE`.\n\n"
-    + "\n".join(f"- `{s}`: {c}" for s, _, _, c in entries)
-    + "\n"
+    + "\n".join(f"- `{s}`: {c}" for s, _, c, _, _ in entries)
+    + "\n" + tail
 )
 print(f"wrote {len(entries)} faces")
