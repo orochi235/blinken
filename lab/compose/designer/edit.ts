@@ -96,3 +96,33 @@ export const keyOf = (piece: Piece) => ('mod' in piece ? MOD + piece.mod : piece
 /** The fresh piece a Select key names. */
 export const pieceOf = (key: string): Piece =>
   key.startsWith(MOD) ? { mod: key.slice(MOD.length) as ModulatorName } : { move: key as MoveName };
+
+/**
+ * Gives the open effect another name, which the scenes playing it follow; a built-in is copied
+ * under it instead. Says false, changing nothing, when the name is empty or taken.
+ */
+export function renameEffect(from: string, to: string): boolean {
+  if (to === from) return true;
+  const taken =
+    !to ||
+    to === '__proto__' ||
+    Object.hasOwn(EFFECTS, to) ||
+    Object.hasOwn(compose.get().effects, to);
+  if (taken) return false;
+  designerEdit((s) => {
+    if (!Object.hasOwn(s.effects, from)) {
+      const built = builtinOf(from);
+      if (!built) return;
+      s.effects = { ...s.effects, [to]: { ...built, name: to } };
+      s.editing.effect = to;
+      return;
+    }
+    const { [from]: spec, ...rest } = s.effects;
+    s.effects = { ...rest, [to]: { ...(spec as EffectSpec), name: to } };
+    s.program = s.program.map((scene) =>
+      scene.effect === from ? { ...scene, effect: to } : scene,
+    );
+    s.editing.effect = to;
+  });
+  return true;
+}

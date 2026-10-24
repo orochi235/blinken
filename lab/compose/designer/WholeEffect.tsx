@@ -1,14 +1,21 @@
 import { ControlPanel, f, isAuto } from '@weasel-js/labkit';
+import { useState } from 'react';
 import { type EffectSpec, ORDERS, type OrderBy } from '@/index.js';
 import { DENSITY, numberField, schemaFor } from '../schema.js';
 import { BLEND, HOLD, LAG } from '../state.js';
-import { editEffect } from './edit.js';
+import { editEffect, renameEffect } from './edit.js';
 
 const NONE: ReadonlySet<string> = new Set();
 const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
 
 const schema = () =>
   schemaFor('whole', () => ({
+    name: f
+      .string('')
+      .label('name')
+      .describe(
+        'What the effect is called in the picker and in a shared composition. Scenes playing it follow a new name; renaming a built-in saves a copy under the new name. A name that is empty or already taken goes back.',
+      ),
     order: f
       .enum<'none' | OrderBy>('none', ['none', ...ORDERS])
       .label('whole effect')
@@ -20,8 +27,9 @@ const schema = () =>
     blend: numberField(BLEND),
   }));
 
-/** The open effect as a whole: its order, its hold and its blend. */
-export function WholeEffect({ spec }: { spec: EffectSpec }) {
+/** The open effect as a whole: its name, its order, its hold and its blend. */
+export function WholeEffect({ name, spec }: { name: string; spec: EffectSpec }) {
+  const [refusals, setRefusals] = useState(0);
   const set = (path: string, v: unknown) =>
     editEffect((e) => {
       if (path === 'order') {
@@ -36,19 +44,30 @@ export function WholeEffect({ spec }: { spec: EffectSpec }) {
       }
       return { ...e, blend: Number(v) };
     });
+  const commit = (path: string, v: unknown) => {
+    if (path === 'name') {
+      if (!renameEffect(name, String(v).trim())) setRefusals((n) => n + 1);
+    } else set(path, v);
+  };
+  const draft = (path: string, v: unknown) => {
+    if (path !== 'name') set(path, v);
+  };
   return (
     <ControlPanel
+      // Remounts on a refused name, so the field drops the text it was refused.
+      key={refusals}
       density={DENSITY}
       schema={schema()}
       config={{
+        name,
         order: spec.order?.by ?? 'none',
         lag: spec.order?.lag ?? 0,
         hold: spec.hold ?? 0,
         blend: spec.blend ?? 0,
       }}
       auto={spec.hold === undefined ? OWN_HOLD : NONE}
-      setConfig={set}
-      draftConfig={set}
+      setConfig={commit}
+      draftConfig={draft}
       className="compose-two-up"
       pack="pairs"
       layout="inline"

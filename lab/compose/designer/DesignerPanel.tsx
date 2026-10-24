@@ -9,7 +9,6 @@ import './DesignerPanel.css';
 import { EffectGallery } from './EffectGallery.js';
 import { EffectPicker } from './EffectPicker.js';
 import { builtinOf, designerEdit } from './edit.js';
-import { NameField } from './NameField.js';
 import { SlotBox } from './SlotBox.js';
 import { WholeEffect } from './WholeEffect.js';
 
@@ -64,7 +63,6 @@ export function DesignerPanel() {
           >
             {browsing ? 'back' : 'browse'}
           </Button>
-          {name !== undefined && own && <NameField name={name} />}
           {name !== undefined && own && (
             <IconButton
               glyph="remove"
@@ -89,7 +87,7 @@ export function DesignerPanel() {
       ) : (
         <>
           <div className="compose-whole">
-            <WholeEffect spec={spec} />
+            <WholeEffect name={name} spec={spec} />
             {(warnings.get('effect') ?? []).map((w) => (
               <p key={w} className="compose-warning">
                 {w}
