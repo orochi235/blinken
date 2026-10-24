@@ -98,6 +98,7 @@ slot set `tint` outright, since averaging two colors is rarely what was meant.
 | bloom pulse, flare      | `glow`   | sine / easing                    | together, or by letter        |
 | chase (today's layer)   | `lit`    | square                           | by border cell                |
 | sparkle (today's layer) | `lit`    | random flicker                   | random                        |
+| invert (a layer)        | `invert` | steady, or square / sine / tri   | together, or by column        |
 
 Today's three layers are modulators that happen to loop under the whole program. So a **layer**
 becomes a place a modulator plays, under the program or inside one effect's slot, not a separate
@@ -142,8 +143,8 @@ board, each placed where the scene before it ends and holding that scene's arcs.
 (2026-10-22): a span places its children itself, so it cannot hold the per-letter arcs a
 whole-effect order starts a lag apart. Every scene's hold is finite, so its length is known when
 it is staged. Under the program play any number of modulators looping as
-layers, each with a weight and its settings; the built-in layers are `sparkle`, `chase` and
-`rainbow`. `createMarquee` takes `effects` (a name
+layers, each with a weight and its settings; the built-in layers are `sparkle`, `chase`,
+`rainbow`, and `invert`. `createMarquee` takes `effects` (a name
 → `EffectSpec` table added to the built-ins), so a program can name effects designed elsewhere.
 
 ## The compose lab

@@ -69,11 +69,12 @@ const layers = {
   sparkle: { mod: 'sparkle' },
   chase: { mod: 'chase' },
   rainbow: { mod: 'hue-cycle', spread: { by: 'column' }, params: { rate: 0.4, phase: 0.015 } },
+  invert: { mod: 'invert' },
 } as const satisfies Record<string, LayerSpec>;
 
 export type EffectName = keyof typeof effects;
 export type LayerName = keyof typeof layers;
 /** The six built-in text effects, by name. */
 export const EFFECTS: Readonly<Record<EffectName, EffectSpec>> = effects;
-/** The three built-in layers, by name. */
+/** The built-in layers, by name. */
 export const LAYERS: Readonly<Record<LayerName, LayerSpec>> = layers;

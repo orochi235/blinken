@@ -8,7 +8,7 @@ export type Plane = 'shape' | 'brightness' | 'color' | 'glow';
 
 /** Which channels each plane drives. */
 export const PLANES: Readonly<Record<Plane, readonly Channel[]>> = {
-  shape: ['lit'],
+  shape: ['lit', 'invert'],
   brightness: ['gain'],
   color: ['tint', 'hue', 'chroma'],
   glow: ['glow'],

@@ -4,7 +4,8 @@ import { type Bitmap, ROWS } from './font.js';
 /**
  * What a dot shows. `lit` is how much it is on, 0 to 1, the brightest voice winning; `gain` scales
  * its brightness; `tint` is its color, which `hue` (degrees) turns and `chroma` scales; `glow`
- * scales its halo. The scaling channels rest at 1.
+ * scales its halo; `invert`, 0 to 1, swaps lit and dark toward the other. The scaling channels rest
+ * at 1.
  */
 export interface Pose {
   lit: number;
@@ -13,6 +14,7 @@ export interface Pose {
   hue: number;
   chroma: number;
   glow: number;
+  invert: number;
 }
 
 export const KIT = kit<Pose>({
@@ -22,6 +24,7 @@ export const KIT = kit<Pose>({
   hue: angle(),
   chroma: mul(),
   glow: mul(),
+  invert: max(),
 });
 
 /** A dot of the sign, in dot pitches from its top left; a bulb of the border sits outside it. */

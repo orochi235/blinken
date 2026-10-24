@@ -90,8 +90,9 @@ one before it ends.
 The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Matrix rain), and
 `tile`, in `EFFECTS`. The
 built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the border's bulbs
-stepping around; and `rainbow`, a hue running across the sign that recolors whatever is lit. They
-are in `LAYERS`.
+stepping around; `rainbow`, a hue running across the sign that recolors whatever is lit; and
+`invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when spread by
+column. They are in `LAYERS`.
 
 ## Faces and styles
 

@@ -14,11 +14,18 @@ export interface SignColumns {
   hue: Float64Array;
   chroma: Float64Array;
   glow: Float64Array;
+  invert: Float64Array;
 }
 
 /** How far a dot's light blooms: its radius times `glow`, nothing at 0. */
 export function haloRadius(r: number, glow: number): number {
   return r * Math.max(glow, 0);
+}
+
+/** How lit a dot shows: `lit`, clamped to 0..1, swapped `invert` of the way toward dark or lit. */
+export function shownLit(lit: number, invert: number): number {
+  const on = Math.min(Math.max(lit, 0), 1);
+  return on + Math.min(Math.max(invert, 0), 1) * (1 - 2 * on);
 }
 
 /** Fresh columns for `n` lights, every channel at rest. */
@@ -30,6 +37,7 @@ export function signColumns(n: number): SignColumns {
     hue: new Float64Array(n),
     chroma: new Float64Array(n).fill(1),
     glow: new Float64Array(n).fill(1),
+    invert: new Float64Array(n),
   };
 }
 
@@ -126,13 +134,12 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
   resize();
 
   return {
-    render({ lit, gain, tint, hue, chroma, glow: halo }, fallback, dt) {
+    render({ lit, gain, tint, hue, chroma, glow: halo, invert }, fallback, dt) {
       clock += dt;
       gctx.clearRect(0, 0, glow.width, glow.height);
       bctx.clearRect(0, 0, body.width, body.height);
       for (let i = 0; i < leds.length; i++) {
-        const want = lit[i] ?? 0;
-        const target = afflict(broken, i, want > 0 ? Math.min(want, 1) : 0, clock);
+        const target = afflict(broken, i, shownLit(lit[i] ?? 0, invert[i] ?? 0), clock);
         shown[i] = settle(shown[i] ?? 0, target, dt, fade);
       }
       ghosts(b, shown, leak, ghost);

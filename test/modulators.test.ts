@@ -126,6 +126,20 @@ describe('modulators', () => {
     expect(poseAt('chase', 10, { kind: 'cell', i: 0 }).tint).toEqual(oklab(0xffe2b0));
   });
 
+  it('invert holds at depth when steady and swings from 0 to depth otherwise', () => {
+    expect(poseAt('invert', 0).invert).toBe(1);
+    expect(poseAt('invert', 1300, undefined, { depth: 0.4 }).invert).toBe(0.4);
+    const sq = (t: number) => poseAt('invert', t, undefined, { shape: 'square', rate: 1 }).invert;
+    expect(new Set([0, 250, 500, 750].map(sq))).toEqual(new Set([0, 1]));
+  });
+
+  it('invert sweeps across the sign when spread by column', () => {
+    const given = { shape: 'sine', rate: 1, phase: 0.1 };
+    const at0 = poseAt('invert', 0, b.dots[0] as Subject, given, column).invert;
+    const at3 = poseAt('invert', 0, b.dots.find((d) => d.x === 3) as Subject, given, column).invert;
+    expect(at0).not.toBeCloseTo(at3 as number, 3);
+  });
+
   for (const name of names) {
     it(`${name} writes only the channels it declares`, () => {
       const m = MODULATORS[name];
