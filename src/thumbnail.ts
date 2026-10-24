@@ -19,6 +19,8 @@ export interface ThumbnailOptions extends Look {
   readonly rows?: number;
   /** The clock it animates on. Default one every thumbnail shares, at 30 fps. */
   readonly ticker?: Ticker;
+  /** A moment of the pass, ms, to draw once and hold, for a still preview instead of a loop. */
+  readonly still?: number;
 }
 
 export interface Thumbnail {
@@ -53,10 +55,23 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
       off = null;
     }
   };
+  // Still, a thumbnail leaves the ticker once it has drawn onto a canvas with a size; sizing the
+  // canvas clears it, so a resize draws it again.
+  let redraw: (() => void) | null = null;
   // The marquee's frame loop runs through this, so scrolling out of view takes it off the ticker.
   const gated: Ticker = {
     add(fn) {
-      tick = fn;
+      const once = (now: number) => {
+        fn(now);
+        if (canvas.width === 0) return;
+        tick = null;
+        gate();
+      };
+      redraw = () => {
+        tick = once;
+        gate();
+      };
+      tick = opts.still === undefined ? fn : once;
       gate();
       return () => {
         tick = null;
@@ -89,6 +104,19 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
     name: `thumbnail ${name}`,
   });
 
+  if (opts.still !== undefined) {
+    marquee.seek(opts.still, { hold: true });
+    // One frame is all a still gets, and a frame after a long wait counts no time, so the dots'
+    // warm-up would leave them dark.
+    marquee.setFade({ rise: 0, fall: 0 });
+  }
+  const resized =
+    opts.still === undefined || typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(() => redraw?.());
+  // The sign resizes, and so clears, its canvas when this box changes, its first layout included.
+  resized?.observe(canvas.parentElement ?? canvas);
+
   const watch =
     typeof IntersectionObserver === 'undefined'
       ? null
@@ -100,14 +128,16 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
         });
   watch?.observe(canvas);
 
-  return {
+  const handle: Thumbnail = {
     marquee,
     get playing() {
       return off !== null;
     },
     destroy() {
       watch?.disconnect();
+      resized?.disconnect();
       marquee.destroy();
     },
   };
+  return handle;
 }

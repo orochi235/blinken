@@ -9,7 +9,8 @@ import './Thumbnail.css';
 
 /**
  * A small sign looping `effect`, looked up in `effects` before the built-ins, animating while in
- * view; `text` and `face` change what it shows, and a new one is made for each.
+ * view, or drawn once at `still`; `text` and `face` change what it shows, and a new one is made
+ * for each.
  */
 export function Thumbnail({
   effect,
@@ -17,12 +18,14 @@ export function Thumbnail({
   text,
   face,
   cols,
+  still,
 }: {
   effect: string | EffectSpec;
   effects: Readonly<Record<string, EffectSpec>>;
   text?: string;
   face?: FaceName;
   cols?: number;
+  still?: number;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const thumb = useRef<Handle | null>(null);
@@ -37,13 +40,14 @@ export function Thumbnail({
       text,
       face,
       cols,
+      still,
     });
     thumb.current = t;
     return () => {
       thumb.current = null;
       t.destroy();
     };
-  }, [effect, text, face, cols]);
+  }, [effect, text, face, cols, still]);
 
   // An edit to the effect plays from its next pass.
   const spec =

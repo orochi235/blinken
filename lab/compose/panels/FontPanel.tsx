@@ -78,6 +78,7 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
               text={preview}
               face={name}
               cols={rasterize(preview, { face: name }).cols + 2}
+              still={100}
             />
           </label>
         ))}

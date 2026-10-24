@@ -165,6 +165,18 @@ describe('createThumbnail', () => {
     expect(two.playing).toBe(false);
   });
 
+  it('draws a still once, lit, then leaves the ticker', () => {
+    const ticker = createTicker();
+    const canvas = fakeCanvas();
+    const still = createThumbnail(canvas, { effect: 'hold', text: 'HI', ticker, still: 100 });
+    expect(ticker.size).toBe(1);
+    frame(16);
+    expect(arcs).toBeGreaterThan(0);
+    expect(ticker.size).toBe(0);
+    expect(still.playing).toBe(false);
+    still.destroy();
+  });
+
   it('shares one ticker at 30 fps by default', () => {
     const one = createThumbnail(fakeCanvas(), { effect: 'hold' });
     const two = createThumbnail(fakeCanvas(), { effect: 'roll', text: 'HI', face: 'slim' });
