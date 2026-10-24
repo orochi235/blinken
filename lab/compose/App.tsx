@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import './App.css';
 import { DesignerPanel } from './designer/DesignerPanel.js';
 import { HARDWARE, type Hardware, hardwareOf } from './hardware.js';
+import { FontPanel } from './panels/FontPanel.js';
 import { HardwarePanel } from './panels/HardwarePanel.js';
 import { LayersPanel } from './panels/LayersPanel.js';
 import { ProgramPanel } from './panels/ProgramPanel.js';
@@ -22,7 +23,8 @@ function Compose() {
       <Scrubber />
       <div className="compose-panes">
         <div className="compose-pane">
-          <ProgramPanel
+          <ProgramPanel />
+          <FontPanel
             setRows={(rows) =>
               setKept((h) => {
                 const now = hardwareOf(h);

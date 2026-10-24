@@ -1,6 +1,8 @@
+import { board } from './board.js';
 import type { EffectSpec } from './effects.js';
-import { type Look, ROWS } from './font.js';
+import { type Look, ROWS, rasterize } from './font.js';
 import { createMarquee, type Marquee } from './marquee.js';
+import { rowsToShow } from './orders.js';
 import { createTicker, type Ticker } from './ticker.js';
 
 export interface ThumbnailOptions extends Look {
@@ -12,7 +14,7 @@ export interface ThumbnailOptions extends Look {
   readonly text?: string;
   /** Its color. Default amber. */
   readonly hex?: number;
-  /** Dots across and down. Default 32 × 7, or two lines of text for an effect that needs them. */
+  /** Dots across and down. Default 32 across and as many rows as show every dot of the text, at least 7. */
   readonly cols?: number;
   readonly rows?: number;
   /** The clock it animates on. Default one every thumbnail shares, at 30 fps. */
@@ -68,7 +70,8 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
 
   const name = typeof opts.effect === 'string' ? opts.effect : opts.effect.name;
   const cols = opts.cols ?? 32;
-  const rows = opts.rows ?? ROWS;
+  const text = opts.text ?? 'OPEN';
+  const rows = opts.rows ?? rowsToShow(board(cols, ROWS), rasterize(text, opts));
   const marquee = createMarquee(canvas, {
     cols,
     rows,
@@ -76,7 +79,7 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
     program: [
       {
         effect: opts.effect,
-        text: opts.text ?? 'OPEN',
+        text,
         hex: opts.hex ?? 0xff9a2e,
         face: opts.face,
         style: opts.style,

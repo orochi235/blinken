@@ -1,0 +1,48 @@
+.compose-font {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compose-font-styles {
+  display: flex;
+  gap: 12px;
+}
+
+.compose-font-faces {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+
+.compose-font-face {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm, 4px);
+  background: var(--wzl-surface-sunken);
+  font-size: var(--wzl-font-size-sm, 12px);
+  cursor: pointer;
+}
+
+.compose-font-face:hover {
+  background-color: var(--wzl-surface-hover);
+}
+
+.compose-font-face:has(input:checked) {
+  border-color: var(--wzl-accent);
+}
+
+.compose-font-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.compose-font-face .compose-thumbnail {
+  grid-column: 1 / -1;
+  height: 40px;
+}
