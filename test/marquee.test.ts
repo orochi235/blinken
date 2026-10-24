@@ -387,6 +387,16 @@ describe('createMarquee', () => {
       });
     });
 
+    it('plays on from a seek made before the first frame', async () => {
+      await withSign({ program: two, effects: { quick } }, (sign, step) => {
+        sign.seek(quickMs + 100);
+        expect(sign.pass()?.at).toBe(quickMs + 100);
+        step(300);
+        expect(sign.pass()?.at).toBe(quickMs + 300);
+        expect(litAmong(sign, 36, 44)).toBeGreaterThan(0);
+      });
+    });
+
     it('clamps a seek to the pass, and has no pass to report with nothing to play', async () => {
       await withSign({ program: two, effects: { quick } }, (sign, step) => {
         step(100);

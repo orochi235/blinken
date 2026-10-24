@@ -1,5 +1,14 @@
 import { useSyncExternalStore } from 'react';
-import { EFFECTS, type LayerName, type Marquee, type Pass, type PassStep } from '@/index.js';
+import {
+  type Board,
+  board,
+  EFFECTS,
+  type LayerName,
+  type Marquee,
+  type Pass,
+  type PassStep,
+  SIZE,
+} from '@/index.js';
 import { gestureKey } from './gesture.js';
 import { type ComposeState, layerOf } from './state.js';
 import { open, save } from './storage.js';
@@ -148,8 +157,16 @@ export const compose = {
   attach(next: Marquee | null) {
     live.sign = next;
     setLayers();
+    notify();
   },
 };
+
+/** The board of a sign the marquee's default size, for while none is attached. */
+const DEFAULT_BOARD = board(SIZE.cols, SIZE.rows);
+const boardNow = () => live.sign?.board ?? DEFAULT_BOARD;
+
+/** The board of the sign the page drew, which a new size replaces. */
+export const useBoard = (): Board => useSyncExternalStore(compose.subscribe, boardNow, boardNow);
 
 export const useCompose = (): ComposeState =>
   useSyncExternalStore(compose.subscribe, compose.get, compose.get);

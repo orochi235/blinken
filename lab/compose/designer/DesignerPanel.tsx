@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { board, placeText, SIZE, SLOTS, type Slot, stageEffect, type Warning } from '@/index.js';
+import { placeText, SLOTS, type Slot, stageEffect, type Warning } from '@/index.js';
 import { IconButton } from '../IconButton.js';
 import { deleteEffect, FALLBACK } from '../state.js';
-import { pickedOf, useCompose } from '../store.js';
+import { pickedOf, useBoard, useCompose } from '../store.js';
 import './DesignerPanel.css';
 import { EffectPicker } from './EffectPicker.js';
 import { builtinOf, designerEdit } from './edit.js';
@@ -10,15 +10,13 @@ import { NameField } from './NameField.js';
 import { SlotBox } from './SlotBox.js';
 import { WholeEffect } from './WholeEffect.js';
 
-/** The board the lab's sign is: the marquee's default size. */
-const BOARD = board(SIZE.cols, SIZE.rows);
-
 /**
  * The effect designer: pick an effect, or start one, and edit its pieces, hold and blend. Its
  * warnings come from staging the open effect on the picked step's text.
  */
 export function DesignerPanel() {
   const state = useCompose();
+  const b = useBoard();
   const name = state.editing.effect;
   const own = name !== undefined && Object.hasOwn(state.effects, name);
   const spec = name === undefined ? undefined : own ? state.effects[name] : builtinOf(name);
@@ -29,18 +27,14 @@ export function DesignerPanel() {
     if (!spec) return at;
     let found: readonly Warning[];
     try {
-      found = stageEffect(
-        spec,
-        placeText(BOARD, step?.text ?? ' '),
-        step?.hex ?? 0xffffff,
-      ).warnings;
+      found = stageEffect(spec, placeText(b, step?.text ?? ' '), step?.hex ?? 0xffffff).warnings;
     } catch (e) {
       found = [{ text: (e as Error).message }];
     }
     for (const w of found)
       at.set(w.slot ?? 'effect', [...(at.get(w.slot ?? 'effect') ?? []), w.text]);
     return at;
-  }, [spec, step]);
+  }, [spec, step, b]);
 
   return (
     <section className="compose-designer" aria-label="effect">

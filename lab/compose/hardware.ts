@@ -1,7 +1,7 @@
 import { f } from '@weasel-js/labkit';
 import { stereo } from '@weasel-js/ui/components/MotifFrame';
-import { FADE, type NumberParam } from '@/index.js';
-import { numberField, schemaFor } from './schema.js';
+import { FADE, type NumberParam, SIZE } from '@/index.js';
+import { numberField, schemaFor, shownValues, storedValue } from './schema.js';
 
 const share = (label: string, about: string): NumberParam => ({
   label,
@@ -26,6 +26,28 @@ const leak = (label: string, about: string): NumberParam => ({
 
 /** Each group of the sign's hardware settings. */
 const GROUPS = {
+  size: {
+    cols: {
+      label: 'columns',
+      min: 10,
+      max: 240,
+      step: 1,
+      value: SIZE.cols,
+      unit: 'dots',
+      about:
+        'How many dots across the sign is. A message wider than the sign clips, except in moves that scroll it.',
+    },
+    rows: {
+      label: 'rows',
+      min: 5,
+      max: 40,
+      step: 1,
+      value: SIZE.rows,
+      unit: 'dots',
+      about:
+        'How many dots down the sign is. Every 8 rows fit another line of the same message; below 7 the message shows its top.',
+    },
+  },
   fade: {
     rise: {
       label: 'rise',
@@ -104,18 +126,29 @@ export const hardwareSchema = () =>
     ),
   );
 
-/** Hardware read back from storage, each value kept only when it is a number. */
+/** Hardware read back from storage, each value kept only when it is a number, held to its range. */
 export function hardwareOf(kept: unknown): Hardware {
   const k = (kept ?? {}) as Record<string, Record<string, unknown>>;
   return Object.fromEntries(
-    entries(HARDWARE).map(([g, values]) => [
+    entries(GROUPS).map(([g, params]) => [
       g,
       Object.fromEntries(
-        entries(values).map(([key, v]) => {
+        entries(params).map(([key, param]) => {
+          const p = param as NumberParam;
           const got = k[g]?.[key];
-          return [key, typeof got === 'number' ? got : v];
+          return [key, typeof got === 'number' ? Math.min(p.max, Math.max(p.min, got)) : p.value];
         }),
       ),
     ]),
   ) as Hardware;
+}
+
+/** Hardware as the panel's controls show it, each scaled number multiplied up. */
+export const shownHardware = (h: Hardware) =>
+  Object.fromEntries(entries(GROUPS).map(([g, params]) => [g, shownValues(params, h[g])]));
+
+/** A value the panel's control at `group.key` wrote, as the hardware stores it. */
+export function storedHardware(path: string, v: unknown): unknown {
+  const [g, key] = path.split('.') as [Group, string];
+  return storedValue(GROUPS[g] ?? {}, key, v);
 }

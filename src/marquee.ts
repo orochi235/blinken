@@ -1,20 +1,13 @@
-import { type Handle, level, type Mix, mix } from '@msb235/blits';
+import { type Handle, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
-import { LAYERS, type LayerSpec } from './builtins.js';
 import type { Defect } from './defects.js';
 import { createSign, paintBulbs, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
+import { cueLayers, type LayerOption } from './layers.js';
 import type { Fade, Ghost } from './optics.js';
 import type { ParamValue } from './params.js';
 import { layOut, type Pass, PassClock, type PassStep } from './pass.js';
-import {
-  cueLayer,
-  cueProgram,
-  effectOf,
-  type StagedStep,
-  type Step,
-  stageProgram,
-} from './program.js';
+import { cueProgram, effectOf, type StagedStep, type Step, stageProgram } from './program.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
 const AWAY_MS = 250;
@@ -42,7 +35,7 @@ export interface MarqueeOptions {
    * Layers by name: a built-in's name with on, off or a weight, or a full spec under any name.
    * Default: none.
    */
-  readonly layers?: Partial<Record<string, boolean | number | LayerSpec>>;
+  readonly layers?: Partial<Record<string, LayerOption>>;
   /** The color of a lit dot nothing has tinted. Default amber. */
   readonly color?: number;
   /** The mix's rate. Default 1. */
@@ -154,29 +147,25 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   };
   again();
 
+  let synced = false;
+  let early: { at: number; rate: number } | null = null;
+  /** Moves the pass to `at`, playing at `rate`. */
+  const moveTo = (at: number, rate: number) => {
+    if (pass === null) return;
+    // A step that has ended has left the mix, so the pass is cued again and moved from its start.
+    pass.fade({ over: 0 });
+    const fresh = cue();
+    fresh.seek(at);
+    fresh.rate = rate;
+    clock.set(m.now, at, rate);
+  };
+
   /** Throws on a step naming no effect; a program given as a function is checked as each pass starts. */
   const check = (p: typeof program, e: typeof effects) => {
     if (typeof p !== 'function') for (const step of p) effectOf(step, e);
   };
 
-  type Weight = ReturnType<typeof level<Subject>>;
-  const weightOf = (spec: LayerSpec, on: boolean | number) =>
-    on === true ? (spec.weight ?? 1) : on === false ? 0 : on;
-  const layers = new Map<string, { spec: LayerSpec; weight: Weight; voice: Handle<Subject> }>();
-  const addLayer = (name: string, spec: LayerSpec, on: boolean | number) => {
-    const weight = level<Subject>(weightOf(spec, on));
-    layers.set(name, { spec, weight, voice: cueLayer(m, b, spec, weight) });
-  };
-  for (const [name, spec] of Object.entries(LAYERS)) addLayer(name, spec, false);
-  for (const [name, v] of Object.entries(opts.layers ?? {})) {
-    if (v === undefined) continue;
-    const known = layers.get(name);
-    if (typeof v === 'object') {
-      known?.voice.fade({ over: 0 });
-      addLayer(name, v, true);
-    } else if (known) known.weight.set(weightOf(known.spec, v));
-    else throw new Error(`bree: no layer named ${name}`);
-  }
+  const layers = cueLayers(m, b, opts.layers);
 
   let last = performance.now();
   let mixMs = 0;
@@ -203,6 +192,11 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     }
     const t0 = performance.now();
     m.sync(now);
+    synced = true;
+    if (early) {
+      moveTo(early.at, early.rate);
+      early = null;
+    }
     clock.settle(m.now);
     m.pull(b.dots, cols);
     m.pull(b.cells, cells);
@@ -231,6 +225,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       if (pass === null) again();
     },
     restart(fromStep = 0) {
+      early = null;
       pass?.fade({ over: 0 });
       due = false;
       again(fromStep);
@@ -243,23 +238,16 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       if (pass === null) return;
       const at = Math.min(length, Math.max(0, ms));
       const rate = opts.hold ? 0 : 1;
-      // A step that has ended has left the mix, so the pass is cued again and moved from its start.
-      pass.fade({ over: 0 });
-      const fresh = cue();
-      fresh.seek(at);
-      fresh.rate = rate;
-      clock.set(m.now, at, rate);
+      // The mix has no time to seek from until its first sync, so the first frame makes the seek.
+      if (!synced) {
+        early = { at, rate };
+        clock.set(Number.NaN, at, rate);
+        return;
+      }
+      moveTo(at, rate);
     },
     setLayer(name, on, params) {
-      const layer = layers.get(name);
-      if (!layer) throw new Error(`bree: no layer named ${name}`);
-      if (params) {
-        const spec = { ...layer.spec, params: { ...layer.spec.params, ...params } };
-        layer.voice.fade({ over: 0 });
-        layer.voice = cueLayer(m, b, spec, layer.weight);
-        layer.spec = spec;
-      }
-      layer.weight.set(weightOf(layer.spec, on));
+      layers.set(name, on, params);
     },
     setColor(hex) {
       color = hex;
