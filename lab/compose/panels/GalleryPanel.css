@@ -1,0 +1,40 @@
+.compose-strip-tiles {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 4px;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.compose-strip-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 112px;
+  padding: 4px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm, 4px);
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size-xs, 11px);
+  cursor: pointer;
+}
+
+.compose-strip-tile:hover,
+.compose-strip-tile:focus-visible {
+  background-color: var(--wzl-surface-hover);
+  border-color: var(--wzl-accent);
+}
+
+.compose-strip-tile .compose-thumbnail {
+  height: 32px;
+}
+
+.compose-strip-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+}

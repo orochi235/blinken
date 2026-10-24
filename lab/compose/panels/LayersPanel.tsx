@@ -5,6 +5,7 @@ import { Panel } from '../Panel.js';
 import { DENSITY, fieldsOf, schemaFor, shownValues, storedValue } from '../schema.js';
 import { sceneLayerOf, withLayer } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
+import '../Row.css';
 import './LayersPanel.css';
 
 const schemaOf = (name: LayerName) =>
@@ -33,14 +34,15 @@ export function LayersPanel() {
     );
   return (
     <Panel title={`layers of scene ${at + 1}`} className="compose-layers">
-      <ol className="compose-layer-list">
+      <ol className="compose-rows">
         {(Object.keys(LAYERS) as LayerName[]).map((name) => {
           const layer = sceneLayerOf(scene, name);
           const mod = MODULATORS[layer.mod];
           return (
-            <li key={name} className={layer.on ? 'compose-layer is-on' : 'compose-layer'}>
+            <li key={name}>
               <label
-                className="compose-layer-row"
+                className="compose-row compose-layer-row"
+                data-picked={layer.on || undefined}
                 title="Play this layer across this scene, under its message; its settings show while it is on."
               >
                 <input

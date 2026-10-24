@@ -1,11 +1,22 @@
 import { Button } from '@weasel-js/labkit';
 import { Input, RangeSlider } from '@weasel-js/ui';
-import { useMemo, useState } from 'react';
-import { FACE_NAMES, FACES, type FaceName, placeText, rasterize, rowsToShow } from '@/index.js';
+import { type CSSProperties, useMemo, useState } from 'react';
+import {
+  board,
+  FACE_NAMES,
+  FACES,
+  type FaceName,
+  MARGIN,
+  placeText,
+  rasterize,
+  rowsToShow,
+} from '@/index.js';
+import { useLive } from '../live.js';
 import { Panel } from '../Panel.js';
 import { withLook } from '../state.js';
 import { compose, pickedOf, useBoard, useCompose } from '../store.js';
 import { NO_EFFECTS, STILL, Thumbnail } from '../Thumbnail.js';
+import '../Row.css';
 import './FontPanel.css';
 
 /** A face's body height: the rows its lines are spaced by, ghost rows aside. */
@@ -26,7 +37,6 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
   const scene = state.program[at];
   if (!scene) return null;
   const face = typeof scene.face === 'string' ? scene.face : 'standard';
-  const preview = scene.text.trim().slice(0, 12) || 'OPEN';
   const set = (what: 'face' | 'reverse' | 'proportional', v: unknown) =>
     compose.edit(
       (s) => {
@@ -36,7 +46,20 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
       { replay: at },
     );
   return (
-    <Panel title="font" className="compose-font">
+    <Panel
+      title="font"
+      className="compose-font"
+      actions={
+        <span className="compose-font-find" title="Narrow the faces by name.">
+          <Input
+            aria-label="find a face"
+            placeholder="find a face"
+            value={search}
+            onChange={setSearch}
+          />
+        </span>
+      }
+    >
       <Fit setRows={setRows} />
       <div className="compose-font-styles">
         <label
@@ -61,28 +84,22 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
           />
           proportional
         </label>
+        <span
+          className="compose-font-height"
+          title="Narrow the faces by how many rows tall their letters are."
+        >
+          <RangeSlider
+            label="height"
+            minValue={SHORTEST}
+            maxValue={TALLEST}
+            step={1}
+            value={heights}
+            onChange={(v) => setHeights(Array.isArray(v) ? v : [v, v])}
+            formatOutput={(v) => (Array.isArray(v) ? `${v[0]}–${v[1]} rows` : `${v} rows`)}
+          />
+        </span>
       </div>
-      <div
-        className="compose-font-filter"
-        title="Narrow the faces by name, and by how many rows tall their letters are."
-      >
-        <Input
-          aria-label="find a face"
-          placeholder="find a face"
-          value={search}
-          onChange={setSearch}
-        />
-        <RangeSlider
-          label="height"
-          minValue={SHORTEST}
-          maxValue={TALLEST}
-          step={1}
-          value={heights}
-          onChange={(v) => setHeights(Array.isArray(v) ? v : [v, v])}
-          formatOutput={(v) => (Array.isArray(v) ? `${v[0]}–${v[1]} rows` : `${v} rows`)}
-        />
-      </div>
-      <div className="compose-font-faces" role="radiogroup" aria-label="face">
+      <div className="compose-rows compose-font-faces" role="radiogroup" aria-label="face">
         {FACE_NAMES.filter((name) => {
           const body = bodyOf(name);
           return (
@@ -91,26 +108,59 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
             body <= (heights[1] ?? TALLEST)
           );
         }).map((name: FaceName) => (
-          <label key={name} className="compose-font-face" title={FACES[name].about}>
-            <input
-              type="radio"
-              name="face"
-              checked={name === face}
-              onChange={() => set('face', name)}
-            />
-            <span className="compose-font-name">{name}</span>
-            <Thumbnail
-              effect={STILL}
-              effects={NO_EFFECTS}
-              text={preview}
-              face={name}
-              cols={rasterize(preview, { face: name }).cols + 2}
-              still={100}
-            />
-          </label>
+          <FaceRow key={name} name={name} picked={name === face} onPick={() => set('face', name)} />
         ))}
       </div>
     </Panel>
+  );
+}
+
+/** What a face's row scrolls while hovered: every letter of a word that tells faces apart. */
+const SPECIMEN = 'HAMBURGEFONSTIV';
+/** A face row's sign: as wide as its name and as tall as the face's rows, the specimen's included. */
+const signOf = (name: FaceName) => {
+  const cols = rasterize(name, { face: name }).cols + 2;
+  const at = board(cols, FACES[name].rows);
+  const rows = Math.max(
+    rowsToShow(at, rasterize(name, { face: name })),
+    rowsToShow(at, rasterize(SPECIMEN, { face: name })),
+  );
+  return { cols, rows };
+};
+
+/** A face's row: its name set in it, still, and the specimen scrolling across while hovered. */
+function FaceRow({
+  name,
+  picked,
+  onPick,
+}: {
+  name: FaceName;
+  picked: boolean;
+  onPick: () => void;
+}) {
+  const { live, on } = useLive();
+  const { cols, rows } = useMemo(() => signOf(name), [name]);
+  // The sign's size in dots is all that varies by face; the pitch is the stylesheet's.
+  const size = { '--cols': cols + 2 * MARGIN, '--rows': rows + 2 * MARGIN } as CSSProperties;
+  return (
+    <label
+      className="compose-row compose-font-face"
+      data-picked={picked || undefined}
+      title={FACES[name].about}
+      style={size}
+      {...on}
+    >
+      <input type="radio" name="face" aria-label={name} checked={picked} onChange={onPick} />
+      <Thumbnail
+        effect={live ? 'scroll' : STILL}
+        effects={NO_EFFECTS}
+        text={live ? SPECIMEN : name}
+        face={name}
+        cols={cols}
+        rows={rows}
+        still={live ? undefined : 100}
+      />
+    </label>
   );
 }
 

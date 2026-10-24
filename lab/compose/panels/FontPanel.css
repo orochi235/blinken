@@ -6,51 +6,48 @@
 
 .compose-font-styles {
   display: flex;
+  align-items: center;
   gap: 12px;
 }
 
-.compose-font-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.compose-font-height {
+  flex: 1;
+  min-width: 0;
+}
+
+.compose-font-find {
+  width: 12em;
+  min-width: 0;
 }
 
 .compose-font-faces {
   max-height: 320px;
   overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 6px;
 }
 
+/* The radio keeps the row a choice for the keyboard and a reader; the accent edge shows it. */
+/* No padding: the sign is the row. Every row's dots are one pitch, so a row is as tall as its
+   face, and a long name clips rather than shrinking until the dots vanish. */
 .compose-font-face {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 2px 6px;
-  padding: 4px 6px;
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm, 4px);
-  background: var(--wzl-surface-sunken);
-  font-size: var(--wzl-font-size-sm, 12px);
-  cursor: pointer;
-}
-
-.compose-font-face:hover {
-  background-color: var(--wzl-surface-hover);
-}
-
-.compose-font-face:has(input:checked) {
-  border-color: var(--wzl-accent);
-}
-
-.compose-font-name {
+  --pitch: 3px;
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+}
+
+.compose-font-face input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.compose-font-face:has(input:focus-visible) {
+  outline: 2px solid var(--wzl-focus-ring, var(--wzl-accent));
 }
 
 .compose-font-face .compose-thumbnail {
-  grid-column: 1 / -1;
-  height: 40px;
+  justify-self: start;
+  width: calc(var(--cols) * var(--pitch));
+  height: calc(var(--rows) * var(--pitch));
 }

@@ -20,3 +20,9 @@
   text-transform: none;
   letter-spacing: normal;
 }
+
+/* A bar's icon buttons draw their glyphs large enough to read at the bar's height. */
+.compose-panel-actions svg {
+  width: 20px;
+  height: 20px;
+}

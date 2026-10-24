@@ -19,8 +19,11 @@ export interface ThumbnailOptions extends Look {
   readonly rows?: number;
   /** The clock it animates on. Default one every thumbnail shares, at 30 fps. */
   readonly ticker?: Ticker;
-  /** A moment of the pass, ms, to draw once and hold, for a still preview instead of a loop. */
-  readonly still?: number;
+  /**
+   * A moment of the pass to draw once and hold, for a still preview instead of a loop: ms, or a
+   * `share` of the pass's length for an effect whose length the caller doesn't know.
+   */
+  readonly still?: number | { readonly share: number };
 }
 
 export interface Thumbnail {
@@ -105,7 +108,11 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
   });
 
   if (opts.still !== undefined) {
-    marquee.seek(opts.still, { hold: true });
+    const at =
+      typeof opts.still === 'number'
+        ? opts.still
+        : (marquee.pass()?.length ?? 0) * opts.still.share;
+    marquee.seek(at, { hold: true });
     // One frame is all a still gets, and a frame after a long wait counts no time, so the dots'
     // warm-up would leave them dark.
     marquee.setFade({ rise: 0, fall: 0 });

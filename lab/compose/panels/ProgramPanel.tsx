@@ -8,6 +8,7 @@ import { effectTitle, hexOf } from '../schema.js';
 import { moveScene } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
 import { NO_EFFECTS, STILL, Thumbnail } from '../Thumbnail.js';
+import '../Row.css';
 import './ProgramPanel.css';
 
 /** Reshapes the list, keeping `keep` picked wherever it lands, and opens its effect. */
@@ -101,14 +102,13 @@ export function ProgramPanel() {
         </>
       }
     >
-      <ol className="compose-scenes">
+      <ol className="compose-rows">
         {state.program.map((scene, i) => (
           <li
             // biome-ignore lint/suspicious/noArrayIndexKey: a scene is its place in the program
             key={i}
             className={[
               'compose-scene',
-              i === picked && 'is-picked',
               drag?.from === i && 'is-dragged',
               drag && drag.to === i && 'is-drop-before',
               drag && drag.to === i + 1 && i === state.program.length - 1 && 'is-drop-after',
@@ -139,7 +139,8 @@ export function ProgramPanel() {
                 rows.current[i] = el;
               }}
               type="button"
-              className="compose-scene-pick"
+              className="compose-row compose-scene-pick"
+              data-picked={i === picked || undefined}
               aria-pressed={i === picked}
               title="Edit this scene. ↑ and ↓ pick the next one, Option-↑ and Option-↓ move this one, and Delete removes it."
               onClick={() => pick(i)}

@@ -21,7 +21,14 @@ export {
   scatter,
   type Where,
 } from './defects.js';
-export { createSign, paintBulbs, type Sign, type SignColumns, signColumns } from './draw.js';
+export {
+  createSign,
+  MARGIN,
+  paintBulbs,
+  type Sign,
+  type SignColumns,
+  signColumns,
+} from './draw.js';
 export { type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 export {
   type Bitmap,

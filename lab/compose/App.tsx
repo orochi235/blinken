@@ -4,6 +4,7 @@ import './App.css';
 import { DesignerPanel } from './designer/DesignerPanel.js';
 import { HARDWARE, type Hardware, hardwareOf } from './hardware.js';
 import { FontPanel } from './panels/FontPanel.js';
+import { GalleryPanel } from './panels/GalleryPanel.js';
 import { HardwarePanel } from './panels/HardwarePanel.js';
 import { LayersPanel } from './panels/LayersPanel.js';
 import { ProgramPanel } from './panels/ProgramPanel.js';
@@ -36,6 +37,7 @@ function Compose() {
           />
         </div>
         <div className="compose-pane compose-pane-wide">
+          <GalleryPanel />
           <DesignerPanel />
           <LayersPanel />
         </div>

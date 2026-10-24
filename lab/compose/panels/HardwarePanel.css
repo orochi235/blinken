@@ -1,0 +1,4 @@
+/* The sign's groups wear the secondary accent; the bar's ink follows it, black on both modes' secondary. */
+.compose-hardware [data-motif="stereo"] {
+  --wzl-tint: var(--wzl-secondary);
+}

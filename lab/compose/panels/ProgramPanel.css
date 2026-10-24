@@ -11,25 +11,9 @@
   gap: 6px 10px;
 }
 
-.compose-scenes {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
+/* The playing scene's row fills from the left as it plays. */
 .compose-scene-pick {
-  display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 4px 8px;
-  border: 1px solid transparent;
-  border-left: 3px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm, 4px);
   background:
     linear-gradient(
       to right,
@@ -38,20 +22,6 @@
     )
     no-repeat,
     var(--wzl-surface-sunken);
-  color: var(--wzl-fg);
-  font: inherit;
-  font-size: var(--wzl-font-size-sm, 12px);
-  text-align: start;
-  cursor: pointer;
-}
-
-.compose-scene-pick:hover {
-  background-color: var(--wzl-surface-hover);
-}
-
-.is-picked .compose-scene-pick {
-  border-color: var(--wzl-border);
-  border-left-color: var(--wzl-accent);
 }
 
 .compose-scene-dot {

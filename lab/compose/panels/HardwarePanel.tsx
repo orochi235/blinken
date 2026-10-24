@@ -2,6 +2,7 @@ import { ControlPanel, withValueAtPath } from '@weasel-js/labkit';
 import { type Hardware, hardwareSchema, shownHardware, storedHardware } from '../hardware.js';
 import { Panel } from '../Panel.js';
 import { DENSITY } from '../schema.js';
+import './HardwarePanel.css';
 
 /** The sign's hardware: how its lights fade, how much they ghost, and which are broken. */
 export function HardwarePanel({

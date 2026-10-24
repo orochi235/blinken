@@ -4,7 +4,7 @@ import { type Afflictions, afflict, afflictions, type Defect } from './defects.j
 import { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
 
 /** The margin round the dots, in pitches, which holds the border's bulbs. */
-const MARGIN = 3;
+export const MARGIN = 3;
 
 /** The mix's columns for each light, in the order the sign was given them; `tint` holds four per light. */
 export interface SignColumns {

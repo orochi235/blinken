@@ -4,11 +4,14 @@ import {
   type EffectSpec,
   type FaceName,
   type Thumbnail as Handle,
+  type ThumbnailOptions,
 } from '@/index.js';
 import './Thumbnail.css';
 
 /** The message standing still, so a preview shows the letters rather than an effect. */
 export const STILL: EffectSpec = { name: 'still', active: { move: 'stand' } };
+/** Far enough into a pass that most effects have come on, for a still of the effect itself. */
+export const MIDWAY = { share: 0.4 } as const;
 /** No designed effects, for a thumbnail that plays a spec of its own. */
 export const NO_EFFECTS: Readonly<Record<string, EffectSpec>> = {};
 
@@ -23,6 +26,7 @@ export function Thumbnail({
   text,
   face,
   cols,
+  rows,
   still,
   hex,
 }: {
@@ -31,7 +35,8 @@ export function Thumbnail({
   text?: string;
   face?: FaceName;
   cols?: number;
-  still?: number;
+  rows?: number;
+  still?: ThumbnailOptions['still'];
   hex?: number;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -47,6 +52,7 @@ export function Thumbnail({
       text,
       face,
       cols,
+      rows,
       still,
       hex,
     });
@@ -55,7 +61,7 @@ export function Thumbnail({
       thumb.current = null;
       t.destroy();
     };
-  }, [effect, text, face, cols, still, hex]);
+  }, [effect, text, face, cols, rows, still, hex]);
 
   // An edit to the effect plays from its next pass.
   const spec =
