@@ -12,8 +12,9 @@ import './SceneEditor.css';
 const NONE: ReadonlySet<string> = new Set();
 const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
 
-/** The scene panel's frame: the theme's primary accent. */
-const ACCENT = { ref: 'accent' } as const;
+/** The scene panel's frame: the color its message lights in. */
+const tintOf = (hex: number) =>
+  ({ space: 'srgb', coords: [16, 8, 0].map((s) => ((hex >> s) & 0xff) / 255) }) as const;
 
 /** The picked scene's own panel: its message and how it plays, and its layers; its face is the font panel's. */
 export function SceneEditor() {
@@ -83,7 +84,7 @@ export function SceneEditor() {
   };
 
   return (
-    <Panel title={`scene ${at + 1}`} className="compose-scene-editor" tint={ACCENT}>
+    <Panel title={`scene ${at + 1}`} className="compose-scene-editor" tint={tintOf(scene.hex)}>
       <MotifFrame kind="subpanel" title="message" className="compose-scene-part">
         <ControlPanel
           schema={schema}
