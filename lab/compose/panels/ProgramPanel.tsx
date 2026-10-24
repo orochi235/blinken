@@ -3,6 +3,7 @@ import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import type { Step } from '@/index.js';
 import { AMBER } from '../../demo.js';
 import { stepAt, watchPass } from '../clock.js';
+import { IconButton } from '../IconButton.js';
 import { hexOf } from '../schema.js';
 import { moveStep } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
@@ -123,11 +124,27 @@ export function ProgramPanel() {
           </li>
         ))}
       </ol>
-      <StepEditor
-        at={picked}
-        onMove={(by) => reshape(moveStep(state.program, picked, by))}
-        onRemove={() => remove(picked)}
-      />
+      <div className="compose-step-tools">
+        <IconButton
+          glyph="up"
+          label="move this step up"
+          disabled={picked === 0}
+          onClick={() => reshape(moveStep(state.program, picked, -1))}
+        />
+        <IconButton
+          glyph="down"
+          label="move this step down"
+          disabled={picked === state.program.length - 1}
+          onClick={() => reshape(moveStep(state.program, picked, 1))}
+        />
+        <IconButton
+          glyph="remove"
+          label="remove this step"
+          disabled={state.program.length < 2}
+          onClick={() => remove(picked)}
+        />
+      </div>
+      <StepEditor at={picked} />
     </section>
   );
 }

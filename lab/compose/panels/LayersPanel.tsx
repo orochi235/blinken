@@ -1,7 +1,7 @@
 import { ControlPanel, f } from '@weasel-js/labkit';
 import { LAYERS, type LayerName, MODULATORS, type ParamValue, values } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
-import { fieldsOf, schemaFor, shownValues, storedValue, whileOn } from '../schema.js';
+import { DENSITY, fieldsOf, schemaFor, shownValues, storedValue, whileOn } from '../schema.js';
 import { layerOf } from '../state.js';
 import { compose, useCompose } from '../store.js';
 import './LayersPanel.css';
@@ -59,7 +59,7 @@ function Layer({ name }: { name: LayerName }) {
       setConfig={set}
       draftConfig={set}
       renderers={RENDERERS}
-      density="tight"
+      density={DENSITY}
     />
   );
 }

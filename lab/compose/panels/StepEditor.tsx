@@ -1,8 +1,7 @@
 import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
 import { useMemo } from 'react';
 import { EFFECTS, FACE_NAMES, FACES } from '@/index.js';
-import { IconButton } from '../IconButton.js';
-import { hexOf, numberField, numOf } from '../schema.js';
+import { DENSITY, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
 import { compose, useCompose } from '../store.js';
 import './StepEditor.css';
@@ -10,16 +9,8 @@ import './StepEditor.css';
 const NONE: ReadonlySet<string> = new Set();
 const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
 
-/** The picked step's text, color, effect, hold, face and style, with buttons to move or remove it. */
-export function StepEditor({
-  at,
-  onMove,
-  onRemove,
-}: {
-  at: number;
-  onMove: (by: number) => void;
-  onRemove: () => void;
-}) {
+/** The picked step's text, color, effect, hold, face and style. */
+export function StepEditor({ at }: { at: number }) {
   const state = useCompose();
   const step = state.program[at];
   const names = [...Object.keys(state.effects), ...Object.keys(EFFECTS)];
@@ -88,7 +79,6 @@ export function StepEditor({
       path === 'effect' ? { follow: true } : { replay: at },
     );
 
-  const last = state.program.length - 1;
   return (
     <div className="compose-step-editor">
       <ControlPanel
@@ -106,28 +96,8 @@ export function StepEditor({
         auto={step.hold === undefined ? OWN_HOLD : NONE}
         setConfig={set}
         draftConfig={set}
-        density="tight"
+        density={DENSITY}
       />
-      <div className="compose-step-tools">
-        <IconButton
-          glyph="up"
-          label="move this step up"
-          disabled={at === 0}
-          onClick={() => onMove(-1)}
-        />
-        <IconButton
-          glyph="down"
-          label="move this step down"
-          disabled={at === last}
-          onClick={() => onMove(1)}
-        />
-        <IconButton
-          glyph="remove"
-          label="remove this step"
-          disabled={last === 0}
-          onClick={onRemove}
-        />
-      </div>
     </div>
   );
 }

@@ -72,3 +72,9 @@
 .compose-step-effect {
   color: var(--wzl-fg-muted);
 }
+
+.compose-step-tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}

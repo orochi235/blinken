@@ -33,7 +33,6 @@ const GROUPS = {
       max: 240,
       step: 1,
       value: SIZE.cols,
-      unit: 'dots',
       about:
         'How many dots across the sign is. A message wider than the sign clips, except in moves that scroll it.',
     },
@@ -43,7 +42,6 @@ const GROUPS = {
       max: 40,
       step: 1,
       value: SIZE.rows,
-      unit: 'dots',
       about:
         'How many dots down the sign is. Every 8 rows fit another line of the same message; below 7 the message shows its top.',
     },

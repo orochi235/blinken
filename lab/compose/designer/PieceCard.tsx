@@ -12,7 +12,7 @@ import {
 import { RENDERERS } from '../ColorsRow.js';
 import { IconButton } from '../IconButton.js';
 import { PlainSelect } from '../PlainSelect.js';
-import { fieldOf, numberField, schemaFor, shownValues, storedValue } from '../schema.js';
+import { DENSITY, fieldOf, numberField, schemaFor, shownValues, storedValue } from '../schema.js';
 import { LAG } from '../state.js';
 import { keyOf, pieceOf, pieceOptions } from './edit.js';
 import './PieceCard.css';
@@ -106,6 +106,7 @@ export function PieceCard({
         <IconButton glyph="remove" label="remove this piece" onClick={onRemove} />
       </div>
       <ControlPanel
+        density={DENSITY}
         schema={schemaOf(slot, piece)}
         config={config}
         auto={auto}

@@ -77,3 +77,6 @@ export const whileOn = (shape: ConfigShape): ConfigShape =>
       (node as BaseNode<unknown>).enableIf((c) => c.on === true),
     ]),
   );
+
+/** How much room every settings panel in the lab gives its rows. */
+export const DENSITY = 'roomy' as const;

@@ -1,6 +1,6 @@
 import { ControlPanel, f, isAuto } from '@weasel-js/labkit';
 import { type EffectSpec, ORDERS, type OrderBy } from '@/index.js';
-import { numberField, schemaFor } from '../schema.js';
+import { DENSITY, numberField, schemaFor } from '../schema.js';
 import { BLEND, HOLD, LAG } from '../state.js';
 import { editEffect } from './edit.js';
 
@@ -38,6 +38,7 @@ export function WholeEffect({ spec }: { spec: EffectSpec }) {
     });
   return (
     <ControlPanel
+      density={DENSITY}
       schema={schema()}
       config={{
         order: spec.order?.by ?? 'none',
