@@ -30,7 +30,7 @@ export {
   type SignColumns,
   signColumns,
 } from './draw.js';
-export { type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
+export { type EffectSpec, type StagedEffect, type Stretch, stageEffect } from './effects.js';
 export {
   type Bitmap,
   CHARS,

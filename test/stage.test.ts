@@ -227,3 +227,23 @@ describe('what an effect draws', () => {
     expect(Math.max(...out.map((k) => k.timestamp))).toBe(180 + FOLD + TUMBLE);
   });
 });
+
+describe('parts', () => {
+  it('lays enter, active, and exit end to end, each widened by the lag across groups', () => {
+    const spec: EffectSpec = {
+      name: 'laid',
+      order: { by: 'column', lag: 10 },
+      enter: { move: 'cut-on' },
+      active: { move: 'stand' },
+      exit: { move: 'cut-off' },
+      hold: 1000,
+    };
+    const { parts, ms } = stageEffect(spec, place(board(20, 7), rasterize('HI')), 0xffffff);
+    const span = parts.enter.ms - parts.active.start;
+    expect(parts.enter.start).toBe(0);
+    expect(span).toBeGreaterThan(0);
+    expect(parts.active.ms).toBe(1000 + span);
+    expect(parts.exit.start).toBe(parts.active.start + 1000);
+    expect(parts.exit.start + parts.exit.ms).toBe(ms);
+  });
+});

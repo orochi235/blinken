@@ -20,6 +20,8 @@ interface Live {
   opened: ReturnType<typeof open>;
   state: ComposeState;
   solo: boolean;
+  /** The rate the sign plays at. */
+  rate: number;
   sign: Marquee | null;
   listeners: Set<() => void>;
   undo: Undo;
@@ -55,7 +57,14 @@ function begin(): Live {
   const opened = open(location.hash);
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   // Undo reads the state through this object, so it is made before the history that needs it.
-  const l = { opened, state: opened.state, solo: false, sign: null, listeners: new Set() } as Live;
+  const l = {
+    opened,
+    state: opened.state,
+    solo: false,
+    rate: 1,
+    sign: null,
+    listeners: new Set(),
+  } as Live;
   l.undo = createUndo({
     get: () => l.state,
     set: (next) => {
@@ -142,9 +151,17 @@ export const compose = {
   seek: (ms: number, hold = false) => live.sign?.seek(ms, { hold }),
   /** The program scene a scene of the pass plays: soloed, the pass is the picked scene alone. */
   sceneOf: (p: PassScene): number => (live.solo ? pickedOf(live.state) : p.scene),
+  /** The rate the sign plays at, which a sign built later takes too. */
+  rate: () => live.rate ?? 1,
+  setRate(rate: number) {
+    live.rate = rate;
+    live.sign?.ramp(rate, 150);
+    notify();
+  },
   /** Hands the store the sign the page drew, or null when it is gone. */
   attach(next: Marquee | null) {
     live.sign = next;
+    if (next && live.rate !== 1) next.ramp(live.rate, 0);
     notify();
   },
 };

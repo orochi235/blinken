@@ -35,7 +35,18 @@ export interface StagedEffect {
   readonly arcs: readonly { readonly spec: ArcSpec<Subject, Pose>; readonly start: number }[];
   /** How long it keeps the sign, from the owner's 0. */
   readonly ms: number;
+  /**
+   * Where each part plays, from the owner's 0: from the first group starting it to the last group
+   * ending it, so with a lag the parts overlap.
+   */
+  readonly parts: Readonly<Record<Slot, Stretch>>;
   readonly warnings: readonly Warning[];
+}
+
+/** A stretch of time, ms: where it starts and how long it lasts. */
+export interface Stretch {
+  readonly start: number;
+  readonly ms: number;
 }
 
 /** A modulator setting `tint` outweighs the scene color rather than averaging with it evenly. */
@@ -132,7 +143,12 @@ export function stageEffect(
     const blank = patch<Subject, Pose>(Math.max(1, ms), () => ({}), { writes: [] });
     arcs.push(arcOf(cells, { patch: blank, subjects: at.board.cells }, held + span, 0));
   }
-  return { arcs, ms, warnings };
+  const parts = {
+    enter: { start: 0, ms: enter + span },
+    active: { start: enter, ms: held + span },
+    exit: { start: enter + held, ms: exit + span },
+  };
+  return { arcs, ms, parts, warnings };
 }
 
 /** Cues a staged effect's arcs under `owner`, each at its start; one of several is named by its index. */

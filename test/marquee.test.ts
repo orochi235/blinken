@@ -363,10 +363,14 @@ describe('createMarquee', () => {
         step(100);
         const first = sign.pass();
         expect(first?.length).toBe(2 * quickMs);
-        expect(first?.scenes).toEqual([
+        expect(first?.scenes).toMatchObject([
           { scene: 0, start: 0, ms: quickMs },
           { scene: 1, start: quickMs, ms: quickMs },
         ]);
+        // A scene's parts are placed in the pass, after the scenes before it.
+        const [one, other] = first?.scenes ?? [];
+        expect(other?.parts.enter.start).toBe(quickMs + (one?.parts.enter.start ?? Number.NaN));
+        expect(other?.parts.exit.start).toBe(quickMs + (one?.parts.exit.start ?? Number.NaN));
         const at = first?.at ?? Number.NaN;
         step(300);
         expect(sign.pass()?.at).toBe(at + 200);
@@ -380,7 +384,7 @@ describe('createMarquee', () => {
       await withSign({ program: two, effects: { quick } }, (sign, step) => {
         step(100);
         sign.restart(1);
-        expect(sign.pass()?.scenes).toEqual([{ scene: 1, start: 0, ms: quickMs }]);
+        expect(sign.pass()?.scenes).toMatchObject([{ scene: 1, start: 0, ms: quickMs }]);
       });
     });
 

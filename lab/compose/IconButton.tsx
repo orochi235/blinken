@@ -13,6 +13,10 @@ export const GLYPHS = {
   loop: 'ui:loop' as IconName,
   rewind: 'ui:rewind' as IconName,
   image: 'core:image' as IconName,
+  play: 'ui:play' as IconName,
+  pause: 'ui:pause' as IconName,
+  stepBack: 'ui:stepBack' as IconName,
+  stepForward: 'ui:stepForward' as IconName,
 };
 
 /**

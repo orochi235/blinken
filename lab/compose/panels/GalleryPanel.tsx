@@ -56,6 +56,10 @@ export function GalleryPanel() {
 
 /** How far a press moves before it is a drag rather than a click, px. */
 const DRAG_PX = 4;
+/** What a fling keeps of its speed each 16 ms. */
+const FRICTION = 0.94;
+/** How long the pointer may rest before letting go and still fling, ms. */
+const STILL_MS = 80;
 
 /**
  * A row that scrolls sideways under a thin bar of its own, drawn over the tiles rather than below
@@ -122,13 +126,26 @@ function Strip({
     };
   }, [wraps]);
 
-  /** Scrolls by the pointer's motion from `e` on, `by` scroll px per pointer px. */
-  const follow = (e: PointerEvent<HTMLElement>, by: () => number, onDrag?: () => void) => {
+  /** The coast a fling left running, stopped by the next press. */
+  const coast = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(coast.current), []);
+  /**
+   * Scrolls by the pointer's motion from `e` on, `by` scroll px per pointer px; with `fling`, a
+   * release mid-motion coasts on and slows to a stop.
+   */
+  const follow = (
+    e: PointerEvent<HTMLElement>,
+    by: () => number,
+    { onDrag, fling = false }: { onDrag?: () => void; fling?: boolean } = {},
+  ) => {
     const el = box.current;
     if (!el || e.button !== 0) return;
+    cancelAnimationFrame(coast.current);
     const target = e.currentTarget;
     const start = e.clientX;
-    let last = e.clientX;
+    let last = { x: e.clientX, t: e.timeStamp };
+    /** Pointer px per ms, smoothed over the last few moves. */
+    let speed = 0;
     let dragging = false;
     const move = (m: globalThis.PointerEvent) => {
       if (!dragging && Math.abs(m.clientX - start) < DRAG_PX) return;
@@ -137,13 +154,27 @@ function Strip({
         target.setPointerCapture(m.pointerId);
         onDrag?.();
       }
-      el.scrollLeft += (m.clientX - last) * by();
-      last = m.clientX;
+      const dt = Math.max(1, m.timeStamp - last.t);
+      speed = speed * 0.5 + ((m.clientX - last.x) / dt) * 0.5;
+      el.scrollLeft += (m.clientX - last.x) * by();
+      last = { x: m.clientX, t: m.timeStamp };
     };
-    const up = () => {
+    const up = (u: globalThis.PointerEvent) => {
       target.removeEventListener('pointermove', move);
       target.removeEventListener('pointerup', up);
       target.removeEventListener('pointercancel', up);
+      // A pointer that stopped before letting go flings nothing.
+      if (!fling || !dragging || u.timeStamp - last.t > STILL_MS) return;
+      let v = speed * by();
+      let then = performance.now();
+      const glide = (now: number) => {
+        const dt = now - then;
+        then = now;
+        el.scrollLeft += v * dt;
+        v *= FRICTION ** (dt / 16);
+        if (Math.abs(v) > 0.02) coast.current = requestAnimationFrame(glide);
+      };
+      coast.current = requestAnimationFrame(glide);
     };
     target.addEventListener('pointermove', move);
     target.addEventListener('pointerup', up);
@@ -168,7 +199,7 @@ function Strip({
         className="compose-strip-tiles"
         onScroll={settle}
         onPointerDown={(e) => {
-          if (e.pointerType === 'mouse') follow(e, () => -1, swallowClick);
+          if (e.pointerType === 'mouse') follow(e, () => -1, { onDrag: swallowClick, fling: true });
         }}
       >
         {wraps && (
