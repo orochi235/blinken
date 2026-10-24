@@ -14,6 +14,32 @@
   text-overflow: ellipsis;
 }
 
+/* An off layer's settings stay mounted and fold to nothing, so turning it on or off slides them. */
+.compose-layer-fold {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--wzl-motion-medium, 240ms) var(--wzl-ease-out-cubic, ease-out),
+    opacity var(--wzl-motion-medium, 240ms) var(--wzl-ease-out-cubic, ease-out);
+}
+
+.compose-layer-fold[data-open] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.compose-layer-fold > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compose-layer-fold {
+    transition: none;
+  }
+}
+
 .compose-layer-settings {
   padding: 6px 4px 8px 14px;
 }

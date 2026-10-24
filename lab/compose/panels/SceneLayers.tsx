@@ -52,31 +52,33 @@ export function SceneLayers() {
               <span className="compose-layer-name">{name}</span>
               <span className="compose-about">{mod.about}</span>
             </label>
-            {layer.on && (
-              <ControlPanel
-                className="compose-layer-settings"
-                schema={schemaOf(name)}
-                config={shownValues(mod.params, values(mod, layer.params as never))}
-                setConfig={(path, v) =>
-                  set(name, (l) => ({
-                    params: {
-                      ...l.params,
-                      [path]: storedValue(mod.params, path, v) as ParamValue,
-                    },
-                  }))
-                }
-                draftConfig={(path, v) =>
-                  set(name, (l) => ({
-                    params: {
-                      ...l.params,
-                      [path]: storedValue(mod.params, path, v) as ParamValue,
-                    },
-                  }))
-                }
-                renderers={RENDERERS}
-                density={DENSITY}
-              />
-            )}
+            <div className="compose-layer-fold" data-open={layer.on || undefined} inert={!layer.on}>
+              <div>
+                <ControlPanel
+                  className="compose-layer-settings"
+                  schema={schemaOf(name)}
+                  config={shownValues(mod.params, values(mod, layer.params as never))}
+                  setConfig={(path, v) =>
+                    set(name, (l) => ({
+                      params: {
+                        ...l.params,
+                        [path]: storedValue(mod.params, path, v) as ParamValue,
+                      },
+                    }))
+                  }
+                  draftConfig={(path, v) =>
+                    set(name, (l) => ({
+                      params: {
+                        ...l.params,
+                        [path]: storedValue(mod.params, path, v) as ParamValue,
+                      },
+                    }))
+                  }
+                  renderers={RENDERERS}
+                  density={DENSITY}
+                />
+              </div>
+            </div>
           </li>
         );
       })}
