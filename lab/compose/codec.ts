@@ -5,8 +5,10 @@ import {
   type FaceName,
   LAYERS,
   type LayerName,
+  type LayerSpec,
   MODULATORS,
   MOVES,
+  type ModulatorName,
   type NumberParam,
   ORDERS,
   type Order,
@@ -30,7 +32,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 2;
+export const VERSION = 3;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -48,8 +50,13 @@ export interface ShareData {
 const EFFECT_NAMES = Object.keys(EFFECTS);
 const MOD_NAMES = Object.keys(MODULATORS);
 const LAYER_NAMES = Object.keys(LAYERS) as LayerName[];
-/** The layers a version 1 link wrote, in its order, whatever LAYERS holds now. */
-const V1_LAYERS: readonly LayerName[] = ['sparkle', 'chase', 'rainbow'];
+/**
+ * The layers a version 1 link wrote program-wide and a version 2 link wrote per scene, in their
+ * order, whatever LAYERS holds now. Chase has since moved to the sign's border, so it is read and
+ * dropped.
+ */
+const V1_LAYERS = ['sparkle', 'chase', 'rainbow'] as const;
+const V2_LAYERS = ['sparkle', 'chase', 'rainbow', 'invert'] as const;
 const movesIn = Object.fromEntries(
   SLOTS.map((slot) => [
     slot,
@@ -236,7 +243,7 @@ function readScene(r: BitReader, mine: string[], version: number): Scene {
   const reverse = r.flag();
   const proportional = r.flag();
   const style = { ...(reverse && { reverse }), ...(proportional && { proportional }) };
-  const layers = version >= 2 ? readLayers(r) : {};
+  const layers = version >= 3 ? readLayers(r) : version === 2 ? readLayers(r, V2_LAYERS) : {};
   return {
     text,
     hex,
@@ -248,9 +255,11 @@ function readScene(r: BitReader, mine: string[], version: number): Scene {
   };
 }
 
-/** A layer's settings default to its built-in's, then to its modulator's. */
-const layerParams = (name: LayerName) => {
-  const base = LAYERS[name];
+/** A layer's settings default to its built-in's, then to its modulator's; one no longer built in is its modulator's. */
+const layerParams = (name: string) => {
+  const base: LayerSpec = Object.hasOwn(LAYERS, name)
+    ? LAYERS[name as LayerName]
+    : { mod: name as ModulatorName };
   return { params: MODULATORS[base.mod].params, base: base.params ?? {} };
 };
 
@@ -268,14 +277,14 @@ function writeLayers(w: BitWriter, layers: Record<string, LinkLayer>): void {
 
 function readLayers(
   r: BitReader,
-  names: readonly LayerName[] = LAYER_NAMES,
+  names: readonly string[] = LAYER_NAMES,
 ): Record<string, LinkLayer> {
   const layers: Record<string, LinkLayer> = {};
   for (const name of names) {
     if (!r.flag()) continue;
     const on = r.flag();
     const params = readParams(r, layerParams(name).params);
-    layers[name] = { on, ...(params && { params }) };
+    if (Object.hasOwn(LAYERS, name)) layers[name] = { on, ...(params && { params }) };
   }
   return layers;
 }

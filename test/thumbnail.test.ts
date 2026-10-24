@@ -177,6 +177,24 @@ describe('createThumbnail', () => {
     still.destroy();
   });
 
+  it('plays a still on from its moment, and holds wherever it got to', () => {
+    const ticker = createTicker();
+    const t = createThumbnail(fakeCanvas(), { effect: 'scroll', text: 'HI', ticker, still: 500 });
+    frame(16);
+    expect(ticker.size).toBe(0);
+    t.play(true);
+    frame(32);
+    frame(332);
+    expect(ticker.size).toBe(1);
+    const reached = t.marquee.pass()?.at ?? 0;
+    expect(reached).toBeGreaterThan(500);
+    t.play(false);
+    frame(632);
+    expect(ticker.size).toBe(0);
+    expect(t.marquee.pass()?.at).toBeCloseTo(reached, 0);
+    t.destroy();
+  });
+
   it('shares one ticker at 30 fps by default', () => {
     const one = createThumbnail(fakeCanvas(), { effect: 'hold' });
     const two = createThumbnail(fakeCanvas(), { effect: 'roll', text: 'HI', face: 'slim' });

@@ -3,9 +3,6 @@ import { dotColor } from './color.js';
 import { type Afflictions, afflict, afflictions, type Defect } from './defects.js';
 import { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
 
-/** The margin round the dots, in pitches, which holds the border's bulbs. */
-export const MARGIN = 3;
-
 /** The mix's columns for each light, in the order the sign was given them; `tint` holds four per light. */
 export interface SignColumns {
   lit: Float64Array;
@@ -81,8 +78,16 @@ function css(hex: number): string {
   return s;
 }
 
-/** A sign drawn on `canvas`, each of `leds` at its place; the mix's columns arrive in that order. */
-export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly Led[]): Sign {
+/**
+ * A sign drawn on `canvas`, each of `leds` at its place; the mix's columns arrive in that order.
+ * Unless `backed` is false its housing is painted dark, rather than left showing the page.
+ */
+export function createSign(
+  canvas: HTMLCanvasElement,
+  b: Board,
+  leds: readonly Led[],
+  backed = true,
+): Sign {
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   const glow = document.createElement('canvas');
   const gctx = glow.getContext('2d') as CanvasRenderingContext2D;
@@ -98,8 +103,8 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
   let pitch = 0;
 
   const box = canvas.parentElement as HTMLElement;
-  const across = b.cols + 2 * MARGIN;
-  const down = b.rows + 2 * MARGIN;
+  const across = b.cols + 2 * b.margin;
+  const down = b.rows + 2 * b.margin;
 
   /** Fits the sign in its box, as large as both of the box's sides allow. */
   function resize(): void {
@@ -112,8 +117,10 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
       c.height = Math.round(pitch * down);
     }
     const hctx = housing.getContext('2d') as CanvasRenderingContext2D;
-    hctx.fillStyle = '#0d0a08';
-    hctx.fillRect(0, 0, housing.width, housing.height);
+    if (backed) {
+      hctx.fillStyle = '#0d0a08';
+      hctx.fillRect(0, 0, housing.width, housing.height);
+    }
     for (const led of leds) {
       const [x, y] = place(led);
       hctx.fillStyle = led.kind === 'bulb' ? '#2b2118' : '#21150f';
@@ -124,8 +131,8 @@ export function createSign(canvas: HTMLCanvasElement, b: Board, leds: readonly L
   }
 
   const place = (led: Led): [number, number] => [
-    (led.x + MARGIN + 0.5) * pitch,
-    (led.y + MARGIN + 0.5) * pitch,
+    (led.x + b.margin + 0.5) * pitch,
+    (led.y + b.margin + 0.5) * pitch,
   ];
   const radius = (led: Led) => pitch * (led.kind === 'bulb' ? 0.42 : 0.36);
 

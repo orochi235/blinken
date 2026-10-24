@@ -188,6 +188,30 @@ describe('packed links', () => {
     expect(encode(play).length).toBeLessThan(json.length / 4);
   });
 
+  it('opens a version 2 link, dropping the chase layer that moved to the sign', () => {
+    const w = new BitWriter();
+    w.uint(2, 8);
+    w.count(0);
+    w.count(1);
+    w.text('A');
+    w.flag(false);
+    w.flag(false);
+    w.uint(Object.keys(EFFECTS).indexOf('hold'), widthOf(Object.keys(EFFECTS).length));
+    for (let k = 0; k < 4; k++) w.flag(false);
+    // Sparkle absent; chase and invert there, on, at their built-in settings; rainbow absent.
+    w.flag(false);
+    w.flag(true);
+    w.flag(true);
+    for (const _ of Object.keys(MODULATORS.chase.params)) w.flag(false);
+    w.flag(false);
+    w.flag(true);
+    w.flag(true);
+    for (const _ of Object.keys(MODULATORS.invert.params)) w.flag(false);
+    const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
+    expect(read).toBe(true);
+    expect(state.program.map((s) => s.layers)).toEqual([{ invert: { on: true } }]);
+  });
+
   it('opens a version 1 link with its layers on every scene', () => {
     const w = new BitWriter();
     w.uint(1, 8);
@@ -228,6 +252,6 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 2, digest: '8b4cea780bba' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 3, digest: '743f2133773d' });
   });
 });

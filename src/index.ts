@@ -5,10 +5,12 @@ export {
   KIT,
   type Led,
   leftOf,
+  marginOf,
   type Pose,
   SIZE,
   type Subject,
 } from './board.js';
+export { type Border, type BorderVoice, cueBorder } from './border.js';
 export { EFFECTS, type EffectName, LAYERS, type LayerName, type LayerSpec } from './builtins.js';
 export { dotColor } from './color.js';
 export {
@@ -23,7 +25,6 @@ export {
 } from './defects.js';
 export {
   createSign,
-  MARGIN,
   paintBulbs,
   type Sign,
   type SignColumns,

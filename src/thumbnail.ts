@@ -18,6 +18,8 @@ export interface ThumbnailOptions extends Look {
   /** Dots across and down. Default 32 across and as many rows as show every dot of the text, at least 7. */
   readonly cols?: number;
   readonly rows?: number;
+  /** False leaves the housing see-through, so the page shows between the dots. Default true. */
+  readonly housing?: boolean;
   /** The clock it animates on. Default one every thumbnail shares, at 30 fps. */
   readonly ticker?: Ticker;
   /**
@@ -30,8 +32,10 @@ export interface ThumbnailOptions extends Look {
 export interface Thumbnail {
   /** The sign it plays on, for `setProgram` and `setEffects` when the effect changes. */
   readonly marquee: Marquee;
-  /** Whether it is animating: false while scrolled out of view. */
+  /** Whether it is animating: false while held or scrolled out of view. */
   readonly playing: boolean;
+  /** Plays on from the moment it shows, or holds the moment it has reached; a still starts held. */
+  play(on: boolean): void;
   /** Stops it, lets go of the canvas, and takes its mix off the debuggers' list. */
   destroy(): void;
 }
@@ -71,7 +75,7 @@ const thumbnails = () => {
 };
 
 /**
- * A small sign on `canvas` looping one effect, for a preview: no layers, no border chase. It
+ * A small sign on `canvas` looping one effect, for a preview: no layers, no border. It
  * animates only while the canvas is in view, on a ticker shared with every other thumbnail.
  */
 export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOptions): Thumbnail {
@@ -89,9 +93,13 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
   // Still, a thumbnail leaves the ticker once it has drawn onto a canvas with a size; sizing the
   // canvas clears it, so a resize draws it again.
   let redraw: (() => void) | null = null;
+  let frame: ((now: number) => void) | null = null;
+  /** Whether it is holding one moment, drawn once, rather than looping. */
+  let held = opts.still !== undefined;
   // The marquee's frame loop runs through this, so scrolling out of view takes it off the ticker.
   const gated: Ticker = {
     add(fn) {
+      frame = fn;
       const once = (now: number) => {
         fn(now);
         if (canvas.width === 0) return;
@@ -102,7 +110,7 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
         tick = once;
         gate();
       };
-      tick = opts.still === undefined ? fn : once;
+      tick = held ? once : fn;
       gate();
       return () => {
         tick = null;
@@ -117,10 +125,11 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
   const name = typeof opts.effect === 'string' ? opts.effect : opts.effect.name;
   const cols = opts.cols ?? 32;
   const text = opts.text ?? 'OPEN';
-  const rows = opts.rows ?? rowsToShow(board(cols, ROWS), rasterize(text, opts));
+  const rows = opts.rows ?? rowsToShow(board(cols, ROWS, false), rasterize(text, opts));
   const sign = {
     cols,
     rows,
+    border: false as const,
     effects: opts.effects,
     program: [
       {
@@ -132,7 +141,12 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
       },
     ],
   };
-  const marquee = createMarquee(canvas, { ...sign, ticker: gated, name: `thumbnail ${name}` });
+  const marquee = createMarquee(canvas, {
+    ...sign,
+    housing: opts.housing,
+    ticker: gated,
+    name: `thumbnail ${name}`,
+  });
 
   let gone = false;
   if (opts.still === 'action') {
@@ -144,6 +158,8 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
         if (gone) return;
         const at = liveliest(sign);
         remember(key, at);
+        // Played before the search came back, it plays on from where it got to.
+        if (!held) return;
         marquee.seek(at, { hold: true });
         redraw?.();
       });
@@ -173,6 +189,19 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
 
   const handle: Thumbnail = {
     marquee,
+    play(on) {
+      if (on === !held) return;
+      held = !on;
+      marquee.seek(marquee.pass()?.at ?? 0, { hold: held });
+      // The callback on the ticker changes, so the old one comes off first.
+      off?.();
+      off = null;
+      if (held) redraw?.();
+      else {
+        tick = frame;
+        gate();
+      }
+    },
     get playing() {
       return off !== null;
     },

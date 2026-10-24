@@ -1,7 +1,7 @@
 import { f } from '@weasel-js/labkit';
 import { stereo } from '@weasel-js/ui/components/MotifFrame';
-import { FADE, type NumberParam, SIZE } from '@/index.js';
-import { numberField, schemaFor, shownValues, storedValue } from './schema.js';
+import { type ChoiceParam, FADE, MODULATORS, type NumberParam, SIZE } from '@/index.js';
+import { fieldOf, schemaFor, shownValues, storedValue } from './schema.js';
 
 const share = (label: string, about: string): NumberParam => ({
   label,
@@ -45,6 +45,17 @@ const GROUPS = {
       about:
         'How many dots down the sign is. Each line of the message takes its letters\u2019 height and a dot between, so a taller sign stacks more lines; one too short shows the top of the letters.',
     },
+  },
+  border: {
+    bulbs: {
+      label: 'bulbs',
+      choices: ['none', 'unlit', 'lit', 'chase'],
+      value: 'unlit',
+      about:
+        'The ring of bulbs round the sign: none at all, dark, all lit, or a theater chase stepping round it.',
+    } satisfies ChoiceParam,
+    beat: MODULATORS.chase.params.beat as NumberParam,
+    dim: MODULATORS.chase.params.dim as NumberParam,
   },
   fade: {
     rise: {
@@ -93,18 +104,24 @@ const GROUPS = {
         'Which dots get the faults. Each number picks a different set; the same number always picks the same one.',
     },
   },
-} satisfies Record<string, Record<string, NumberParam>>;
+} satisfies Record<string, Record<string, NumberParam | ChoiceParam>>;
 
 type Group = keyof typeof GROUPS;
-/** How the sign's lights fade, how much they ghost, and which are broken. */
-export type Hardware = { [G in Group]: Record<keyof (typeof GROUPS)[G], number> };
+/** The sign's size, its border, how its lights fade, how much they ghost, and which are broken. */
+export type Hardware = {
+  [G in Group]: {
+    [K in keyof (typeof GROUPS)[G]]: (typeof GROUPS)[G][K] extends ChoiceParam ? string : number;
+  };
+};
 
 const entries = <T extends object>(o: T) => Object.entries(o) as [keyof T & string, T[keyof T]][];
 
 export const HARDWARE: Hardware = Object.fromEntries(
   entries(GROUPS).map(([g, params]) => [
     g,
-    Object.fromEntries(entries(params).map(([k, p]) => [k, (p as NumberParam).value])),
+    Object.fromEntries(
+      entries(params).map(([k, p]) => [k, (p as NumberParam | ChoiceParam).value]),
+    ),
   ]),
 ) as Hardware;
 
@@ -116,7 +133,7 @@ export const hardwareSchema = () =>
         g,
         f
           .group(
-            Object.fromEntries(entries(params).map(([k, p]) => [k, numberField(p as NumberParam)])),
+            Object.fromEntries(entries(params).map(([k, p]) => [k, fieldOf(p as NumberParam)])),
           )
           .label(g)
           .motif(stereo()),
@@ -124,7 +141,7 @@ export const hardwareSchema = () =>
     ),
   );
 
-/** Hardware read back from storage, each value kept only when it is a number, held to its range. */
+/** Hardware read back from storage, each value kept only when it is one its setting can hold, a number held to its range. */
 export function hardwareOf(kept: unknown): Hardware {
   const k = (kept ?? {}) as Record<string, Record<string, unknown>>;
   return Object.fromEntries(
@@ -132,8 +149,10 @@ export function hardwareOf(kept: unknown): Hardware {
       g,
       Object.fromEntries(
         entries(params).map(([key, param]) => {
-          const p = param as NumberParam;
+          const p = param as NumberParam | ChoiceParam;
           const got = k[g]?.[key];
+          if ('choices' in p)
+            return [key, typeof got === 'string' && p.choices.includes(got) ? got : p.value];
           return [key, typeof got === 'number' ? Math.min(p.max, Math.max(p.min, got)) : p.value];
         }),
       ),

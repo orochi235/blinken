@@ -45,10 +45,12 @@ export interface Cell {
 /** What the mix folds: a dot, or a cell of the border. */
 export type Subject = Led | Cell;
 
-/** A sign of `cols` × `rows` dots and the border round it. */
+/** A sign of `cols` × `rows` dots and the border round it, if it has one. */
 export interface Board {
   readonly cols: number;
   readonly rows: number;
+  /** The space round the dots, in pitches: room for the border's bulbs, or a dot's width without one. */
+  readonly margin: number;
   readonly dots: readonly Led[];
   readonly bulbs: readonly Led[];
   readonly cells: readonly Cell[];
@@ -59,25 +61,31 @@ export interface Board {
 /** The 80 × 7 of a shopfront sign. */
 export const SIZE = { cols: 80, rows: ROWS } as const;
 
-/** A sign of any size; where its text stands is up to each placement (`place`). */
-export function board(cols: number, rows: number): Board {
+/** The space round a sign's dots, in pitches, with a border of bulbs or without one. */
+export const marginOf = (border: boolean) => (border ? 3 : 1);
+
+/**
+ * A sign of any size, with a border of bulbs unless `border` is false; where its text stands is up
+ * to each placement (`place`).
+ */
+export function board(cols: number, rows: number, border = true): Board {
   const dots: Led[] = Array.from({ length: cols * rows }, (_, k) => ({
     kind: 'dot',
     x: k % cols,
     y: Math.floor(k / cols),
   }));
-  const at = border(cols + 2, rows + 2);
+  const at = border ? ring(cols + 2, rows + 2) : [];
   const bulbs: Led[] = at.map(([x, y], i) => ({ kind: 'bulb', i, x, y }));
   const cells: Cell[] = [0, 1, 2].map((i) => ({ kind: 'cell', i }));
   const cellOf = Uint8Array.from(bulbs, (_, i) => i % 3);
-  return { cols, rows, dots, bulbs, cells, cellOf };
+  return { cols, rows, margin: marginOf(border), dots, bulbs, cells, cellOf };
 }
 
 /**
  * Bulb places round a border `w` × `h` from its top left corner, clockwise: one on every corner,
  * each side evenly spaced near 2 apart, and a count divisible by 3 so a three-cell chase closes.
  */
-function border(w: number, h: number): [number, number][] {
+function ring(w: number, h: number): [number, number][] {
   const near = (len: number) => Math.max(1, Math.round(len / 2));
   let best: [number, number] = [near(w), near(h)];
   let cost = Number.POSITIVE_INFINITY;

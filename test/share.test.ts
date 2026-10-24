@@ -166,7 +166,7 @@ describe('share', () => {
     const s = state();
     s.program[1] = {
       ...s.program[1],
-      layers: { sparkle: { on: true }, chase: { on: false } },
+      layers: { sparkle: { on: true }, rainbow: { on: false } },
     } as never;
     const code = toCode(s);
     expect(code).toContain('layers: { sparkle: true }');
@@ -206,7 +206,7 @@ describe('share', () => {
       effects: {},
       program: [
         { text: 'A', hex: 0xff9a2e, effect: 'hold' },
-        { text: 'B', hex: 0xff9a2e, effect: 'hold', layers: { chase: { on: true } } },
+        { text: 'B', hex: 0xff9a2e, effect: 'hold', layers: { sparkle: { on: true } } },
       ],
       layers: { rainbow: { on: true } },
     });
@@ -214,7 +214,7 @@ describe('share', () => {
     expect(dropped).toEqual([]);
     expect(back.program.map((s) => s.layers)).toEqual([
       { rainbow: { on: true } },
-      { rainbow: { on: true }, chase: { on: true } },
+      { rainbow: { on: true }, sparkle: { on: true } },
     ]);
   });
 

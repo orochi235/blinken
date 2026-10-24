@@ -9,6 +9,11 @@
   list-style: none;
 }
 
+/* A row keeps its own height; a list shorter than its rows scrolls instead. */
+.compose-rows > * {
+  flex: none;
+}
+
 .compose-row {
   display: grid;
   align-items: center;

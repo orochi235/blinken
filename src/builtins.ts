@@ -67,7 +67,6 @@ const effects = {
 
 const layers = {
   sparkle: { mod: 'sparkle' },
-  chase: { mod: 'chase' },
   rainbow: { mod: 'hue-cycle', spread: { by: 'column' }, params: { rate: 0.4, phase: 0.015 } },
   invert: { mod: 'invert' },
 } as const satisfies Record<string, LayerSpec>;

@@ -15,6 +15,13 @@
   overflow-x: auto;
   scrollbar-width: none;
   user-select: none;
+  filter: grayscale(1);
+  transition: filter 0.4s;
+}
+
+/* Gray while the strip rests; it takes its color back as it starts to play. */
+.compose-strip-frame:is(:hover, :focus-within) .compose-strip-tiles {
+  filter: none;
 }
 
 .compose-strip-set {

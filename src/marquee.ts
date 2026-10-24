@@ -1,5 +1,6 @@
 import { type Handle, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
+import { type Border, cueBorder } from './border.js';
 import type { Defect } from './defects.js';
 import { createSign, paintBulbs, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
@@ -38,6 +39,14 @@ export interface MarqueeOptions {
    * Default: none.
    */
   readonly layers?: Partial<Record<string, LayerOption>>;
+  /**
+   * The border of bulbs round the dots and how they light, or false for none, which also takes
+   * away the margin they stand in. Fixed once made, but `setBorder` changes how they light.
+   * Default unlit bulbs.
+   */
+  readonly border?: false | Border;
+  /** False leaves the housing round the dots see-through rather than dark. Default true. */
+  readonly housing?: boolean;
   /** The color of a lit dot nothing has tinted. Default amber. */
   readonly color?: number;
   /** The mix's rate. Default 1. */
@@ -93,6 +102,8 @@ export interface Marquee {
   setFade(fade: Fade): void;
   /** Sets how much an unlit dot shows of its lit row and column. */
   setGhost(ghost: Ghost): void;
+  /** Sets how the border's bulbs light; a sign made with no border has none to light. */
+  setBorder(border: Border): void;
   /** Stops the frame loop, lets go of the canvas, and takes its mix off the debuggers' list. */
   destroy(): void;
 }
@@ -104,7 +115,7 @@ const AMBER = 0xff9a2e;
  * canvas to the largest that fits its parent element, and draws every animation frame.
  */
 export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = {}): Marquee {
-  const b = board(opts.cols ?? SIZE.cols, opts.rows ?? SIZE.rows);
+  const b = board(opts.cols ?? SIZE.cols, opts.rows ?? SIZE.rows, opts.border !== false);
   const m = mix<Subject, Pose>(KIT, {
     name: opts.name ?? `marquee ${canvas.id ? `#${canvas.id} ` : ''}${b.cols}×${b.rows}`,
     labelOf: (s: Subject) => (s.kind === 'cell' ? `cell ${s.i}` : `dot ${s.x},${s.y}`),
@@ -115,7 +126,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const cols = signColumns(leds.length);
   const cells = signColumns(b.cells.length);
   const drawing = opts.draw ?? true;
-  const sign = drawing ? createSign(canvas, b, leds) : null;
+  const sign = drawing ? createSign(canvas, b, leds, opts.housing ?? true) : null;
   if (opts.defects) sign?.setDefects(opts.defects);
   if (opts.fade) sign?.setFade(opts.fade);
   if (opts.ghost) sign?.setGhost(opts.ghost);
@@ -180,6 +191,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   };
 
   const layers = cueLayers(m, b, opts.layers);
+  const border = cueBorder(m, b, opts.border || { bulbs: 'unlit' });
 
   let last = performance.now();
   let mixMs = 0;
@@ -275,6 +287,9 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     },
     setGhost(ghost) {
       sign?.setGhost(ghost);
+    },
+    setBorder(next) {
+      border.set(next);
     },
     destroy() {
       live = false;

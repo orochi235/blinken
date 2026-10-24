@@ -6,7 +6,7 @@ import {
   FACE_NAMES,
   FACES,
   type FaceName,
-  MARGIN,
+  marginOf,
   placeText,
   rasterize,
   rowsToShow,
@@ -120,7 +120,7 @@ const SPECIMEN = 'HAMBURGEFONSTIV';
 /** A face row's sign: as wide as its name and as tall as the face's rows, the specimen's included. */
 const signOf = (name: FaceName) => {
   const cols = rasterize(name, { face: name }).cols + 2;
-  const at = board(cols, FACES[name].rows);
+  const at = board(cols, FACES[name].rows, false);
   const rows = Math.max(
     rowsToShow(at, rasterize(name, { face: name })),
     rowsToShow(at, rasterize(SPECIMEN, { face: name })),
@@ -141,7 +141,8 @@ function FaceRow({
   const { live, on } = useLive();
   const { cols, rows } = useMemo(() => signOf(name), [name]);
   // The sign's size in dots is all that varies by face; the pitch is the stylesheet's.
-  const size = { '--cols': cols + 2 * MARGIN, '--rows': rows + 2 * MARGIN } as CSSProperties;
+  const margin = marginOf(false);
+  const size = { '--cols': cols + 2 * margin, '--rows': rows + 2 * margin } as CSSProperties;
   return (
     <label
       className="compose-row compose-font-face"
@@ -159,6 +160,7 @@ function FaceRow({
         cols={cols}
         rows={rows}
         still={live ? undefined : 100}
+        housing={false}
       />
     </label>
   );

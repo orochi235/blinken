@@ -231,7 +231,8 @@ function StripTile({
         face={message.face}
         hex={message.hex}
         cols={COLS}
-        still={live ? undefined : 'action'}
+        still="action"
+        playing={live}
       />
       <span className="compose-strip-name">{effectTitle(tile.name)}</span>
     </button>

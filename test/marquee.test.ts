@@ -1,7 +1,7 @@
 import { mix, watched } from '@msb235/blits';
 import { describe, expect, it, vi } from 'vitest';
 import { board, KIT, type Led, type Pose, SIZE, type Subject } from '@/board.js';
-import { EFFECTS, LAYERS } from '@/builtins.js';
+import { EFFECTS } from '@/builtins.js';
 import { stageEffect } from '@/effects.js';
 import { rasterize } from '@/font.js';
 import { createMarquee } from '@/marquee.js';
@@ -66,12 +66,19 @@ describe('board', () => {
       expect(outside).toBe(true);
     }
   });
+
+  it('has no bulbs, and a dot of margin, without a border', () => {
+    const bare = board(10, 7, false);
+    expect(bare.bulbs).toEqual([]);
+    expect(bare.margin).toBe(1);
+    expect(board(10, 7).margin).toBe(3);
+  });
 });
 
 describe('chase', () => {
   it('lights every third bulb through its cell, stepping one bulb a beat', () => {
     const m = mix<Subject, Pose>(KIT);
-    cueLayer(m, b, LAYERS.chase, 1);
+    cueLayer(m, b, { mod: 'chase' }, 1);
     for (let beat = 0; beat < 3; beat++) {
       m.sync(beat * CHASE_MS + CHASE_MS / 2);
       b.bulbs.forEach((bulb, j) => {
@@ -163,6 +170,21 @@ describe('createMarquee', () => {
       step(200);
       expect(tintAt(led, sign)).not.toEqual(before);
       expect(tintAt(led, sign)).toEqual(fresh);
+    });
+  });
+
+  it('lights its border as setBorder asks', async () => {
+    const litCells = (sign: ReturnType<typeof createMarquee>) =>
+      sign.board.cells.map((c) => sign.mix.probe(c).lit);
+    await withSign({}, (sign, step) => {
+      step(50);
+      expect(litCells(sign)).toEqual([0, 0, 0]);
+      sign.setBorder({ bulbs: 'lit' });
+      step(100);
+      expect(litCells(sign)).toEqual([1, 1, 1]);
+      sign.setBorder({ bulbs: 'chase', dim: 0.2 });
+      step(150);
+      expect([...litCells(sign)].sort()).toEqual([0.2, 0.2, 1]);
     });
   });
 
@@ -311,7 +333,7 @@ describe('createMarquee', () => {
             return [{ effect: 'quick', text: 'I', hex: 0 }];
           },
           effects: { quick },
-          layers: { chase: true },
+          border: { bulbs: 'chase' },
         },
         async (sign, step) => {
           step(400);

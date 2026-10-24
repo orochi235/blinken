@@ -26,6 +26,8 @@ export function Thumbnail({
   cols,
   rows,
   still,
+  playing = false,
+  housing,
   hex,
 }: {
   effect: string | EffectSpec;
@@ -35,12 +37,18 @@ export function Thumbnail({
   cols?: number;
   rows?: number;
   still?: ThumbnailOptions['still'];
+  /** For a still: plays on from the moment it shows while true, and holds where it got to after. */
+  playing?: boolean;
+  /** False lets the page show between the dots. */
+  housing?: boolean;
   hex?: number;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const thumb = useRef<Handle | null>(null);
   const latest = useRef(effects);
   latest.current = effects;
+  const wanted = useRef(playing);
+  wanted.current = playing;
 
   useEffect(() => {
     if (!canvas.current) return;
@@ -52,14 +60,20 @@ export function Thumbnail({
       cols,
       rows,
       still,
+      housing,
       hex,
     });
     thumb.current = t;
+    if (wanted.current) t.play(true);
     return () => {
       thumb.current = null;
       t.destroy();
     };
-  }, [effect, text, face, cols, rows, still, hex]);
+  }, [effect, text, face, cols, rows, still, housing, hex]);
+
+  useEffect(() => {
+    thumb.current?.play(playing);
+  }, [playing]);
 
   // An edit to the effect plays from its next pass.
   const spec =
