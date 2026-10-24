@@ -22,7 +22,7 @@ import { BLEND, type ComposeState, HOLD, LAG } from './state.js';
 
 /* Readers for each part of a link, each keeping only what it knows and naming the rest in `dropped`. */
 
-const HEX: NumberParam = {
+export const HEX: NumberParam = {
   label: 'color',
   min: 0,
   max: 0xffffff,

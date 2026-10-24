@@ -160,8 +160,16 @@ The lab serves two pages: the composer at `/compose` (`lab/compose.html`) and th
   one scene.
 - **Export:** "copy as code" gives the effects and the program as a `createMarquee` call. "Copy
   link" puts the whole composition in the URL hash, as klieg's `/show/` page does, and "copy player
-  link" puts the same hash on `/play`, which plays the composition with nothing to edit. The current
-  draft is kept in browser storage, so a reload doesn't lose it; it is a convenience, not a save.
+  link" puts on `/play` only what plays: the effects the program names, without their about text,
+  and the layers that are on. The current draft is kept in browser storage, so a reload doesn't
+  lose it; it is a convenience, not a save.
+- **The hash is packed bits** (`lab/compose/codec.ts`): each move, modulator, order, face,
+  built-in effect and layer is written as its place in its registry, each number as a count of
+  its setting's steps, and settings at their defaults not at all. Reordering a registry or
+  changing a setting's range or step changes what existing links mean, so it bumps `VERSION`;
+  a test pins a digest of the layout to catch it. A link of another version opens as unreadable.
+  Hashes from before packing (base64 JSON, opening `ey`) still read. Deflating the packed bytes
+  made them longer, so links are not compressed (2026-10-24).
 
 ## Goals, non-goals, anti-goals
 

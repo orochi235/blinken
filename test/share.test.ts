@@ -6,7 +6,7 @@ import { MODULATORS } from '@/modulators/index.js';
 import { placeText } from '@/orders.js';
 import { values } from '@/params.js';
 import type { Scene } from '@/program.js';
-import { decode, encode, toCode } from '../lab/compose/share.js';
+import { decode, encode, shareOf, toCode } from '../lab/compose/share.js';
 import type { ComposeState } from '../lab/compose/state.js';
 import {
   DRAFT,
@@ -43,8 +43,10 @@ const state = (): ComposeState => ({
   editing: { scene: 0 },
 });
 
-/** A hash carrying `data` as encode writes it. */
+/** A hash carrying `data` as links were written before they were packed. */
 const hashOf = (data: unknown) => Buffer.from(JSON.stringify(data)).toString('base64url');
+/** A composition's share data as plain JSON, to edit into a broken link. */
+const dataOf = (s: ComposeState) => JSON.parse(JSON.stringify(shareOf(s)));
 
 describe('share', () => {
   it('round-trips a composition through the hash', () => {
@@ -57,7 +59,7 @@ describe('share', () => {
 
   it('drops an unknown move from a link and names it', () => {
     const s = state();
-    const data = JSON.parse(Buffer.from(encode(s), 'base64url').toString());
+    const data = dataOf(s);
     data.effects['hold copy'].enter = [{ move: 'moonwalk' }, { move: 'cut-on' }];
     const { state: back, dropped } = decode(hashOf(data));
     expect(back.effects['hold copy']?.enter).toEqual([{ move: 'cut-on' }]);
@@ -65,7 +67,7 @@ describe('share', () => {
   });
 
   it('drops unknown modulators, effects and layers, and scenes naming a dropped effect', () => {
-    const data = JSON.parse(Buffer.from(encode(state()), 'base64url').toString());
+    const data = dataOf(state());
     data.effects['hold copy'].active.push({ mod: 'wobble' });
     data.effects.bad = { name: 'bad', active: 'nonsense' };
     data.program.push({ text: 'X', hex: 0, effect: 'nowhere' });
@@ -83,7 +85,7 @@ describe('share', () => {
   });
 
   it('clamps holds to the lab’s range, and leaves settings for values to clamp', () => {
-    const data = JSON.parse(Buffer.from(encode(state()), 'base64url').toString());
+    const data = dataOf(state());
     data.effects['hold copy'].exit = [{ mod: 'dim', params: { sweep: 1, ms: -5, depth: 0.5 } }];
     data.effects['hold copy'].hold = -100;
     data.program[1].hold = 1e9;
@@ -118,7 +120,7 @@ describe('share', () => {
   });
 
   it('names settings of the wrong type and maps that are not maps', () => {
-    const data = JSON.parse(Buffer.from(encode(state()), 'base64url').toString());
+    const data = dataOf(state());
     data.effects['hold copy'].hold = '500';
     data.effects['hold copy'].active[1].params.colors = 'red';
     data.program[0].hex = [1];
@@ -216,7 +218,7 @@ describe('share', () => {
   });
 
   it('names a face no built-in has and style switches it does not know', () => {
-    const data = JSON.parse(Buffer.from(encode(state()), 'base64url').toString());
+    const data = dataOf(state());
     data.program[0].face = 'gothic';
     data.program[1].style = { reverse: true, blink: true, proportional: 'yes' };
     const { state: back, dropped } = decode(hashOf(data));

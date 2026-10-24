@@ -1,7 +1,7 @@
 import { Button } from '@weasel-js/labkit';
 import { Dialog } from '@weasel-js/ui';
 import { useState } from 'react';
-import { encode, toCode } from '../share.js';
+import { encode, playable, toCode } from '../share.js';
 import { hasPrevious, restorePrevious } from '../storage.js';
 import { compose, opened } from '../store.js';
 import './ShareBar.css';
@@ -46,7 +46,7 @@ export function ShareBar() {
         onClick={() =>
           show(
             'player link copied',
-            new URL(`play#${encode(compose.get())}`, location.href).href,
+            new URL(`play#${encode(playable(compose.get()))}`, location.href).href,
             false,
           )
         }
