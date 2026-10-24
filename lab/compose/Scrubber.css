@@ -35,6 +35,22 @@
   border-inline-end: 0;
 }
 
+.compose-scrubber-played {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--spans, 1fr);
+  border-radius: inherit;
+  clip-path: inset(0 calc((1 - var(--at, 0)) * 100%) 0 0);
+  pointer-events: none;
+}
+
+.compose-scrubber-played > .compose-scrubber-step {
+  background: var(--step-color);
+  color: #000;
+  border-inline-end-color: rgb(0 0 0 / 0.35);
+}
+
 .compose-scrubber-head {
   position: absolute;
   inset-block: -3px;

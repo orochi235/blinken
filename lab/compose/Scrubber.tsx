@@ -1,6 +1,7 @@
-import { type PointerEvent, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from 'react';
 import type { Pass, PassStep } from '@/index.js';
 import { watchPass } from './clock.js';
+import { hexOf } from './schema.js';
 import { compose, useCompose } from './store.js';
 import './Scrubber.css';
 
@@ -91,6 +92,22 @@ export function Scrubber() {
           </span>
         );
       })}
+      {/* The same steps in their own colors, shown only left of the playhead. */}
+      <div className="compose-scrubber-played" aria-hidden="true">
+        {steps.map((s) => {
+          const step = state.program[compose.stepOf(s)];
+          return (
+            <span
+              key={`${s.step}:${s.start}`}
+              className="compose-scrubber-step"
+              // A step's own color has no class to name it; the custom property is all that varies.
+              style={{ '--step-color': hexOf(step?.hex ?? 0) } as CSSProperties}
+            >
+              {step?.text}
+            </span>
+          );
+        })}
+      </div>
       <span className="compose-scrubber-head" aria-hidden="true" />
     </div>
   );
