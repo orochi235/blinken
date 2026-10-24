@@ -34,14 +34,29 @@ const schemaOf = (slot: Slot, piece: Piece) =>
         key === 'ms' && perHold(slot, piece)
           ? numberField(p as NumberParam)
               .auto()
-              .describe('auto makes one pass per hold')
+              .describe(`${p.about} Auto makes one pass over the hold.`)
           : fieldOf(p),
       ]),
     );
     const order: ConfigShape =
       'mod' in piece
-        ? { spread: f.enum<OrderBy>('together', ORDERS).label('spread') }
-        : { order: f.enum<OrderBy>('together', ORDERS).label('order'), lag: numberField(LAG) };
+        ? {
+            spread: f
+              .enum<OrderBy>('together', ORDERS)
+              .label('spread')
+              .describe(
+                'How this piece’s timing is offset over the sign: by column, from the center out, by row, by letter, or at random. Together keeps every dot in step.',
+              ),
+          }
+        : {
+            order: f
+              .enum<OrderBy>('together', ORDERS)
+              .label('order')
+              .describe(
+                'Staggers this move over the sign: by column, from the center out, by row, letter by letter, or at random, each group a lag after the last. Together moves every dot at once.',
+              ),
+            lag: numberField(LAG),
+          };
     return { ...order, ...params };
   });
 

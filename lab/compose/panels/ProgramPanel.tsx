@@ -55,7 +55,10 @@ export function ProgramPanel() {
         >
           add step
         </Button>
-        <label className="compose-check" title="loop the step being edited alone">
+        <label
+          className="compose-check"
+          title="Loop the step you are editing on its own, instead of playing the whole program."
+        >
           <input
             type="checkbox"
             checked={solo}
@@ -66,7 +69,11 @@ export function ProgramPanel() {
           />
           solo
         </label>
-        <Button size="sm" tooltip="play again from the step being edited" onClick={compose.restart}>
+        <Button
+          size="sm"
+          tooltip="Play the program again from the step you are editing."
+          onClick={compose.restart}
+        >
           restart
         </Button>
       </header>

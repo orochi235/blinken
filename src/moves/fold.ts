@@ -6,7 +6,15 @@ import { move, rowOf } from './move.js';
 
 const MID = (ROWS - 1) / 2;
 const QUARTER = Math.PI / 2;
-const FOLD_PARAM = { label: 'fold time', min: 50, max: 1000, step: 10, value: 300, unit: 'ms' };
+const FOLD_PARAM = {
+  label: 'fold time',
+  min: 50,
+  max: 1000,
+  step: 10,
+  value: 300,
+  unit: 'ms',
+  about: 'How long the letters take to turn between flat and edge on. Higher turns more slowly.',
+};
 
 /** Draws a letter turned `angle` radians about its horizontal middle; edge on it is a line. */
 function turned(at: Placed) {
@@ -62,8 +70,24 @@ export const tumble = move({
   about: 'Letters stand, turn end over end, and stand again.',
   slot: 'active',
   params: {
-    ms: { label: 'length', min: 200, max: 10000, step: 100, value: 1200, unit: 'ms' },
-    turns: { label: 'turns', min: 0, max: 6, step: 1, value: 2 },
+    ms: {
+      label: 'length',
+      min: 200,
+      max: 10000,
+      step: 100,
+      value: 1200,
+      unit: 'ms',
+      about:
+        'How long one pass lasts. The letters tumble in its middle third and stand still either side.',
+    },
+    turns: {
+      label: 'turns',
+      min: 0,
+      max: 6,
+      step: 1,
+      value: 2,
+      about: 'How many times each letter turns end over end. At 0 they stand still.',
+    },
   },
   patch(at, p) {
     const draw = turned(at);

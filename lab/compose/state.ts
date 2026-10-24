@@ -26,6 +26,8 @@ export const HOLD: NumberParam = {
   step: 50,
   value: 0,
   unit: 'ms',
+  about:
+    'How long the message stands on the sign between coming on and going. Auto uses the standing move’s own length.',
 };
 export const BLEND: NumberParam = {
   label: 'blend',
@@ -34,8 +36,19 @@ export const BLEND: NumberParam = {
   step: 10,
   value: 0,
   unit: 'ms',
+  about:
+    'How long each part of the effect crossfades into the next, coming on into standing and standing into going. At 0 they cut over at once.',
 };
-export const LAG: NumberParam = { label: 'lag', min: 0, max: 400, step: 1, value: 0, unit: 'ms' };
+export const LAG: NumberParam = {
+  label: 'lag',
+  min: 0,
+  max: 400,
+  step: 1,
+  value: 0,
+  unit: 'ms',
+  about:
+    'How long each group of dots waits after the group before it, in the order chosen. At 0 they all go together; higher makes a slower sweep.',
+};
 
 /** A layer as the state holds it, off and at its built-in settings until changed. */
 export const layerOf = (state: ComposeState, name: LayerName): LayerSpec & { on: boolean } =>

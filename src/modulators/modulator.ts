@@ -32,15 +32,17 @@ export const RATE: NumberParam = {
   step: 0.1,
   value: 1,
   unit: 'Hz',
+  about: 'How many times a second the effect repeats. Higher is faster.',
 };
 
-/** How far a modulator swings its channel, as a fraction of its full range. */
-export const depth = (value: number): NumberParam => ({
+/** How far a modulator swings its channel, as a fraction of its full range; `about` says what that does. */
+export const depth = (value: number, about: string): NumberParam => ({
   label: 'depth',
   min: 0,
   max: 1,
   step: 0.01,
   value,
+  about,
 });
 
 /** How much one rank of the order shifts a modulator's curve. */
@@ -51,6 +53,8 @@ export const phasePerStep = (value: number): NumberParam => ({
   step: 0.005,
   value,
   unit: 'τ',
+  about:
+    'How far behind each step of the spread runs, in whole cycles (τ). At 0 every dot moves in time; higher sends a ripple across the sign.',
 });
 
 /** One cycle of a looping modulator at `rate`, in ms. */

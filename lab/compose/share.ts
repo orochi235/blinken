@@ -19,7 +19,14 @@ import {
 import { AMBER, demo } from '../demo.js';
 import { BLEND, type ComposeState, HOLD, LAG } from './state.js';
 
-const HEX: NumberParam = { label: 'color', min: 0, max: 0xffffff, step: 1, value: 0 };
+const HEX: NumberParam = {
+  label: 'color',
+  min: 0,
+  max: 0xffffff,
+  step: 1,
+  value: 0,
+  about: 'The color the message lights in.',
+};
 
 /** A fresh composition: no designed effects, no layers on, and the demo page's program. */
 export const defaultState = (): ComposeState => ({

@@ -41,7 +41,10 @@ function Layer({ name }: { name: LayerName }) {
     <ControlPanel
       className={layer.on ? 'compose-layer-rows' : 'compose-layer-rows is-off'}
       title={
-        <label className="compose-title">
+        <label
+          className="compose-title"
+          title="Turn this layer on to play it across the whole program, alongside every step."
+        >
           <input
             type="checkbox"
             aria-label={`${name} on`}

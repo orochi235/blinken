@@ -16,6 +16,8 @@ const shapeParam = (choices: readonly string[], value: string): ChoiceParam => (
   label: 'shape',
   choices,
   value,
+  about:
+    'The curve each cycle follows: sine swells smoothly, triangle rises and falls at a steady pace, and square jumps between full and low.',
 });
 
 interface Spec {
@@ -27,6 +29,8 @@ interface Spec {
   /** The shapes a setting may choose between, or one fixed shape. */
   shape: readonly string[] | WaveShape;
   depth: number;
+  /** What `depth` does to the sign, for its tooltip. */
+  depthAbout: string;
   phase: number;
   /** Cycles to shift the wave by, so its 0..1 starts where the channel should. */
   start?: number;
@@ -37,7 +41,7 @@ const swing = (s: Spec): Modulator => {
   const params = {
     ...(choices ? { shape: shapeParam(choices, choices[0] as string) } : {}),
     rate: RATE,
-    depth: depth(s.depth),
+    depth: depth(s.depth, s.depthAbout),
     phase: phasePerStep(s.phase),
   };
   return modulator<Params>({
@@ -70,6 +74,8 @@ export const pulse = swing({
   of: (u, d) => 1 - d * (1 - u),
   shape: ['sine', 'triangle', 'square'],
   depth: 0.6,
+  depthAbout:
+    'How far the dots fade at the low point. At 0 they hold steady; at 1 they go fully dark.',
   phase: 0.02,
 });
 
@@ -81,6 +87,8 @@ export const hueCycle = swing({
   of: (u, d) => 360 * d * u,
   shape: 'saw',
   depth: 1,
+  depthAbout:
+    'How far round the color wheel the hue turns each cycle. At 1 it goes all the way round.',
   phase: 0.01,
   start: -0.5,
 });
@@ -93,5 +101,6 @@ export const bloom = swing({
   of: (u, d) => 1 + d * u,
   shape: 'sine',
   depth: 1,
+  depthAbout: 'How much the halos grow at their fullest. Higher makes a bigger glow.',
   phase: 0.01,
 });

@@ -29,12 +29,23 @@ export function StepEditor({
     () =>
       resolveConfigSchema(
         f.schema({
-          text: f.string('').label('text'),
-          color: f.color('#ffffff').label('color'),
-          effect: f.enum(names[0] ?? 'hold', names).label('effect'),
-          hold: numberField({ ...HOLD, value: 3000 })
-            .auto()
-            .describe('auto plays for its effect’s own hold'),
+          text: f.string('').label('text').describe('The message this step shows on the sign.'),
+          color: f
+            .color('#ffffff')
+            .label('color')
+            .describe('The color the message lights in, unless its effect recolors it.'),
+          effect: f
+            .enum(names[0] ?? 'hold', names)
+            .label('effect')
+            .describe(
+              'How the message comes on, stands, and goes: a built-in effect or one you designed.',
+            ),
+          hold: numberField({
+            ...HOLD,
+            value: 3000,
+            about:
+              'How long this message stands on the sign between coming on and going. Auto uses its effect’s own hold.',
+          }).auto(),
         }),
       ),
     [key],

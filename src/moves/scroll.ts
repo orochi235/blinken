@@ -5,8 +5,21 @@ import type { Values } from '../params.js';
 import { move, rowOf } from './move.js';
 
 const PARAMS = {
-  direction: { label: 'direction', choices: ['left', 'right'], value: 'left' },
-  step: { label: 'column time', min: 10, max: 200, step: 1, value: 45, unit: 'ms' },
+  direction: {
+    label: 'direction',
+    choices: ['left', 'right'],
+    value: 'left',
+    about: 'Which way the message travels.',
+  },
+  step: {
+    label: 'column time',
+    min: 10,
+    max: 200,
+    step: 1,
+    value: 45,
+    unit: 'ms',
+    about: 'How long the message waits before moving one column. Higher scrolls more slowly.',
+  },
 } as const;
 type Scroll = Values<typeof PARAMS>;
 

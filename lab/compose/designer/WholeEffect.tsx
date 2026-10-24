@@ -9,9 +9,14 @@ const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
 
 const schema = () =>
   schemaFor('whole', () => ({
-    order: f.enum<'none' | OrderBy>('none', ['none', ...ORDERS]).label('whole effect'),
+    order: f
+      .enum<'none' | OrderBy>('none', ['none', ...ORDERS])
+      .label('whole effect')
+      .describe(
+        'Staggers the whole effect over the sign: by column, from the center out, by row, letter by letter, or at random, each group a lag after the last. None plays every dot at once.',
+      ),
     lag: numberField(LAG).showIf((c) => c.order !== 'none'),
-    hold: numberField(HOLD).auto().describe('auto holds for the active move’s own length'),
+    hold: numberField(HOLD).auto(),
     blend: numberField(BLEND),
   }));
 

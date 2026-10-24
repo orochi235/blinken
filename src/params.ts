@@ -1,6 +1,8 @@
 /** A number a setting is tuned by, with the range a control should offer and its default. */
 export interface NumberParam {
   readonly label: string;
+  /** What the setting does, in plain words, for a control's tooltip. */
+  readonly about: string;
   readonly min: number;
   readonly max: number;
   readonly step: number;
@@ -13,6 +15,7 @@ export interface NumberParam {
 /** A setting that is one of a fixed set of words. */
 export interface ChoiceParam {
   readonly label: string;
+  readonly about: string;
   readonly choices: readonly string[];
   readonly value: string;
 }
@@ -20,6 +23,7 @@ export interface ChoiceParam {
 /** A setting that is a list of colors, as 0xRRGGBB numbers. */
 export interface ColorsParam {
   readonly label: string;
+  readonly about: string;
   readonly colors: readonly number[];
 }
 

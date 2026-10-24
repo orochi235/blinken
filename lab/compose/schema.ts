@@ -20,6 +20,7 @@ export const numberField = (p: NumberParam, label = p.label) => {
     .range(times(p.min, k), times(p.max, k))
     .step(times(p.step, k))
     .label(label)
+    .describe(p.about)
     .slider();
   return p.unit ? node.suffix(p.unit) : node;
 };
@@ -39,8 +40,12 @@ export const storedValue = (params: Params, key: string, v: unknown) =>
 
 /** The control for one Param: a slider, a choice, or a row of colors (the `colors` renderer). */
 export function fieldOf(p: Param): ConfigEntry {
-  if ('colors' in p) return f.custom('colors', [...p.colors]).label(p.label);
-  if ('choices' in p) return f.enum(p.value, p.choices).label(p.label);
+  if ('colors' in p)
+    return f
+      .custom('colors', [...p.colors])
+      .label(p.label)
+      .describe(p.about);
+  if ('choices' in p) return f.enum(p.value, p.choices).label(p.label).describe(p.about);
   return numberField(p);
 }
 

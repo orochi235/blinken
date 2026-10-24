@@ -8,8 +8,21 @@ export const palette = modulator({
   name: 'palette',
   about: 'Dots step through a list of colors.',
   params: {
-    colors: { label: 'colors', colors: [0xff3b30, 0xffcc00, 0x34c759, 0x0a84ff] } as ColorsParam,
-    step: { label: 'step', min: 50, max: 2000, step: 10, value: 400, unit: 'ms' },
+    colors: {
+      label: 'colors',
+      colors: [0xff3b30, 0xffcc00, 0x34c759, 0x0a84ff],
+      about:
+        'The colors the dots step through, in order. Add or remove swatches to change the list.',
+    } as ColorsParam,
+    step: {
+      label: 'step',
+      min: 50,
+      max: 2000,
+      step: 10,
+      value: 400,
+      unit: 'ms',
+      about: 'How long each color shows before the next. Higher steps more slowly.',
+    },
     phase: phasePerStep(0.05),
   },
   writes: ['tint'],
@@ -36,9 +49,16 @@ export const twoColor = modulator({
   name: 'two-color',
   about: 'Dots blend back and forth between two colors.',
   params: {
-    colors: { label: 'colors', colors: [0xff3b30, 0x0a84ff] } as ColorsParam,
+    colors: {
+      label: 'colors',
+      colors: [0xff3b30, 0x0a84ff],
+      about: 'The two colors the dots blend between. Only the first two are used.',
+    } as ColorsParam,
     rate: RATE,
-    depth: depth(1),
+    depth: depth(
+      1,
+      'How far toward the second color the blend reaches. At 1 it goes all the way; lower stays nearer the first.',
+    ),
     phase: phasePerStep(0.01),
   },
   writes: ['tint'],

@@ -33,6 +33,16 @@ export const stand = move({
   name: 'stand',
   about: 'The message stands still.',
   slot: 'active',
-  params: { ms: { label: 'length', min: 100, max: 10000, step: 100, value: 1000, unit: 'ms' } },
+  params: {
+    ms: {
+      label: 'length',
+      min: 100,
+      max: 10000,
+      step: 100,
+      value: 1000,
+      unit: 'ms',
+      about: 'How long the message stands still.',
+    },
+  },
   patch: (at, p) => patch<Led, Pose>(p.ms, (_, led) => on(litAt(at, led)), { writes: ['lit'] }),
 });

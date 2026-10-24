@@ -5,7 +5,15 @@ import { litAt, move, on } from './move.js';
 
 /** How far a dot falls from or to: past the text's top or bottom. */
 const DROP = ROWS + 1;
-const DROP_PARAM = { label: 'drop time', min: 100, max: 1500, step: 25, value: 350, unit: 'ms' };
+const DROP_PARAM = {
+  label: 'drop time',
+  min: 100,
+  max: 1500,
+  step: 25,
+  value: 350,
+  unit: 'ms',
+  about: 'How long the fall takes. Higher drops more slowly.',
+};
 
 /** The message dropping in from above, speeding up as it comes. */
 export const dropIn = move({

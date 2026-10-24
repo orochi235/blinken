@@ -9,8 +9,24 @@ export const chase = modulator({
   name: 'chase',
   about: 'The border’s theater chase: every third bulb lit, stepping each beat.',
   params: {
-    beat: { label: 'beat', min: 40, max: 1000, step: 10, value: 180, unit: 'ms' },
-    dim: { label: 'unlit glow', min: 0, max: 0.5, step: 0.01, value: 0.1 },
+    beat: {
+      label: 'beat',
+      min: 40,
+      max: 1000,
+      step: 10,
+      value: 180,
+      unit: 'ms',
+      about: 'How long the lit bulbs wait before stepping to the next. Higher chases more slowly.',
+    },
+    dim: {
+      label: 'unlit glow',
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+      value: 0.1,
+      about:
+        'How bright the bulbs between the lit ones stay. At 0 they go dark; higher keeps them glowing.',
+    },
   },
   writes: ['lit', 'tint'],
   on: 'cells',

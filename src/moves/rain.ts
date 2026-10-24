@@ -6,11 +6,50 @@ import type { Values } from '../params.js';
 import { litAt, move } from './move.js';
 
 const RAIN_PARAMS = {
-  ms: { label: 'rain time', min: 300, max: 6000, step: 50, value: 2200, unit: 'ms' },
-  drops: { label: 'drops', min: 1, max: 8, step: 1, value: 3 },
-  tail: { label: 'tail', min: 1, max: 20, step: 1, value: 3, unit: 'dots' },
-  spread: { label: 'stagger', min: 0, max: 0.9, step: 0.05, value: 0.6 },
-  churn: { label: 'churn', min: 0, max: 60, step: 1, value: 24 },
+  ms: {
+    label: 'rain time',
+    min: 300,
+    max: 6000,
+    step: 50,
+    value: 2200,
+    unit: 'ms',
+    about: 'How long the rain lasts, from the first drop to the last. Higher falls more slowly.',
+  },
+  drops: {
+    label: 'drops',
+    min: 1,
+    max: 8,
+    step: 1,
+    value: 3,
+    about: 'How many streams fall down each column.',
+  },
+  tail: {
+    label: 'tail',
+    min: 1,
+    max: 20,
+    step: 1,
+    value: 3,
+    unit: 'dots',
+    about: 'How many fading dots trail behind each falling one. Higher makes longer streaks.',
+  },
+  spread: {
+    label: 'stagger',
+    min: 0,
+    max: 0.9,
+    step: 0.05,
+    value: 0.6,
+    about:
+      'How scattered the streams’ start times are. At 0 they all fall at once; higher spreads them out, and each falls faster to make up the time.',
+  },
+  churn: {
+    label: 'churn',
+    min: 0,
+    max: 60,
+    step: 1,
+    value: 24,
+    about:
+      'How often the dots in a tail flicker, like changing characters. At 0 tails stay steady.',
+  },
 };
 type Rain = Values<typeof RAIN_PARAMS>;
 

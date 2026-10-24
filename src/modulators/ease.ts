@@ -11,6 +11,7 @@ const MS: NumberParam = {
   step: 100,
   value: 1500,
   unit: 'ms',
+  about: 'How long the change takes from start to finish.',
 };
 const SWEEP: NumberParam = {
   label: 'sweep',
@@ -19,11 +20,15 @@ const SWEEP: NumberParam = {
   step: 0.05,
   value: 0.5,
   unit: 'of the pass',
+  about:
+    'How much of the pass the spread staggers the starts over. At 0 every dot changes together; higher sends the change across the sign as a wave.',
 };
 const EASE: ChoiceParam = {
   label: 'easing',
   choices: ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'],
   value: 'ease-in-out',
+  about:
+    'How the change picks up and slows down: linear is steady, ease-in starts slow, ease-out ends slow, and ease-in-out does both.',
 };
 
 type Stop = { at: number; value: number };
@@ -35,6 +40,8 @@ interface Spec {
   /** Channel values at the start and end of a pass, and the peak between if it comes back. */
   stops(depth: number): Stop[];
   depth: number;
+  /** What `depth` does to the sign, for its tooltip. */
+  depthAbout: string;
 }
 
 /** Plays its channel once along an easing: rank spreads the starts over `sweep` of the pass, every subject done by its end. */
@@ -42,7 +49,7 @@ const eased = (s: Spec): Modulator =>
   modulator({
     name: s.name,
     about: s.about,
-    params: { ms: MS, easing: EASE, depth: depth(s.depth), sweep: SWEEP },
+    params: { ms: MS, easing: EASE, depth: depth(s.depth, s.depthAbout), sweep: SWEEP },
     writes: [s.channel],
     on: 'dots',
     patch: (at, v, rank) => {
@@ -79,6 +86,7 @@ export const dim = eased({
     { at: 1, value: 1 - d },
   ],
   depth: 0.7,
+  depthAbout: 'How far the dots fade. At 1 they go dark; lower leaves them brighter.',
 });
 
 /** Chroma falling once from full to `1 - depth`. */
@@ -91,6 +99,7 @@ export const desaturate = eased({
     { at: 1, value: 1 - d },
   ],
   depth: 1,
+  depthAbout: 'How much color drains away. At 1 the dots end fully gray; lower keeps some color.',
 });
 
 /** Glow rising to `1 + depth` at mid-pass and settling back. */
@@ -104,4 +113,5 @@ export const flare = eased({
     { at: 1, value: 1 },
   ],
   depth: 1,
+  depthAbout: 'How bright the halos get at the peak of the flare. Higher flares more.',
 });

@@ -23,8 +23,23 @@ export const reelIn = move({
   about: 'Each letter spins through random glyphs like a slot reel and lands on its own.',
   slot: 'enter',
   params: {
-    ms: { label: 'spin', min: 200, max: 3000, step: 50, value: 900, unit: 'ms' },
-    glyphs: { label: 'glyphs passed', min: 1, max: 30, step: 1, value: 6 },
+    ms: {
+      label: 'spin',
+      min: 200,
+      max: 3000,
+      step: 50,
+      value: 900,
+      unit: 'ms',
+      about: 'How long each reel spins before it settles on its letter.',
+    },
+    glyphs: {
+      label: 'glyphs passed',
+      min: 1,
+      max: 30,
+      step: 1,
+      value: 6,
+      about: 'How many random characters roll past before the letter lands. Higher spins faster.',
+    },
   },
   patch(at, p) {
     const { text } = at;
@@ -62,7 +77,17 @@ export const rollAway = move({
   name: 'roll-away',
   about: 'The message rolls up and away.',
   slot: 'exit',
-  params: { ms: { label: 'roll time', min: 100, max: 3000, step: 50, value: 500, unit: 'ms' } },
+  params: {
+    ms: {
+      label: 'roll time',
+      min: 100,
+      max: 3000,
+      step: 50,
+      value: 500,
+      unit: 'ms',
+      about: 'How long the message takes to roll off the top. Higher rolls more slowly.',
+    },
+  },
   patch: (at, p) =>
     patch<Led, Pose>(
       p.ms,
