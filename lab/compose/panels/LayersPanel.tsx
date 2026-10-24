@@ -1,5 +1,4 @@
 import { ControlPanel } from '@weasel-js/labkit';
-import { useState } from 'react';
 import { LAYERS, type LayerName, MODULATORS, type ParamValue, values } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
 import { Panel } from '../Panel.js';
@@ -11,12 +10,11 @@ import './LayersPanel.css';
 const schemaOf = (name: LayerName) =>
   schemaFor(`layer:${name}`, () => fieldsOf(MODULATORS[LAYERS[name].mod].params));
 
-/** The picked scene's layers, a row each: on or off, and the open one's settings beneath it. */
+/** The picked scene's layers, a row each: on or off, and an on layer's settings beneath it. */
 export function LayersPanel() {
   const state = useCompose();
   const at = pickedOf(state);
   const scene = state.program[at];
-  const [open, setOpen] = useState<LayerName | null>(null);
   if (!scene) return null;
   // Every write reads the layer as it stands now, so one setting's edit keeps the others'.
   const set = (
@@ -39,31 +37,24 @@ export function LayersPanel() {
         {(Object.keys(LAYERS) as LayerName[]).map((name) => {
           const layer = sceneLayerOf(scene, name);
           const mod = MODULATORS[layer.mod];
-          const isOpen = open === name;
           return (
-            <li key={name} className={isOpen ? 'compose-layer is-open' : 'compose-layer'}>
-              <div className="compose-layer-row">
+            <li key={name} className={layer.on ? 'compose-layer is-on' : 'compose-layer'}>
+              <label
+                className="compose-layer-row"
+                title="Play this layer across this scene, under its message; its settings show while it is on."
+              >
                 <input
                   type="checkbox"
                   aria-label={`${name} on`}
-                  title="Play this layer across this scene, under its message."
                   checked={layer.on}
                   onChange={(e) => set(name, () => ({ on: e.target.checked }))}
                 />
-                <button
-                  type="button"
-                  className="compose-layer-pick"
-                  aria-expanded={isOpen}
-                  title={isOpen ? 'Hide this layer’s settings.' : 'Show this layer’s settings.'}
-                  onClick={() => setOpen(isOpen ? null : name)}
-                >
-                  <span className="compose-layer-name">{name}</span>
-                  <span className="compose-about">{mod.about}</span>
-                </button>
-              </div>
-              {isOpen && (
+                <span className="compose-layer-name">{name}</span>
+                <span className="compose-about">{mod.about}</span>
+              </label>
+              {layer.on && (
                 <ControlPanel
-                  className={layer.on ? 'compose-layer-settings' : 'compose-layer-settings is-off'}
+                  className="compose-layer-settings"
                   schema={schemaOf(name)}
                   config={shownValues(mod.params, values(mod, layer.params as never))}
                   setConfig={(path, v) =>
