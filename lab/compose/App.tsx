@@ -6,7 +6,7 @@ import { HARDWARE, type Hardware, hardwareOf } from './hardware.js';
 import { HardwarePanel } from './panels/HardwarePanel.js';
 import { LayersPanel } from './panels/LayersPanel.js';
 import { ProgramPanel } from './panels/ProgramPanel.js';
-import { SharePanel } from './panels/SharePanel.js';
+import { ShareBar } from './panels/ShareBar.js';
 import { Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
 
@@ -32,7 +32,6 @@ function Compose() {
             hardware={hardware}
             setHardware={(fn) => setKept((h) => fn(hardwareOf(h)))}
           />
-          <SharePanel />
         </div>
       </div>
     </div>
@@ -41,7 +40,7 @@ function Compose() {
 
 export function App() {
   return (
-    <LabShell title="bree compose" mode="dark">
+    <LabShell title="bree compose" mode="dark" header={<ShareBar />}>
       <Persistence storageKey="bree-compose" storage={localStorageAdapter}>
         <Compose />
       </Persistence>

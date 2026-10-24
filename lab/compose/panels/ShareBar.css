@@ -1,19 +1,12 @@
 .compose-share {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.compose-share-head {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
+  gap: 8px;
+  margin-inline-start: auto;
 }
 
-.compose-share-link,
-.compose-share-code {
-  width: 100%;
+.compose-share-text {
+  width: min(70ch, 80vw);
   padding: 4px 6px;
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm, 4px);
@@ -21,9 +14,9 @@
   color: var(--wzl-fg);
   font: inherit;
   font-size: var(--wzl-font-size-sm, 12px);
+  resize: vertical;
 }
 
-.compose-share-code {
-  resize: vertical;
+.compose-share-text.is-code {
   font-family: ui-monospace, Menlo, monospace;
 }
