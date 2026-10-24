@@ -3,6 +3,7 @@ import {
   createThumbnail,
   type EffectSpec,
   type FaceName,
+  type Follow,
   type Thumbnail as Handle,
   type TextStyle,
   type ThumbnailOptions,
@@ -31,6 +32,7 @@ export function Thumbnail({
   playing = false,
   rewind = false,
   housing,
+  follow,
   hex,
   onHandle,
 }: {
@@ -48,6 +50,8 @@ export function Thumbnail({
   rewind?: boolean;
   /** False lets the page show between the dots. */
   housing?: boolean;
+  /** A sign whose planes it wears; kept the same object across renders, or it is rebuilt each time. */
+  follow?: Follow;
   hex?: number;
   /** Given the thumbnail each time one is made, and null as it goes, for a caller that drives it. */
   onHandle?: (t: Handle | null) => void;
@@ -74,6 +78,7 @@ export function Thumbnail({
       rows,
       still,
       housing,
+      follow,
       hex,
     });
     thumb.current = t;
@@ -84,7 +89,19 @@ export function Thumbnail({
       thumb.current = null;
       t.destroy();
     };
-  }, [effect, text, face, style?.reverse, style?.proportional, cols, rows, still, housing, hex]);
+  }, [
+    effect,
+    text,
+    face,
+    style?.reverse,
+    style?.proportional,
+    cols,
+    rows,
+    still,
+    housing,
+    follow,
+    hex,
+  ]);
 
   const rewinds = useRef(rewind);
   rewinds.current = rewind;

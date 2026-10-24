@@ -47,6 +47,7 @@ export {
 } from './font.js';
 export {
   createMarquee,
+  type Follow,
   type FrameCost,
   type Marquee,
   type MarqueeOptions,

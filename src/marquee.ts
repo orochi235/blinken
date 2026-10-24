@@ -2,13 +2,14 @@ import { type Handle, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
 import { type Border, cueBorder } from './border.js';
 import type { Defect } from './defects.js';
-import { createSign, paintBulbs, signColumns } from './draw.js';
+import { createSign, paintBulbs, type SignColumns, signColumns } from './draw.js';
 import type { EffectSpec } from './effects.js';
 import { faceOf } from './font.js';
 import { cueLayers, type LayerOption } from './layers.js';
 import type { Fade, Ghost } from './optics.js';
 import type { ParamValue } from './params.js';
 import { layOut, type Pass, PassClock, type PassScene } from './pass.js';
+import { PLANES, type Plane } from './planes.js';
 import { cueProgram, effectOf, type Scene, type StagedScene, stageProgram } from './program.js';
 import { createTicker, type Ticker } from './ticker.js';
 
@@ -45,6 +46,12 @@ export interface MarqueeOptions {
    * Default unlit bulbs.
    */
   readonly border?: false | Border;
+  /**
+   * Another sign whose planes this one takes over, each dot from the dot at the same place on it:
+   * `color` makes a preview wear what the main sign is wearing while keeping its own shape.
+   * `source` is read every frame, so it can follow a sign that is replaced. Default none.
+   */
+  readonly follow?: Follow;
   /** False leaves the housing round the dots see-through rather than dark. Default true. */
   readonly housing?: boolean;
   /** The color of a lit dot nothing has tinted. Default amber. */
@@ -73,8 +80,21 @@ export interface MarqueeOptions {
   readonly name?: string;
 }
 
+/** Which sign a marquee follows, and in which planes. */
+export interface Follow {
+  readonly source: () => Marquee | null;
+  readonly planes: readonly Plane[];
+}
+
 export interface Marquee {
   readonly board: Board;
+  /** Its dots and border bulbs as the last frame drew them, every channel. */
+  readonly columns: SignColumns;
+  /**
+   * Draws the last frame again without running the mix, taking what it follows afresh: for a
+   * still that follows a moving sign.
+   */
+  repaint(): void;
   /** The mix lighting it, for cueing voices of your own on its dots and border cells. */
   readonly mix: Mix<Subject, Pose>;
   /** Replaces the program from the next pass; throws on a scene naming no effect or face. */
@@ -225,6 +245,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     m.pull(b.dots, cols);
     m.pull(b.cells, cells);
     paintBulbs(b, cells, cols);
+    follow();
     const t1 = performance.now();
     sign?.render(cols, color, gap);
     const t2 = performance.now();
@@ -232,10 +253,33 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     drawMs += (t2 - t1 - drawMs) * 0.05;
     opts.onFrame?.({ mixMs, drawMs });
   };
-  const stop = (opts.ticker ?? createTicker()).add(frame);
+  const followed = opts.follow ? opts.follow.planes.flatMap((plane) => PLANES[plane]) : [];
+  /** Lays the followed sign's planes over this one's dots, each from the dot at the same place. */
+  function follow(): void {
+    const source = opts.follow?.source();
+    if (!source || source === self) return;
+    const from = source.columns;
+    const sb = source.board;
+    for (let i = 0; i < b.dots.length; i++) {
+      const d = b.dots[i] as Led;
+      const sx = Math.min(sb.cols - 1, Math.floor(((d.x + 0.5) * sb.cols) / b.cols));
+      const sy = Math.min(sb.rows - 1, Math.floor(((d.y + 0.5) * sb.rows) / b.rows));
+      const j = sy * sb.cols + sx;
+      for (const c of followed) {
+        if (c === 'tint')
+          for (let k = 0; k < 4; k++) cols.tint[i * 4 + k] = from.tint[j * 4 + k] ?? 0;
+        else cols[c][i] = from[c][j] ?? 0;
+      }
+    }
+  }
 
-  return {
+  const self: Marquee = {
     board: b,
+    columns: cols,
+    repaint() {
+      follow();
+      sign?.render(cols, color, 0);
+    },
     mix: m,
     setProgram(next) {
       check(next, effects);
@@ -298,4 +342,6 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       m.close();
     },
   };
+  const stop = (opts.ticker ?? createTicker()).add(frame);
+  return self;
 }

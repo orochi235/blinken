@@ -2,7 +2,7 @@ import { board } from './board.js';
 import type { EffectSpec } from './effects.js';
 import { type Look, ROWS, rasterize } from './font.js';
 import { liveliest } from './liveliest.js';
-import { createMarquee, type Marquee } from './marquee.js';
+import { createMarquee, type Follow, type Marquee } from './marquee.js';
 import { rowsToShow } from './orders.js';
 import { createTicker, type Ticker } from './ticker.js';
 
@@ -20,6 +20,11 @@ export interface ThumbnailOptions extends Look {
   readonly rows?: number;
   /** False leaves the housing see-through, so the page shows between the dots. Default true. */
   readonly housing?: boolean;
+  /**
+   * A sign whose planes it wears, as `createMarquee` takes it. Held, it then stays on the ticker
+   * repainting the moment it holds, without running its mix, so it follows a moving sign.
+   */
+  readonly follow?: Follow;
   /** The clock it animates on. Default one every thumbnail shares, at 30 fps. */
   readonly ticker?: Ticker;
   /**
@@ -106,7 +111,10 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
       const once = (now: number) => {
         fn(now);
         if (canvas.width === 0) return;
-        tick = null;
+        // The callback on the ticker changes, so the old one comes off first.
+        off?.();
+        off = null;
+        tick = opts.follow ? repaint : null;
         gate();
       };
       redraw = () => {
@@ -147,10 +155,12 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
   const marquee = createMarquee(canvas, {
     ...sign,
     housing: opts.housing,
+    follow: opts.follow,
     ticker: gated,
     name: `thumbnail ${name}`,
   });
 
+  const repaint = () => marquee.repaint();
   let gone = false;
   /** The moment it was made to show, once known. */
   let rest = typeof opts.still === 'number' ? opts.still : undefined;
@@ -211,7 +221,7 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
       }
     },
     get playing() {
-      return off !== null;
+      return off !== null && !held;
     },
     destroy() {
       gone = true;

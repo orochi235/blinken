@@ -158,6 +158,8 @@ export const compose = {
     live.sign?.ramp(rate, 150);
     notify();
   },
+  /** The sign the page drew, or null while there is none. */
+  sign: () => live.sign,
   /** Hands the store the sign the page drew, or null when it is gone. */
   attach(next: Marquee | null) {
     live.sign = next;

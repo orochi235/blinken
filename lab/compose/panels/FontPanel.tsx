@@ -139,6 +139,9 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
   );
 }
 
+/** The rows wear whatever color the sign does, each keeping its own letters. */
+const FOLLOW = { source: compose.sign, planes: ['color'] } as const;
+
 /** A face row's dot pitch, px: every row's dots are this size, so a row is as tall as its face. */
 const PITCH = 3;
 /** How long a row takes to run back to rest across the whole sign, ms, ramps included. */
@@ -249,6 +252,7 @@ function FaceRow({
         rows={reel.rows}
         still={reel.from}
         housing={false}
+        follow={FOLLOW}
         onHandle={(t) => {
           thumb.current = t;
           leaving.current = null;

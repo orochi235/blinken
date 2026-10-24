@@ -76,8 +76,10 @@ export function marqueeSlider(p: NumberParam): ControlRenderer {
   const min = times(p.min, k);
   const max = times(p.max, k);
   const step = times(p.step, k);
-  // Wide enough for the widest value the param can hold, so the readout never resizes.
-  const cols = Math.max(...[min, max].map((v) => rasterize(textOf(p, v), { face: FACE }).cols)) + 2;
+  // Wide enough for the widest value the param can hold, so the readout never resizes; a
+  // shorter one is padded on the left, and in a fixed-pitch face a space is a digit's width.
+  const chars = Math.max(...[min, max].map((v) => textOf(p, v).length));
+  const cols = rasterize('0'.repeat(chars), { face: FACE }).cols + 2;
   return Object.assign(
     ({ value, setValue, pref, disabled }: Parameters<ControlRenderer>[0]) => {
       const v = typeof value === 'number' ? value : min;

@@ -471,3 +471,48 @@ describe('createMarquee', () => {
     });
   });
 });
+
+describe('follow', () => {
+  it('wears the followed sign’s color, dot for dot, and keeps its own shape', () => {
+    const fns: ((now: number) => void)[] = [];
+    const ticker = {
+      add(fn: (now: number) => void) {
+        fns.push(fn);
+        return () => {};
+      },
+      size: 0,
+    };
+    const step = (now: number) => {
+      for (const fn of fns) fn(now);
+    };
+    const main = createMarquee({} as HTMLCanvasElement, {
+      draw: false,
+      ticker,
+      cols: 20,
+      rows: 7,
+      program: [{ effect: 'hold', text: 'A', hex: 0x00ff00 }],
+    });
+    const mine = createMarquee({} as HTMLCanvasElement, {
+      draw: false,
+      ticker,
+      cols: 10,
+      rows: 7,
+      follow: { source: () => main, planes: ['color'] },
+      program: [{ effect: 'hold', text: 'WW', hex: 0xff0000 }],
+    });
+    for (let now = 0; now <= 1000; now += 100) step(now);
+    const own = createMarquee({} as HTMLCanvasElement, {
+      draw: false,
+      ticker,
+      cols: 10,
+      rows: 7,
+      program: [{ effect: 'hold', text: 'WW', hex: 0xff0000 }],
+    });
+    for (let now = 1100; now <= 2000; now += 100) step(now);
+    // Dot 3 of a 10-column row sits where dot 7 of a 20-column one does.
+    expect([...mine.columns.tint.slice(12, 16)]).toEqual([...main.columns.tint.slice(28, 32)]);
+    expect([...mine.columns.tint.slice(12, 16)]).not.toEqual([...own.columns.tint.slice(12, 16)]);
+    expect([...mine.columns.lit]).toEqual([...own.columns.lit]);
+    for (const m of [main, mine, own]) m.destroy();
+  });
+});
