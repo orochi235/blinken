@@ -1,4 +1,5 @@
 import { f } from '@weasel-js/labkit';
+import { stereo } from '@weasel-js/ui/components/MotifFrame';
 import { FADE, type NumberParam } from '@/index.js';
 import { numberField, schemaFor } from './schema.js';
 
@@ -44,7 +45,8 @@ export const hardwareSchema = () =>
           .group(
             Object.fromEntries(entries(params).map(([k, p]) => [k, numberField(p as NumberParam)])),
           )
-          .label(g),
+          .label(g)
+          .motif(stereo()),
       ]),
     ),
   );
