@@ -26,7 +26,6 @@ const reshape = (next: Scene[], keep?: Scene) =>
 /** The program: its scenes in order, and the picked one's editor. */
 export function ProgramPanel() {
   const state = useCompose();
-  const [solo, setSolo] = useState(false);
   const [thumbs, setThumbs] = useState(false);
   // The row being dragged, and where a drop would put it: before the row at `to`, or at the end.
   const [drag, setDrag] = useState<{ from: number; to: number } | null>(null);
@@ -78,20 +77,6 @@ export function ProgramPanel() {
               const at = picked + 1;
               reshape([...state.program.slice(0, at), fresh, ...state.program.slice(at)], fresh);
             }}
-          />
-          <IconButton
-            glyph="loop"
-            label="solo: loop the scene you are editing on its own, instead of playing the whole program"
-            pressed={solo}
-            onClick={() => {
-              setSolo(!solo);
-              compose.setSolo(!solo);
-            }}
-          />
-          <IconButton
-            glyph="rewind"
-            label="play the program again from the scene you are editing"
-            onClick={compose.restart}
           />
           <IconButton
             glyph="image"

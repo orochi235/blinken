@@ -1,0 +1,4 @@
+/* Every icon button in the lab draws its glyph this large, through the kit's own hook for it. */
+.compose-icon-button {
+  --wzl-button-icon-size: 20px;
+}

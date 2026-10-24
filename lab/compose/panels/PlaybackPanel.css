@@ -10,11 +10,6 @@
   gap: 6px;
 }
 
-.compose-playback-row svg {
-  width: 18px;
-  height: 18px;
-}
-
 /* The readout changes every frame, so it sits last and grows into the slack. */
 .compose-playback-time {
   min-width: 13ch;

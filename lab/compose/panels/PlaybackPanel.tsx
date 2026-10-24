@@ -15,7 +15,7 @@ const FOCI = ['all', 'scene', 'enter', 'active', 'exit'] as const;
 type Focus = (typeof FOCI)[number];
 const FOCUS_TIPS: Record<Focus, string> = {
   all: 'Play the whole program round.',
-  scene: 'Loop the scene you are editing.',
+  scene: 'Play the scene you are editing on its own, round and round.',
   enter: 'Loop how the scene you are editing comes on.',
   active: 'Loop the scene you are editing while it stands.',
   exit: 'Loop how the scene you are editing goes.',
@@ -105,6 +105,15 @@ export function PlaybackPanel() {
         }}
       >
         <IconButton
+          glyph="rewind"
+          label="play again from the start of the scene you are editing"
+          onClick={() => {
+            setPaused(false);
+            held.current = false;
+            compose.restart();
+          }}
+        />
+        <IconButton
           glyph="stepBack"
           label="back one frame (Shift: ten); ← in this panel"
           onClick={() => step(-FRAME_MS)}
@@ -146,7 +155,11 @@ export function PlaybackPanel() {
               type="radio"
               name="playback-focus"
               checked={focus === f}
-              onChange={() => setFocus(f)}
+              onChange={() => {
+                setFocus(f);
+                // Anything narrower than the program plays the picked scene alone.
+                compose.setSolo(f !== 'all');
+              }}
             />
             {f}
           </label>

@@ -1,4 +1,5 @@
 import { Button, Icon } from '@weasel-js/labkit';
+import './IconButton.css';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
 
@@ -20,7 +21,7 @@ export const GLYPHS = {
 };
 
 /**
- * A small chromeless button showing only a glyph; `label` names it and is its tooltip. With
+ * A chromeless button showing only a glyph; `label` names it and is its tooltip. With
  * `pressed`, it is a toggle that stays down while on.
  */
 export function IconButton({
@@ -42,12 +43,13 @@ export function IconButton({
       ariaLabel={label}
       tooltip={label}
       variant="ghost"
-      size="sm"
+      size="md"
+      className="compose-icon-button"
       disabled={disabled}
       pressed={pressed}
       onClick={onClick}
     >
-      {glyph === 'remove' ? <Trash /> : <Icon name={GLYPHS[glyph] as IconName} size={14} />}
+      {glyph === 'remove' ? <Trash /> : <Icon name={GLYPHS[glyph] as IconName} />}
     </Button>
   );
 }
@@ -56,8 +58,6 @@ export function IconButton({
 function Trash() {
   return (
     <svg
-      width="14"
-      height="14"
       viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"
