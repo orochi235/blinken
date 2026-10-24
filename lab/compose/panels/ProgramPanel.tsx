@@ -27,6 +27,17 @@ export function ProgramPanel() {
   const [solo, setSolo] = useState(false);
   const picked = pickedOf(state);
   const rows = useRef<(HTMLButtonElement | null)[]>([]);
+  const pick = (i: number) =>
+    compose.edit(
+      (s) => {
+        s.editing.step = i;
+      },
+      { follow: true },
+    );
+  const remove = (i: number) => {
+    if (state.program.length < 2) return;
+    reshape(state.program.filter((_, j) => j !== i));
+  };
 
   // The playing step's row fills behind its content as the step plays, read off the sign's pass.
   useEffect(
@@ -88,15 +99,18 @@ export function ProgramPanel() {
               type="button"
               className="compose-step-pick"
               aria-pressed={i === picked}
-              title="edit this step"
-              onClick={() =>
-                compose.edit(
-                  (s) => {
-                    s.editing.step = i;
-                  },
-                  { follow: true },
-                )
-              }
+              title="Edit this step. ↑ and ↓ pick the next one, Option-↑ and Option-↓ move this one, and Delete removes it."
+              onClick={() => pick(i)}
+              onKeyDown={(e) => {
+                const by = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+                if (e.key === 'Delete' || e.key === 'Backspace') remove(i);
+                else if (by && e.altKey) reshape(moveStep(state.program, i, by), step);
+                else if (by && rows.current[i + by]) pick(i + by);
+                else return;
+                e.preventDefault();
+                // Rows are keyed by place, so focus follows the pick to wherever it landed.
+                requestAnimationFrame(() => rows.current[pickedOf(compose.get())]?.focus());
+              }}
             >
               <span
                 className="compose-step-dot"
@@ -112,7 +126,7 @@ export function ProgramPanel() {
       <StepEditor
         at={picked}
         onMove={(by) => reshape(moveStep(state.program, picked, by))}
-        onRemove={() => reshape(state.program.filter((_, j) => j !== picked))}
+        onRemove={() => remove(picked)}
       />
     </section>
   );
