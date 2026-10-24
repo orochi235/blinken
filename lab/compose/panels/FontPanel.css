@@ -15,9 +15,18 @@
   min-width: 0;
 }
 
+/* The search sits at the bar's far end, see-through, and shorter than a field in the body; the
+   frame shrinks evenly about its text, so the text keeps the title's baseline. */
+.compose-panel-actions:has(.compose-font-find) {
+  flex: 1;
+}
+
 .compose-font-find {
+  --wzl-input-surface: transparent;
+  --wzl-field-h: 20px;
   width: 12em;
   min-width: 0;
+  margin-inline-start: auto;
 }
 
 .compose-font-faces {
