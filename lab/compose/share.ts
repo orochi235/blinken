@@ -1,6 +1,6 @@
 import { LAYERS, type LayerName, MODULATORS } from '@/index.js';
 import { AMBER, demo } from '../demo.js';
-import { effectOf, entriesOf, isObj, paramsOf, stepOf } from './readers.js';
+import { effectOf, entriesOf, isObj, paramsOf, sceneOf } from './readers.js';
 import type { ComposeState } from './state.js';
 
 /** A fresh composition: no designed effects, no layers on, and the demo page's program. */
@@ -8,7 +8,7 @@ export const defaultState = (): ComposeState => ({
   effects: {},
   program: demo('HELLO FROM BLITS', AMBER),
   layers: {},
-  editing: { step: 0 },
+  editing: { scene: 0 },
 });
 
 /** What a link carries: the composition, without what is open. */
@@ -49,7 +49,7 @@ function parse(data: unknown): Decoded {
     if (spec) state.effects[name] = spec;
   }
   if (Array.isArray(data.program))
-    state.program = data.program.flatMap((v) => stepOf(v, state.effects, dropped) ?? []);
+    state.program = data.program.flatMap((v) => sceneOf(v, state.effects, dropped) ?? []);
   else {
     state.program = [];
     dropped.push('the program');

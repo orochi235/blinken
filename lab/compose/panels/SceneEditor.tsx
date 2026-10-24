@@ -4,15 +4,15 @@ import { EFFECTS, FACE_NAMES, FACES } from '@/index.js';
 import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
 import { compose, useCompose } from '../store.js';
-import './StepEditor.css';
+import './SceneEditor.css';
 
 const NONE: ReadonlySet<string> = new Set();
 const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
 
-/** The picked step's text, color, effect, hold, face and style. */
-export function StepEditor({ at }: { at: number }) {
+/** The picked scene's text, color, effect, hold, face and style. */
+export function SceneEditor({ at }: { at: number }) {
   const state = useCompose();
-  const step = state.program[at];
+  const scene = state.program[at];
   const names = [...Object.keys(state.effects), ...Object.keys(EFFECTS)];
   const key = names.join('\n');
   // biome-ignore lint/correctness/useExhaustiveDependencies: `key` stands for `names`
@@ -20,7 +20,7 @@ export function StepEditor({ at }: { at: number }) {
     () =>
       resolveConfigSchema(
         f.schema({
-          text: f.string('').label('text').describe('The message this step shows on the sign.'),
+          text: f.string('').label('text').describe('The message this scene shows on the sign.'),
           color: f
             .color('#ffffff')
             .label('color')
@@ -60,7 +60,7 @@ export function StepEditor({ at }: { at: number }) {
       ),
     [key],
   );
-  if (!step) return null;
+  if (!scene) return null;
 
   const set = (path: string, v: unknown) =>
     compose.edit(
@@ -81,20 +81,20 @@ export function StepEditor({ at }: { at: number }) {
     );
 
   return (
-    <div className="compose-step-editor">
+    <div className="compose-scene-editor">
       <ControlPanel
-        title={`step ${at + 1}`}
+        title={`scene ${at + 1}`}
         schema={schema}
         config={{
-          text: step.text,
-          color: hexOf(step.hex),
-          effect: String(step.effect),
-          hold: step.hold ?? 3000,
-          face: typeof step.face === 'string' ? step.face : 'standard',
-          reverse: step.style?.reverse === true,
-          proportional: step.style?.proportional === true,
+          text: scene.text,
+          color: hexOf(scene.hex),
+          effect: String(scene.effect),
+          hold: scene.hold ?? 3000,
+          face: typeof scene.face === 'string' ? scene.face : 'standard',
+          reverse: scene.style?.reverse === true,
+          proportional: scene.style?.proportional === true,
         }}
-        auto={step.hold === undefined ? OWN_HOLD : NONE}
+        auto={scene.hold === undefined ? OWN_HOLD : NONE}
         setConfig={set}
         draftConfig={set}
         density={DENSITY}

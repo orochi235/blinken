@@ -20,6 +20,6 @@ export function watchPass(fn: (pass: Pass | null) => void): () => void {
   };
 }
 
-/** The step of `pass` playing at its `at`: the last one past its end, undefined with none. */
-export const stepAt = (pass: Pass) =>
-  pass.steps.find((s) => pass.at >= s.start && pass.at < s.start + s.ms) ?? pass.steps.at(-1);
+/** The scene of `pass` playing at its `at`: the last one past its end, undefined with none. */
+export const sceneAt = (pass: Pass) =>
+  pass.scenes.find((s) => pass.at >= s.start && pass.at < s.start + s.ms) ?? pass.scenes.at(-1);

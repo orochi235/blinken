@@ -11,7 +11,7 @@
   gap: 6px 10px;
 }
 
-.compose-steps {
+.compose-scenes {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -20,7 +20,7 @@
   list-style: none;
 }
 
-.compose-step-pick {
+.compose-scene-pick {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -45,35 +45,35 @@
   cursor: pointer;
 }
 
-.compose-step-pick:hover {
+.compose-scene-pick:hover {
   background-color: var(--wzl-surface-hover);
 }
 
-.is-picked .compose-step-pick {
+.is-picked .compose-scene-pick {
   border-color: var(--wzl-border);
   border-left-color: var(--wzl-accent);
 }
 
-.compose-step-dot {
+.compose-scene-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--step-color);
-  box-shadow: 0 0 6px var(--step-color);
+  background: var(--scene-color);
+  box-shadow: 0 0 6px var(--scene-color);
 }
 
-.compose-step-text {
+.compose-scene-text {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   text-transform: uppercase;
 }
 
-.compose-step-effect {
+.compose-scene-effect {
   color: var(--wzl-fg-muted);
 }
 
-.compose-step-tools {
+.compose-scene-tools {
   display: flex;
   justify-content: flex-end;
   gap: 6px;

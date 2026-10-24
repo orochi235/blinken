@@ -28,7 +28,7 @@ const shown = () =>
 function cued(effect: EffectSpec, hold?: number): Mix<Subject, Pose> {
   const m = mix<Subject, Pose>(KIT);
   m.sync(0);
-  cueEffect(m, m.owns({ name: 'step' }), stageEffect(effect, at, HEX, hold), effect.name);
+  cueEffect(m, m.owns({ name: 'scene' }), stageEffect(effect, at, HEX, hold), effect.name);
   return m;
 }
 
@@ -86,7 +86,7 @@ describe('stageEffect', () => {
     expect(Math.max(...end.map((k) => k.timestamp))).toBe(stageEffect(flip, at, HEX).ms);
   });
 
-  it('overrides the hold from the step', () => {
+  it('overrides the hold from the scene', () => {
     const staged = stageEffect({ ...flip, hold: 500 }, at, HEX, 800);
     expect(staged.ms).toBe(180 + FOLD + 800 + FOLD);
     for (const a of staged.arcs) expect(a.spec.hold).toBe(800);
@@ -175,7 +175,7 @@ describe('what an effect draws', () => {
     expect(litNow(m, ms + 1).every((v) => v === 0)).toBe(true);
   });
 
-  it('tints the dots the step color', () => {
+  it('tints the dots the scene color', () => {
     const m = cued({ name: 'c', enter: { move: 'cut-on' }, active: { move: 'stand' } }, 500);
     m.sync(300);
     const tint = m.probe(b.dots[0] as Subject).tint;
@@ -183,7 +183,7 @@ describe('what an effect draws', () => {
     for (let i = 0; i < 3; i++) expect(tint[i]).toBeCloseTo(want[i] as number, 5);
   });
 
-  it('plays a tint modulator at weight 3 over the step color', () => {
+  it('plays a tint modulator at weight 3 over the scene color', () => {
     const staged = stageEffect(
       { name: 'p', active: [{ move: 'stand' }, { mod: 'palette' }] },
       at,

@@ -7,8 +7,8 @@ import { faceOf } from './font.js';
 import { cueLayers, type LayerOption } from './layers.js';
 import type { Fade, Ghost } from './optics.js';
 import type { ParamValue } from './params.js';
-import { layOut, type Pass, PassClock, type PassStep } from './pass.js';
-import { cueProgram, effectOf, type StagedStep, type Step, stageProgram } from './program.js';
+import { layOut, type Pass, PassClock, type PassScene } from './pass.js';
+import { cueProgram, effectOf, type Scene, type StagedScene, stageProgram } from './program.js';
 import { createTicker, type Ticker } from './ticker.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
@@ -30,8 +30,8 @@ export interface MarqueeOptions {
    * The messages it plays, in a loop. A function is read again at the start of every pass, so a
    * program can follow inputs that change. Default: nothing, until `setProgram`.
    */
-  readonly program?: readonly Step[] | (() => readonly Step[]);
-  /** Effects steps can name, ahead of the built-ins. */
+  readonly program?: readonly Scene[] | (() => readonly Scene[]);
+  /** Effects scenes can name, ahead of the built-ins. */
   readonly effects?: Readonly<Record<string, EffectSpec>>;
   /**
    * Layers by name: a built-in's name with on, off or a weight, or a full spec under any name.
@@ -68,12 +68,12 @@ export interface Marquee {
   readonly board: Board;
   /** The mix lighting it, for cueing voices of your own on its dots and border cells. */
   readonly mix: Mix<Subject, Pose>;
-  /** Replaces the program from the next pass; throws on a step naming no effect or face. */
-  setProgram(program: readonly Step[] | (() => readonly Step[])): void;
-  /** Replaces the effects steps can name, from the next pass; throws if a step names none of them. */
+  /** Replaces the program from the next pass; throws on a scene naming no effect or face. */
+  setProgram(program: readonly Scene[] | (() => readonly Scene[])): void;
+  /** Replaces the effects scenes can name, from the next pass; throws if a scene names none of them. */
   setEffects(effects: Readonly<Record<string, EffectSpec>>): void;
-  /** Starts the program over at `fromStep`, fading the pass playing now at once. */
-  restart(fromStep?: number): void;
+  /** Starts the program over at `fromScene`, fading the pass playing now at once. */
+  restart(fromScene?: number): void;
   /** Where the pass playing now stands, on the mix clock, so rate changes count; null while none plays. */
   pass(): Pass | null;
   /**
@@ -125,12 +125,12 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   let effects = opts.effects ?? {};
   let live = true;
   let pass: Handle<Subject> | null = null;
-  let steps: readonly PassStep[] = [];
+  let scenes: readonly PassScene[] = [];
   let length = 0;
   const clock = new PassClock();
   /** A pass ended; the next starts at the next frame, so one that ends at once cannot spin. */
   let due = false;
-  let staged: readonly StagedStep[] = [];
+  let staged: readonly StagedScene[] = [];
   /** Cues the staged pass afresh, from its start. */
   const cue = () => {
     const mine = cueProgram(m, staged);
@@ -148,7 +148,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     const offset = from > 0 && from < all.length ? from : 0;
     const chosen = offset ? all.slice(offset) : all;
     staged = stageProgram(b, chosen, effects);
-    ({ steps, length } = layOut(staged, offset));
+    ({ scenes, length } = layOut(staged, offset));
     if (chosen.length > 0) cue();
     else pass = null;
   };
@@ -159,7 +159,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   /** Moves the pass to `at`, playing at `rate`. */
   const moveTo = (at: number, rate: number) => {
     if (pass === null) return;
-    // A step that has ended has left the mix, so the pass is cued again and moved from its start.
+    // A scene that has ended has left the mix, so the pass is cued again and moved from its start.
     pass.fade({ over: 0 });
     const fresh = cue();
     fresh.seek(at);
@@ -168,14 +168,14 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   };
 
   /**
-   * Throws on a step naming no effect or face; a program given as a function is checked as each
+   * Throws on a scene naming no effect or face; a program given as a function is checked as each
    * pass starts.
    */
   const check = (p: typeof program, e: typeof effects) => {
     if (typeof p !== 'function')
-      for (const step of p) {
-        effectOf(step, e);
-        faceOf(step.face);
+      for (const scene of p) {
+        effectOf(scene, e);
+        faceOf(scene.face);
       }
   };
 
@@ -236,15 +236,15 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       effects = next;
       if (pass === null) again();
     },
-    restart(fromStep = 0) {
+    restart(fromScene = 0) {
       early = null;
       pass?.fade({ over: 0 });
       due = false;
-      again(fromStep);
+      again(fromScene);
     },
     pass() {
       if (pass === null || length === 0) return null;
-      return { at: Math.min(length, Math.max(0, clock.read(m.now))), length, steps };
+      return { at: Math.min(length, Math.max(0, clock.read(m.now))), length, scenes };
     },
     seek(ms, opts = {}) {
       if (pass === null) return;

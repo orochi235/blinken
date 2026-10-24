@@ -1,6 +1,6 @@
 import './app.css';
 import { mount } from '@msb235/blits-panel';
-import { createMarquee, EFFECTS, LAYERS, type LayerName, type Step } from '@/index.js';
+import { createMarquee, EFFECTS, LAYERS, type LayerName, type Scene } from '@/index.js';
 import { demo } from './demo.js';
 
 function el<T extends HTMLElement>(id: string): T {
@@ -29,7 +29,7 @@ const whole = (key: string, fallback: number, most: number) => {
 const userHex = () => Number.parseInt(hue.value, 16);
 /** `?show=flip` loops that one effect on the message, for looking at it alone. */
 const only = params.get('show');
-const program = (): Step[] =>
+const program = (): Scene[] =>
   only !== null && Object.hasOwn(EFFECTS, only)
     ? [{ effect: only, text: message.value || ' ', hex: userHex() }]
     : demo(message.value || ' ', userHex());
@@ -73,7 +73,7 @@ sizeForm.addEventListener('submit', (event) => {
 });
 for (const { name, box } of boxes)
   box.addEventListener('change', () => sign.setLayer(name, box.checked));
-// The visitor's message first plays at the program's second step, so a change replays from there.
+// The visitor's message first plays at the program's second scene, so a change replays from there.
 const replay = () => sign.restart(only === null ? 1 : 0);
 message.addEventListener('change', replay);
 hue.addEventListener('change', () => {

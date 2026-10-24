@@ -1,11 +1,11 @@
-import type { Step } from '@/index.js';
+import type { Scene } from '@/index.js';
 
 export const AMBER = 0xff9a2e;
 export const RED = 0xff4030;
 export const GREEN = 0x6dff5a;
 
 /** The demo page's program, with `message` in `hex` where the visitor's own text goes. */
-export const demo = (message: string, hex: number): Step[] => [
+export const demo = (message: string, hex: number): Scene[] => [
   { effect: 'hold', text: 'BLITS', hex: AMBER },
   { effect: 'scroll', text: message, hex },
   { effect: 'flip', text: 'NOW SHOWING', hex: RED },

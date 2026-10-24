@@ -43,7 +43,7 @@ function Layer({ name }: { name: LayerName }) {
       title={
         <label
           className="compose-title"
-          title="Turn this layer on to play it across the whole program, alongside every step."
+          title="Turn this layer on to play it across the whole program, alongside every scene."
         >
           <input
             type="checkbox"

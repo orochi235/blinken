@@ -6,7 +6,7 @@ const start = (): ComposeState => ({
   effects: {},
   program: [{ text: 'HI', hex: 0xffffff, effect: 'hold' }],
   layers: {},
-  editing: { step: 0, effect: 'hold' },
+  editing: { scene: 0, effect: 'hold' },
 });
 
 /** A store as small as the lab's: `edit` copies, changes, then records. */
@@ -59,7 +59,7 @@ describe('compose undo', () => {
   it('records nothing for a change to what is open alone', () => {
     const s = store();
     s.edit((x) => {
-      x.editing = { step: 0, effect: 'rain' };
+      x.editing = { scene: 0, effect: 'rain' };
     });
     expect(s.undo.history.canUndo()).toBe(false);
   });
@@ -74,17 +74,17 @@ describe('compose undo', () => {
       x.editing.effect = 'rain';
     });
     s.undo.history.undo();
-    expect(s.get().editing).toEqual({ step: 0, effect: 'hold' });
+    expect(s.get().editing).toEqual({ scene: 0, effect: 'hold' });
     expect(s.get().effects).toEqual({});
     s.undo.history.redo();
-    expect(s.get().editing).toEqual({ step: 0, effect: 'rain' });
+    expect(s.get().editing).toEqual({ scene: 0, effect: 'rain' });
     expect(Object.keys(s.get().effects)).toEqual(['hold copy']);
   });
 
   it('round-trips what is open through the ids a history keeps', () => {
-    expect(editingOf(editingIds({ step: 3, effect: 'step: odd' }))).toEqual({
-      step: 3,
-      effect: 'step: odd',
+    expect(editingOf(editingIds({ scene: 3, effect: 'scene: odd' }))).toEqual({
+      scene: 3,
+      effect: 'scene: odd',
     });
     expect(editingOf(editingIds({}))).toEqual({});
   });

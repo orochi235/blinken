@@ -1,5 +1,5 @@
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from 'react';
-import type { Pass, PassStep } from '@/index.js';
+import type { Pass, PassScene } from '@/index.js';
 import { watchPass } from './clock.js';
 import { hexOf } from './schema.js';
 import { compose, useCompose } from './store.js';
@@ -8,17 +8,17 @@ import './Scrubber.css';
 /** How far an arrow key moves the pass. */
 const STEP_MS = 250;
 
-const spansOf = (pass: Pass | null) => pass?.steps ?? [];
-const keyOf = (steps: readonly PassStep[]) => steps.map((s) => `${s.step}:${s.ms}`).join(' ');
+const spansOf = (pass: Pass | null) => pass?.scenes ?? [];
+const keyOf = (scenes: readonly PassScene[]) => scenes.map((s) => `${s.scene}:${s.ms}`).join(' ');
 
 /**
- * The pass playing now, its steps end to end, with a playhead on the sign's own clock. A press
+ * The pass playing now, its scenes end to end, with a playhead on the sign's own clock. A press
  * holds the sign at that moment and follows a drag; letting go plays on from there.
  */
 export function Scrubber() {
   const state = useCompose();
   const track = useRef<HTMLDivElement>(null);
-  const [steps, setSteps] = useState<readonly PassStep[]>([]);
+  const [scenes, setScenes] = useState<readonly PassScene[]>([]);
   const held = useRef(false);
   const length = useRef(0);
 
@@ -26,7 +26,7 @@ export function Scrubber() {
     () =>
       watchPass((pass) => {
         const next = spansOf(pass);
-        setSteps((was) => (keyOf(was) === keyOf(next) ? was : next));
+        setScenes((was) => (keyOf(was) === keyOf(next) ? was : next));
         length.current = pass?.length ?? 0;
         const at = pass && pass.length > 0 ? pass.at / pass.length : 0;
         const el = track.current;
@@ -39,8 +39,8 @@ export function Scrubber() {
   );
 
   useEffect(() => {
-    track.current?.style.setProperty('--spans', steps.map((s) => `${s.ms}fr`).join(' ') || '1fr');
-  }, [steps]);
+    track.current?.style.setProperty('--spans', scenes.map((s) => `${s.ms}fr`).join(' ') || '1fr');
+  }, [scenes]);
 
   const msAt = (e: PointerEvent) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -80,30 +80,30 @@ export function Scrubber() {
         held.current = false;
       }}
     >
-      {steps.map((s) => {
-        const index = compose.stepOf(s);
+      {scenes.map((s) => {
+        const index = compose.sceneOf(s);
         return (
           <span
-            key={`${s.step}:${s.start}`}
-            className="compose-scrubber-step"
+            key={`${s.scene}:${s.start}`}
+            className="compose-scrubber-scene"
             title={state.program[index]?.text}
           >
             {state.program[index]?.text}
           </span>
         );
       })}
-      {/* The same steps in their own colors, shown only left of the playhead. */}
+      {/* The same scenes in their own colors, shown only left of the playhead. */}
       <div className="compose-scrubber-played" aria-hidden="true">
-        {steps.map((s) => {
-          const step = state.program[compose.stepOf(s)];
+        {scenes.map((s) => {
+          const scene = state.program[compose.sceneOf(s)];
           return (
             <span
-              key={`${s.step}:${s.start}`}
-              className="compose-scrubber-step"
-              // A step's own color has no class to name it; the custom property is all that varies.
-              style={{ '--step-color': hexOf(step?.hex ?? 0) } as CSSProperties}
+              key={`${s.scene}:${s.start}`}
+              className="compose-scrubber-scene"
+              // A scene's own color has no class to name it; the custom property is all that varies.
+              style={{ '--scene-color': hexOf(scene?.hex ?? 0) } as CSSProperties}
             >
-              {step?.text}
+              {scene?.text}
             </span>
           );
         })}

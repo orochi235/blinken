@@ -21,7 +21,7 @@ klieg's `fire({ enter, active, exit })` has the same shape, and bree lines up wi
 | ----------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | **piece**   | One thing dots do, in one order, during one part of an arc             | one `ArcVoice`: a patch, a `stagger`, a `duration`                                            | letters unfold, one letter after the next |
 | **effect**  | Pieces placed in `enter`, `active` and `exit`, with a hold and a blend | one `ArcSpec`                                                                                 | `flip` = unfold · tumble · fold           |
-| **program** | Messages, each played with an effect, one after another, under layers  | an owner holding one owner per step, each holding that step's arcs, plus looping layer voices | the lab's seven-message show              |
+| **program** | Messages, each played with an effect, one after another, under layers  | an owner holding one owner per scene, each holding that scene's arcs, plus looping layer voices | the lab's seven-message show              |
 
 ### Pieces
 
@@ -129,7 +129,7 @@ stagger, which `ArcVoice.duration` exists for.
 ### Programs
 
 ```ts
-interface Step {
+interface Scene {
   readonly text: string;
   readonly hex: number;
   readonly effect: EffectName | EffectSpec;
@@ -137,10 +137,10 @@ interface Step {
 }
 ```
 
-`play(mix, board, steps)` cues a program owner, and under it one owner per step that fits the
-board, each placed where the step before it ends and holding that step's arcs. Not a queued span
+`play(mix, board, scenes)` cues a program owner, and under it one owner per scene that fits the
+board, each placed where the scene before it ends and holding that scene's arcs. Not a queued span
 (2026-10-22): a span places its children itself, so it cannot hold the per-letter arcs a
-whole-effect order starts a lag apart. Every step's hold is finite, so its length is known when
+whole-effect order starts a lag apart. Every scene's hold is finite, so its length is known when
 it is staged. Under the program play any number of modulators looping as
 layers, each with a weight and its settings; the built-in layers are `sparkle`, `chase` and
 `rainbow`. `createMarquee` takes `effects` (a name
@@ -153,11 +153,11 @@ A second lab page, `lab/compose.html`, beside the current demo page, which stays
   exit) lists its pieces. A move shows its order, lag and settings; a modulator shows its channel,
   curve, depth and spread. All of the controls are built from the pieces' `params` data. Add a piece to layer it. Hold and blend are
   sliders. A sign previews the effect looping on a sample message.
-- **Program.** Steps as a list: text, color, which effect, an optional hold. Add, remove,
+- **Program.** Scenes as a list: text, color, which effect, an optional hold. Add, remove,
   reorder. Layers are modulators under the program, with on/off and their own sliders; this needs
   `setLayer(name, on, params)` on `createMarquee`.
-- **Every edit restarts from the step being edited**, so a change shows at once. "Solo" loops
-  one step.
+- **Every edit restarts from the scene being edited**, so a change shows at once. "Solo" loops
+  one scene.
 - **Export:** "copy as code" gives the effects and the program as a `createMarquee` call. "Copy
   link" puts the whole composition in the URL hash, as klieg's `/show/` page does. The current
   draft is kept in browser storage, so a reload doesn't lose it; it is a convenience, not a save.
@@ -176,7 +176,7 @@ A second lab page, `lab/compose.html`, beside the current demo page, which stays
 
 - Runs on blits `mix.arc`, unreleased. bree uses the `../blits` checkout until blits publishes;
   then it pins that version and restores `labelOf` (see `TODO.md`).
-- An `'open'` hold is refused inside a span, so program steps always have a finite hold.
+- An `'open'` hold is refused inside a span, so program scenes always have a finite hold.
 - Published source keeps relative imports; the lab and tests use the `@/` alias.
 
 ## Calls made without asking (2026-10-22), open to change
@@ -185,7 +185,7 @@ A second lab page, `lab/compose.html`, beside the current demo page, which stays
   (flip's overlapping tumble, hold's sweeping flash, roll landing left to right); tests check
   the pieces, not pixels against the old patches.
 - **An `active` piece with a length setting left unset plays one pass over the hold** (2026-10-22,
-  replacing "loops at its own pass length"), so a built-in's look survives a step's hold override.
+  replacing "loops at its own pass length"), so a built-in's look survives a scene's hold override.
   Pieces that set their speed by `rate` (hue-cycle, pulse, bloom) still loop at it. `scroll across` lasts as long as its crossing, and
   is the default hold for an effect using it.
 - **A brightness modulator darkens everything on its dots,** layers included, the way a real

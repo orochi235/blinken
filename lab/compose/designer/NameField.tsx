@@ -5,7 +5,7 @@ import { designerEdit } from './edit.js';
 import './NameField.css';
 
 /**
- * Gives the open effect another name, which the steps playing it follow. Says false, changing
+ * Gives the open effect another name, which the scenes playing it follow. Says false, changing
  * nothing, when the name is empty or taken.
  */
 function rename(from: string, to: string): boolean {
@@ -19,7 +19,9 @@ function rename(from: string, to: string): boolean {
   designerEdit((s) => {
     const { [from]: spec, ...rest } = s.effects;
     s.effects = { ...rest, [to]: { ...(spec as EffectSpec), name: to } };
-    s.program = s.program.map((step) => (step.effect === from ? { ...step, effect: to } : step));
+    s.program = s.program.map((scene) =>
+      scene.effect === from ? { ...scene, effect: to } : scene,
+    );
     s.editing.effect = to;
   });
   return true;

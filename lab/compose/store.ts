@@ -6,7 +6,7 @@ import {
   type LayerName,
   type Marquee,
   type Pass,
-  type PassStep,
+  type PassScene,
   SIZE,
 } from '@/index.js';
 import { gestureKey } from './gesture.js';
@@ -14,7 +14,7 @@ import { type ComposeState, layerOf } from './state.js';
 import { open, save } from './storage.js';
 import { createUndo, type Undo } from './undo.js';
 
-/** What the sign does after an edit: play again from a step, update one layer, or nothing. */
+/** What the sign does after an edit: play again from a scene, update one layer, or nothing. */
 export type After = { replay: number | 'picked' } | { layer: LayerName } | { follow: true } | null;
 
 interface Live {
@@ -26,9 +26,9 @@ interface Live {
   undo: Undo;
 }
 
-/** The step being edited, kept inside the program. */
+/** The scene being edited, kept inside the program. */
 export const pickedOf = (s: ComposeState): number =>
-  Math.max(0, Math.min(s.editing.step ?? 0, s.program.length - 1));
+  Math.max(0, Math.min(s.editing.scene ?? 0, s.program.length - 1));
 
 const copy = (s: ComposeState): ComposeState => ({
   ...s,
@@ -38,7 +38,7 @@ const copy = (s: ComposeState): ComposeState => ({
   editing: { ...s.editing },
 });
 
-/** Opens the picked step's effect in the designer, yours or a built-in. */
+/** Opens the picked scene's effect in the designer, yours or a built-in. */
 function follow(s: ComposeState): void {
   const effect = s.program[pickedOf(s)]?.effect;
   s.editing.effect =
@@ -48,7 +48,7 @@ function follow(s: ComposeState): void {
       : undefined;
 }
 
-/** Everything the store holds, kept across a hot reload so the sign stays attached and undo keeps its steps. */
+/** Everything the store holds, kept across a hot reload so the sign stays attached and undo keeps its scenes. */
 const live: Live = import.meta.hot?.data.live ?? begin();
 if (import.meta.hot) import.meta.hot.data.live = live;
 
@@ -71,14 +71,14 @@ function begin(): Live {
 
 export const opened = live.opened;
 
-/** Plays the whole program again from step `from`, so the pass always spans every step. */
+/** Plays the whole program again from scene `from`, so the pass always spans every scene. */
 function replay(from: number): void {
   const { sign } = live;
   if (!sign) return;
   sign.setEffects(live.state.effects);
   sign.restart(0);
   if (live.solo || from <= 0) return;
-  const at = sign.pass()?.steps.find((s) => s.step >= from);
+  const at = sign.pass()?.scenes.find((s) => s.scene >= from);
   if (at) sign.seek(at.start);
 }
 
@@ -91,7 +91,7 @@ const notify = () => {
   for (const l of live.listeners) l();
 };
 
-/** Shows an undo or redo: every listener, every layer, and the program from the picked step. */
+/** Shows an undo or redo: every listener, every layer, and the program from the picked scene. */
 function stepped(): void {
   notify();
   setLayers();
@@ -99,10 +99,10 @@ function stepped(): void {
   save(live.state);
 }
 
-/** The program the sign plays: the whole of it, or the picked step alone. */
+/** The program the sign plays: the whole of it, or the picked scene alone. */
 export const playing = () => {
-  const step = live.state.program[pickedOf(live.state)];
-  return live.solo && step ? [step] : live.state.program;
+  const scene = live.state.program[pickedOf(live.state)];
+  return live.solo && scene ? [scene] : live.state.program;
 };
 
 /** The composition every panel edits, and what each edit tells the sign. */
@@ -114,7 +114,7 @@ export const compose = {
   },
   /**
    * Applies `fn` to a copy of the state, which it may change in place, then tells the sign.
-   * `follow` opens the picked step's effect and replays from it.
+   * `follow` opens the picked scene's effect and replays from it.
    */
   edit(fn: (s: ComposeState) => void, after: After = { replay: 'picked' }) {
     const before = live.state;
@@ -151,8 +151,8 @@ export const compose = {
   pass: (): Pass | null => live.sign?.pass() ?? null,
   /** Moves the sign's pass to `ms`, held there with `hold`. */
   seek: (ms: number, hold = false) => live.sign?.seek(ms, { hold }),
-  /** The program step a step of the pass plays: soloed, the pass is the picked step alone. */
-  stepOf: (p: PassStep): number => (live.solo ? pickedOf(live.state) : p.step),
+  /** The program scene a scene of the pass plays: soloed, the pass is the picked scene alone. */
+  sceneOf: (p: PassScene): number => (live.solo ? pickedOf(live.state) : p.scene),
   /** Hands the store the sign the page drew, or null when it is gone. */
   attach(next: Marquee | null) {
     live.sign = next;

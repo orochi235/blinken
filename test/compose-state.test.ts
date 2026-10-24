@@ -4,7 +4,7 @@ import {
   addPiece,
   type ComposeState,
   deleteEffect,
-  moveStep,
+  moveScene,
   removePiece,
   setPiece,
   withLook,
@@ -41,25 +41,25 @@ describe('compose state slot edits', () => {
 });
 
 describe('compose state program edits', () => {
-  const steps = [
+  const scenes = [
     { text: 'A', hex: 0, effect: 'hold' },
     { text: 'B', hex: 0, effect: 'mine' },
     { text: 'C', hex: 0, effect: 'flip' },
   ];
 
-  it('moves a step up and down, and leaves it at either end', () => {
-    expect(moveStep(steps, 1, -1).map((s) => s.text)).toEqual(['B', 'A', 'C']);
-    expect(moveStep(steps, 1, 1).map((s) => s.text)).toEqual(['A', 'C', 'B']);
-    expect(moveStep(steps, 0, -1)).toEqual(steps);
-    expect(moveStep(steps, 2, 1)).toEqual(steps);
+  it('moves a scene up and down, and leaves it at either end', () => {
+    expect(moveScene(scenes, 1, -1).map((s) => s.text)).toEqual(['B', 'A', 'C']);
+    expect(moveScene(scenes, 1, 1).map((s) => s.text)).toEqual(['A', 'C', 'B']);
+    expect(moveScene(scenes, 0, -1)).toEqual(scenes);
+    expect(moveScene(scenes, 2, 1)).toEqual(scenes);
   });
 
-  it('deletes a designed effect, its steps falling back to hold', () => {
+  it('deletes a designed effect, its scenes falling back to hold', () => {
     const state: ComposeState = {
       effects: { mine: { name: 'mine', active: { move: 'stand' } } },
-      program: steps,
+      program: scenes,
       layers: {},
-      editing: { effect: 'mine', step: 1 },
+      editing: { effect: 'mine', scene: 1 },
     };
     deleteEffect(state, 'mine');
     expect(state.effects).toEqual({});
@@ -69,13 +69,13 @@ describe('compose state program edits', () => {
 });
 
 describe('withLook', () => {
-  const step = { text: 'HI', hex: 0, effect: 'hold' };
+  const scene = { text: 'HI', hex: 0, effect: 'hold' };
   it('sets a face and style switches, leaving the defaults out', () => {
-    const slim = withLook(step, 'face', 'slim');
-    expect(slim).toEqual({ ...step, face: 'slim' });
-    expect(withLook(slim, 'face', 'standard')).toEqual(step);
-    const both = withLook(withLook(step, 'reverse', true), 'proportional', true);
+    const slim = withLook(scene, 'face', 'slim');
+    expect(slim).toEqual({ ...scene, face: 'slim' });
+    expect(withLook(slim, 'face', 'standard')).toEqual(scene);
+    const both = withLook(withLook(scene, 'reverse', true), 'proportional', true);
     expect(both.style).toEqual({ reverse: true, proportional: true });
-    expect(withLook(withLook(both, 'reverse', false), 'proportional', false)).toEqual(step);
+    expect(withLook(withLook(both, 'reverse', false), 'proportional', false)).toEqual(scene);
   });
 });

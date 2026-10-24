@@ -9,7 +9,7 @@ import { createMarquee } from '@/marquee.js';
 import { chase } from '@/modulators/index.js';
 import { scrollAcross } from '@/moves/index.js';
 import { place } from '@/orders.js';
-import { cueLayer, play, type Step } from '@/program.js';
+import { cueLayer, play, type Scene } from '@/program.js';
 
 const STEP_MS = scrollAcross.params.step.value;
 const CHASE_MS = chase.params.beat.value;
@@ -18,7 +18,7 @@ const b = board(SIZE.cols, SIZE.rows);
 const COLS = b.cols;
 const dot = (x: number, y: number) => b.dots[y * COLS + x] as Led;
 
-/** A face taller than the sign's lines, so a step in it cues nothing. */
+/** A face taller than the sign's lines, so a scene in it cues nothing. */
 const TALL: Face = { name: 'tall', rows: 9, width: 5, glyph: () => Array(9).fill('#####') };
 
 describe('rasterize', () => {
@@ -34,13 +34,13 @@ describe('rasterize', () => {
 });
 
 describe('play', () => {
-  it('places each step where the one before it ends', () => {
+  it('places each scene where the one before it ends', () => {
     const m = mix<Subject, Pose>(KIT);
-    const steps: Step[] = [
+    const scenes: Scene[] = [
       { effect: 'hold', text: 'I', hex: 0xff9a2e },
       { effect: 'scroll', text: 'I', hex: 0x6dff5a },
     ];
-    play(m, b, steps);
+    play(m, b, scenes);
     m.sync(0);
     m.sync(1000);
     expect(m.probe(dot(39, 0)).lit).toBe(1);
@@ -210,13 +210,13 @@ describe('createMarquee', () => {
     return n;
   };
 
-  it('restart from step 2 plays step 2 alone, replacing the pass underway', async () => {
-    const steps: Step[] = [
+  it('restart from scene 2 plays scene 2 alone, replacing the pass underway', async () => {
+    const scenes: Scene[] = [
       { effect: 'quick', text: 'WWWW', hex: 0xff9a2e },
       { effect: 'quick', text: 'WWWW', hex: 0xff9a2e },
       { effect: 'quick', text: 'I', hex: 0x6dff5a },
     ];
-    await withSign({ program: steps, effects: { quick } }, (sign, step) => {
+    await withSign({ program: scenes, effects: { quick } }, (sign, step) => {
       step(200);
       expect(litAmong(sign, 28, 36)).toBeGreaterThan(0);
       sign.restart(2);
@@ -226,7 +226,7 @@ describe('createMarquee', () => {
     });
   });
 
-  it('restart past the last step falls back to the first', async () => {
+  it('restart past the last scene falls back to the first', async () => {
     await withSign(
       { program: [{ effect: 'quick', text: 'I', hex: 0 }], effects: { quick } },
       (sign, step) => {
@@ -292,7 +292,7 @@ describe('createMarquee', () => {
     );
   });
 
-  it('setProgram and setEffects refuse a step naming no effect, at the call', async () => {
+  it('setProgram and setEffects refuse a scene naming no effect, at the call', async () => {
     await withSign(
       { program: [{ effect: 'quick', text: 'I', hex: 0 }], effects: { quick } },
       (sign) => {
@@ -335,20 +335,20 @@ describe('createMarquee', () => {
   });
 
   describe('pass and seek', () => {
-    const two: Step[] = [
+    const two: Scene[] = [
       { effect: 'quick', text: 'WWWW', hex: 0xff9a2e },
       { effect: 'quick', text: 'I', hex: 0x6dff5a },
     ];
     const quickMs = stageEffect(quick, place(b, rasterize('I')), 0).ms;
 
-    it('lays the steps end to end and reads where the pass is on the mix clock', async () => {
+    it('lays the scenes end to end and reads where the pass is on the mix clock', async () => {
       await withSign({ program: two, effects: { quick } }, (sign, step) => {
         step(100);
         const first = sign.pass();
         expect(first?.length).toBe(2 * quickMs);
-        expect(first?.steps).toEqual([
-          { step: 0, start: 0, ms: quickMs },
-          { step: 1, start: quickMs, ms: quickMs },
+        expect(first?.scenes).toEqual([
+          { scene: 0, start: 0, ms: quickMs },
+          { scene: 1, start: quickMs, ms: quickMs },
         ]);
         const at = first?.at ?? Number.NaN;
         step(300);
@@ -359,15 +359,15 @@ describe('createMarquee', () => {
       });
     });
 
-    it('numbers the steps of a pass restarted partway by their place in the program', async () => {
+    it('numbers the scenes of a pass restarted partway by their place in the program', async () => {
       await withSign({ program: two, effects: { quick } }, (sign, step) => {
         step(100);
         sign.restart(1);
-        expect(sign.pass()?.steps).toEqual([{ step: 1, start: 0, ms: quickMs }]);
+        expect(sign.pass()?.scenes).toEqual([{ scene: 1, start: 0, ms: quickMs }]);
       });
     });
 
-    it('seeks back into a step that has ended, and the sign shows it again', async () => {
+    it('seeks back into a scene that has ended, and the sign shows it again', async () => {
       await withSign({ program: two, effects: { quick } }, (sign, step) => {
         step(quickMs + 200);
         expect(litAmong(sign, 28, 36)).toBe(0);

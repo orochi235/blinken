@@ -7,19 +7,19 @@ import {
   type NumberParam,
   type Piece,
   piecesOf,
+  type Scene,
   type Slot,
-  type Step,
 } from '@/index.js';
 
 /** Everything the compose lab is editing: its effects, the program and layers, and what is open. */
 export interface ComposeState {
   effects: Record<string, EffectSpec>;
-  program: Step[];
+  program: Scene[];
   layers: Record<string, LayerSpec & { on: boolean }>;
-  editing: { effect?: string; step?: number };
+  editing: { effect?: string; scene?: number };
 }
 
-/** An effect's or a step's hold, an effect's blend and an order's lag, as the lab offers them. */
+/** An effect's or a scene's hold, an effect's blend and an order's lag, as the lab offers them. */
 export const HOLD: NumberParam = {
   label: 'hold',
   min: 0,
@@ -55,7 +55,7 @@ export const LAG: NumberParam = {
 export const layerOf = (state: ComposeState, name: LayerName): LayerSpec & { on: boolean } =>
   state.layers[name] ?? { ...LAYERS[name], on: false };
 
-/** The effect a step falls back to when the one it named is deleted. */
+/** The effect a scene falls back to when the one it named is deleted. */
 export const FALLBACK = 'hold';
 
 /** `base`, or `base 2`, `base 3`… whichever no effect in `state` is named yet. */
@@ -90,34 +90,38 @@ export const removePiece = (spec: EffectSpec, slot: Slot, i: number): EffectSpec
 export const addPiece = (spec: EffectSpec, slot: Slot, piece: Piece): EffectSpec =>
   withSlot(spec, slot, [...piecesOf(spec[slot]), piece]);
 
-/** The program with step `i` moved `by` places, or as it was when that would leave the list. */
-export function moveStep(program: readonly Step[], i: number, by: number): Step[] {
+/** The program with scene `i` moved `by` places, or as it was when that would leave the list. */
+export function moveScene(program: readonly Scene[], i: number, by: number): Scene[] {
   const to = i + by;
   const out = [...program];
   if (to < 0 || to >= out.length || i < 0 || i >= out.length) return out;
-  const [step] = out.splice(i, 1);
-  out.splice(to, 0, step as Step);
+  const [scene] = out.splice(i, 1);
+  out.splice(to, 0, scene as Scene);
   return out;
 }
 
-/** Deletes a designed effect; the steps that played it play the fallback built-in instead. */
+/** Deletes a designed effect; the scenes that played it play the fallback built-in instead. */
 export function deleteEffect(state: ComposeState, name: string): void {
   const { [name]: _, ...rest } = state.effects;
   state.effects = rest;
-  state.program = state.program.map((step) =>
-    step.effect === name ? { ...step, effect: FALLBACK } : step,
+  state.program = state.program.map((scene) =>
+    scene.effect === name ? { ...scene, effect: FALLBACK } : scene,
   );
   if (state.editing.effect === name) state.editing.effect = undefined;
 }
 
-/** A step with its face or one of its style switches set, the default left out. */
-export function withLook(step: Step, what: 'face' | 'reverse' | 'proportional', v: unknown): Step {
+/** A scene with its face or one of its style switches set, the default left out. */
+export function withLook(
+  scene: Scene,
+  what: 'face' | 'reverse' | 'proportional',
+  v: unknown,
+): Scene {
   if (what === 'face') {
-    const { face: _, ...rest } = step;
+    const { face: _, ...rest } = scene;
     return v === 'standard' ? rest : { ...rest, face: v as FaceName };
   }
-  const { style: _, ...rest } = step;
-  const { [what]: __, ...others } = step.style ?? {};
+  const { style: _, ...rest } = scene;
+  const { [what]: __, ...others } = scene.style ?? {};
   const style = v === true ? { ...others, [what]: true } : others;
   return Object.keys(style).length ? { ...rest, style } : rest;
 }

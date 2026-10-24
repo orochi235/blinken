@@ -5,7 +5,7 @@ import { stageEffect } from '@/effects.js';
 import { MODULATORS } from '@/modulators/index.js';
 import { placeText } from '@/orders.js';
 import { values } from '@/params.js';
-import type { Step } from '@/program.js';
+import type { Scene } from '@/program.js';
 import { decode, encode, toCode } from '../lab/compose/share.js';
 import type { ComposeState } from '../lab/compose/state.js';
 import {
@@ -40,7 +40,7 @@ const state = (): ComposeState => ({
       on: true,
     },
   },
-  editing: { step: 0 },
+  editing: { scene: 0 },
 });
 
 /** A hash carrying `data` as encode writes it. */
@@ -64,7 +64,7 @@ describe('share', () => {
     expect(dropped).toEqual(['move moonwalk in hold copy']);
   });
 
-  it('drops unknown modulators, effects and layers, and steps naming a dropped effect', () => {
+  it('drops unknown modulators, effects and layers, and scenes naming a dropped effect', () => {
     const data = JSON.parse(Buffer.from(encode(state()), 'base64url').toString());
     data.effects['hold copy'].active.push({ mod: 'wobble' });
     data.effects.bad = { name: 'bad', active: 'nonsense' };
@@ -77,7 +77,7 @@ describe('share', () => {
     expect(dropped).toEqual([
       'modulator wobble in hold copy',
       'effect bad',
-      'step X, its effect nowhere',
+      'scene X, its effect nowhere',
       'layer fog',
     ]);
   });
@@ -113,7 +113,7 @@ describe('share', () => {
     expect(Object.getPrototypeOf(back.effects)).toBe(Object.prototype);
     expect(Object.keys(back.effects)).toEqual(['constructor']);
     expect(back.program.map((s) => s.text)).toEqual(['B']);
-    expect(dropped).toEqual(['effect __proto__', 'step A, its effect __proto__']);
+    expect(dropped).toEqual(['effect __proto__', 'scene A, its effect __proto__']);
     expect(decode(encode(back)).state.effects.constructor?.name).toBe('constructor');
   });
 
@@ -130,7 +130,7 @@ describe('share', () => {
     expect(dropped).toEqual([
       'setting colors in hold copy',
       'hold in hold copy',
-      'color in step HI',
+      'color in scene HI',
       'the layers',
     ]);
   });
@@ -142,17 +142,17 @@ describe('share', () => {
     expect(dropped).toEqual(['the program']);
   });
 
-  it('gives a valid, empty program when every step is dropped', () => {
+  it('gives a valid, empty program when every scene is dropped', () => {
     const { state: back, dropped } = decode(
       hashOf({ program: [{ text: 'A', hex: 0, effect: 'gone' }, 7] }),
     );
     expect(back.program).toEqual([]);
-    expect(back.editing).toEqual({ step: 0 });
-    expect(dropped).toEqual(['step A, its effect gone', 'a step']);
+    expect(back.editing).toEqual({ scene: 0 });
+    expect(dropped).toEqual(['scene A, its effect gone', 'a scene']);
     expect(decode(encode(back)).state.program).toEqual([]);
   });
 
-  it('writes code that names every designed effect and step', () => {
+  it('writes code that names every designed effect and scene', () => {
     const code = toCode(state());
     expect(code).toMatch(/^createMarquee\(canvas, \{/);
     expect(code).toContain('"hold copy": {');
@@ -191,10 +191,10 @@ describe('share', () => {
     }
   });
 
-  it('round-trips a step’s face and style, and writes them as code', () => {
+  it('round-trips a scene’s face and style, and writes them as code', () => {
     const s = state();
-    s.program[0] = { ...(s.program[0] as Step), face: 'slim', style: { reverse: true } };
-    s.program[1] = { ...(s.program[1] as Step), style: { proportional: true } };
+    s.program[0] = { ...(s.program[0] as Scene), face: 'slim', style: { reverse: true } };
+    s.program[1] = { ...(s.program[1] as Scene), style: { proportional: true } };
     const { state: back, dropped } = decode(`#${encode(s)}`);
     expect(dropped).toEqual([]);
     expect(back.program).toEqual(s.program);
@@ -204,7 +204,7 @@ describe('share', () => {
     expect(code).toContain('style: { proportional: true }');
   });
 
-  it('reads a link written before steps had faces, dropping nothing', () => {
+  it('reads a link written before scenes had faces, dropping nothing', () => {
     const old = hashOf({
       effects: {},
       program: [{ text: 'HI', hex: 0xff9a2e, effect: 'hold', hold: 1500 }],
@@ -223,9 +223,9 @@ describe('share', () => {
     expect(back.program[0]?.face).toBeUndefined();
     expect(back.program[1]?.style).toEqual({ reverse: true });
     expect(dropped).toEqual([
-      'face in step HI',
-      'blink in style in step THERE',
-      'proportional in style in step THERE',
+      'face in scene HI',
+      'blink in style in scene THERE',
+      'proportional in style in scene THERE',
     ]);
   });
 

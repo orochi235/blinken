@@ -11,15 +11,15 @@ import {
 import { type ComposeState, freeName } from '../state.js';
 import { compose, pickedOf } from '../store.js';
 
-/** The picked step plays whatever the designer has open, so an edit there is heard at once. */
+/** The picked scene plays whatever the designer has open, so an edit there is heard at once. */
 function playOpen(s: ComposeState): void {
   const i = pickedOf(s);
-  const step = s.program[i];
+  const scene = s.program[i];
   const open = s.editing.effect;
-  if (step && open !== undefined) s.program[i] = { ...step, effect: open };
+  if (scene && open !== undefined) s.program[i] = { ...scene, effect: open };
 }
 
-/** Changes the state from the designer, then plays the picked step on the open effect. */
+/** Changes the state from the designer, then plays the picked scene on the open effect. */
 export const designerEdit = (fn: (s: ComposeState) => void) =>
   compose.edit((s) => {
     fn(s);
@@ -36,7 +36,7 @@ export const editEffect = (fn: (spec: EffectSpec) => EffectSpec) =>
       s.effects[n] = fn(own);
       return;
     }
-    // A built-in is never changed: the first edit makes a copy, which the picked step then plays.
+    // A built-in is never changed: the first edit makes a copy, which the picked scene then plays.
     const built = builtinOf(n);
     if (!built) return;
     const name = freeName(s, `${n} copy`);

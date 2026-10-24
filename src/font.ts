@@ -13,7 +13,7 @@ export interface TextStyle {
   readonly proportional?: boolean;
 }
 
-/** A face and a style; a program step is one. Default: the standard face, plain. */
+/** A face and a style; a program scene is one. Default: the standard face, plain. */
 export interface Look {
   readonly face?: FaceName | Face;
   readonly style?: TextStyle;

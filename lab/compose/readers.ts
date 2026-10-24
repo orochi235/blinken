@@ -12,9 +12,9 @@ import {
   type Params,
   type ParamValue,
   type Piece,
+  type Scene,
   SLOTS,
   type Slot,
-  type Step,
   type TextStyle,
 } from '@/index.js';
 import { AMBER } from '../demo.js';
@@ -175,13 +175,13 @@ export function effectOf(name: string, v: unknown, dropped: string[]): EffectSpe
   return out as unknown as EffectSpec;
 }
 
-export function stepOf(
+export function sceneOf(
   v: unknown,
   effects: ComposeState['effects'],
   dropped: string[],
-): Step | undefined {
+): Scene | undefined {
   if (!isObj(v) || typeof v.text !== 'string') {
-    dropped.push('a step');
+    dropped.push('a scene');
     return undefined;
   }
   const effect = v.effect;
@@ -189,13 +189,13 @@ export function stepOf(
     typeof effect !== 'string' ||
     !(Object.hasOwn(effects, effect) || Object.hasOwn(EFFECTS, effect))
   ) {
-    dropped.push(`step ${v.text}, its effect ${String(effect)}`);
+    dropped.push(`scene ${v.text}, its effect ${String(effect)}`);
     return undefined;
   }
-  const hold = optional(v.hold, HOLD, `hold in step ${v.text}`, dropped);
-  const hex = optional(v.hex, HEX, `color in step ${v.text}`, dropped);
-  const face = faceIn(v.face, `face in step ${v.text}`, dropped);
-  const style = styleIn(v.style, `style in step ${v.text}`, dropped);
+  const hold = optional(v.hold, HOLD, `hold in scene ${v.text}`, dropped);
+  const hex = optional(v.hex, HEX, `color in scene ${v.text}`, dropped);
+  const face = faceIn(v.face, `face in scene ${v.text}`, dropped);
+  const style = styleIn(v.style, `style in scene ${v.text}`, dropped);
   return {
     text: v.text,
     hex: Math.round(hex ?? AMBER),
@@ -206,7 +206,7 @@ export function stepOf(
   };
 }
 
-/** A link's face for a step: a built-in's name, or none (named in `dropped`) when it is another. */
+/** A link's face for a scene: a built-in's name, or none (named in `dropped`) when it is another. */
 function faceIn(v: unknown, what: string, dropped: string[]): FaceName | undefined {
   if (v === undefined) return undefined;
   if (typeof v === 'string' && FACE_NAMES.includes(v as FaceName)) return v as FaceName;
@@ -216,7 +216,7 @@ function faceIn(v: unknown, what: string, dropped: string[]): FaceName | undefin
 
 const STYLES = ['reverse', 'proportional'] as const;
 
-/** A link's style for a step: each switch it knows that is true, the rest named in `dropped`. */
+/** A link's style for a scene: each switch it knows that is true, the rest named in `dropped`. */
 function styleIn(v: unknown, what: string, dropped: string[]): TextStyle | undefined {
   if (v === undefined) return undefined;
   if (!isObj(v)) {

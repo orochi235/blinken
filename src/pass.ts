@@ -1,31 +1,31 @@
-import type { StagedStep } from './program.js';
+import type { StagedScene } from './program.js';
 
-/** One step of a pass: which step of the program it is, and where it plays in the pass, ms. */
-export interface PassStep {
-  readonly step: number;
+/** One scene of a pass: which scene of the program it is, and where it plays in the pass, ms. */
+export interface PassScene {
+  readonly scene: number;
   readonly start: number;
   readonly ms: number;
 }
 
-/** Where the pass playing now stands: ms into it, how long it is, and its steps end to end. */
+/** Where the pass playing now stands: ms into it, how long it is, and its scenes end to end. */
 export interface Pass {
   readonly at: number;
   readonly length: number;
-  readonly steps: readonly PassStep[];
+  readonly scenes: readonly PassScene[];
 }
 
-/** Staged steps laid end to end, numbered by their place in the program, `offset` steps in. */
+/** Staged scenes laid end to end, numbered by their place in the program, `offset` scenes in. */
 export function layOut(
-  staged: readonly StagedStep[],
+  staged: readonly StagedScene[],
   offset: number,
-): { steps: PassStep[]; length: number } {
+): { scenes: PassScene[]; length: number } {
   let start = 0;
-  const steps = staged.map((s) => {
-    const out = { step: s.step + offset, start, ms: s.staged.ms };
+  const scenes = staged.map((s) => {
+    const out = { scene: s.scene + offset, start, ms: s.staged.ms };
     start += s.staged.ms;
     return out;
   });
-  return { steps, length: start };
+  return { scenes, length: start };
 }
 
 /**

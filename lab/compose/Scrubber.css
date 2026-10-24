@@ -18,7 +18,7 @@
   outline-offset: 1px;
 }
 
-.compose-scrubber-step {
+.compose-scrubber-scene {
   min-width: 0;
   overflow: hidden;
   padding: 0 6px;
@@ -31,7 +31,7 @@
   text-transform: uppercase;
 }
 
-.compose-scrubber-step:last-of-type {
+.compose-scrubber-scene:last-of-type {
   border-inline-end: 0;
 }
 
@@ -45,8 +45,8 @@
   pointer-events: none;
 }
 
-.compose-scrubber-played > .compose-scrubber-step {
-  background: var(--step-color);
+.compose-scrubber-played > .compose-scrubber-scene {
+  background: var(--scene-color);
   color: #000;
   border-inline-end-color: rgb(0 0 0 / 0.35);
 }

@@ -15,7 +15,7 @@ const at = (text: string) => ({ ...place(b, rasterize(text)), label: text });
 function cued(name: EffectName, text: string, hold?: number): Mix<Subject, Pose> {
   const m = mix<Subject, Pose>(KIT);
   m.sync(0);
-  cueEffect(m, m.owns({ name: 'step' }), stageEffect(EFFECTS[name], at(text), HEX, hold), name);
+  cueEffect(m, m.owns({ name: 'scene' }), stageEffect(EFFECTS[name], at(text), HEX, hold), name);
   return m;
 }
 
@@ -44,7 +44,7 @@ describe('EFFECTS', () => {
       expect(gainAt(t), `${t}`).toBe(dark.includes(t) ? 0 : 1);
   });
 
-  it('hold held 7200 by its step still flashes three times in its middle third', () => {
+  it('hold held 7200 by its scene still flashes three times in its middle third', () => {
     const m = cued('hold', 'HELLO', 7200);
     const x = 40;
     const dot = b.dots[x] as Subject;

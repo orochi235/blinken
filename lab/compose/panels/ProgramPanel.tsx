@@ -1,28 +1,28 @@
 import { Button } from '@weasel-js/labkit';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
-import type { Step } from '@/index.js';
+import type { Scene } from '@/index.js';
 import { AMBER } from '../../demo.js';
-import { stepAt, watchPass } from '../clock.js';
+import { sceneAt, watchPass } from '../clock.js';
 import { IconButton } from '../IconButton.js';
 import { effectTitle, hexOf } from '../schema.js';
-import { moveStep } from '../state.js';
+import { moveScene } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
 import './ProgramPanel.css';
-import { StepEditor } from './StepEditor.js';
+import { SceneEditor } from './SceneEditor.js';
 
 /** Reshapes the list, keeping `keep` picked wherever it lands, and opens its effect. */
-const reshape = (next: Step[], keep?: Step) =>
+const reshape = (next: Scene[], keep?: Scene) =>
   compose.edit(
     (s) => {
       const held = keep ?? s.program[pickedOf(s)];
       const at = held ? next.indexOf(held) : -1;
-      s.editing.step = at >= 0 ? at : Math.min(pickedOf(s), next.length - 1);
+      s.editing.scene = at >= 0 ? at : Math.min(pickedOf(s), next.length - 1);
       s.program = next;
     },
     { follow: true },
   );
 
-/** The program: its steps in order, and the picked one's editor. */
+/** The program: its scenes in order, and the picked one's editor. */
 export function ProgramPanel() {
   const state = useCompose();
   const [solo, setSolo] = useState(false);
@@ -31,7 +31,7 @@ export function ProgramPanel() {
   const pick = (i: number) =>
     compose.edit(
       (s) => {
-        s.editing.step = i;
+        s.editing.scene = i;
       },
       { follow: true },
     );
@@ -40,12 +40,12 @@ export function ProgramPanel() {
     reshape(state.program.filter((_, j) => j !== i));
   };
 
-  // The playing step's row fills behind its content as the step plays, read off the sign's pass.
+  // The playing scene's row fills behind its content as the scene plays, read off the sign's pass.
   useEffect(
     () =>
       watchPass((pass) => {
-        const now = pass && stepAt(pass);
-        const playing = now ? compose.stepOf(now) : -1;
+        const now = pass && sceneAt(pass);
+        const playing = now ? compose.sceneOf(now) : -1;
         const done = now && pass ? Math.min(1, (pass.at - now.start) / now.ms) : 0;
         rows.current.forEach((row, i) => {
           row?.style.setProperty('--progress', i === playing ? done.toFixed(4) : '0');
@@ -60,16 +60,16 @@ export function ProgramPanel() {
         <Button
           size="sm"
           onClick={() => {
-            const fresh: Step = { text: 'NEW', hex: AMBER, effect: 'hold' };
+            const fresh: Scene = { text: 'NEW', hex: AMBER, effect: 'hold' };
             const at = picked + 1;
             reshape([...state.program.slice(0, at), fresh, ...state.program.slice(at)], fresh);
           }}
         >
-          add step
+          add scene
         </Button>
         <label
           className="compose-check"
-          title="Loop the step you are editing on its own, instead of playing the whole program."
+          title="Loop the scene you are editing on its own, instead of playing the whole program."
         >
           <input
             type="checkbox"
@@ -83,29 +83,29 @@ export function ProgramPanel() {
         </label>
         <Button
           size="sm"
-          tooltip="Play the program again from the step you are editing."
+          tooltip="Play the program again from the scene you are editing."
           onClick={compose.restart}
         >
           restart
         </Button>
       </header>
-      <ol className="compose-steps">
-        {state.program.map((step, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: a step is its place in the program
-          <li key={i} className={i === picked ? 'compose-step is-picked' : 'compose-step'}>
+      <ol className="compose-scenes">
+        {state.program.map((scene, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: a scene is its place in the program
+          <li key={i} className={i === picked ? 'compose-scene is-picked' : 'compose-scene'}>
             <button
               ref={(el) => {
                 rows.current[i] = el;
               }}
               type="button"
-              className="compose-step-pick"
+              className="compose-scene-pick"
               aria-pressed={i === picked}
-              title="Edit this step. ↑ and ↓ pick the next one, Option-↑ and Option-↓ move this one, and Delete removes it."
+              title="Edit this scene. ↑ and ↓ pick the next one, Option-↑ and Option-↓ move this one, and Delete removes it."
               onClick={() => pick(i)}
               onKeyDown={(e) => {
                 const by = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
                 if (e.key === 'Delete' || e.key === 'Backspace') remove(i);
-                else if (by && e.altKey) reshape(moveStep(state.program, i, by), step);
+                else if (by && e.altKey) reshape(moveScene(state.program, i, by), scene);
                 else if (by && rows.current[i + by]) pick(i + by);
                 else return;
                 e.preventDefault();
@@ -114,37 +114,37 @@ export function ProgramPanel() {
               }}
             >
               <span
-                className="compose-step-dot"
-                // A step's own color has no class to name it; the custom property is all that varies.
-                style={{ '--step-color': hexOf(step.hex) } as CSSProperties}
+                className="compose-scene-dot"
+                // A scene's own color has no class to name it; the custom property is all that varies.
+                style={{ '--scene-color': hexOf(scene.hex) } as CSSProperties}
               />
-              <span className="compose-step-text">{step.text}</span>
-              <span className="compose-step-effect">{effectTitle(String(step.effect))}</span>
+              <span className="compose-scene-text">{scene.text}</span>
+              <span className="compose-scene-effect">{effectTitle(String(scene.effect))}</span>
             </button>
           </li>
         ))}
       </ol>
-      <div className="compose-step-tools">
+      <div className="compose-scene-tools">
         <IconButton
           glyph="up"
-          label="move this step up"
+          label="move this scene up"
           disabled={picked === 0}
-          onClick={() => reshape(moveStep(state.program, picked, -1))}
+          onClick={() => reshape(moveScene(state.program, picked, -1))}
         />
         <IconButton
           glyph="down"
-          label="move this step down"
+          label="move this scene down"
           disabled={picked === state.program.length - 1}
-          onClick={() => reshape(moveStep(state.program, picked, 1))}
+          onClick={() => reshape(moveScene(state.program, picked, 1))}
         />
         <IconButton
           glyph="remove"
-          label="remove this step"
+          label="remove this scene"
           disabled={state.program.length < 2}
           onClick={() => remove(picked)}
         />
       </div>
-      <StepEditor at={picked} />
+      <SceneEditor at={picked} />
     </section>
   );
 }

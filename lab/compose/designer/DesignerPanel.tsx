@@ -14,7 +14,7 @@ import { WholeEffect } from './WholeEffect.js';
 
 /**
  * The effect designer: pick an effect, or start one, and edit its pieces, hold and blend. Its
- * warnings come from staging the open effect on the picked step's text.
+ * warnings come from staging the open effect on the picked scene's text.
  */
 export function DesignerPanel() {
   const state = useCompose();
@@ -22,7 +22,7 @@ export function DesignerPanel() {
   const name = state.editing.effect;
   const own = name !== undefined && Object.hasOwn(state.effects, name);
   const spec = name === undefined ? undefined : own ? state.effects[name] : builtinOf(name);
-  const step = state.program[pickedOf(state)];
+  const scene = state.program[pickedOf(state)];
   const [browsing, setBrowsing] = useState(false);
 
   const warnings = useMemo(() => {
@@ -32,8 +32,8 @@ export function DesignerPanel() {
     try {
       found = stageEffect(
         spec,
-        placeText(b, step?.text ?? ' ', step),
-        step?.hex ?? 0xffffff,
+        placeText(b, scene?.text ?? ' ', scene),
+        scene?.hex ?? 0xffffff,
       ).warnings;
     } catch (e) {
       found = [{ text: (e as Error).message }];
@@ -41,7 +41,7 @@ export function DesignerPanel() {
     for (const w of found)
       at.set(w.slot ?? 'effect', [...(at.get(w.slot ?? 'effect') ?? []), w.text]);
     return at;
-  }, [spec, step, b]);
+  }, [spec, scene, b]);
 
   return (
     <section className="compose-designer" aria-label="effect">
@@ -64,7 +64,7 @@ export function DesignerPanel() {
         {name !== undefined && own && (
           <IconButton
             glyph="remove"
-            label={`delete this effect; steps playing it play ${FALLBACK} instead`}
+            label={`delete this effect; scenes playing it play ${FALLBACK} instead`}
             onClick={() => designerEdit((s) => deleteEffect(s, name))}
           />
         )}
@@ -74,7 +74,7 @@ export function DesignerPanel() {
         <>
           {!browsing && (
             <p className="compose-hint">
-              Pick a step or an effect to edit, or start a new one. A built-in is copied when you
+              Pick a scene or an effect to edit, or start a new one. A built-in is copied when you
               first change it.
             </p>
           )}

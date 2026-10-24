@@ -32,25 +32,25 @@ const sign = createMarquee(canvas, {
 
 sign.setLayer('rainbow', true);
 sign.setLayer('sparkle', true, { rate: 0.02 }); // new params re-cue the layer
-sign.restart(1); // play this pass from the second step; later passes start from the first
+sign.restart(1); // play this pass from the second scene; later passes start from the first
 sign.seek(1500, { hold: true }); // show the pass 1.5 s in, held there
 sign.seek(1500); // and play on from there
-sign.pass(); // { at, length, steps: [{ step, start, ms }, …] }, or null while nothing plays
+sign.pass(); // { at, length, scenes: [{ scene, start, ms }, …] }, or null while nothing plays
 sign.destroy();
 ```
 
 The canvas takes the largest size its parent element allows. `program` loops; given as a function,
 it is read again at the start of every pass. `layers` takes the name of a built-in with on, off or
-a weight, or a full layer spec under a name of your own. `setEffects` replaces the effects steps
+a weight, or a full layer spec under a name of your own. `setEffects` replaces the effects scenes
 can name from the next pass. `sign.mix` is the mix itself, for cueing voices of your own on
 `sign.board`'s dots and cells. `name` is what debuggers list that mix as, by default
 `marquee #<canvas id> <cols>×<rows>` (or `marquee <cols>×<rows>` for a canvas with no id), and
 `destroy` takes it off their list.
 
-`pass()` says where the pass playing now stands: `at` ms into it, its `length`, and each step it
+`pass()` says where the pass playing now stands: `at` ms into it, its `length`, and each scene it
 plays, end to end, with its index in the program, its `start` and its `ms`. It reads the mix clock,
 so `ramp` slows it with everything else. `seek(ms)` moves that pass to `ms` from its start, back
-into a step that has ended as readily as forward, and `{ hold: true }` keeps it there until a seek
+into a scene that has ended as readily as forward, and `{ hold: true }` keeps it there until a seek
 without it or the next restart.
 
 ## Thumbnails
@@ -66,7 +66,7 @@ thumb.destroy();
 ```
 
 It is a marquee of 32 × 7 dots by default, with no layers and the border's bulbs dark. `effect` is a built-in's name, one of `effects`, or a
-spec; `text`, `hex`, `face` and `style` are as a step's. Every thumbnail draws from one shared
+spec; `text`, `hex`, `face` and `style` are as a scene's. Every thumbnail draws from one shared
 ticker at 30 fps, and one scrolled out of view comes off it until it is back, so a page of them
 costs only the ones on screen. `createTicker({ fps })` makes a ticker of your own, and
 `createMarquee`'s `ticker` option runs any sign on one.
@@ -83,8 +83,8 @@ shares of it, which is how `hold` flashes three times in the middle third of its
 An effect is plain data made of pieces: an `enter`, an `active` and an `exit` slot, each holding a
 piece or several that play together, an optional `order` that staggers the dots (by column, by
 letter, at random), and a `hold` time. In `active`, a piece whose `ms` is left unset plays one
-pass over the hold. A program is a list of steps, each a message with its color
-and the effect it plays; a step names an effect or carries one inline. Each step starts where the
+pass over the hold. A program is a list of scenes, each a message with its color
+and the effect it plays; a scene names an effect or carries one inline. Each scene starts where the
 one before it ends.
 
 The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Matrix rain), and
@@ -95,7 +95,7 @@ are in `LAYERS`.
 
 ## Faces and styles
 
-A step can name the face its message is drawn in and a style for it, as `face` and `style`:
+A scene can name the face its message is drawn in and a style for it, as `face` and `style`:
 
 ```ts
 program: [
@@ -111,7 +111,7 @@ letters with each lit dot also lighting the one to its right. All four are 7 dot
 the sign. `style.reverse` is inverse video: the message's box lit and its letters dark.
 `style.proportional` spaces each letter by its own width and a blank, so an I takes three columns
 where a fixed-pitch one takes five. A face can also be given in full, as a `Face` with `rows`,
-`width` and a `glyph` for each character; a step whose face is taller than the sign's lines is
+`width` and a `glyph` for each character; a scene whose face is taller than the sign's lines is
 left out of the program, as one whose effect lacks room is, and staging it warns.
 `rasterize(text, { face, style })` lays text out as a `Bitmap` of its own `cols` and `rows`, with
 each letter's columns in `letters`.
@@ -151,7 +151,7 @@ three.
 
 `board(cols, rows)` lays out the dots and the border. `KIT` is the pose they fold to: `lit` by
 `max`, `gain` by `mul`, `tint` by color, `hue` as an angle that adds and wraps, and `chroma` and
-`glow` by `mul`. `play(mix, board, steps, effects?)` cues one pass of a program on an owner of its
+`glow` by `mul`. `play(mix, board, scenes, effects?)` cues one pass of a program on an owner of its
 own, and `cueLayer` cues a layer looping. To draw it, pull the mix's columns every frame and hand
 them to `createSign`; the border's bulbs take their cells' poses through `paintBulbs`:
 

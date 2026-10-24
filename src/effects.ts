@@ -38,7 +38,7 @@ export interface StagedEffect {
   readonly warnings: readonly Warning[];
 }
 
-/** A modulator setting `tint` outweighs the step color rather than averaging with it evenly. */
+/** A modulator setting `tint` outweighs the scene color rather than averaging with it evenly. */
 const TINT_WEIGHT = 3;
 
 const lengthOf = (v: ArcVoice<Subject, Pose>) => v.duration ?? v.patch.duration;
@@ -73,7 +73,7 @@ export function stageEffect(
   const warnings: Warning[] = [];
   if (at.text.rows > at.board.line)
     warnings.push({
-      text: `the ${at.text.face.name} face is ${at.text.rows} rows tall, taller than the sign's ${at.board.line}-row lines, so the step is skipped`,
+      text: `the ${at.text.face.name} face is ${at.text.rows} rows tall, taller than the sign's ${at.board.line}-row lines, so the scene is skipped`,
     });
   SLOTS.forEach((slot, s) => {
     const pieces = first[s] ?? [];
@@ -114,7 +114,7 @@ export function stageEffect(
   const color = patch<Subject, Pose>(Math.max(1, ms), () => ({ tint }), { writes: ['tint'] });
   const dots = (pieces: readonly StagedPiece[], s: number) =>
     pieces.filter((_, i) => !onCells(pieceAt(s, i)));
-  // The step color spans each group's arc as one voice layered into every part.
+  // The scene color spans each group's arc as one voice layered into every part.
   const arcs = groups.map((subjects, g) =>
     arcOf(
       g === 0 ? first.map(dots) : stageAll(subjects, (piece) => !onCells(piece)),

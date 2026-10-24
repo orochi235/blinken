@@ -149,13 +149,13 @@ describe('a face that does not fit', () => {
       { text: 'A', hex: 0, effect: 'hold', face: tall },
       { text: 'B', hex: 0, effect: 'hold', face: 'slim' },
     ]);
-    expect(staged.map((s) => s.step)).toEqual([1]);
+    expect(staged.map((s) => s.scene)).toEqual([1]);
   });
 
   it('warns when the effect is staged for it', () => {
     const at = placeText(board(80, 7), 'A', { face: tall });
     expect(stageEffect(EFFECTS.hold, at, 0).warnings).toContainEqual({
-      text: "the tall face is 9 rows tall, taller than the sign's 7-row lines, so the step is skipped",
+      text: "the tall face is 9 rows tall, taller than the sign's 7-row lines, so the scene is skipped",
     });
   });
 

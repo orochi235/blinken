@@ -65,7 +65,7 @@ export {
   type Values,
   values,
 } from './params.js';
-export type { Pass, PassStep } from './pass.js';
+export type { Pass, PassScene } from './pass.js';
 export {
   type ModPiece,
   type MovePiece,
@@ -75,6 +75,6 @@ export {
   type Warning,
 } from './pieces.js';
 export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
-export { cueLayer, effectOf, play, type Step } from './program.js';
+export { cueLayer, effectOf, play, type Scene } from './program.js';
 export { createThumbnail, type Thumbnail, type ThumbnailOptions } from './thumbnail.js';
 export { createTicker, type Ticker } from './ticker.js';
