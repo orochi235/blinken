@@ -7,6 +7,8 @@ export const GLYPHS = {
   remove: 'trash',
   up: 'ui:arrowUp' as IconName,
   down: 'ui:arrowDown' as IconName,
+  undo: 'core:undo' as IconName,
+  redo: 'core:redo' as IconName,
 };
 
 /** A small chromeless button showing only a glyph; `label` names it and is its tooltip. */

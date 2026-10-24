@@ -7,6 +7,7 @@ import { HardwarePanel } from './panels/HardwarePanel.js';
 import { LayersPanel } from './panels/LayersPanel.js';
 import { ProgramPanel } from './panels/ProgramPanel.js';
 import { ShareBar } from './panels/ShareBar.js';
+import { UndoBar } from './panels/UndoBar.js';
 import { Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
 
@@ -40,7 +41,16 @@ function Compose() {
 
 export function App() {
   return (
-    <LabShell title="bree compose" mode="dark" header={<ShareBar />}>
+    <LabShell
+      title="bree compose"
+      mode="dark"
+      header={
+        <>
+          <UndoBar />
+          <ShareBar />
+        </>
+      }
+    >
       <Persistence storageKey="bree-compose" storage={localStorageAdapter}>
         <Compose />
       </Persistence>
