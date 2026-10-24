@@ -5,7 +5,6 @@ import { HARDWARE, type Hardware, hardwareOf } from './hardware.js';
 import { FontPanel } from './panels/FontPanel.js';
 import { GalleryPanel } from './panels/GalleryPanel.js';
 import { HardwarePanel } from './panels/HardwarePanel.js';
-import { LayersPanel } from './panels/LayersPanel.js';
 import { PlaybackPanel } from './panels/PlaybackPanel.js';
 import { ProgramPanel } from './panels/ProgramPanel.js';
 import { SceneEditor } from './panels/SceneEditor.js';
@@ -14,7 +13,7 @@ import { UndoBar } from './panels/UndoBar.js';
 import { Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
 
-/** The lab: the sign on top; under it playback and the program, the effects and layers, and the sign's hardware and faces. */
+/** The lab: the sign on top; under it playback and the program, the effects and the picked scene, and the sign's hardware and faces. */
 function Compose() {
   // The hardware belongs to the sign, not the composition, so it stays out of drafts and links.
   const [kept, setKept] = usePersistedState<Hardware>('sign', HARDWARE, { scope: 'lab' });
@@ -27,11 +26,10 @@ function Compose() {
         <div className="compose-pane">
           <PlaybackPanel />
           <ProgramPanel />
-          <SceneEditor />
         </div>
         <div className="compose-pane compose-pane-wide">
           <GalleryPanel />
-          <LayersPanel />
+          <SceneEditor />
         </div>
         <div className="compose-pane">
           <HardwarePanel

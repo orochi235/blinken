@@ -37,11 +37,11 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
   const scene = state.program[at];
   if (!scene) return null;
   const face = typeof scene.face === 'string' ? scene.face : 'standard';
-  const set = (what: 'face' | 'reverse' | 'monospace', v: unknown) =>
+  const pick = (name: FaceName) =>
     compose.edit(
       (s) => {
         const was = s.program[at];
-        if (was) s.program[at] = withLook(was, what, v);
+        if (was) s.program[at] = withLook(was, 'face', name);
       },
       { replay: at },
     );
@@ -62,28 +62,6 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
     >
       <Fit setRows={setRows} />
       <div className="compose-font-styles">
-        <label
-          className="compose-check"
-          title="Inverse video: the message’s box lights up and the letters show as dark dots in it."
-        >
-          <input
-            type="checkbox"
-            checked={scene.style?.reverse === true}
-            onChange={(e) => set('reverse', e.target.checked)}
-          />
-          reverse
-        </label>
-        <label
-          className="compose-check"
-          title="Gives every letter the same width, the face’s widest, as on a fixed-pitch sign. Off, each letter takes its own width, so narrow letters like I sit closer to their neighbors."
-        >
-          <input
-            type="checkbox"
-            checked={scene.style?.monospace === true}
-            onChange={(e) => set('monospace', e.target.checked)}
-          />
-          monospace
-        </label>
         <span
           className="compose-font-height"
           title="Narrow the faces by how many rows tall their letters are."
@@ -113,7 +91,7 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
             name={name}
             style={scene.style}
             picked={name === face}
-            onPick={() => set('face', name)}
+            onPick={() => pick(name)}
           />
         ))}
       </div>

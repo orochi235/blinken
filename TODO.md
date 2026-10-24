@@ -8,6 +8,7 @@
 
 ## Known gaps
 
+- The compose lab no longer offers `style.reverse`, which is to become a layer (asked 2026-10-24); a scene that already has it still draws reversed, with no switch to turn it off. The `invert` layer swaps the whole sign, while `reverse` lights only the message's box, following it as it moves.
 - The compose lab's scene controls have no accessible names.
 - In the compose lab, clicking a palette's colors row opens its first color picker, since the row is a label.
 - The compose lab keeps one previous draft, so opening a second link loses the draft the first replaced.

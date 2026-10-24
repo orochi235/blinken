@@ -1,5 +1,11 @@
 .compose-scene-editor {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+
+.compose-scene-part > :last-child {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
 }
