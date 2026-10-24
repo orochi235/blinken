@@ -48,6 +48,11 @@ describe('modulators', () => {
     expect(poseAt('hue-cycle', 999.9).hue).toBeCloseTo(360, 0);
   });
 
+  it('hue-cycle turns the hue only as far as its arc, in degrees', () => {
+    expect(poseAt('hue-cycle', 500, undefined, { arc: 90 }).hue).toBeCloseTo(45);
+    expect(poseAt('hue-cycle', 999.9, undefined, { arc: 90 }).hue).toBeCloseTo(90, 0);
+  });
+
   it('spreads by phase: column order shifts neighbors by the phase per step', () => {
     const [d0, d1] = [b.dots[0], b.dots[1]] as Subject[];
     const step = 0.05;
