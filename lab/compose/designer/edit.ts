@@ -54,6 +54,23 @@ export const openEffect = (name: string | undefined) =>
     s.editing.effect = name;
   });
 
+/**
+ * Opens an effect by its picker key: `y:` and a name opens one of yours, `b:` and a name a copy of
+ * that built-in, and `n:` a new effect.
+ */
+export const pickEffect = (key: string) => {
+  const [kind, n] = [key.slice(0, 2), key.slice(2)];
+  if (kind === 'y:') return openEffect(n);
+  designerEdit((s) => {
+    const name = freeName(s, kind === 'b:' ? `${n} copy` : 'effect');
+    s.effects[name] =
+      kind === 'b:'
+        ? { ...EFFECTS[n as keyof typeof EFFECTS], name }
+        : { name, active: [{ move: 'stand' }], hold: 2000 };
+    s.editing.effect = name;
+  });
+};
+
 const MOD = 'mod:';
 
 /** The pieces a slot may hold, as Select options: its own moves, then every modulator. */

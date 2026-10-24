@@ -76,3 +76,5 @@ export {
 } from './pieces.js';
 export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
 export { cueLayer, effectOf, fits, play, type Step } from './program.js';
+export { createThumbnail, type Thumbnail, type ThumbnailOptions } from './thumbnail.js';
+export { createTicker, type Ticker } from './ticker.js';

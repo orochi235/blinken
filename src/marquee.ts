@@ -9,6 +9,7 @@ import type { Fade, Ghost } from './optics.js';
 import type { ParamValue } from './params.js';
 import { layOut, type Pass, PassClock, type PassStep } from './pass.js';
 import { cueProgram, effectOf, type StagedStep, type Step, stageProgram } from './program.js';
+import { createTicker, type Ticker } from './ticker.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
 const AWAY_MS = 250;
@@ -49,6 +50,11 @@ export interface MarqueeOptions {
   readonly ghost?: Ghost;
   /** False runs the mix without drawing, for timing it alone. Default true. */
   readonly draw?: boolean;
+  /**
+   * The clock its frames run on; signs sharing one draw from one animation frame callback, and a
+   * throttled one draws them less often. Default a ticker of its own, every display frame.
+   */
+  readonly ticker?: Ticker;
   /** Called after every frame with what it cost. */
   readonly onFrame?: (cost: FrameCost) => void;
   /**
@@ -178,9 +184,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   let last = performance.now();
   let mixMs = 0;
   let drawMs = 0;
-  let raf = 0;
   const frame = (now: number) => {
-    raf = requestAnimationFrame(frame);
     let gap = now - last;
     last = now;
     if (gap > AWAY_MS) {
@@ -216,7 +220,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     drawMs += (t2 - t1 - drawMs) * 0.05;
     opts.onFrame?.({ mixMs, drawMs });
   };
-  raf = requestAnimationFrame(frame);
+  const stop = (opts.ticker ?? createTicker()).add(frame);
 
   return {
     board: b,
@@ -274,7 +278,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     },
     destroy() {
       live = false;
-      cancelAnimationFrame(raf);
+      stop();
       sign?.destroy();
       m.close();
     },

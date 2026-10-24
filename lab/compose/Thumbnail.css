@@ -1,0 +1,14 @@
+/* The canvas sizes itself to this box's client size, as large as both sides allow. */
+.compose-thumbnail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 52px;
+  min-width: 0;
+}
+
+.compose-thumbnail canvas {
+  display: block;
+  border-radius: 4px;
+}

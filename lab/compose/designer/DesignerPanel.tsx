@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { Button } from '@weasel-js/labkit';
+import { useMemo, useState } from 'react';
 import { placeText, SLOTS, type Slot, stageEffect, type Warning } from '@/index.js';
 import { IconButton } from '../IconButton.js';
 import { deleteEffect, FALLBACK } from '../state.js';
 import { pickedOf, useBoard, useCompose } from '../store.js';
 import './DesignerPanel.css';
+import { EffectGallery } from './EffectGallery.js';
 import { EffectPicker } from './EffectPicker.js';
 import { builtinOf, designerEdit } from './edit.js';
 import { NameField } from './NameField.js';
@@ -21,6 +23,7 @@ export function DesignerPanel() {
   const own = name !== undefined && Object.hasOwn(state.effects, name);
   const spec = name === undefined ? undefined : own ? state.effects[name] : builtinOf(name);
   const step = state.program[pickedOf(state)];
+  const [browsing, setBrowsing] = useState(false);
 
   const warnings = useMemo(() => {
     const at = new Map<Slot | 'effect', string[]>();
@@ -45,6 +48,18 @@ export function DesignerPanel() {
       <header className="compose-designer-head">
         <h2 className="compose-heading">effect</h2>
         <EffectPicker />
+        <Button
+          size="sm"
+          variant="ghost"
+          tooltip={
+            browsing
+              ? 'Go back to editing the open effect.'
+              : 'Show every effect playing side by side, to pick one by eye.'
+          }
+          onClick={() => setBrowsing(!browsing)}
+        >
+          {browsing ? 'back' : 'browse'}
+        </Button>
         {name !== undefined && own && <NameField name={name} />}
         {name !== undefined && own && (
           <IconButton
@@ -55,11 +70,16 @@ export function DesignerPanel() {
         )}
         {spec?.about && <span className="compose-about">{spec.about}</span>}
       </header>
-      {name === undefined || !spec ? (
-        <p className="compose-hint">
-          Pick a step or an effect to edit, or start a new one. A built-in is copied when you first
-          change it.
-        </p>
+      {browsing || name === undefined || !spec ? (
+        <>
+          {!browsing && (
+            <p className="compose-hint">
+              Pick a step or an effect to edit, or start a new one. A built-in is copied when you
+              first change it.
+            </p>
+          )}
+          <EffectGallery onPick={() => setBrowsing(false)} />
+        </>
       ) : (
         <>
           <div className="compose-whole">

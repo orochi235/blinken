@@ -53,6 +53,25 @@ so `ramp` slows it with everything else. `seek(ms)` moves that pass to `ms` from
 into a step that has ended as readily as forward, and `{ hold: true }` keeps it there until a seek
 without it or the next restart.
 
+## Thumbnails
+
+`createThumbnail` loops one effect on a small sign, for a preview beside its name:
+
+```ts
+import { createThumbnail } from 'bree';
+
+const thumb = createThumbnail(canvas, { effect: 'flip', text: 'OPEN', hex: 0xff4030 });
+thumb.marquee.setEffects(mine); // a changed effect plays from its next pass
+thumb.destroy();
+```
+
+It is a marquee of 32 × 7 dots by default, or two lines of text for an effect that needs them,
+with no layers and the border's bulbs dark. `effect` is a built-in's name, one of `effects`, or a
+spec; `text`, `hex`, `face` and `style` are as a step's. Every thumbnail draws from one shared
+ticker at 30 fps, and one scrolled out of view comes off it until it is back, so a page of them
+costs only the ones on screen. `createTicker({ fps })` makes a ticker of your own, and
+`createMarquee`'s `ticker` option runs any sign on one.
+
 ## Pieces, effects and programs
 
 A piece is one thing happening to the dots. A move places the text: `stand` holds it, `scroll-across`
