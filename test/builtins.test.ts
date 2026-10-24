@@ -7,7 +7,6 @@ import { rasterize } from '@/font.js';
 import { MOVES } from '@/moves/index.js';
 import { place } from '@/orders.js';
 import { values } from '@/params.js';
-import { fits } from '@/program.js';
 
 const b = board(80, 7);
 const HEX = 0xff9a2e;
@@ -21,15 +20,13 @@ function cued(name: EffectName, text: string, hold?: number): Mix<Subject, Pose>
 }
 
 describe('EFFECTS', () => {
-  it('every built-in stages on an 80 × 7 board without warnings, except tile which does not fit', () => {
+  it('every built-in stages on an 80 × 7 board without warnings', () => {
     for (const name of Object.keys(EFFECTS) as EffectName[]) {
       const effect = EFFECTS[name];
-      expect(fits(b, effect), name).toBe(name !== 'tile');
       const staged = stageEffect(effect, at('HELLO'), HEX);
       expect(staged.warnings, name).toEqual([]);
       expect(staged.ms, name).toBeGreaterThan(0);
     }
-    expect(fits(board(80, 15), EFFECTS.tile)).toBe(true);
   });
 
   it('hold flashes three times in the middle third of its hold, steady either side', () => {

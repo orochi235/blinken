@@ -3,7 +3,6 @@ import { board } from '@/board.js';
 import { EFFECTS } from '@/builtins.js';
 import { stageEffect } from '@/effects.js';
 import { CHARS, FACE_NAMES, FACES, type Face, faceOf, rasterize } from '@/font.js';
-import { MOVES } from '@/moves/index.js';
 import { placeText, rankOf } from '@/orders.js';
 import { stageProgram } from '@/program.js';
 
@@ -161,7 +160,6 @@ describe('a face that does not fit', () => {
   });
 
   it('fits a board whose lines are as tall as it', () => {
-    expect(MOVES.stand.fits).toBeUndefined();
     expect(
       stageProgram(board(80, 7), [{ text: 'A', hex: 0, effect: 'hold', face: 'wide' }]),
     ).toHaveLength(1);

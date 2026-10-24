@@ -4,10 +4,9 @@ import { EFFECTS, type LayerSpec } from './builtins.js';
 import { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 import { type Look, rasterize } from './font.js';
 import { MODULATORS } from './modulators/index.js';
-import { MOVES } from './moves/index.js';
 import { place, placeText, rankOf } from './orders.js';
 import { values } from './params.js';
-import { piecesOf, TOGETHER } from './pieces.js';
+import { TOGETHER } from './pieces.js';
 
 /**
  * One message in a program: its text and color, the effect it plays with, a hold overriding the
@@ -32,13 +31,6 @@ export function effectOf(
   throw new Error(`bree: no effect named ${name}`);
 }
 
-/** Whether the board has room for every move an effect uses. */
-export function fits(b: Board, effect: EffectSpec): boolean {
-  return [effect.enter, effect.active, effect.exit].every((slot) =>
-    piecesOf(slot).every((piece) => !('move' in piece) || (MOVES[piece.move].fits?.(b) ?? true)),
-  );
-}
-
 /** A step of a program staged to play: which step it is, and what it plays. */
 export interface StagedStep {
   /** Its index in the steps it was staged from. */
@@ -49,8 +41,7 @@ export interface StagedStep {
 
 /**
  * Stages each step of a program that fits the board and plays for some time, in order: a step
- * whose effect has a move the board lacks room for, or whose face is taller than the board's lines,
- * is left out. Throws on a step naming no effect or face, before anything is cued.
+ * whose face is taller than the board's lines is left out. Throws on a step naming no effect or face, before anything is cued.
  */
 export function stageProgram(
   b: Board,
@@ -60,7 +51,7 @@ export function stageProgram(
   return steps.flatMap((step, i) => {
     const effect = effectOf(step, effects);
     const at = placeText(b, step.text, step);
-    if (!fits(b, effect) || at.text.rows > b.line) return [];
+    if (at.text.rows > b.line) return [];
     const s = stageEffect(effect, at, step.hex, step.hold);
     return s.ms > 0 ? [{ step: i, staged: s, name: `${effect.name} ${step.text}` }] : [];
   });

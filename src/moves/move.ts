@@ -1,5 +1,5 @@
 import type { Patch } from '@msb235/blits';
-import type { Board, Led, Pose } from '../board.js';
+import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { Params, Values } from '../params.js';
 
@@ -17,8 +17,6 @@ export interface Move<P extends Params = Params> {
   readonly params: P;
   /** Written for text wider than the board, so it never clips. Default false. */
   readonly wide?: boolean;
-  /** Whether the board has room for it. Default: always. */
-  readonly fits?: (b: Board) => boolean;
   /** Writes `lit` only; its duration is one pass, before any order's delay. */
   patch(at: Placed, p: Values<P>): Patch<Led, Pose>;
 }

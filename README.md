@@ -65,8 +65,7 @@ thumb.marquee.setEffects(mine); // a changed effect plays from its next pass
 thumb.destroy();
 ```
 
-It is a marquee of 32 × 7 dots by default, or two lines of text for an effect that needs them,
-with no layers and the border's bulbs dark. `effect` is a built-in's name, one of `effects`, or a
+It is a marquee of 32 × 7 dots by default, with no layers and the border's bulbs dark. `effect` is a built-in's name, one of `effects`, or a
 spec; `text`, `hex`, `face` and `style` are as a step's. Every thumbnail draws from one shared
 ticker at 30 fps, and one scrolled out of view comes off it until it is back, so a page of them
 costs only the ones on screen. `createTicker({ fps })` makes a ticker of your own, and

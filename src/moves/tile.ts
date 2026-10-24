@@ -7,6 +7,7 @@ export const tile = move({
   name: 'tile',
   about: 'Repeats the message in tilted brick rows, neighbors scrolling opposite ways.',
   slot: 'active',
+  wide: true,
   params: {
     angle: {
       label: 'tilt',
@@ -55,7 +56,6 @@ export const tile = move({
         'How far every other row is shifted along, as a share of one copy, like courses of bricks. At 0 the copies line up in columns.',
     },
   },
-  fits: (b) => b.lines > 1,
   patch(at, p) {
     const { board: b, text } = at;
     const period = text.cols + p.gap;

@@ -1,8 +1,6 @@
-import { board } from './board.js';
 import type { EffectSpec } from './effects.js';
 import { type Look, ROWS } from './font.js';
 import { createMarquee, type Marquee } from './marquee.js';
-import { effectOf, fits } from './program.js';
 import { createTicker, type Ticker } from './ticker.js';
 
 export interface ThumbnailOptions extends Look {
@@ -70,8 +68,7 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
 
   const name = typeof opts.effect === 'string' ? opts.effect : opts.effect.name;
   const cols = opts.cols ?? 32;
-  const spec = effectOf({ effect: opts.effect, text: '', hex: 0 }, opts.effects);
-  const rows = opts.rows ?? (fits(board(cols, ROWS), spec) ? ROWS : 2 * ROWS + 1);
+  const rows = opts.rows ?? ROWS;
   const marquee = createMarquee(canvas, {
     cols,
     rows,

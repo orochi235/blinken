@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { board, KIT, type Led, type Pose, SIZE, type Subject } from '@/board.js';
 import { EFFECTS, LAYERS } from '@/builtins.js';
 import { stageEffect } from '@/effects.js';
+import type { Face } from '@/faces.js';
 import { rasterize } from '@/font.js';
 import { createMarquee } from '@/marquee.js';
 import { chase } from '@/modulators/index.js';
@@ -16,6 +17,9 @@ const CHASE_MS = chase.params.beat.value;
 const b = board(SIZE.cols, SIZE.rows);
 const COLS = b.cols;
 const dot = (x: number, y: number) => b.dots[y * COLS + x] as Led;
+
+/** A face taller than the sign's lines, so a step in it cues nothing. */
+const TALL: Face = { name: 'tall', rows: 9, width: 5, glyph: () => Array(9).fill('#####') };
 
 describe('rasterize', () => {
   it('lays glyphs out five dots wide with a blank column after each', () => {
@@ -95,7 +99,7 @@ describe('createMarquee', () => {
         draw: false,
         program: () => {
           passes++;
-          return [{ effect: 'tile', text: 'I', hex: 0 }];
+          return [{ effect: 'hold', text: 'I', hex: 0, face: TALL }];
         },
       });
       const settle = () => new Promise((r) => setTimeout(r, 0));

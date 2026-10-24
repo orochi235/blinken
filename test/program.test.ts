@@ -3,11 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { board, KIT, type Pose, type Subject } from '@/board.js';
 import { EFFECTS } from '@/builtins.js';
 import { type EffectSpec, stageEffect } from '@/effects.js';
+import type { Face } from '@/faces.js';
 import { rasterize } from '@/font.js';
 import { place } from '@/orders.js';
 import { play, type Step } from '@/program.js';
 
 const b = board(80, 7);
+/** A face taller than the board's lines, so a step in it never fits. */
+const tall: Face = { name: 'tall', rows: 9, width: 5, glyph: () => Array(9).fill('#####') };
 const msOf = (step: Step) =>
   stageEffect(
     typeof step.effect === 'string' ? EFFECTS[step.effect as 'hold'] : step.effect,
@@ -88,15 +91,15 @@ describe('play', () => {
   it('skips a step that does not fit the board', () => {
     const m = fresh();
     const step: Step = { text: 'I', hex: 0xff9a2e, effect: LEFT };
-    play(m, b, [step, { text: 'I', hex: 0, effect: 'tile' }, step]);
+    play(m, b, [step, { text: 'I', hex: 0, effect: 'hold', face: tall }, step]);
     const starts = m.marks(0, 100_000).filter((k) => k.mark === 'start' && k.name === 'left I');
     expect(new Set(starts.map((k) => k.timestamp))).toEqual(new Set([0, msOf(step)]));
-    expect(stepNames(m).some((n) => n?.startsWith('tile'))).toBe(false);
+    expect(stepNames(m).some((n) => n?.startsWith('hold'))).toBe(false);
   });
 
   it('resolves done after a sync when no step fits', async () => {
     const m = fresh();
-    const program = play(m, b, [{ text: 'I', hex: 0, effect: 'tile' }]);
+    const program = play(m, b, [{ text: 'I', hex: 0, effect: 'hold', face: tall }]);
     let done = false;
     void program.done.then(() => {
       done = true;

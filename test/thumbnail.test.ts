@@ -165,12 +165,6 @@ describe('createThumbnail', () => {
     expect(two.playing).toBe(false);
   });
 
-  it('takes two lines of text for an effect that needs them', () => {
-    const tile = createThumbnail(fakeCanvas(), { effect: 'tile', ticker: createTicker() });
-    expect(tile.marquee.board.lines).toBe(2);
-    tile.destroy();
-  });
-
   it('shares one ticker at 30 fps by default', () => {
     const one = createThumbnail(fakeCanvas(), { effect: 'hold' });
     const two = createThumbnail(fakeCanvas(), { effect: 'roll', text: 'HI', face: 'slim' });

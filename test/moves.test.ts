@@ -110,9 +110,11 @@ describe('moves', () => {
     expect(frame(0).some((v) => v === 1)).toBe(true);
   });
 
-  it('tile refuses a one-line board', () => {
-    expect(MOVES.tile.fits?.(board(80, 7))).toBe(false);
-    expect(MOVES.tile.fits?.(board(80, 16))).toBe(true);
+  it('tile lights a one-line board', () => {
+    const b7 = board(80, 7);
+    const at = place(b7, rasterize('HI'));
+    const tiled = MOVES.tile.patch(at, values(MOVES.tile));
+    expect(b7.dots.some((d) => tiled.at(0, d).lit === 1)).toBe(true);
   });
 
   it('every move stages an empty message without throwing', () => {
