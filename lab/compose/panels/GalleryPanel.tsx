@@ -233,6 +233,7 @@ function StripTile({
         cols={COLS}
         still="action"
         playing={live}
+        rewind
       />
       <span className="compose-strip-name">{effectTitle(tile.name)}</span>
     </button>

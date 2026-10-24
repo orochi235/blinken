@@ -34,8 +34,11 @@ export interface Thumbnail {
   readonly marquee: Marquee;
   /** Whether it is animating: false while held or scrolled out of view. */
   readonly playing: boolean;
-  /** Plays on from the moment it shows, or holds the moment it has reached; a still starts held. */
-  play(on: boolean): void;
+  /**
+   * Plays on from the moment it shows, or holds the moment it has reached, or `at`: a moment in
+   * ms, or `'still'` for the one it was made to show. A still starts held.
+   */
+  play(on: boolean, at?: number | 'still'): void;
   /** Stops it, lets go of the canvas, and takes its mix off the debuggers' list. */
   destroy(): void;
 }
@@ -149,15 +152,19 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
   });
 
   let gone = false;
+  /** The moment it was made to show, once known. */
+  let rest = typeof opts.still === 'number' ? opts.still : undefined;
   if (opts.still === 'action') {
     const key = JSON.stringify(sign);
     const known = moments.get(key);
+    rest = known;
     if (known !== undefined) marquee.seek(known, { hold: true });
     else
       later(() => {
         if (gone) return;
         const at = liveliest(sign);
         remember(key, at);
+        rest = at;
         // Played before the search came back, it plays on from where it got to.
         if (!held) return;
         marquee.seek(at, { hold: true });
@@ -189,10 +196,11 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
 
   const handle: Thumbnail = {
     marquee,
-    play(on) {
-      if (on === !held) return;
+    play(on, at) {
+      if (on === !held && at === undefined) return;
       held = !on;
-      marquee.seek(marquee.pass()?.at ?? 0, { hold: held });
+      const to = at === 'still' ? rest : at;
+      marquee.seek(to ?? marquee.pass()?.at ?? 0, { hold: held });
       // The callback on the ticker changes, so the old one comes off first.
       off?.();
       off = null;

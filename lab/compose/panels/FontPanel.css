@@ -38,11 +38,18 @@
 /* No padding: the sign is the row. Every row's dots are one pitch, so a row is as tall as its
    face, and a long name clips rather than shrinking until the dots vanish. */
 .compose-font-face {
-  --pitch: 3px;
   position: relative;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) var(--metrics);
   padding: 0;
   overflow: hidden;
+}
+
+.compose-font-metrics {
+  padding-inline-end: 6px;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-xs, 11px);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
 }
 
 .compose-font-face input {

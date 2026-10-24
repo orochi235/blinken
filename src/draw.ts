@@ -182,6 +182,8 @@ export function createSign(
 
       ctx.globalCompositeOperation = 'source-over';
       ctx.filter = 'none';
+      // An unbacked housing covers nothing, so the last frame's glow is cleared first.
+      if (!backed) ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(housing, 0, 0);
       ctx.globalCompositeOperation = 'lighter';
       ctx.filter = `blur(${(pitch * 0.9).toFixed(1)}px)`;
