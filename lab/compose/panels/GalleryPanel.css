@@ -1,40 +1,83 @@
+/* A little air round the strip, less than a pane of controls takes. */
+.compose-panel:has(.compose-strip) {
+  --wzl-prop-group-pad: 6px;
+}
+
+.compose-strip-frame {
+  position: relative;
+}
+
+/* The copies sit a tile's gap apart, as the tiles do, so the seam of the wrap doesn't show. */
 .compose-strip-tiles {
   display: flex;
+  column-gap: 6px;
+  padding: 0 0 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  user-select: none;
+}
+
+.compose-strip-set {
+  display: flex;
+  flex: none;
   gap: 6px;
   margin: 0;
-  padding: 0 0 4px;
-  overflow-x: auto;
+  padding: 0;
   list-style: none;
 }
 
 .compose-strip-tile {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  width: 112px;
-  padding: 4px;
-  border: 1px solid var(--wzl-border);
+  gap: 3px;
+  width: 120px;
+  padding: 3px;
+  border: 1px solid transparent;
   border-radius: var(--wzl-radius-sm, 4px);
-  background: var(--wzl-surface-sunken);
+  background: none;
   color: var(--wzl-fg);
   font: inherit;
-  font-size: var(--wzl-font-size-xs, 11px);
   cursor: pointer;
 }
 
-.compose-strip-tile:hover,
-.compose-strip-tile:focus-visible {
-  background-color: var(--wzl-surface-hover);
-  border-color: var(--wzl-accent);
-}
-
 .compose-strip-tile .compose-thumbnail {
-  height: 32px;
+  height: 34px;
 }
 
 .compose-strip-name {
   overflow: hidden;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm, 12px);
+  line-height: 1.2;
   white-space: nowrap;
   text-overflow: ellipsis;
   text-align: center;
+}
+
+.compose-strip-tile:hover,
+.compose-strip-tile:focus-visible {
+  border-color: var(--wzl-border);
+  background: var(--wzl-surface-hover);
+}
+
+.compose-strip-tile:hover .compose-strip-name,
+.compose-strip-tile:focus-visible .compose-strip-name {
+  color: var(--wzl-fg);
+}
+
+.compose-strip-bar {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--at) * 100%);
+  width: calc(var(--size) * 100%);
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.25);
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: grab;
+}
+
+.compose-strip-frame:hover .compose-strip-bar {
+  opacity: 1;
 }

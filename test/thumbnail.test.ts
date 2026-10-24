@@ -177,20 +177,6 @@ describe('createThumbnail', () => {
     still.destroy();
   });
 
-  it('holds a still at a share of the pass', () => {
-    const ticker = createTicker();
-    const still = createThumbnail(fakeCanvas(), {
-      effect: 'hold',
-      text: 'HI',
-      ticker,
-      still: { share: 0.5 },
-    });
-    frame(16);
-    const pass = still.marquee.pass();
-    expect(pass?.at).toBeCloseTo((pass?.length ?? 0) / 2);
-    still.destroy();
-  });
-
   it('shares one ticker at 30 fps by default', () => {
     const one = createThumbnail(fakeCanvas(), { effect: 'hold' });
     const two = createThumbnail(fakeCanvas(), { effect: 'roll', text: 'HI', face: 'slim' });

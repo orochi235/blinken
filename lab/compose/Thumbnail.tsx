@@ -10,8 +10,6 @@ import './Thumbnail.css';
 
 /** The message standing still, so a preview shows the letters rather than an effect. */
 export const STILL: EffectSpec = { name: 'still', active: { move: 'stand' } };
-/** Far enough into a pass that most effects have come on, for a still of the effect itself. */
-export const MIDWAY = { share: 0.4 } as const;
 /** No designed effects, for a thumbnail that plays a spec of its own. */
 export const NO_EFFECTS: Readonly<Record<string, EffectSpec>> = {};
 
