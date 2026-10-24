@@ -1,47 +1,41 @@
 .compose-designer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
   gap: 12px;
 }
 
-.compose-designer-head,
-.compose-hint,
+/* Enter and exit sit side by side, the way a scene comes on and goes; active spans below them. */
+.compose-slot-enter {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.compose-slot-exit {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.compose-slot-active {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
 .compose-whole {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.compose-hint {
   grid-column: 1 / -1;
 }
 
-.compose-designer {
-  /* Read here, before the bar below redefines the kit's ink for everything in it. */
-  --compose-bar-fill: var(--wzl-fg);
-  --compose-bar-ink: var(--wzl-surface);
-}
-
-/* An inverted title bar across the pane's top, so the open effect's name stands out. */
-.compose-designer-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  margin: -10px -12px 0;
-  /* As tall as other panes' headers: their 10px top padding and a 24px row. */
-  padding: 3px 12px;
-  border-radius: var(--wzl-radius-sm, 4px) var(--wzl-radius-sm, 4px) 0 0;
-  background: var(--compose-bar-fill);
-  --wzl-fg: var(--compose-bar-ink);
-  --wzl-fg-muted: var(--compose-bar-ink);
-  color: var(--compose-bar-ink);
-  font-weight: 600;
-}
-
-.compose-designer-head > .compose-heading {
-  color: inherit;
-  opacity: 0.7;
-}
-
-.compose-designer-head .compose-about {
+.compose-panel-actions .compose-about {
+  overflow: hidden;
   font-size: var(--wzl-font-size-sm, 12px);
   font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .compose-hint {

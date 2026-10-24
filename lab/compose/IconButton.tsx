@@ -9,19 +9,28 @@ export const GLYPHS = {
   down: 'ui:arrowDown' as IconName,
   undo: 'core:undo' as IconName,
   redo: 'core:redo' as IconName,
+  add: 'ui:add' as IconName,
+  loop: 'ui:loop' as IconName,
+  rewind: 'ui:rewind' as IconName,
+  image: 'core:image' as IconName,
 };
 
-/** A small chromeless button showing only a glyph; `label` names it and is its tooltip. */
+/**
+ * A small chromeless button showing only a glyph; `label` names it and is its tooltip. With
+ * `pressed`, it is a toggle that stays down while on.
+ */
 export function IconButton({
   glyph,
   label,
   onClick,
   disabled,
+  pressed,
 }: {
   glyph: keyof typeof GLYPHS;
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  pressed?: boolean;
 }) {
   return (
     <Button
@@ -31,6 +40,7 @@ export function IconButton({
       variant="ghost"
       size="sm"
       disabled={disabled}
+      pressed={pressed}
       onClick={onClick}
     >
       {glyph === 'remove' ? <Trash /> : <Icon name={GLYPHS[glyph] as IconName} size={14} />}

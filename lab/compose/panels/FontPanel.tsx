@@ -1,23 +1,12 @@
 import { Button } from '@weasel-js/labkit';
 import { Input, RangeSlider } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
-import {
-  type EffectSpec,
-  FACE_NAMES,
-  FACES,
-  type FaceName,
-  placeText,
-  rasterize,
-  rowsToShow,
-} from '@/index.js';
+import { FACE_NAMES, FACES, type FaceName, placeText, rasterize, rowsToShow } from '@/index.js';
+import { Panel } from '../Panel.js';
 import { withLook } from '../state.js';
 import { compose, pickedOf, useBoard, useCompose } from '../store.js';
-import { Thumbnail } from '../Thumbnail.js';
+import { NO_EFFECTS, STILL, Thumbnail } from '../Thumbnail.js';
 import './FontPanel.css';
-
-/** The message standing still, so a preview shows the letters rather than an effect. */
-const STILL: EffectSpec = { name: 'still', active: { move: 'stand' } };
-const NO_EFFECTS = {};
 
 /** A face's body height: the rows its lines are spaced by, ghost rows aside. */
 const bodyOf = (name: FaceName) => {
@@ -47,8 +36,7 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
       { replay: at },
     );
   return (
-    <section className="compose-font" aria-label="font">
-      <h2 className="compose-heading">font</h2>
+    <Panel title="font" className="compose-font">
       <Fit setRows={setRows} />
       <div className="compose-font-styles">
         <label
@@ -122,7 +110,7 @@ export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
           </label>
         ))}
       </div>
-    </section>
+    </Panel>
   );
 }
 

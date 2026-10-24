@@ -1,0 +1,22 @@
+/* Every pane's bar is the same height, whatever it carries; its controls keep to one line. */
+.compose-panel > :first-child {
+  box-sizing: border-box;
+  height: 30px;
+  overflow: hidden;
+}
+
+/* Kit controls in the bar read the bar's dark ink, not the page's light one. */
+.compose-panel-actions {
+  --wzl-fg: oklch(0.2 0.01 285);
+  --wzl-fg-muted: oklch(0.3 0.01 285);
+  display: inline-flex;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  align-items: center;
+  gap: 6px 10px;
+  font-family: var(--wzl-font-family, inherit);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}

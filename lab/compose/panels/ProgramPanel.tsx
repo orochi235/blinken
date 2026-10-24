@@ -1,12 +1,13 @@
-import { Button } from '@weasel-js/labkit';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
-import type { Scene } from '@/index.js';
+import { rasterize, type Scene } from '@/index.js';
 import { AMBER } from '../../demo.js';
 import { sceneAt, watchPass } from '../clock.js';
 import { IconButton } from '../IconButton.js';
+import { Panel } from '../Panel.js';
 import { effectTitle, hexOf } from '../schema.js';
 import { moveScene } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
+import { NO_EFFECTS, STILL, Thumbnail } from '../Thumbnail.js';
 import './ProgramPanel.css';
 import { SceneEditor } from './SceneEditor.js';
 
@@ -26,6 +27,7 @@ const reshape = (next: Scene[], keep?: Scene) =>
 export function ProgramPanel() {
   const state = useCompose();
   const [solo, setSolo] = useState(false);
+  const [thumbs, setThumbs] = useState(false);
   const picked = pickedOf(state);
   const rows = useRef<(HTMLButtonElement | null)[]>([]);
   const pick = (i: number) =>
@@ -54,41 +56,43 @@ export function ProgramPanel() {
     [],
   );
   return (
-    <section className="compose-program" aria-label="program">
-      <header className="compose-program-head">
-        <h2 className="compose-heading">program</h2>
-        <Button
-          size="sm"
-          onClick={() => {
-            const fresh: Scene = { text: 'NEW', hex: AMBER, effect: 'hold' };
-            const at = picked + 1;
-            reshape([...state.program.slice(0, at), fresh, ...state.program.slice(at)], fresh);
-          }}
-        >
-          add scene
-        </Button>
-        <label
-          className="compose-check"
-          title="Loop the scene you are editing on its own, instead of playing the whole program."
-        >
-          <input
-            type="checkbox"
-            checked={solo}
-            onChange={(e) => {
-              setSolo(e.target.checked);
-              compose.setSolo(e.target.checked);
+    <Panel
+      title="program"
+      className="compose-program"
+      actions={
+        <>
+          <IconButton
+            glyph="add"
+            label="add a scene after this one"
+            onClick={() => {
+              const fresh: Scene = { text: 'NEW', hex: AMBER, effect: 'hold' };
+              const at = picked + 1;
+              reshape([...state.program.slice(0, at), fresh, ...state.program.slice(at)], fresh);
             }}
           />
-          solo
-        </label>
-        <Button
-          size="sm"
-          tooltip="Play the program again from the scene you are editing."
-          onClick={compose.restart}
-        >
-          restart
-        </Button>
-      </header>
+          <IconButton
+            glyph="loop"
+            label="solo: loop the scene you are editing on its own, instead of playing the whole program"
+            pressed={solo}
+            onClick={() => {
+              setSolo(!solo);
+              compose.setSolo(!solo);
+            }}
+          />
+          <IconButton
+            glyph="rewind"
+            label="play the program again from the scene you are editing"
+            onClick={compose.restart}
+          />
+          <IconButton
+            glyph="image"
+            label="show each scene as a still of the sign"
+            pressed={thumbs}
+            onClick={() => setThumbs(!thumbs)}
+          />
+        </>
+      }
+    >
       <ol className="compose-scenes">
         {state.program.map((scene, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: a scene is its place in the program
@@ -118,7 +122,19 @@ export function ProgramPanel() {
                 // A scene's own color has no class to name it; the custom property is all that varies.
                 style={{ '--scene-color': hexOf(scene.hex) } as CSSProperties}
               />
-              <span className="compose-scene-text">{scene.text}</span>
+              {thumbs ? (
+                <Thumbnail
+                  effect={STILL}
+                  effects={NO_EFFECTS}
+                  text={scene.text}
+                  face={typeof scene.face === 'string' ? scene.face : undefined}
+                  hex={scene.hex}
+                  cols={rasterize(scene.text, scene).cols + 2}
+                  still={100}
+                />
+              ) : (
+                <span className="compose-scene-text">{scene.text}</span>
+              )}
               <span className="compose-scene-effect">{effectTitle(String(scene.effect))}</span>
             </button>
           </li>
@@ -145,6 +161,6 @@ export function ProgramPanel() {
         />
       </div>
       <SceneEditor at={picked} />
-    </section>
+    </Panel>
   );
 }

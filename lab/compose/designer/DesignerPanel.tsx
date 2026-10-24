@@ -2,6 +2,7 @@ import { Button } from '@weasel-js/labkit';
 import { useMemo, useState } from 'react';
 import { placeText, SLOTS, type Slot, stageEffect, type Warning } from '@/index.js';
 import { IconButton } from '../IconButton.js';
+import { Panel } from '../Panel.js';
 import { deleteEffect, FALLBACK } from '../state.js';
 import { pickedOf, useBoard, useCompose } from '../store.js';
 import './DesignerPanel.css';
@@ -45,32 +46,36 @@ export function DesignerPanel() {
   }, [spec, scene, b]);
 
   return (
-    <section className="compose-designer" aria-label="effect">
-      <header className="compose-designer-head">
-        <h2 className="compose-heading">effect</h2>
-        <EffectPicker />
-        <Button
-          size="sm"
-          variant="ghost"
-          tooltip={
-            browsing
-              ? 'Go back to editing the open effect.'
-              : 'Show every effect playing side by side, to pick one by eye.'
-          }
-          onClick={() => setBrowsing(!browsing)}
-        >
-          {browsing ? 'back' : 'browse'}
-        </Button>
-        {name !== undefined && own && <NameField name={name} />}
-        {name !== undefined && own && (
-          <IconButton
-            glyph="remove"
-            label={`delete this effect; scenes playing it play ${FALLBACK} instead`}
-            onClick={() => designerEdit((s) => deleteEffect(s, name))}
-          />
-        )}
-        {spec?.about && <span className="compose-about">{spec.about}</span>}
-      </header>
+    <Panel
+      title="effect"
+      className="compose-designer"
+      actions={
+        <>
+          <EffectPicker />
+          <Button
+            size="sm"
+            variant="ghost"
+            tooltip={
+              browsing
+                ? 'Go back to editing the open effect.'
+                : 'Show every effect playing side by side, to pick one by eye.'
+            }
+            onClick={() => setBrowsing(!browsing)}
+          >
+            {browsing ? 'back' : 'browse'}
+          </Button>
+          {name !== undefined && own && <NameField name={name} />}
+          {name !== undefined && own && (
+            <IconButton
+              glyph="remove"
+              label={`delete this effect; scenes playing it play ${FALLBACK} instead`}
+              onClick={() => designerEdit((s) => deleteEffect(s, name))}
+            />
+          )}
+          {spec?.about && <span className="compose-about">{spec.about}</span>}
+        </>
+      }
+    >
       {browsing || name === undefined || !spec ? (
         <>
           {!browsing && (
@@ -96,6 +101,6 @@ export function DesignerPanel() {
           ))}
         </>
       )}
-    </section>
+    </Panel>
   );
 }

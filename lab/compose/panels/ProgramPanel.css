@@ -78,3 +78,8 @@
   justify-content: flex-end;
   gap: 6px;
 }
+
+.compose-scene-pick .compose-thumbnail {
+  height: 28px;
+  justify-content: start;
+}

@@ -1,6 +1,7 @@
 import { ControlPanel, f } from '@weasel-js/labkit';
 import { LAYERS, type LayerName, MODULATORS, type ParamValue, values } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
+import { Panel } from '../Panel.js';
 import { DENSITY, fieldsOf, schemaFor, shownValues, storedValue, whileOn } from '../schema.js';
 import { layerOf } from '../state.js';
 import { compose, useCompose } from '../store.js';
@@ -67,11 +68,10 @@ function Layer({ name }: { name: LayerName }) {
 /** The layers under the program, each built-in one with its settings. */
 export function LayersPanel() {
   return (
-    <section className="compose-layers" aria-label="layers">
-      <h2 className="compose-heading">layers</h2>
+    <Panel title="layers" className="compose-layers">
       {(Object.keys(LAYERS) as LayerName[]).map((name) => (
         <Layer key={name} name={name} />
       ))}
-    </section>
+    </Panel>
   );
 }

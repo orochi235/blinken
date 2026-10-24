@@ -33,10 +33,6 @@ body {
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  padding: 10px 12px;
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-md, 8px);
-  background: var(--wzl-surface-raised);
 }
 
 /* Narrow screens stack the panes, each scrolling in its share of the height. */
