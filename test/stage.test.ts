@@ -229,7 +229,7 @@ describe('what an effect draws', () => {
 });
 
 describe('parts', () => {
-  it('lays enter, active, and exit end to end, each widened by the lag across groups', () => {
+  it('runs enter until every group is on, exit from the first going, and active between', () => {
     const spec: EffectSpec = {
       name: 'laid',
       order: { by: 'column', lag: 10 },
@@ -239,11 +239,15 @@ describe('parts', () => {
       hold: 1000,
     };
     const { parts, ms } = stageEffect(spec, place(board(20, 7), rasterize('HI')), 0xffffff);
-    const span = parts.enter.ms - parts.active.start;
+    const { order: _, ...together } = spec;
+    const plain = stageEffect(together, place(board(20, 7), rasterize('HI')), 0xffffff).parts;
+    // What the lag adds: the last group starts this much after the first.
+    const lag = parts.enter.ms - plain.enter.ms;
+    expect(lag).toBeGreaterThan(0);
     expect(parts.enter.start).toBe(0);
-    expect(span).toBeGreaterThan(0);
-    expect(parts.active.ms).toBe(1000 + span);
-    expect(parts.exit.start).toBe(parts.active.start + 1000);
+    expect(parts.active.start).toBe(parts.enter.ms);
+    expect(parts.active.ms).toBe(1000 - lag);
+    expect(parts.active.start + parts.active.ms).toBe(parts.exit.start);
     expect(parts.exit.start + parts.exit.ms).toBe(ms);
   });
 });

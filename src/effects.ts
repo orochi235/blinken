@@ -36,8 +36,9 @@ export interface StagedEffect {
   /** How long it keeps the sign, from the owner's 0. */
   readonly ms: number;
   /**
-   * Where each part plays, from the owner's 0: from the first group starting it to the last group
-   * ending it, so with a lag the parts overlap.
+   * Where each part plays, from the owner's 0. With a lag the groups' parts overlap, so `enter`
+   * runs until every group has come on, `exit` from the first group going, and `active` only while
+   * every group stands: none at all when the lag spans the hold.
    */
   readonly parts: Readonly<Record<Slot, Stretch>>;
   readonly warnings: readonly Warning[];
@@ -145,7 +146,7 @@ export function stageEffect(
   }
   const parts = {
     enter: { start: 0, ms: enter + span },
-    active: { start: enter, ms: held + span },
+    active: { start: enter + span, ms: Math.max(0, held - span) },
     exit: { start: enter + held, ms: exit + span },
   };
   return { arcs, ms, parts, warnings };
