@@ -99,7 +99,7 @@ export function marqueeSlider(p: NumberParam): ControlRenderer {
               readoutPlacement="none"
               onInput={(next) => setValue(next[0]?.value ?? v)}
             />
-            <Readout text={textOf(p, v)} cols={cols} />
+            <Readout text={textOf(p, v).padStart(chars)} cols={cols} />
           </span>
         </PropertyRow>
       );
