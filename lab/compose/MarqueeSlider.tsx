@@ -12,8 +12,8 @@ import {
 import './MarqueeSlider.css';
 import { STILL } from './Thumbnail.js';
 
-/** The face a readout's numbers are set in: four rows, so a row's readout fits a line of text. */
-const FACE = 'bytesized';
+/** The face a readout's numbers are set in: the sign's own 5 × 7, the clearest digits it has. */
+const FACE = 'standard';
 const ROWS = FACES[FACE].rows;
 const times = (n: number, by: number) => Number((n * by).toPrecision(12));
 

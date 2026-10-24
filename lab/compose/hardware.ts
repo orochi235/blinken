@@ -128,12 +128,13 @@ export const HARDWARE: Hardware = Object.fromEntries(
 
 const readoutKey = (g: string, k: string) => `readout:${g}.${k}`;
 
-/** The hardware panel's rows that draw their number on a small sign: one per number setting. */
+/** The groups whose rows draw their number on a small sign: the sign's own size, read in dots. */
+const ON_A_SIGN: readonly Group[] = ['size'];
+
+/** The hardware panel's rows that draw their number on a small sign. */
 export const HARDWARE_RENDERERS = Object.fromEntries(
-  entries(GROUPS).flatMap(([g, params]) =>
-    entries(params).flatMap(([k, p]) =>
-      'choices' in p ? [] : [[readoutKey(g, k), marqueeSlider(p as NumberParam)]],
-    ),
+  ON_A_SIGN.flatMap((g) =>
+    entries(GROUPS[g]).map(([k, p]) => [readoutKey(g, k), marqueeSlider(p as NumberParam)]),
   ),
 );
 
@@ -148,7 +149,7 @@ export const hardwareSchema = () =>
             Object.fromEntries(
               entries(params).map(([k, param]) => {
                 const p = param as NumberParam | ChoiceParam;
-                if ('choices' in p) return [k, fieldOf(p)];
+                if ('choices' in p || !ON_A_SIGN.includes(g)) return [k, fieldOf(p)];
                 const shown = p.value * (p.scale ?? 1);
                 return [k, f.custom(readoutKey(g, k), shown).label(p.label).describe(p.about)];
               }),
