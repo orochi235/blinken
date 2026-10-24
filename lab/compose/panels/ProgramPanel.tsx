@@ -1,13 +1,13 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
-import { rasterize, type Scene } from '@/index.js';
+import type { Scene } from '@/index.js';
 import { AMBER } from '../../demo.js';
 import { sceneAt, watchPass } from '../clock.js';
 import { IconButton } from '../IconButton.js';
 import { Panel } from '../Panel.js';
+import { ScenePreview } from '../ScenePreview.js';
 import { effectTitle, hexOf } from '../schema.js';
 import { moveScene } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
-import { NO_EFFECTS, STILL, Thumbnail } from '../Thumbnail.js';
 import '../Row.css';
 import './ProgramPanel.css';
 
@@ -26,7 +26,8 @@ const reshape = (next: Scene[], keep?: Scene) =>
 /** The program: its scenes in order, and the picked one's editor. */
 export function ProgramPanel() {
   const state = useCompose();
-  const [thumbs, setThumbs] = useState(false);
+  const [thumbs, setThumbs] = useState(true);
+  const [hovered, setHovered] = useState<number | null>(null);
   // The row being dragged, and where a drop would put it: before the row at `to`, or at the end.
   const [drag, setDrag] = useState<{ from: number; to: number } | null>(null);
   const drop = () => {
@@ -80,14 +81,14 @@ export function ProgramPanel() {
           />
           <IconButton
             glyph="image"
-            label="show each scene as a still of the sign"
+            label="show each scene on a small sign, which plays it while hovered"
             pressed={thumbs}
             onClick={() => setThumbs(!thumbs)}
           />
         </>
       }
     >
-      <ol className="compose-rows">
+      <ol className="compose-rows" onPointerLeave={() => setHovered(null)}>
         {state.program.map((scene, i) => (
           <li
             // biome-ignore lint/suspicious/noArrayIndexKey: a scene is its place in the program
@@ -101,6 +102,8 @@ export function ProgramPanel() {
               .filter(Boolean)
               .join(' ')}
             draggable
+            onPointerEnter={() => setHovered(i)}
+            onPointerLeave={() => setHovered((h) => (h === i ? null : h))}
             onDragStart={(e) => {
               e.dataTransfer.effectAllowed = 'move';
               e.dataTransfer.setData('text/plain', String(i));
@@ -146,15 +149,7 @@ export function ProgramPanel() {
                 style={{ '--scene-color': hexOf(scene.hex) } as CSSProperties}
               />
               {thumbs ? (
-                <Thumbnail
-                  effect={STILL}
-                  effects={NO_EFFECTS}
-                  text={scene.text}
-                  face={typeof scene.face === 'string' ? scene.face : undefined}
-                  hex={scene.hex}
-                  cols={rasterize(scene.text, scene).cols + 2}
-                  still={100}
-                />
+                <ScenePreview scene={scene} effects={state.effects} live={hovered === i} />
               ) : (
                 <span className="compose-scene-text">{scene.text}</span>
               )}

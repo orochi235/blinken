@@ -49,11 +49,6 @@
   gap: 6px;
 }
 
-.compose-scene-pick .compose-thumbnail {
-  height: 28px;
-  justify-content: start;
-}
-
 /* Dragging a row: it dims, and a line marks where it would land. */
 .compose-scene {
   cursor: grab;

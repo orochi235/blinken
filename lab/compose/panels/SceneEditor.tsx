@@ -1,7 +1,7 @@
 import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
 import { useMemo } from 'react';
 import { EFFECTS } from '@/index.js';
-import { Panel, tintOf } from '../Panel.js';
+import { Panel } from '../Panel.js';
 import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
@@ -9,6 +9,9 @@ import './SceneEditor.css';
 
 const NONE: ReadonlySet<string> = new Set();
 const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
+
+/** The scene panel's frame: the theme's primary accent. */
+const ACCENT = { ref: 'accent' } as const;
 
 /** The picked scene's own panel: its text, color, effect and hold; its face and style are the font panel's. */
 export function SceneEditor() {
@@ -63,7 +66,7 @@ export function SceneEditor() {
     );
 
   return (
-    <Panel title={`scene ${at + 1}`} className="compose-scene-editor" tint={tintOf(scene.hex)}>
+    <Panel title={`scene ${at + 1}`} className="compose-scene-editor" tint={ACCENT}>
       <ControlPanel
         schema={schema}
         config={{

@@ -1,0 +1,13 @@
+/* As wide as its cell, and as tall as its dots; the sign inside is its dots at one pitch. */
+.compose-scene-preview {
+  display: block;
+  min-width: 0;
+  height: calc(var(--rows) * var(--pitch));
+  overflow: hidden;
+}
+
+.compose-scene-preview .compose-thumbnail {
+  justify-content: start;
+  width: calc(var(--cols) * var(--pitch));
+  height: 100%;
+}
