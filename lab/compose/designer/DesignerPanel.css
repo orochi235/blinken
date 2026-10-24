@@ -24,13 +24,13 @@
   align-items: center;
   gap: 6px 10px;
   margin: -10px -12px 0;
-  padding: 6px 12px;
+  /* As tall as other panes' headers: their 10px top padding and a 24px row. */
+  padding: 3px 12px;
   border-radius: var(--wzl-radius-sm, 4px) var(--wzl-radius-sm, 4px) 0 0;
   background: var(--compose-bar-fill);
   --wzl-fg: var(--compose-bar-ink);
   --wzl-fg-muted: var(--compose-bar-ink);
   color: var(--compose-bar-ink);
-  font-size: var(--wzl-font-size-lg, 16px);
   font-weight: 600;
 }
 
