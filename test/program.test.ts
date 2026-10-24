@@ -5,7 +5,7 @@ import { EFFECTS } from '@/builtins.js';
 import { type EffectSpec, stageEffect } from '@/effects.js';
 import { rasterize } from '@/font.js';
 import { place } from '@/orders.js';
-import { play, type Scene } from '@/program.js';
+import { layerOf, play, type Scene } from '@/program.js';
 
 const b = board(80, 7);
 const msOf = (scene: Scene) =>
@@ -53,6 +53,38 @@ describe('play', () => {
     // The scroll enters from the right edge, so just after scene 1 the sign is dark.
     expect(anyLit(m, end - 1)).toBe(false);
     expect(anyLit(m, end + 45 * 4)).toBe(true);
+  });
+
+  it('plays the layers of a scene across that scene alone, and still finishes', async () => {
+    const lit: Scene = { text: 'I', hex: 0xff9a2e, effect: LEFT };
+    const rainbow: Scene = { ...lit, layers: { rainbow: { params: { arc: 360 } } } };
+    const m = fresh();
+    const program = play(m, b, [rainbow, lit]);
+    const dot = b.dots[0] as Subject;
+    const hueAt = (t: number) => {
+      m.sync(t);
+      return m.probe(dot).hue ?? 0;
+    };
+    const ms = msOf(lit);
+    expect([ms * 0.25, ms * 0.5, ms * 0.75].map(hueAt).some((h) => h !== 0)).toBe(true);
+    expect(hueAt(ms * 1.5)).toBe(0);
+    let done = false;
+    void program.done.then(() => {
+      done = true;
+    });
+    m.sync(2 * ms + 10);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(done).toBe(true);
+  });
+
+  it('keeps the settings of a layer that is off, and plays nothing', () => {
+    expect(layerOf('rainbow', { on: false, params: { arc: 90 } })).toBeNull();
+    expect(layerOf('rainbow', true)?.mod).toBe('hue-cycle');
+    expect(layerOf('rainbow', { params: { arc: 90 } })?.params).toMatchObject({
+      arc: 90,
+      rate: 0.4,
+    });
+    expect(() => layerOf('nope', true)).toThrow('no layer named nope');
   });
 
   it('resolves done after the last scene', async () => {

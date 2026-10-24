@@ -9,7 +9,7 @@ import {
   SLOTS,
   type Slot,
 } from '@/index.js';
-import type { ComposeState } from './state.js';
+import { type ComposeState, sceneLayerOf } from './state.js';
 
 /** A number written as a 0xRRGGBB literal. */
 class Hex {
@@ -76,26 +76,31 @@ export function toCode(state: ComposeState): string {
   const effects = Object.fromEntries(
     Object.entries(state.effects).map(([name, spec]) => [name, effectCode(spec)]),
   );
-  const program = state.program.map(({ text, hex, effect, hold, face, style }) => ({
-    text,
-    hex: new Hex(hex),
-    effect,
-    hold,
-    face,
-    style,
-  }));
-  const layers = Object.fromEntries(
-    Object.entries(state.layers).flatMap(([name, { on, ...spec }]): [string, unknown][] => {
-      if (!on) return [];
-      const base = LAYERS[name as LayerName];
-      if (base && same(spec.params, base.params)) return [[name, true]];
-      return [[name, { ...spec, params: hexParams(MODULATORS[spec.mod], spec.params) }]];
-    }),
-  );
+  const program = state.program.map((scene) => {
+    const { text, hex, effect, hold, face, style } = scene;
+    // A layer that is on, as true where it keeps its built-in's settings.
+    const layers = Object.fromEntries(
+      (Object.keys(scene.layers ?? {}) as LayerName[]).flatMap((name): [string, unknown][] => {
+        const { on, params } = sceneLayerOf(scene, name);
+        if (!on) return [];
+        const base = LAYERS[name];
+        if (same(params, base.params)) return [[name, true]];
+        return [[name, { params: hexParams(MODULATORS[base.mod], params) }]];
+      }),
+    );
+    return {
+      text,
+      hex: new Hex(hex),
+      effect,
+      hold,
+      face,
+      style,
+      ...(Object.keys(layers).length && { layers }),
+    };
+  });
   const opts = {
     ...(Object.keys(effects).length && { effects }),
     program,
-    ...(Object.keys(layers).length && { layers }),
   };
   return `createMarquee(canvas, ${lit(opts, 0, true)});\n`;
 }

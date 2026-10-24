@@ -92,7 +92,10 @@ The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Mat
 built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the border's bulbs
 stepping around; `rainbow`, a hue running across the sign that recolors whatever is lit; and
 `invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when spread by
-column. They are in `LAYERS`.
+column. They are in `LAYERS`. A layer plays under the whole sign through `layers` on
+`createMarquee`, or under one scene through that scene's `layers`, by the same names:
+`{ rainbow: true }`, or `{ rainbow: { params: { arc: 90 } } }` laid over the built-in's settings.
+A scene's layer runs as long as the scene, and `on: false` keeps its settings without playing it.
 
 ## Faces and styles
 

@@ -29,17 +29,14 @@ const state = (): ComposeState => ({
     },
   },
   program: [
-    { text: 'HI', hex: 0xff9a2e, effect: 'hold copy' },
+    {
+      text: 'HI',
+      hex: 0xff9a2e,
+      effect: 'hold copy',
+      layers: { rainbow: { on: true, params: { rate: 2 } } },
+    },
     { text: 'THERE', hex: 0x6dff5a, effect: 'flip', hold: 1500 },
   ],
-  layers: {
-    rainbow: {
-      mod: 'hue-cycle',
-      spread: { by: 'column' },
-      params: { rate: 2, phase: 0.015 },
-      on: true,
-    },
-  },
   editing: { scene: 0 },
 });
 
@@ -71,16 +68,16 @@ describe('share', () => {
     data.effects['hold copy'].active.push({ mod: 'wobble' });
     data.effects.bad = { name: 'bad', active: 'nonsense' };
     data.program.push({ text: 'X', hex: 0, effect: 'nowhere' });
-    data.layers.fog = { on: true };
+    data.program[0].layers.fog = { on: true };
     const { state: back, dropped } = decode(hashOf(data));
     expect(back.effects['hold copy']?.active).toHaveLength(2);
     expect(back.program.map((s) => s.text)).toEqual(['HI', 'THERE']);
-    expect(Object.keys(back.layers)).toEqual(['rainbow']);
+    expect(Object.keys(back.program[0]?.layers ?? {})).toEqual(['rainbow']);
     expect(dropped).toEqual([
       'modulator wobble in hold copy',
       'effect bad',
+      'layer fog of scene HI',
       'scene X, its effect nowhere',
-      'layer fog',
     ]);
   });
 
@@ -124,16 +121,16 @@ describe('share', () => {
     data.effects['hold copy'].hold = '500';
     data.effects['hold copy'].active[1].params.colors = 'red';
     data.program[0].hex = [1];
-    data.layers = [];
+    data.program[0].layers = [];
     const { state: back, dropped } = decode(hashOf(data));
     expect(back.effects['hold copy']?.hold).toBeUndefined();
     expect(back.program[0]?.hex).toBe(0xff9a2e);
-    expect(back.layers).toEqual({});
+    expect(back.program[0]?.layers).toBeUndefined();
     expect(dropped).toEqual([
       'setting colors in hold copy',
       'hold in hold copy',
       'color in scene HI',
-      'the layers',
+      'the layers of scene HI',
     ]);
   });
 
@@ -158,27 +155,25 @@ describe('share', () => {
     const code = toCode(state());
     expect(code).toMatch(/^createMarquee\(canvas, \{/);
     expect(code).toContain('"hold copy": {');
-    expect(code).toContain('{ text: "HI", hex: 0xff9a2e, effect: "hold copy" }');
+    expect(code).toContain('text: "HI"');
     expect(code).toContain('{ text: "THERE", hex: 0x6dff5a, effect: "flip", hold: 1500 }');
     expect(code).toContain('colors: [0xff0000, 0x0000ff]');
-    expect(code).toContain(
-      'rainbow: { mod: "hue-cycle", spread: { by: "column" }, params: { rate: 2, phase: 0.015 } }',
-    );
+    expect(code).toContain('layers: { rainbow: { params: { rate: 2, phase: 0.015 } } }');
     expect(code).not.toContain('flip: {');
   });
 
   it('writes an untouched layer as true and leaves out layers that are off', () => {
     const s = state();
-    s.layers = {
-      sparkle: { mod: 'sparkle', on: true },
-      chase: { mod: 'chase', on: false },
-    };
+    s.program[1] = {
+      ...s.program[1],
+      layers: { sparkle: { on: true }, chase: { on: false } },
+    } as never;
     const code = toCode(s);
     expect(code).toContain('layers: { sparkle: true }');
   });
 
   it('rebuilds every built-in from a link: a copy decodes and stages as the built-in does', () => {
-    const s: ComposeState = { effects: {}, program: [], layers: {}, editing: {} };
+    const s: ComposeState = { effects: {}, program: [], editing: {} };
     for (const [name, spec] of Object.entries(EFFECTS))
       s.effects[`${name} copy`] = { ...spec, name: `${name} copy` };
     const { state: back, dropped } = decode(encode(s));
@@ -204,6 +199,23 @@ describe('share', () => {
     expect(code).toContain('face: "slim"');
     expect(code).toContain('style: { reverse: true }');
     expect(code).toContain('style: { proportional: true }');
+  });
+
+  it('puts the layers of a link from before scenes had their own on every scene', () => {
+    const old = hashOf({
+      effects: {},
+      program: [
+        { text: 'A', hex: 0xff9a2e, effect: 'hold' },
+        { text: 'B', hex: 0xff9a2e, effect: 'hold', layers: { chase: { on: true } } },
+      ],
+      layers: { rainbow: { on: true } },
+    });
+    const { state: back, dropped } = decode(old);
+    expect(dropped).toEqual([]);
+    expect(back.program.map((s) => s.layers)).toEqual([
+      { rainbow: { on: true } },
+      { rainbow: { on: true }, chase: { on: true } },
+    ]);
   });
 
   it('reads a link written before scenes had faces, dropping nothing', () => {

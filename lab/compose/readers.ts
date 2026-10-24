@@ -3,6 +3,8 @@ import {
   type EffectSpec,
   FACE_NAMES,
   type FaceName,
+  LAYERS,
+  type LayerName,
   MODULATORS,
   MOVES,
   type NumberParam,
@@ -18,7 +20,7 @@ import {
   type TextStyle,
 } from '@/index.js';
 import { AMBER } from '../demo.js';
-import { BLEND, type ComposeState, HOLD, LAG } from './state.js';
+import { BLEND, type ComposeState, HOLD, LAG, type LabLayer } from './state.js';
 
 /* Readers for each part of a link, each keeping only what it knows and naming the rest in `dropped`. */
 
@@ -196,6 +198,7 @@ export function sceneOf(
   const hex = optional(v.hex, HEX, `color in scene ${v.text}`, dropped);
   const face = faceIn(v.face, `face in scene ${v.text}`, dropped);
   const style = styleIn(v.style, `style in scene ${v.text}`, dropped);
+  const layers = layersIn(v.layers, `scene ${v.text}`, dropped);
   return {
     text: v.text,
     hex: Math.round(hex ?? AMBER),
@@ -203,7 +206,28 @@ export function sceneOf(
     ...(hold !== undefined && { hold }),
     ...(face !== undefined && { face }),
     ...(style !== undefined && { style }),
+    ...(layers !== undefined && { layers }),
   };
+}
+
+/** A link's layers, each a built-in's name with on and its changed settings; the rest dropped. */
+export function layersIn(
+  v: unknown,
+  what: string,
+  dropped: string[],
+): Record<string, LabLayer> | undefined {
+  if (v === undefined) return undefined;
+  const out: Record<string, LabLayer> = {};
+  for (const [name, layer] of entriesOf(v, `the layers of ${what}`, dropped)) {
+    if (!Object.hasOwn(LAYERS, name) || !isObj(layer)) {
+      dropped.push(`layer ${name} of ${what}`);
+      continue;
+    }
+    const mod = MODULATORS[LAYERS[name as LayerName].mod];
+    const params = paramsOf(mod, layer.params, `layer ${name} of ${what}`, dropped);
+    out[name] = { on: layer.on === true, ...(params && Object.keys(params).length && { params }) };
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** A link's face for a scene: a built-in's name, or none (named in `dropped`) when it is another. */

@@ -5,7 +5,6 @@ import { createUndo, editingIds, editingOf } from '../lab/compose/undo.js';
 const start = (): ComposeState => ({
   effects: {},
   program: [{ text: 'HI', hex: 0xffffff, effect: 'hold' }],
-  layers: {},
   editing: { scene: 0, effect: 'hold' },
 });
 

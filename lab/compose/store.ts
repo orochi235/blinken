@@ -3,19 +3,18 @@ import {
   type Board,
   board,
   EFFECTS,
-  type LayerName,
   type Marquee,
   type Pass,
   type PassScene,
   SIZE,
 } from '@/index.js';
 import { gestureKey } from './gesture.js';
-import { type ComposeState, layerOf } from './state.js';
+import type { ComposeState } from './state.js';
 import { open, save } from './storage.js';
 import { createUndo, type Undo } from './undo.js';
 
-/** What the sign does after an edit: play again from a scene, update one layer, or nothing. */
-export type After = { replay: number | 'picked' } | { layer: LayerName } | { follow: true } | null;
+/** What the sign does after an edit: play again from a scene, or nothing. */
+export type After = { replay: number | 'picked' } | { follow: true } | null;
 
 interface Live {
   opened: ReturnType<typeof open>;
@@ -34,7 +33,6 @@ const copy = (s: ComposeState): ComposeState => ({
   ...s,
   effects: { ...s.effects },
   program: [...s.program],
-  layers: { ...s.layers },
   editing: { ...s.editing },
 });
 
@@ -82,19 +80,13 @@ function replay(from: number): void {
   if (at) sign.seek(at.start);
 }
 
-function setLayers(): void {
-  for (const [name, layer] of Object.entries(live.state.layers))
-    live.sign?.setLayer(name, layer.on, layer.params);
-}
-
 const notify = () => {
   for (const l of live.listeners) l();
 };
 
-/** Shows an undo or redo: every listener, every layer, and the program from the picked scene. */
+/** Shows an undo or redo: every listener, and the program from the picked scene. */
 function stepped(): void {
   notify();
-  setLayers();
   replay(pickedOf(live.state));
   save(live.state);
 }
@@ -124,10 +116,7 @@ export const compose = {
     live.state = next;
     live.undo.record(before, gestureKey());
     notify();
-    if (after && 'layer' in after) {
-      const layer = layerOf(live.state, after.layer);
-      live.sign?.setLayer(after.layer, layer.on, layer.params);
-    } else if (after) {
+    if (after) {
       replay('replay' in after && after.replay !== 'picked' ? after.replay : pickedOf(live.state));
     }
     save(live.state);
@@ -156,7 +145,6 @@ export const compose = {
   /** Hands the store the sign the page drew, or null when it is gone. */
   attach(next: Marquee | null) {
     live.sign = next;
-    setLayers();
     notify();
   },
 };

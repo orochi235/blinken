@@ -49,8 +49,8 @@ const boxes = (Object.keys(LAYERS) as LayerName[]).map((name) => ({
   name,
   box: el<HTMLInputElement>(name),
 }));
-if (composition)
-  for (const { name, box } of boxes) box.checked = composition.layers[name]?.on === true;
+// A link's layers play in its scenes; the sign's own start off.
+if (composition) for (const { box } of boxes) box.checked = false;
 
 let frames = 0;
 let shownAt = performance.now();
@@ -84,11 +84,8 @@ sizeForm.addEventListener('submit', (event) => {
   params.set('rows', rowsIn.value);
   location.search = params.toString();
 });
-for (const { name, box } of boxes) {
-  const params = composition?.layers[name]?.params;
-  if (params) sign.setLayer(name, box.checked, params);
-  box.addEventListener('change', () => sign.setLayer(name, box.checked, params));
-}
+for (const { name, box } of boxes)
+  box.addEventListener('change', () => sign.setLayer(name, box.checked));
 // The visitor's message first plays at the program's second scene, so a change replays from there.
 const replay = () => sign.restart(only === null ? 1 : 0);
 message.addEventListener('change', replay);

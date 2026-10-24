@@ -1,14 +1,12 @@
-import { LAYERS, type LayerName, MODULATORS } from '@/index.js';
 import { AMBER, demo } from '../demo.js';
 import { pack, type ShareData, unpack } from './codec.js';
-import { effectOf, entriesOf, isObj, paramsOf, sceneOf } from './readers.js';
+import { effectOf, entriesOf, isObj, layersIn, sceneOf } from './readers.js';
 import type { ComposeState } from './state.js';
 
-/** A fresh composition: no designed effects, no layers on, and the demo page's program. */
+/** A fresh composition: no designed effects, and the demo page's program. */
 export const defaultState = (): ComposeState => ({
   effects: {},
   program: demo('HELLO FROM BLITS', AMBER),
-  layers: {},
   editing: { scene: 0 },
 });
 
@@ -16,17 +14,11 @@ export const defaultState = (): ComposeState => ({
 export const shareOf = (state: ComposeState): ShareData => ({
   effects: state.effects,
   program: state.program,
-  layers: Object.fromEntries(
-    Object.entries(state.layers).map(([name, { on, params }]) => [
-      name,
-      params ? { on, params } : { on },
-    ]),
-  ),
 });
 
 /**
  * Only what the player plays: the effects the program names, numbered rather than named and with
- * no about, and the layers that are on.
+ * no about, and each scene's layers that are on.
  */
 export function playable(state: ComposeState): ComposeState {
   const used = [...new Set(state.program.map((s) => s.effect as string))].filter((name) =>
@@ -43,9 +35,12 @@ export function playable(state: ComposeState): ComposeState {
     ),
     program: state.program.map((s) => {
       const to = renamed.get(s.effect as string);
-      return to ? { ...s, effect: to } : s;
+      const { layers, ...rest } = to ? { ...s, effect: to } : s;
+      const on = Object.entries(layers ?? {}).filter(
+        ([, l]) => l === true || (typeof l === 'object' && l.on !== false),
+      );
+      return on.length ? { ...rest, layers: Object.fromEntries(on) } : rest;
     }),
-    layers: Object.fromEntries(Object.entries(state.layers).filter(([, l]) => l.on)),
     editing: {},
   };
 }
@@ -84,20 +79,13 @@ function parse(data: unknown): Decoded {
     state.program = [];
     dropped.push('the program');
   }
-  for (const [name, v] of entriesOf(data.layers, 'the layers', dropped)) {
-    if (!Object.hasOwn(LAYERS, name) || !isObj(v)) {
-      dropped.push(`layer ${name}`);
-      continue;
-    }
-    const base = LAYERS[name as LayerName];
-    const given = paramsOf(MODULATORS[base.mod], v.params, `layer ${name}`, dropped);
-    const params = { ...base.params, ...given };
-    state.layers[name] = {
-      ...base,
-      ...(Object.keys(params).length && { params }),
-      on: v.on === true,
-    };
-  }
+  // Links from before layers were each scene's put theirs on every scene.
+  const everywhere = layersIn(data.layers, 'the program', dropped);
+  if (everywhere)
+    state.program = state.program.map((scene) => ({
+      ...scene,
+      layers: { ...everywhere, ...scene.layers },
+    }));
   return { state, dropped, read: true };
 }
 

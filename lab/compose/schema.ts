@@ -1,5 +1,4 @@
 import {
-  type BaseNode,
   type ConfigEntry,
   type ConfigShape,
   f,
@@ -68,15 +67,6 @@ export function schemaFor(key: string, build: () => ConfigShape): ResolvedConfig
 /** A 0xRRGGBB number as a color input's `#rrggbb`, and back. */
 export const hexOf = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 export const numOf = (hex: string) => Number.parseInt(hex.slice(1, 7), 16);
-
-/** Fields whose rows take input only while the config's `on` holds. */
-export const whileOn = (shape: ConfigShape): ConfigShape =>
-  Object.fromEntries(
-    Object.entries(shape).map(([k, node]) => [
-      k,
-      (node as BaseNode<unknown>).enableIf((c) => c.on === true),
-    ]),
-  );
 
 /** How an effect's name reads wherever the lab shows it. */
 export const effectTitle = (name: string) => name.toUpperCase();

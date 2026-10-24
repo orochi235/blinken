@@ -5,18 +5,24 @@ import {
   type LayerName,
   type LayerSpec,
   type NumberParam,
+  type ParamValue,
   type Piece,
   piecesOf,
   type Scene,
   type Slot,
 } from '@/index.js';
 
-/** Everything the compose lab is editing: its effects, the program and layers, and what is open. */
+/** Everything the compose lab is editing: its effects, the program, and what is open. */
 export interface ComposeState {
   effects: Record<string, EffectSpec>;
   program: Scene[];
-  layers: Record<string, LayerSpec & { on: boolean }>;
   editing: { effect?: string; scene?: number };
+}
+
+/** A scene's layer as the lab keeps it: on or off, and the settings it changed. */
+export interface LabLayer {
+  on: boolean;
+  params?: Record<string, ParamValue>;
 }
 
 /** An effect's or a scene's hold, an effect's blend and an order's lag, as the lab offers them. */
@@ -51,9 +57,19 @@ export const LAG: NumberParam = {
     'How long each group of dots waits after the group before it, in the order chosen. At 0 they all go together; higher makes a slower sweep.',
 };
 
-/** A layer as the state holds it, off and at its built-in settings until changed. */
-export const layerOf = (state: ComposeState, name: LayerName): LayerSpec & { on: boolean } =>
-  state.layers[name] ?? { ...LAYERS[name], on: false };
+/** A scene's layer with its built-in's settings under the scene's, off until turned on. */
+export function sceneLayerOf(scene: Scene, name: LayerName): LayerSpec & { on: boolean } {
+  const base = LAYERS[name];
+  const v = scene.layers?.[name];
+  if (v === undefined || typeof v === 'boolean') return { ...base, on: v === true };
+  return { ...base, params: { ...base.params, ...v.params }, on: v.on !== false };
+}
+
+/** A scene with its layer `name` set to `layer`. */
+export const withLayer = (scene: Scene, name: LayerName, layer: LabLayer): Scene => ({
+  ...scene,
+  layers: { ...scene.layers, [name]: layer },
+});
 
 /** The effect a scene falls back to when the one it named is deleted. */
 export const FALLBACK = 'hold';

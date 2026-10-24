@@ -7,7 +7,7 @@ import { FACE_NAMES } from '@/faces.js';
 import { MODULATORS } from '@/modulators/index.js';
 import { MOVES } from '@/moves/index.js';
 import { ORDERS, placeText } from '@/orders.js';
-import { BitReader, BitWriter } from '../lab/compose/bits.js';
+import { BitReader, BitWriter, widthOf } from '../lab/compose/bits.js';
 import { pack, unpack, VERSION } from '../lab/compose/codec.js';
 import { HEX } from '../lab/compose/readers.js';
 import { decode, encode, playable, shareOf } from '../lab/compose/share.js';
@@ -47,14 +47,18 @@ const copies = (): ComposeState => ({
     },
   },
   program: [
-    { text: 'TONIGHT', hex: AMBER, effect: 'hold' },
+    {
+      text: 'TONIGHT',
+      hex: AMBER,
+      effect: 'hold',
+      layers: {
+        sparkle: { on: false, params: { rate: 0.022 } },
+        rainbow: { on: true, params: { rate: 0.6 } },
+      },
+    },
     { text: 'YOU', hex: 0x6dff5a, effect: 'roll copy', hold: 1234.5 },
     { text: 'ÜBER 🎉', hex: AMBER, effect: 'mine', face: 'slim', style: { reverse: true } },
   ],
-  layers: {
-    sparkle: { ...LAYERS.sparkle, params: { rate: 0.022 }, on: false },
-    rainbow: { ...LAYERS.rainbow, params: { rate: 0.6, phase: 0.015 }, on: true },
-  },
   editing: {},
 });
 
@@ -103,7 +107,7 @@ describe('packed links', () => {
   });
 
   it('round-trips every built-in, a copy staging as the built-in does', () => {
-    const s: ComposeState = { effects: {}, program: [], layers: {}, editing: {} };
+    const s: ComposeState = { effects: {}, program: [], editing: {} };
     for (const [name, spec] of Object.entries(EFFECTS))
       s.effects[`${name} copy`] = { ...spec, name: `${name} copy` };
     const { state: back } = decode(encode(s));
@@ -125,7 +129,7 @@ describe('packed links', () => {
     };
     const pick = <T>(xs: readonly T[]) => xs[Math.floor(rand() * xs.length)] as T;
     for (let trial = 0; trial < 50; trial++) {
-      const s: ComposeState = { effects: {}, program: [], layers: {}, editing: {} };
+      const s: ComposeState = { effects: {}, program: [], editing: {} };
       for (let e = 0; e < 3; e++) {
         const spec: Record<string, unknown> = { name: `e${e}` };
         for (const slot of ['enter', 'active', 'exit'] as const) {
@@ -174,7 +178,7 @@ describe('packed links', () => {
     expect(Object.keys(play.effects)).toEqual(['1', '2']);
     expect(play.program.map((s) => s.effect)).toEqual(['hold', '1', '2']);
     expect(play.effects['1']?.about).toBeUndefined();
-    expect(Object.keys(play.layers)).toEqual(['rainbow']);
+    expect(Object.keys(play.program[0]?.layers ?? {})).toEqual(['rainbow']);
     const at = placeText(board(80, 7), 'YOU');
     const back = decode(encode(play)).state;
     expect(JSON.stringify(stageEffect(back.effects['1'] as never, at, AMBER).arcs)).toBe(
@@ -182,6 +186,32 @@ describe('packed links', () => {
     );
     const json = Buffer.from(JSON.stringify(shareOf(play))).toString('base64url');
     expect(encode(play).length).toBeLessThan(json.length / 4);
+  });
+
+  it('opens a version 1 link with its layers on every scene', () => {
+    const w = new BitWriter();
+    w.uint(1, 8);
+    // Sparkle and chase absent; rainbow there, on, at its built-in settings.
+    w.flag(false);
+    w.flag(false);
+    w.flag(true);
+    w.flag(true);
+    for (const _ of Object.keys(MODULATORS['hue-cycle'].params)) w.flag(false);
+    w.count(0);
+    w.count(2);
+    for (const text of ['A', 'B']) {
+      w.text(text);
+      w.flag(false);
+      w.flag(false);
+      w.uint(Object.keys(EFFECTS).indexOf('hold'), widthOf(Object.keys(EFFECTS).length));
+      for (let k = 0; k < 4; k++) w.flag(false);
+    }
+    const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
+    expect(read).toBe(true);
+    expect(state.program.map((s) => s.layers)).toEqual([
+      { rainbow: { on: true } },
+      { rainbow: { on: true } },
+    ]);
   });
 
   it('is at VERSION for the registries and ranges it was written against', () => {
@@ -198,6 +228,6 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 1, digest: '981b68483107' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 2, digest: '8b4cea780bba' });
   });
 });

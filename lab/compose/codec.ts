@@ -30,18 +30,26 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 1;
+export const VERSION = 2;
 
-/** What a link carries: the share shape that `parse` reads. */
+/** A layer as a link carries it: on, and the settings it changed. */
+type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
+
+/**
+ * What a link carries: the share shape that `parse` reads. `layers` is a version 1 link's, which
+ * played under the whole program before each scene had its own.
+ */
 export interface ShareData {
   effects: Record<string, EffectSpec>;
   program: Scene[];
-  layers: Record<string, { on: boolean; params?: Record<string, ParamValue> }>;
+  layers?: Record<string, LinkLayer>;
 }
 
 const EFFECT_NAMES = Object.keys(EFFECTS);
 const MOD_NAMES = Object.keys(MODULATORS);
 const LAYER_NAMES = Object.keys(LAYERS) as LayerName[];
+/** The layers a version 1 link wrote, in its order, whatever LAYERS holds now. */
+const V1_LAYERS: readonly LayerName[] = ['sparkle', 'chase', 'rainbow'];
 const movesIn = Object.fromEntries(
   SLOTS.map((slot) => [
     slot,
@@ -214,9 +222,10 @@ function writeScene(w: BitWriter, scene: Scene, mine: string[]): void {
   if (face >= 0) w.uint(face, widthOf(FACE_NAMES.length));
   w.flag(scene.style?.reverse === true);
   w.flag(scene.style?.proportional === true);
+  writeLayers(w, (scene.layers ?? {}) as Record<string, LinkLayer>);
 }
 
-function readScene(r: BitReader, mine: string[]): Scene {
+function readScene(r: BitReader, mine: string[], version: number): Scene {
   const text = r.text();
   const hex = r.flag() ? readNumber(r, HEX) : AMBER;
   const effect = r.flag()
@@ -227,6 +236,7 @@ function readScene(r: BitReader, mine: string[]): Scene {
   const reverse = r.flag();
   const proportional = r.flag();
   const style = { ...(reverse && { reverse }), ...(proportional && { proportional }) };
+  const layers = version >= 2 ? readLayers(r) : {};
   return {
     text,
     hex,
@@ -234,6 +244,7 @@ function readScene(r: BitReader, mine: string[]): Scene {
     ...(hold !== undefined && { hold }),
     ...(face !== undefined && { face }),
     ...(Object.keys(style).length && { style }),
+    ...(Object.keys(layers).length && { layers }),
   };
 }
 
@@ -243,18 +254,36 @@ const layerParams = (name: LayerName) => {
   return { params: MODULATORS[base.mod].params, base: base.params ?? {} };
 };
 
-/** The composition as bytes: the version, the layers, the effects, then the program. */
-export function pack(data: ShareData): Uint8Array {
-  const w = new BitWriter();
-  w.uint(VERSION, 8);
+/** Each built-in layer: whether it is there, and if so whether it is on and what it changed. */
+function writeLayers(w: BitWriter, layers: Record<string, LinkLayer>): void {
   for (const name of LAYER_NAMES) {
-    const layer = data.layers[name];
+    const layer = layers[name];
     w.flag(layer !== undefined);
     if (!layer) continue;
     w.flag(layer.on);
     const { params, base } = layerParams(name);
     writeParams(w, params, layer.params, base);
   }
+}
+
+function readLayers(
+  r: BitReader,
+  names: readonly LayerName[] = LAYER_NAMES,
+): Record<string, LinkLayer> {
+  const layers: Record<string, LinkLayer> = {};
+  for (const name of names) {
+    if (!r.flag()) continue;
+    const on = r.flag();
+    const params = readParams(r, layerParams(name).params);
+    layers[name] = { on, ...(params && { params }) };
+  }
+  return layers;
+}
+
+/** The composition as bytes: the version, the effects, then the program, each scene with its layers. */
+export function pack(data: ShareData): Uint8Array {
+  const w = new BitWriter();
+  w.uint(VERSION, 8);
   const mine = Object.keys(data.effects);
   w.count(mine.length);
   for (const name of mine) writeEffect(w, name, data.effects[name] as EffectSpec);
@@ -270,14 +299,10 @@ export function pack(data: ShareData): Uint8Array {
 /** Bytes `pack` wrote, as the share shape; throws on anything that is not one. */
 export function unpack(bytes: Uint8Array): ShareData {
   const r = new BitReader(bytes);
-  if (r.uint(8) !== VERSION) throw new RangeError('bree: a link from another version');
-  const layers: ShareData['layers'] = {};
-  for (const name of LAYER_NAMES) {
-    if (!r.flag()) continue;
-    const on = r.flag();
-    const params = readParams(r, layerParams(name).params);
-    layers[name] = { on, ...(params && { params }) };
-  }
+  const version = r.uint(8);
+  if (version < 1 || version > VERSION) throw new RangeError('bree: a link from another version');
+  // Version 1 wrote the layers once, for the whole program, ahead of the effects.
+  const layers = version === 1 ? readLayers(r, V1_LAYERS) : undefined;
   const effects: Record<string, EffectSpec> = {};
   const mine: string[] = [];
   for (let i = r.count(); i > 0; i--) {
@@ -286,6 +311,6 @@ export function unpack(bytes: Uint8Array): ShareData {
     // Defined, not assigned: a link's `__proto__` would otherwise set the prototype.
     Object.defineProperty(effects, spec.name, { value: spec, enumerable: true, writable: true });
   }
-  const program = Array.from({ length: r.count() }, () => readScene(r, mine));
-  return { effects, program, layers };
+  const program = Array.from({ length: r.count() }, () => readScene(r, mine, version));
+  return { effects, program, ...(layers && { layers }) };
 }

@@ -37,9 +37,9 @@ function Compose() {
         </div>
         <div className="compose-pane compose-pane-wide">
           <DesignerPanel />
+          <LayersPanel />
         </div>
         <div className="compose-pane">
-          <LayersPanel />
           <HardwarePanel
             hardware={hardware}
             setHardware={(fn) => setKept((h) => fn(hardwareOf(h)))}

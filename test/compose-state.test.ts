@@ -58,7 +58,6 @@ describe('compose state program edits', () => {
     const state: ComposeState = {
       effects: { mine: { name: 'mine', active: { move: 'stand' } } },
       program: scenes,
-      layers: {},
       editing: { effect: 'mine', scene: 1 },
     };
     deleteEffect(state, 'mine');

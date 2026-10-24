@@ -2,12 +2,11 @@ import { createHistory, type History, swapOp } from '@weasel-js/history';
 import type { ComposeState } from './state.js';
 
 /** The part of the state undo steps through. What is open and picked is view state, restored around each step. */
-export type Composition = Pick<ComposeState, 'program' | 'effects' | 'layers'>;
+export type Composition = Pick<ComposeState, 'program' | 'effects'>;
 
-export const compositionOf = ({ program, effects, layers }: ComposeState): Composition => ({
+export const compositionOf = ({ program, effects }: ComposeState): Composition => ({
   program,
   effects,
-  layers,
 });
 
 const SCENE = 'scene:';

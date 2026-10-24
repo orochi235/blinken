@@ -5,14 +5,68 @@
   gap: 8px;
 }
 
-/* A layer switched off: its title stays live, its rows read as idle. */
-.compose-layer-rows.is-off {
-  opacity: 0.45;
+/* Rows as the program's: a sunken bar with an accent edge, here led by the layer's checkbox. */
+.compose-layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-/* labkit frames a titled panel as a card; a layer reads as plain rows under its title. */
-.compose-layers .lk-control-panel-frame {
-  padding: 0;
+.compose-layer-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 0 8px;
+  border: 1px solid transparent;
+  border-left: 3px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm, 4px);
+  background: var(--wzl-surface-sunken);
+}
+
+.compose-layer-row:hover {
+  background-color: var(--wzl-surface-hover);
+}
+
+.is-open > .compose-layer-row {
+  border-color: var(--wzl-border);
+  border-left-color: var(--wzl-accent);
+}
+
+.compose-layer-pick {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 8px 4px 0;
   border: 0;
   background: none;
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm, 12px);
+  text-align: start;
+  cursor: pointer;
+}
+
+.compose-layer-name {
+  text-transform: uppercase;
+}
+
+.compose-layer-pick .compose-about {
+  overflow: hidden;
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.compose-layer-settings {
+  padding: 6px 4px 8px 14px;
+}
+
+/* A layer switched off keeps its settings, which read as idle. */
+.compose-layer-settings.is-off {
+  opacity: 0.45;
 }
