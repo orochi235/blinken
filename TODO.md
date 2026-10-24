@@ -15,3 +15,4 @@
 - In the compose lab's narrow sign pane, a setting's value runs into the next setting's label ("140ROWS").
 - Holding the scrubber on a resized sign plays on after the resize rather than staying held.
 - `biome check lab/compose` fails on `ShareBar.tsx`'s `role="group"` div (`lint/a11y/useSemanticElements` wants a `<fieldset>`).
+- `@msb235/blits-panel@0.1.1` pins weasel `1.12.0` exactly, so with bree on `1.13.0-rc.0` npm nests a second weasel copy under it; `WEASEL=npm` runs and the deployed lab ship both. Needs a blits-panel release on the RC.
