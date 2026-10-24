@@ -40,6 +40,19 @@ export function ShareBar() {
       >
         copy link
       </Button>
+      <Button
+        size="sm"
+        tooltip="A link that plays this composition on the player page, with nothing to edit."
+        onClick={() =>
+          show(
+            'player link copied',
+            new URL(`play#${encode(compose.get())}`, location.href).href,
+            false,
+          )
+        }
+      >
+        copy player link
+      </Button>
       <Button size="sm" onClick={() => show('code copied', toCode(compose.get()), true)}>
         copy as code
       </Button>

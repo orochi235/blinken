@@ -159,7 +159,8 @@ The lab serves two pages: the composer at `/compose` (`lab/compose.html`) and th
 - **Every edit restarts from the scene being edited**, so a change shows at once. "Solo" loops
   one scene.
 - **Export:** "copy as code" gives the effects and the program as a `createMarquee` call. "Copy
-  link" puts the whole composition in the URL hash, as klieg's `/show/` page does. The current
+  link" puts the whole composition in the URL hash, as klieg's `/show/` page does, and "copy player
+  link" puts the same hash on `/play`, which plays the composition with nothing to edit. The current
   draft is kept in browser storage, so a reload doesn't lose it; it is a convenience, not a save.
 
 ## Goals, non-goals, anti-goals

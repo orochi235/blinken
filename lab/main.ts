@@ -1,6 +1,7 @@
 import './app.css';
 import { mount } from '@msb235/blits-panel';
 import { createMarquee, EFFECTS, LAYERS, type LayerName, type Scene } from '@/index.js';
+import { decode } from './compose/share.js';
 import { demo } from './demo.js';
 
 function el<T extends HTMLElement>(id: string): T {
@@ -27,18 +28,29 @@ const whole = (key: string, fallback: number, most: number) => {
 };
 
 const userHex = () => Number.parseInt(hue.value, 16);
+/** A composer link's `#…` plays its composition in place of the demo; the message and color then have nothing to drive. */
+const shared = location.hash.length > 1 ? decode(location.hash) : null;
+const composition = shared?.read ? shared.state : null;
+// A pasted link changes only the hash, which reloads nothing on its own.
+addEventListener('hashchange', () => location.reload());
+for (const input of [message, hue]) input.disabled = composition !== null;
+
 /** `?show=flip` loops that one effect on the message, for looking at it alone. */
 const only = params.get('show');
 const program = (): Scene[] =>
-  only !== null && Object.hasOwn(EFFECTS, only)
-    ? [{ effect: only, text: message.value || ' ', hex: userHex() }]
-    : demo(message.value || ' ', userHex());
+  composition
+    ? composition.program
+    : only !== null && Object.hasOwn(EFFECTS, only)
+      ? [{ effect: only, text: message.value || ' ', hex: userHex() }]
+      : demo(message.value || ' ', userHex());
 
 // Each layer's checkbox shares its name.
 const boxes = (Object.keys(LAYERS) as LayerName[]).map((name) => ({
   name,
   box: el<HTMLInputElement>(name),
 }));
+if (composition)
+  for (const { name, box } of boxes) box.checked = composition.layers[name]?.on === true;
 
 let frames = 0;
 let shownAt = performance.now();
@@ -46,6 +58,7 @@ const sign = createMarquee(canvas, {
   cols: whole('cols', 80, 4000),
   rows: whole('rows', 7, 2000),
   program,
+  effects: composition?.effects,
   layers: Object.fromEntries(boxes.map(({ name, box }) => [name, box.checked])),
   color: userHex(),
   draw: !params.has('nodraw'),
@@ -71,8 +84,11 @@ sizeForm.addEventListener('submit', (event) => {
   params.set('rows', rowsIn.value);
   location.search = params.toString();
 });
-for (const { name, box } of boxes)
-  box.addEventListener('change', () => sign.setLayer(name, box.checked));
+for (const { name, box } of boxes) {
+  const params = composition?.layers[name]?.params;
+  if (params) sign.setLayer(name, box.checked, params);
+  box.addEventListener('change', () => sign.setLayer(name, box.checked, params));
+}
 // The visitor's message first plays at the program's second scene, so a change replays from there.
 const replay = () => sign.restart(only === null ? 1 : 0);
 message.addEventListener('change', replay);
