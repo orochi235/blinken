@@ -4,7 +4,7 @@ import { EFFECTS, LAYERS, type LayerSpec } from './builtins.js';
 import { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 import { type Look, rasterize } from './font.js';
 import { MODULATORS } from './modulators/index.js';
-import { place, placeText, rankOf } from './orders.js';
+import { type Placed, place, placeText, rankOf } from './orders.js';
 import { type ParamValue, values } from './params.js';
 import { TOGETHER } from './pieces.js';
 import { tuned } from './tuning.js';
@@ -91,7 +91,7 @@ export function stageProgram(
     if (s.ms <= 0) return [];
     const layers = Object.entries(scene.layers ?? {}).flatMap(([name, layer]) => {
       const spec = layerOf(name, layer);
-      return spec ? [stageLayer(b, name, spec, s.ms)] : [];
+      return spec ? [stageLayer(b, name, spec, s.ms, at)] : [];
     });
     return [{ scene: i, staged: s, name: `${effect.name} ${scene.text}`, layers }];
   });
@@ -129,19 +129,27 @@ export function play(
   return cueProgram(m, stageProgram(b, scenes, effects));
 }
 
-/** A layer's modulator on the board, one cycle a pass, and the subjects it plays on. */
-function layerPatch(b: Board, layer: LayerSpec) {
+/**
+ * A layer's modulator on the board, one cycle a pass, and the subjects it plays on. A scene's layer
+ * is placed against its message, so a spread by letter follows the letters; a sign's has none.
+ */
+function layerPatch(b: Board, layer: LayerSpec, at: Placed = place(b, rasterize(''))) {
   const mod = MODULATORS[layer.mod];
-  const at = place(b, rasterize(''));
   return {
     patch: mod.patch(at, values(mod, layer.params as never), rankOf(layer.spread ?? TOGETHER, at)),
     subjects: mod.on === 'cells' ? b.cells : b.dots,
   };
 }
 
-/** A layer for one scene: its cycles laid end to end through one pass `ms` long. */
-function stageLayer(b: Board, name: string, layer: LayerSpec, ms: number): StagedLayer {
-  const { patch: cycle, subjects } = layerPatch(b, layer);
+/** A layer for one scene: its cycles laid end to end through one pass `ms` long, against `at`. */
+function stageLayer(
+  b: Board,
+  name: string,
+  layer: LayerSpec,
+  ms: number,
+  at?: Placed,
+): StagedLayer {
+  const { patch: cycle, subjects } = layerPatch(b, layer, at);
   const cycles = ms / Math.max(1, cycle.duration);
   if (cycle.form !== 'fn') throw new Error(`bree: layer ${name} is not a plain patch`);
   const stretched = patch<Subject, Pose>(

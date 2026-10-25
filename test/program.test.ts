@@ -4,8 +4,8 @@ import { board, KIT, type Pose, type Subject } from '@/board.js';
 import { EFFECTS } from '@/builtins.js';
 import { type EffectSpec, stageEffect } from '@/effects.js';
 import { rasterize } from '@/font.js';
-import { place } from '@/orders.js';
-import { layerOf, play, type Scene } from '@/program.js';
+import { place, placeText } from '@/orders.js';
+import { layerOf, play, type Scene, stageProgram } from '@/program.js';
 
 const b = board(80, 7);
 const msOf = (scene: Scene) =>
@@ -75,6 +75,23 @@ describe('play', () => {
     m.sync(2 * ms + 10);
     await new Promise((r) => setTimeout(r, 0));
     expect(done).toBe(true);
+  });
+
+  it('places a scene’s layer against its message, so a spread by letter follows the letters', () => {
+    const b = board(40, 7);
+    const [scene] = stageProgram(b, [
+      {
+        text: 'AB',
+        hex: 0xff9a2e,
+        effect: 'hold',
+        layers: { swept: { mod: 'hue-cycle', spread: { by: 'letter' }, params: { phase: 0.25 } } },
+      },
+    ]);
+    const layer = scene?.layers[0];
+    const at = placeText(b, 'AB');
+    const hueAt = (x: number) =>
+      layer?.patch.at(0.1, b.dots.find((d) => d.x === x && d.y === 3) as never, {} as never).hue;
+    expect(hueAt(at.left + 1)).not.toBe(hueAt(at.left + 7));
   });
 
   it('keeps the settings of a layer that is off, and plays nothing', () => {

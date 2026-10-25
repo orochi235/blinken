@@ -115,8 +115,8 @@ stepping around; `rainbow`, a hue running across the sign that recolors whatever
 `invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when spread by
 column; `scanline`, a bright band rolling down the rows like a CRT's; `fire`, a rising flicker from
 deep red at the bottom to yellow at the top; `glitch`, rare bursts in which bands of rows jump color,
-drop out or flip; `neon`, letters buzzing like failing tubes, a few worse than the rest (a layer cannot see the
-message, so there each six columns are a tube); `shimmer`,
+drop out or flip; `neon`, letters buzzing like failing tubes, a few worse than the rest (under a
+whole sign, which has no message to go by, each six columns are a tube); `shimmer`,
 a slanted glint sweeping across now and then; `aurora`, colors drifting in soft bands; and
 `gradient`, a still blend of colors from edge to edge. They are in `LAYERS`. A layer plays under the whole sign through `layers` on
 `createMarquee`, or under one scene through that scene's `layers`, by the same names:
