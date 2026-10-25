@@ -45,9 +45,10 @@ export interface Look {
   readonly style?: TextStyle;
 }
 
-/** A run of columns. */
+/** A letter's run of columns, and the first row of its line. */
 export interface Span {
   readonly x: number;
+  readonly y: number;
   readonly width: number;
 }
 
@@ -62,9 +63,9 @@ export interface Bitmap {
   readonly below: number;
   readonly rows: number;
   /**
-   * Each letter's columns, in order: its glyph and a blank beside it. One letter of the same look
-   * rasterized alone draws the same dots at the same place in its own span. Kerned letters' spans
-   * can overlap.
+   * Each letter's columns, in order: its glyph and a blank beside it, and the first row of its
+   * line. One letter of the same look rasterized alone draws the same dots at the same place in its
+   * own span, `y` rows down. Kerned letters' spans can overlap.
    */
   readonly letters: readonly Span[];
   readonly face: Face;
@@ -74,48 +75,70 @@ export interface Bitmap {
   /** Whether the dot at column `x`, row `y` lights at all. */
   lit(x: number, y: number): boolean;
   /**
-   * The index of the letter whose span holds column `x`, or -1 outside them all. Given row `y`, a
-   * lit dot is its own letter's where kerned spans overlap; elsewhere the later span has it.
+   * The index of the letter whose span holds column `x`, or -1 outside them all. Given row `y`, the
+   * letter on that row's line, and a lit dot its own letter's where kerned spans overlap; elsewhere
+   * the later span has it.
    */
   letterAt(x: number, y?: number): number;
 }
 
+/**
+ * `text` laid out as dots in `look`, a line for each `\n`-separated part. Lines stack a blank row
+ * apart by their letters' body, as a sign stacks repeated lines, each centered on the widest.
+ */
 export function rasterize(text: string, look: Look = {}): Bitmap {
   const face = faceOf(look.face);
   const style = look.style ?? {};
   const monospace = style.monospace ?? false;
-  const glyphs = [...text.toUpperCase()].map((ch) => dress(cut(face, ch, monospace), style));
+  const gap = 1 + Math.round(values(LOOK, style).tracking);
   const top = style.outline ? 1 : 0;
-  const rows = face.rows + top + (style.outline ? 1 : 0) + (style.shadow ? 1 : 0);
-  const xs = layout(glyphs, rows, monospace, 1 + Math.round(values(LOOK, style).tracking));
-  const cols = glyphs.reduce((n, g, k) => Math.max(n, (xs[k] as number) + g.width + 1), 0);
+  const lineRows = face.rows + top + (style.outline ? 1 : 0) + (style.shadow ? 1 : 0);
+  const above = (face.above ?? 0) + top;
+  const below = (face.below ?? 0) + lineRows - face.rows - top;
+  const pitch = lineRows - above - below + 1;
+  const lines = text
+    .toUpperCase()
+    .split('\n')
+    .map((line) => {
+      const glyphs = [...line].map((ch) => dress(cut(face, ch, monospace), style));
+      const xs = layout(glyphs, lineRows, monospace, gap);
+      const cols = glyphs.reduce((n, g, k) => Math.max(n, (xs[k] as number) + g.width + 1), 0);
+      return { glyphs, xs, cols };
+    });
+  const cols = Math.max(...lines.map((l) => l.cols));
+  const rows = lineRows + (lines.length - 1) * pitch;
   const levels = new Float32Array(cols * rows);
-  const owner = new Int32Array(cols).fill(-1);
+  const owner = new Int32Array(cols * rows).fill(-1);
   const inkOwner = new Int32Array(cols * rows).fill(-1);
   const letters: Span[] = [];
-  glyphs.forEach((g, k) => {
-    const at = xs[k] as number;
-    g.cells.forEach((r, y) => {
-      r.forEach((v, x) => {
-        const i = y * cols + at + x;
-        // A letter stands in front of the shadow of the one before it.
-        if (v > (levels[i] as number)) {
-          levels[i] = v;
-          inkOwner[i] = k;
-        }
+  lines.forEach((line, n) => {
+    const dy = n * pitch;
+    const dx = Math.floor((cols - line.cols) / 2);
+    line.glyphs.forEach((g, j) => {
+      const k = letters.length;
+      const at = dx + (line.xs[j] as number);
+      g.cells.forEach((r, y) => {
+        r.forEach((v, x) => {
+          const i = (dy + y) * cols + at + x;
+          // A letter stands in front of the shadow of the one before it.
+          if (v > (levels[i] as number)) {
+            levels[i] = v;
+            inkOwner[i] = k;
+          }
+        });
       });
+      const width = g.width + 1;
+      letters.push({ x: at, y: dy, width });
+      for (let y = dy; y < dy + lineRows; y++) owner.fill(k, y * cols + at, y * cols + at + width);
     });
-    const width = g.width + 1;
-    letters.push({ x: at, width });
-    owner.fill(k, at, at + width);
   });
-  const level = (x: number, y: number) =>
-    x >= 0 && x < cols && y >= 0 && y < rows ? (levels[y * cols + x] as number) : 0;
+  const inside = (x: number, y: number) => x >= 0 && x < cols && y >= 0 && y < rows;
+  const level = (x: number, y: number) => (inside(x, y) ? (levels[y * cols + x] as number) : 0);
   return {
     cols,
     rows,
-    above: (face.above ?? 0) + top,
-    below: (face.below ?? 0) + rows - face.rows - top,
+    above,
+    below,
     letters,
     face,
     style,
@@ -123,8 +146,13 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
     lit: (x, y) => level(x, y) > 0,
     letterAt: (x, y) => {
       if (x < 0 || x >= cols) return -1;
-      const ink = y !== undefined && y >= 0 && y < rows ? (inkOwner[y * cols + x] as number) : -1;
-      return ink >= 0 ? ink : (owner[x] as number);
+      if (y === undefined || !inside(x, y))
+        return Math.max(
+          -1,
+          ...letters.flatMap((l, k) => (x >= l.x && x < l.x + l.width ? [k] : [])),
+        );
+      const ink = inkOwner[y * cols + x] as number;
+      return ink >= 0 ? ink : (owner[y * cols + x] as number);
     },
   };
 }

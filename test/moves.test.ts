@@ -16,12 +16,12 @@ function litAt(m: Move, t: number, where = at, given: Record<string, unknown> = 
   const p = { ...values(m), ...given } as never;
   const patch = m.patch(where, p);
   const phase = Math.min(1, t / patch.duration);
-  return b.dots.map((d) => patch.at(phase, d, setting).lit ?? 0);
+  return where.board.dots.map((d) => patch.at(phase, d, setting).lit ?? 0);
 }
 
-const shown = (left = at.left, text = at.text) => {
-  const rowOf = place(b, text).rowOf;
-  return b.dots.map((d) => (rowOf(d) >= 0 ? text.level(d.x - left, rowOf(d)) : 0));
+const shown = (left = at.left, text = at.text, on = b) => {
+  const rowOf = place(on, text).rowOf;
+  return on.dots.map((d) => (rowOf(d) >= 0 ? text.level(d.x - left, rowOf(d)) : 0));
 };
 const STEP = (MOVES['scroll-across'].params.step as { value: number }).value;
 const length = (m: Move, where = at) => m.patch(where, values(m)).duration;
@@ -38,14 +38,19 @@ const LOOKS: readonly Look[] = [
 const lookName = (look: Look) =>
   [look.face ?? 'standard', ...Object.keys(look.style ?? {})].join(' ');
 
+/** Each look on `HI`, and two lines on a sign tall enough for both. */
+const CASES = [
+  ...LOOKS.map((look) => ({ name: lookName(look), at: place(b, rasterize('HI', look)) })),
+  { name: 'two lines', at: place(board(80, 15), rasterize('HI\nYOU')) },
+];
+
 describe('moves in every look', () => {
-  for (const look of LOOKS) {
-    const at = place(b, rasterize('HI', look));
-    describe(lookName(look), () => {
+  for (const { name: caseName, at } of CASES) {
+    describe(caseName, () => {
       for (const name of slotted('enter')) {
         it(`${name} ends showing the message`, () => {
           const m = MOVES[name];
-          expect(litAt(m, length(m, at), at)).toEqual(shown(at.left, at.text));
+          expect(litAt(m, length(m, at), at)).toEqual(shown(at.left, at.text, at.board));
         });
       }
 
@@ -60,7 +65,7 @@ describe('moves in every look', () => {
       for (const name of slotted('exit')) {
         it(`${name} starts showing the message and ends blank`, () => {
           const m = MOVES[name];
-          expect(litAt(m, 0, at)).toEqual(shown(at.left, at.text));
+          expect(litAt(m, 0, at)).toEqual(shown(at.left, at.text, at.board));
           expect(litAt(m, length(m, at), at).every((v) => v === 0)).toBe(true);
         });
       }
@@ -68,7 +73,7 @@ describe('moves in every look', () => {
       it('stand shows the message the whole time', () => {
         const m = MOVES.stand;
         for (const f of [0, 0.3, 0.99])
-          expect(litAt(m, f * length(m, at), at)).toEqual(shown(at.left, at.text));
+          expect(litAt(m, f * length(m, at), at)).toEqual(shown(at.left, at.text, at.board));
       });
     });
   }
@@ -78,7 +83,7 @@ describe('moves', () => {
   it('stand shows the message the whole time', () => {
     const m = MOVES.stand;
     for (const f of [0, 0.3, 0.99])
-      expect(litAt(m, f * length(m))).toEqual(shown(at.left, at.text));
+      expect(litAt(m, f * length(m))).toEqual(shown(at.left, at.text, at.board));
   });
 
   it('scroll-across enters at the right edge and leaves at the left', () => {

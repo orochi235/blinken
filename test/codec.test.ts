@@ -285,6 +285,7 @@ describe('packed links', () => {
         { text: 'A', hex: AMBER, effect: 'hold', style: { outline: true, shadow: true } },
         { text: 'B', hex: AMBER, effect: 'hold', style: { shadow: true, tracking: -1 } },
         { text: 'C', hex: AMBER, effect: 'hold', style: { tracking: 3 } },
+        { text: 'TWO\nLINES', hex: AMBER, effect: 'hold' },
       ],
     } as ShareData;
     expect(unpack(pack(data))).toEqual(data);

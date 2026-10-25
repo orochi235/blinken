@@ -160,6 +160,22 @@ describe('styles', () => {
     expect(at('II', { tracking: 99 })).toEqual(at('II', { tracking: 6 }));
   });
 
+  it('stacks lines a blank row apart, each centered on the widest', () => {
+    const t = rasterize('HI\nI');
+    expect([t.cols, t.rows]).toEqual([10, 15]);
+    expect(t.letters.map((l) => [l.x, l.y])).toEqual([
+      [0, 0],
+      [6, 0],
+      [3, 8],
+    ]);
+    expect(t.lit(4, 8)).toBe(true);
+    expect(t.lit(4, 7)).toBe(false);
+    // Each line's letters are its own: column 4 is the I's on the second line, the H's on the first.
+    expect(t.letterAt(4, 10)).toBe(2);
+    expect(t.letterAt(4, 1)).toBe(0);
+    expect(rasterize('A\n').rows).toBe(15);
+  });
+
   it('monospace advances every glyph by the face’s widest and a blank', () => {
     expect(rasterize('MI', { style: { monospace: true } }).cols).toBe(6 + 6);
     expect(rasterize(' ', { style: { monospace: true } }).cols).toBe(6);

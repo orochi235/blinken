@@ -1,5 +1,6 @@
 import { type ControlRenderer, PropertyRow } from '@weasel-js/labkit';
 import './ColorsRow.css';
+import { linesRow } from './LinesRow.js';
 import { hexOf, numOf } from './schema.js';
 
 /** A ColorsParam's row: its label, with its description as a tooltip, then a swatch per color and buttons to add one or drop the last. */
@@ -56,5 +57,5 @@ export const colorsRow: ControlRenderer = Object.assign(
   { group: true },
 );
 
-/** The renderers every panel built from Params needs. */
-export const RENDERERS = { colors: colorsRow };
+/** The renderers every panel built from Params needs, and the message's text box. */
+export const RENDERERS = { colors: colorsRow, lines: linesRow };

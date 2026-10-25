@@ -1,5 +1,6 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
+import { rasterize } from '../font.js';
 import type { Placed } from '../orders.js';
 import { move } from './move.js';
 
@@ -14,20 +15,35 @@ const FOLD_PARAM = {
   about: 'How long the letters take to turn between flat and edge on. Higher turns more slowly.',
 };
 
-/** Draws a letter turned `angle` radians about its horizontal middle; edge on it is a line. */
+/**
+ * Draws a letter turned `angle` radians about the horizontal middle of its line; edge on it is a
+ * line.
+ */
 function turned(at: Placed) {
   const { text } = at;
-  const mid = (text.rows - 1) / 2;
-  const any = Array.from({ length: text.cols }, (_, x) =>
-    Array.from({ length: text.rows }, (_, y) => text.lit(x, y)).some(Boolean),
+  const tall = rasterize('', text).rows;
+  const tops = [...new Set(text.letters.map((l) => l.y))];
+  /** The top row of the line `row` is on, the last line holding it where lines' ghost rows meet. */
+  const topOf = (row: number) => {
+    let top: number | undefined;
+    for (const t of tops) if (row >= t && row < t + tall) top = t;
+    return top;
+  };
+  const any = tops.map((t) =>
+    Array.from({ length: text.cols }, (_, x) =>
+      Array.from({ length: tall }, (_, y) => text.lit(x, t + y)).some(Boolean),
+    ),
   );
   return (led: Led, angle: number) => {
     const row = at.rowOf(led);
     const x = led.x - at.left;
-    if (row < 0) return { lit: 0 };
+    const top = row < 0 ? undefined : topOf(row);
+    if (top === undefined) return { lit: 0 };
+    const mid = top + (tall - 1) / 2;
     const s = Math.cos(angle);
-    if (Math.abs(s) < 0.18) return { lit: row === mid && any[x] ? 1 : 0 };
-    return { lit: text.level(x, Math.round(mid + (row - mid) / s)) };
+    if (Math.abs(s) < 0.18) return { lit: row === mid && any[tops.indexOf(top)]?.[x] ? 1 : 0 };
+    const from = Math.round(mid + (row - mid) / s);
+    return { lit: from >= top && from < top + tall ? text.level(x, from) : 0 };
   };
 }
 

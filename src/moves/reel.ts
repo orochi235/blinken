@@ -1,6 +1,6 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
-import { type Bitmap, CHARS, rasterize } from '../font.js';
+import { type Bitmap, CHARS, rasterize, type Span } from '../font.js';
 import { hash } from '../hash.js';
 import { litAt, move, on } from './move.js';
 
@@ -44,8 +44,9 @@ export const reelIn = move({
   patch(at, p) {
     const { text } = at;
     const n = text.letters.length;
-    // A reel's pitch: a glyph and the blank row under it.
-    const pitch = text.rows + 1;
+    // A reel spins one line's letter: its pitch is a glyph and the blank row under it.
+    const tall = rasterize('', text).rows;
+    const pitch = tall + 1;
     const reels = Array.from({ length: n }, (_, k) =>
       Array.from({ length: p.glyphs }, (_, j) =>
         glyph(text, CHARS[Math.floor(hash(k, j, text.cols) * CHARS.length)] as string),
@@ -59,16 +60,17 @@ export const reelIn = move({
         const k = text.letterAt(x, row);
         if (row < 0 || k < 0) return on(false);
         const reel = reels[k] as Bitmap[];
+        const span = text.letters[k] as Span;
         // The reel starts on a blank cell, so a letter waiting out its delay shows nothing.
-        const r = row - pitch + Math.floor(pitch * (reel.length + 1) * easeOut(phase));
+        const r = row - span.y - pitch + Math.floor(pitch * (reel.length + 1) * easeOut(phase));
         const j = Math.floor(r / pitch);
         const y = ((r % pitch) + pitch) % pitch;
-        const u = x - (text.letters[k] as { x: number }).x;
+        const u = x - span.x;
         const level =
-          j >= 0 && y < text.rows
+          j >= 0 && y < tall
             ? j < reel.length
               ? (reel[j] as Bitmap).level(u, y)
-              : text.level(x, y)
+              : text.level(x, span.y + y)
             : 0;
         return on(level);
       },

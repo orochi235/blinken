@@ -1,0 +1,20 @@
+.lines-row {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm, 4px);
+  background: var(--wzl-input-surface, var(--wzl-surface));
+  color: var(--wzl-fg);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.3;
+  text-transform: uppercase;
+  resize: none;
+}
+
+.lines-row:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring, var(--wzl-accent));
+  outline-offset: -1px;
+}

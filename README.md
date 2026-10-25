@@ -148,7 +148,9 @@ its own row and the rows either side, so letters never touch, even at a corner. 
 tail under an N.
 `style.monospace` gives every letter the face's widest instead, five columns for the same I. `style.tracking` adds
 blank columns between letters, kerned or fixed pitch, from −1, which lets them touch, to 6; its
-range is `LOOK.params.tracking`. A face can also be given in full, as a `Face` with `rows`,
+range is `LOOK.params.tracking`. A `\n` in a scene's text starts a new line: lines stack a blank row apart by the letters'
+body, each centered on the widest, and the block plays as one message, so a sign shows both
+lines once it is tall enough for them. A face can also be given in full, as a `Face` with `rows`,
 `width` and a `glyph` for each character, and its ghost rows as `above` and `below`. A scene that
 runs off the sign still plays, showing what fits, and staging it warns with the height of sign
 that shows all of it.

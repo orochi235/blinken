@@ -2,6 +2,7 @@ import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit'
 import { MotifFrame } from '@weasel-js/ui';
 import { useMemo } from 'react';
 import { EFFECTS, LOOK } from '@/index.js';
+import { RENDERERS } from '../ColorsRow.js';
 import { Panel } from '../Panel.js';
 import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
@@ -33,7 +34,12 @@ export function SceneEditor() {
     () =>
       resolveConfigSchema(
         f.schema({
-          text: f.string('').label('text').describe('The message this scene shows on the sign.'),
+          text: f
+            .custom('lines', '')
+            .label('text')
+            .describe(
+              'The message this scene shows on the sign. Enter starts a new line; lines stack a blank row apart, each centered.',
+            ),
           color: f
             .color('#ffffff')
             .label('color')
@@ -118,6 +124,7 @@ export function SceneEditor() {
           setConfig={set}
           draftConfig={set}
           density={DENSITY}
+          renderers={RENDERERS}
         />
       </MotifFrame>
       <MotifFrame

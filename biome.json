@@ -13,6 +13,7 @@
       "!**/node_modules",
       "!.superpowers",
       "!.playwright-mcp",
+      "!.claude",
       "!**/test-results",
       "!**/playwright-report"
     ]
