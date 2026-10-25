@@ -1,6 +1,6 @@
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from 'react';
 import type { Pass, PassScene } from '@/index.js';
-import { watchPass } from './clock.js';
+import { sceneAt, watchPass } from './clock.js';
 import { hexOf } from './schema.js';
 import { compose, useCompose } from './store.js';
 import './Scrubber.css';
@@ -10,6 +10,16 @@ const STEP_MS = 250;
 
 const spansOf = (pass: Pass | null) => pass?.scenes ?? [];
 const keyOf = (scenes: readonly PassScene[]) => scenes.map((s) => `${s.scene}:${s.ms}`).join(' ');
+const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
+
+/** The playhead as a screen reader says it: how far in, of how long, and in which scene. */
+function valueText(pass: Pass | null): string {
+  if (!pass) return 'nothing playing';
+  const now = sceneAt(pass);
+  const text = now ? compose.get().program[compose.sceneOf(now)]?.text : undefined;
+  const where = `${seconds(pass.at)} of ${seconds(pass.length)}`;
+  return text ? `${where}, in ${text}` : where;
+}
 
 /**
  * The pass playing now, its scenes end to end, with a playhead on the sign's own clock. A press
@@ -34,6 +44,7 @@ export function Scrubber() {
         el.style.setProperty('--at', at.toFixed(5));
         el.setAttribute('aria-valuenow', String(Math.round(pass?.at ?? 0)));
         el.setAttribute('aria-valuemax', String(Math.round(length.current)));
+        el.setAttribute('aria-valuetext', valueText(pass));
       }),
     [],
   );
@@ -54,6 +65,7 @@ export function Scrubber() {
       role="slider"
       tabIndex={0}
       aria-label="where the pass is"
+      title="Where the sign is in the program. Press or drag to hold it at a moment, and let go to play on from there; ← and → step a quarter second."
       aria-valuemin={0}
       aria-valuenow={0}
       onKeyDown={(e) => {

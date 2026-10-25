@@ -130,6 +130,7 @@ export function ProgramPanel() {
               className="compose-row compose-scene-pick"
               data-picked={i === picked || undefined}
               aria-pressed={i === picked}
+              aria-label={`scene ${i + 1}: ${scene.text}, ${effectTitle(String(scene.effect))}`}
               title="Edit this scene. ↑ and ↓ pick the next one, Option-↑ and Option-↓ move this one, and Delete removes it."
               onClick={() => pick(i)}
               onKeyDown={(e) => {
