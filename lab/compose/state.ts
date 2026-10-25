@@ -110,10 +110,10 @@ export function moveScene(program: readonly Scene[], i: number, by: number): Sce
   return out;
 }
 
-/** A scene with its face or one of its style switches set, the default left out. */
+/** A scene with its face or one of its style settings set, the default left out. */
 export function withLook(
   scene: Scene,
-  what: 'face' | 'monospace' | 'outline' | 'shadow',
+  what: 'face' | 'monospace' | 'outline' | 'shadow' | 'tracking',
   v: unknown,
 ): Scene {
   if (what === 'face') {
@@ -122,6 +122,7 @@ export function withLook(
   }
   const { style: _, ...rest } = scene;
   const { [what]: __, ...others } = scene.style ?? {};
-  const style = v === true ? { ...others, [what]: true } : others;
+  const set = what === 'tracking' ? typeof v === 'number' && v !== 0 : v === true;
+  const style = set ? { ...others, [what]: v } : others;
   return Object.keys(style).length ? { ...rest, style } : rest;
 }

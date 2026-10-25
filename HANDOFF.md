@@ -37,7 +37,7 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
   (2026-10-24).
 - Reverse text is dropped for the `invert` layer; old links and files that reversed a scene
   open with that layer on (2026-10-24).
-- Unanswered: whether a tracking lever is still wanted now kerning is in.
+- Tracking is wanted alongside kerning: whole blank columns, −1 to 6 (2026-10-24).
 
 - Every prefs setting carries a tooltip explanation, no ⓘ icons (all projects).
 - Consumers of the user's own libraries build against the sibling checkout by default.

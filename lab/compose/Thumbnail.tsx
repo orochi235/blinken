@@ -96,6 +96,7 @@ export function Thumbnail({
     style?.monospace,
     style?.outline,
     style?.shadow,
+    style?.tracking,
     cols,
     rows,
     still,

@@ -150,6 +150,16 @@ describe('styles', () => {
     expect(i.lit(0, 7)).toBe(false);
   });
 
+  it('tracks letters further apart, or closer down to touching, kerned or fixed pitch', () => {
+    const at = (text: string, style: object) => rasterize(text, { style }).letters.map((l) => l.x);
+    expect(at('II', {})).toEqual([0, 4]);
+    expect(at('II', { tracking: 2 })).toEqual([0, 6]);
+    expect(at('II', { tracking: -1 })).toEqual([0, 3]);
+    expect(at('II', { monospace: true, tracking: 1 })).toEqual([0, 7]);
+    // Held to its range.
+    expect(at('II', { tracking: 99 })).toEqual(at('II', { tracking: 6 }));
+  });
+
   it('monospace advances every glyph by the face’s widest and a blank', () => {
     expect(rasterize('MI', { style: { monospace: true } }).cols).toBe(6 + 6);
     expect(rasterize(' ', { style: { monospace: true } }).cols).toBe(6);

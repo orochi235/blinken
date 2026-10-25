@@ -1,7 +1,7 @@
 import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
 import { MotifFrame } from '@weasel-js/ui';
 import { useMemo } from 'react';
-import { EFFECTS } from '@/index.js';
+import { EFFECTS, LOOK } from '@/index.js';
 import { Panel } from '../Panel.js';
 import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
@@ -57,6 +57,7 @@ export function SceneEditor() {
             .describe(
               'Gives every letter the same width, the face’s widest, as on a fixed-pitch sign. Off, each letter takes its own width, so narrow letters like I sit closer to their neighbors.',
             ),
+          tracking: numberField(LOOK.params.tracking),
           outline: f
             .boolean(false)
             .label('outline')
@@ -86,6 +87,7 @@ export function SceneEditor() {
         if (!was) return;
         if (path === 'monospace' || path === 'outline' || path === 'shadow')
           s.program[at] = withLook(was, path, v === true);
+        else if (path === 'tracking') s.program[at] = withLook(was, path, Number(v));
         else if (path === 'text') s.program[at] = { ...was, text: String(v) || ' ' };
         else if (path === 'color') s.program[at] = { ...was, hex: numOf(String(v)) };
         else if (isAuto(v)) {
@@ -108,6 +110,7 @@ export function SceneEditor() {
             effect: String(scene.effect),
             hold: scene.hold ?? 3000,
             monospace: scene.style?.monospace === true,
+            tracking: scene.style?.tracking ?? 0,
             outline: scene.style?.outline === true,
             shadow: scene.style?.shadow === true,
           }}

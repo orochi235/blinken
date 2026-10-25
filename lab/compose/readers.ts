@@ -6,6 +6,7 @@ import {
   type FaceName,
   LAYERS,
   type LayerName,
+  LOOK,
   MODULATORS,
   MOVES,
   type NumberParam,
@@ -298,11 +299,17 @@ function styleIn(
   legacy: boolean,
 ): TextStyle | undefined {
   const known: readonly string[] = legacy ? LEGACY_STYLES : STYLES;
-  const out: Record<string, boolean> = {};
+  const out: Record<string, boolean | number> = {};
   if (v !== undefined && !isObj(v)) dropped.push(what);
   else
     for (const [key, on] of Object.entries(v ?? {})) {
       if (key === 'reverse' && typeof on === 'boolean') continue;
+      if (key === 'tracking' && !legacy) {
+        const n = clamp(on, LOOK.params.tracking);
+        if (n === undefined) dropped.push(`${key} in ${what}`);
+        else if (n !== 0) out.tracking = Math.round(n);
+        continue;
+      }
       if (!known.includes(key) || typeof on !== 'boolean') dropped.push(`${key} in ${what}`);
       else if (on) out[key] = true;
     }

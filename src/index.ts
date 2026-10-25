@@ -39,6 +39,7 @@ export {
   type Face,
   type FaceName,
   faceOf,
+  LOOK,
   type Look,
   ROWS,
   rasterize,

@@ -4,6 +4,7 @@ import { board } from '@/board.js';
 import { EFFECTS, LAYERS } from '@/builtins.js';
 import { stageEffect } from '@/effects.js';
 import { FACE_NAMES } from '@/faces.js';
+import { LOOK } from '@/font.js';
 import { MODULATORS } from '@/modulators/index.js';
 import { MOVES } from '@/moves/index.js';
 import { ORDERS, placeText } from '@/orders.js';
@@ -277,12 +278,13 @@ describe('packed links', () => {
     expect(state.program[0]?.layers).toEqual({ invert: { on: true } });
   });
 
-  it('round-trips outline and shadow', () => {
+  it('round-trips outline, shadow and tracking', () => {
     const data = {
       effects: {},
       program: [
         { text: 'A', hex: AMBER, effect: 'hold', style: { outline: true, shadow: true } },
-        { text: 'B', hex: AMBER, effect: 'hold', style: { shadow: true } },
+        { text: 'B', hex: AMBER, effect: 'hold', style: { shadow: true, tracking: -1 } },
+        { text: 'C', hex: AMBER, effect: 'hold', style: { tracking: 3 } },
       ],
     } as ShareData;
     expect(unpack(pack(data))).toEqual(data);
@@ -356,11 +358,12 @@ describe('packed links', () => {
       layers: LAYERS,
       orders: ORDERS,
       faces: FACE_NAMES,
+      look: range(LOOK.params),
       numbers: [HOLD, BLEND, LAG, HEX].map(one),
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 8, digest: 'f13fd810472a' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 9, digest: 'bc7e28879ea1' });
   });
 });
 

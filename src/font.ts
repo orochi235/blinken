@@ -1,4 +1,5 @@
 import { type Face, type FaceName, faceOf } from './faces.js';
+import { type Params, values } from './params.js';
 
 /** The sign's default height, and the body height of the drawn faces. */
 export const ROWS = 7;
@@ -14,7 +15,25 @@ export interface TextStyle {
   readonly monospace?: boolean;
   readonly outline?: boolean;
   readonly shadow?: boolean;
+  /** Blanks between letters past the one they keep: more spreads them, -1 lets them touch. */
+  readonly tracking?: number;
 }
+
+/** A style's number settings, with their ranges. */
+export const LOOK = {
+  params: {
+    tracking: {
+      label: 'tracking',
+      min: -1,
+      max: 6,
+      step: 1,
+      value: 0,
+      unit: 'dots',
+      about:
+        'How many more blank columns sit between letters than the one they keep. More spreads the message out; −1 lets the letters touch.',
+    },
+  },
+} as const satisfies { readonly params: Params };
 
 /** How brightly a shadow lights, against the letters' 1. */
 export const SHADOW = 0.35;
@@ -121,8 +140,11 @@ function dress(g: Glyph, style: TextStyle): Glyph {
   return out;
 }
 
-/** Each glyph's first column: fixed pitch, or kerned against the ink of every glyph before it. */
-function layout(glyphs: readonly Glyph[], rows: number, monospace: boolean): number[] {
+/**
+ * Each glyph's first column: fixed pitch, or kerned against the ink of every glyph before it,
+ * `gap` blanks apart.
+ */
+function layout(glyphs: readonly Glyph[], rows: number, monospace: boolean, gap: number): number[] {
   const xs: number[] = [];
   // The rightmost ink placed so far in each row; a space counts as ink in every row.
   const reach = new Array<number>(rows).fill(Number.NEGATIVE_INFINITY);
@@ -133,10 +155,10 @@ function layout(glyphs: readonly Glyph[], rows: number, monospace: boolean): num
     const blank = ink.every((i) => i < 0);
     let x = next;
     if (!monospace && !blank) {
-      // A blank to the ink before in the rows above and below too, so letters never touch corners.
+      // The gap from the ink before in the rows above and below too, so letters never touch corners.
       const near = (y: number) =>
         Math.max(...[y - 1, y, y + 1].map((r) => reach[r] ?? Number.NEGATIVE_INFINITY));
-      const fits = ink.map((i, y) => (i < 0 ? Number.NEGATIVE_INFINITY : near(y) + 2 - i));
+      const fits = ink.map((i, y) => (i < 0 ? Number.NEGATIVE_INFINITY : near(y) + 1 + gap - i));
       x = Math.max(start, Math.min(next, Math.max(...fits)));
     }
     xs.push(x);
@@ -146,7 +168,7 @@ function layout(glyphs: readonly Glyph[], rows: number, monospace: boolean): num
       if (right >= 0) reach[y] = Math.max(reach[y] as number, x + right);
     });
     start = x;
-    next = Math.max(next, x + g.width + 1);
+    next = Math.max(next, x + g.width + gap);
   }
   return xs;
 }
@@ -158,7 +180,7 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
   const glyphs = [...text.toUpperCase()].map((ch) => dress(cut(face, ch, monospace), style));
   const top = style.outline ? 1 : 0;
   const rows = face.rows + top + (style.outline ? 1 : 0) + (style.shadow ? 1 : 0);
-  const xs = layout(glyphs, rows, monospace);
+  const xs = layout(glyphs, rows, monospace, 1 + Math.round(values(LOOK, style).tracking));
   const cols = glyphs.reduce((n, g, k) => Math.max(n, (xs[k] as number) + g.width + 1), 0);
   const levels = new Float32Array(cols * rows);
   const owner = new Int32Array(cols).fill(-1);

@@ -8,6 +8,7 @@ import {
   LAYERS,
   type LayerName,
   type LayerSpec,
+  LOOK,
   MODULATORS,
   MOVES,
   type ModulatorName,
@@ -35,7 +36,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 8;
+export const VERSION = 9;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -259,6 +260,9 @@ function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): 
   w.flag(scene.style?.monospace === true);
   w.flag(scene.style?.outline === true);
   w.flag(scene.style?.shadow === true);
+  const tracking = scene.style?.tracking;
+  w.flag(tracking !== undefined && tracking !== 0);
+  if (tracking !== undefined && tracking !== 0) writeNumber(w, LOOK.params.tracking, tracking);
   writeLayers(w, (scene.layers ?? {}) as Record<string, LinkLayer>);
   const tuning = tuningOf(effectOf(scene, effects));
   writeParams(w, tuning, scene.params, defaultsOf(tuning));
@@ -297,10 +301,13 @@ function readScene(r: BitReader, effects: ShareData['effects'], version: number)
   // Outline and shadow came in version 7.
   const outline = version >= 7 && r.flag();
   const shadow = version >= 7 && r.flag();
+  // Tracking came in version 9.
+  const tracking = version >= 9 && r.flag() ? readNumber(r, LOOK.params.tracking) : undefined;
   const style = {
     ...(monospace && { monospace }),
     ...(outline && { outline }),
     ...(shadow && { shadow }),
+    ...(tracking !== undefined && { tracking }),
   };
   const read = version >= 3 ? readLayers(r) : version === 2 ? readLayers(r, V2_LAYERS) : {};
   const layers = reverse && !read.invert ? { ...read, invert: { on: true } } : read;
