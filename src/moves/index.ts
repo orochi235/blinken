@@ -5,11 +5,13 @@ import type { Move } from './move.js';
 import { rainIn, rainOut } from './rain.js';
 import { reelIn, rollAway } from './reel.js';
 import { scrollAcross, scrollIn, scrollOut } from './scroll.js';
+import { assemble, scatter } from './swarm.js';
 import { tile } from './tile.js';
 import { typeOff, typeOn } from './type.js';
 
 export * from './move.js';
 export {
+  assemble,
   cutOff,
   cutOn,
   dropIn,
@@ -19,6 +21,7 @@ export {
   rainOut,
   reelIn,
   rollAway,
+  scatter,
   scrollAcross,
   scrollIn,
   scrollOut,
@@ -49,6 +52,8 @@ const moves = {
   tile,
   'type-on': typeOn,
   'type-off': typeOff,
+  assemble,
+  scatter,
 };
 export type MoveName = keyof typeof moves;
 /** Every move, by name. */
