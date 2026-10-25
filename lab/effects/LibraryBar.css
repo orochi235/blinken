@@ -4,9 +4,3 @@
   gap: 8px;
   flex: 1;
 }
-
-.effects-link {
-  margin-inline-start: auto;
-  color: var(--wzl-accent);
-  font-size: var(--wzl-font-size-sm, 12px);
-}

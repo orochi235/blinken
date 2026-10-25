@@ -6,6 +6,7 @@ import {
   usePersistedState,
 } from '@weasel-js/labkit';
 import { useMemo, useSyncExternalStore } from 'react';
+import { PAGES } from '../pages.js';
 import './App.css';
 import { HARDWARE, type Hardware, hardwareOf } from './hardware.js';
 import { FontPanel } from './panels/FontPanel.js';
@@ -122,17 +123,11 @@ export function App() {
     <LabShell
       title="bree compose"
       mode="dark"
+      pages={PAGES}
       header={
         <>
           <UndoBar />
           <ShareBar />
-          <a
-            className="compose-link"
-            href="./effects.html"
-            title="Design effects on a page of their own; what you save there is offered here."
-          >
-            effects
-          </a>
         </>
       }
     >

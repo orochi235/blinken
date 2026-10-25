@@ -13,7 +13,7 @@ const undoTarget = {
   redo: designer.redo,
 };
 
-/** The effects page's bar: undo, the library to and from a JSON file, and the way to compose. */
+/** The effects page's bar: undo, and the library to and from a JSON file. */
 export function LibraryBar() {
   useDesk();
   useUndoKeys(undoTarget);
@@ -79,13 +79,6 @@ export function LibraryBar() {
           if (file) void load(file);
         }}
       />
-      <a
-        className="effects-link"
-        href="./compose.html"
-        title="Back to composing, where the library's effects are offered for every scene."
-      >
-        compose
-      </a>
     </div>
   );
 }
