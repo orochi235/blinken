@@ -3,8 +3,10 @@ import { palette, twoColor } from './color.js';
 import { desaturate, dim, flare } from './ease.js';
 import { fire } from './fire.js';
 import { flash } from './flash.js';
+import { glitch } from './glitch.js';
 import { invert } from './invert.js';
 import type { Modulator } from './modulator.js';
+import { neon } from './neon.js';
 import { scanline } from './scanline.js';
 import { shimmer } from './shimmer.js';
 import { sparkle } from './sparkle.js';
@@ -19,8 +21,10 @@ export {
   fire,
   flare,
   flash,
+  glitch,
   hueCycle,
   invert,
+  neon,
   palette,
   pulse,
   scanline,
@@ -44,6 +48,8 @@ const modulators = {
   invert,
   scanline,
   fire,
+  glitch,
+  neon,
   shimmer,
 };
 export type ModulatorName = keyof typeof modulators;

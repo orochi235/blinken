@@ -183,6 +183,51 @@ describe('modulators', () => {
     expect(gains.size).toBeGreaterThan(1);
   });
 
+  /** Every 50 ms frame of a minute-long loop, for one dot. */
+  const minute = (name: ModulatorName, d: Subject, given: Record<string, unknown> = {}) =>
+    Array.from({ length: 1200 }, (_, f) => poseAt(name, f * 50 + 25, d, given));
+
+  it('glitch is calm between bursts, and in one turns the hue hard or drops out or inverts', () => {
+    const poses = b.dots.filter((_, i) => i % 23 === 0).flatMap((d) => minute('glitch', d));
+    const hit = poses.filter((p) => p.hue !== 0);
+    expect(hit.length).toBeGreaterThan(0);
+    expect(hit.length).toBeLessThan(poses.length * 0.05);
+    for (const p of poses) {
+      expect([0, 1]).toContain(p.gain);
+      expect([0, 1]).toContain(p.invert);
+      if (p.hue === 0) expect(p).toEqual({ hue: 0, gain: 1, invert: 0 });
+      else expect(Math.abs(p.hue as number)).toBeGreaterThanOrEqual(50);
+    }
+  });
+
+  it('glitch plays the same bursts for a seed and others for another', () => {
+    const d = b.dots[300] as Subject;
+    const run = (seed: number) => minute('glitch', d, { seed, often: 120 }).map((p) => p.hue);
+    expect(run(4)).toEqual(run(4));
+    expect(run(4)).not.toEqual(run(5));
+  });
+
+  it('neon holds steady at 0 a minute, and otherwise goes out now and then', () => {
+    const dots = b.dots.filter((_, i) => i % 11 === 0);
+    for (const d of dots)
+      for (const p of minute('neon', d, { often: 0 })) {
+        expect(p.gain).toBeGreaterThanOrEqual(0.9);
+        expect(p.glow).toBe(1.25);
+      }
+    const out = dots.flatMap((d) => minute('neon', d)).filter((p) => (p.gain as number) < 0.1);
+    expect(out.length).toBeGreaterThan(0);
+  });
+
+  it('neon flickers each rank of its spread as one tube, the same for a seed', () => {
+    const letter = rankOf({ by: 'letter' }, at);
+    const tube = at.board.dots.filter((d) => letter(d) === 1);
+    const given = { often: 60, seed: 3 };
+    const gains = (d: Subject) =>
+      Array.from({ length: 600 }, (_, f) => poseAt('neon', f * 100, d, given, letter).gain);
+    expect(gains(tube[0] as Subject)).toEqual(gains(tube[tube.length - 1] as Subject));
+    expect(gains(tube[0] as Subject)).toEqual(gains(tube[0] as Subject));
+  });
+
   it('shimmer rests between glints and lifts lit, glow, and paleness as one passes', () => {
     const given = { every: 4000, width: 3, angle: 0 };
     for (const d of b.dots.filter((_, i) => i % 13 === 0))
