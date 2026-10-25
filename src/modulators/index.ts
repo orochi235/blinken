@@ -4,6 +4,8 @@ import { desaturate, dim, flare } from './ease.js';
 import { flash } from './flash.js';
 import { invert } from './invert.js';
 import type { Modulator } from './modulator.js';
+import { scanline } from './scanline.js';
+import { shimmer } from './shimmer.js';
 import { sparkle } from './sparkle.js';
 import { bloom, hueCycle, pulse } from './wave.js';
 
@@ -19,6 +21,8 @@ export {
   invert,
   palette,
   pulse,
+  scanline,
+  shimmer,
   sparkle,
   twoColor,
 };
@@ -36,6 +40,8 @@ const modulators = {
   sparkle,
   chase,
   invert,
+  scanline,
+  shimmer,
 };
 export type ModulatorName = keyof typeof modulators;
 /** Every modulator, by name. */

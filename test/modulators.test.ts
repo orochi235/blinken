@@ -140,6 +140,48 @@ describe('modulators', () => {
     expect(at0).not.toBeCloseTo(at3 as number, 3);
   });
 
+  it('scanline keeps gain within its dimming and lights the band brightest', () => {
+    const given = { speed: 9, band: 2, dim: 0.4 };
+    const row = (y: number, t: number) =>
+      poseAt('scanline', t, b.dots.find((d) => d.y === y) as Subject, given);
+    for (const t of [0, 120, 340, 610, 900]) {
+      for (let y = 0; y < 7; y++) {
+        const { gain, glow } = row(y, t);
+        expect(gain).toBeGreaterThanOrEqual(0.6 - 1e-9);
+        expect(gain).toBeLessThanOrEqual(1);
+        expect(glow).toBeGreaterThanOrEqual(1);
+        expect(glow).toBeLessThanOrEqual(1.6 + 1e-9);
+      }
+    }
+    // Nine rows of travel at nine rows a second, starting a band's half above the top row.
+    const t = (4 / 9) * 1000;
+    expect(row(3, t).gain).toBeCloseTo(1);
+    expect(row(3, t).glow).toBeCloseTo(1.6);
+    expect(row(0, t).gain).toBeLessThan(0.7);
+  });
+
+  it('shimmer rests between glints and lifts lit, glow, and paleness as one passes', () => {
+    const given = { every: 4000, width: 3, angle: 0 };
+    for (const d of b.dots.filter((_, i) => i % 13 === 0))
+      expect(poseAt('shimmer', 2500, d, given)).toEqual({ lit: 0, glow: 1, chroma: 1 });
+    const mid = poseAt('shimmer', 550, b.dots.find((d) => d.x === 40) as Subject, given);
+    expect(mid.lit).toBeGreaterThan(0.25);
+    expect(mid.glow).toBeGreaterThan(3);
+    expect(mid.chroma).toBeLessThan(0.5);
+  });
+
+  it('shimmer leans its glint by its angle', () => {
+    const glint = (x: number, y: number, angle: number) =>
+      poseAt('shimmer', 664, b.dots.find((d) => d.x === x && d.y === y) as Subject, {
+        angle,
+      }).glow as number;
+    expect(glint(40, 0, 0)).toBeCloseTo(glint(40, 6, 0));
+    // At 45° the glint's top runs a column ahead for every row up.
+    expect(glint(40, 0, 45)).toBeGreaterThan(3);
+    expect(glint(40, 0, 45)).toBeCloseTo(glint(46, 6, 45));
+    expect(glint(40, 6, 45)).toBe(1);
+  });
+
   for (const name of names) {
     it(`${name} writes only the channels it declares`, () => {
       const m = MODULATORS[name];
