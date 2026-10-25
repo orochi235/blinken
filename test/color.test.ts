@@ -31,4 +31,10 @@ describe('dotColor', () => {
   it('falls back when nothing tinted the dot', () => {
     expect(dotColor([0, 0, 0, 0], 0, 0, 1, 0x123456)).toBe(0x123456);
   });
+
+  it('turns and grays the fallback as it does a tint', () => {
+    const none = [0, 0, 0, 0];
+    expect(dotColor(none, 0, 120, 1, 0xff0000)).toBe(dotColor(oklab(0xff0000), 0, 120, 1, 0));
+    expect(dotColor(none, 0, 0, 0, 0xff4030)).toBe(dotColor(oklab(0xff4030), 0, 0, 0, 0));
+  });
 });
