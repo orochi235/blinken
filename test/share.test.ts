@@ -255,6 +255,26 @@ describe('share', () => {
     ]);
   });
 
+  it('names an effect param that drives nothing the effect has, and tuning its scene lacks', () => {
+    const data = dataOf(state());
+    data.effects = {
+      mine: {
+        name: 'mine',
+        active: [{ move: 'stand' }],
+        params: {
+          good: { label: 'good', about: '', to: ['active.0.ms'] },
+          bad: { label: 'bad', about: '', to: ['enter.4.ms'] },
+        },
+      },
+    };
+    data.program[0] = { text: 'HI', hex: 0, effect: 'mine', params: { good: 900, nope: 1 } };
+    const { state: back, dropped } = decode(hashOf(data));
+    expect(Object.keys(back.effects.mine?.params ?? {})).toEqual(['good']);
+    expect(back.program[0]?.params).toEqual({ good: 900 });
+    expect(dropped).toContain('param bad of mine');
+    expect(dropped).toContain('setting nope in scene HI');
+  });
+
   it('escapes every control character in code strings', () => {
     const s = state();
     s.program = [{ text: "A\r\nB'\u0001", hex: 0, effect: 'hold' }];

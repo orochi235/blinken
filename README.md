@@ -87,6 +87,26 @@ pass over the hold. A program is a list of scenes, each a message with its color
 and the effect it plays; a scene names an effect or carries one inline. Each scene starts where the
 one before it ends.
 
+An effect's `params` are what a scene playing it can tune, each with a label, an `about`, and the
+settings it drives in `to`: `enter.0.ms` is the first enter piece's `ms`, `enter.0.lag` that
+piece's order lag, and `lag` or `blend` the effect's own. Its range and default come from the first
+of them. A scene sets them by name, and `blend`, and `lag` on an effect with an order, are always
+there besides:
+
+```ts
+fall: {
+  // …its pieces
+  params: {
+    drop: { label: 'drop time', about: 'How long a column takes to fall.', to: ['enter.0.ms', 'exit.0.ms'] },
+  },
+},
+// and in the program:
+{ effect: 'fall', text: 'TONIGHT', hex: 0xff9a2e, params: { drop: 600, blend: 120 } },
+```
+
+`tuningOf(effect)` lists them as number settings, defaulting to what the effect sets, and
+`tuned(effect, values)` is the effect as those values set it.
+
 The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Matrix rain), and
 `tile`, in `EFFECTS`. The
 built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the border's bulbs

@@ -20,3 +20,14 @@
   text-transform: none;
   letter-spacing: normal;
 }
+
+.compose-hint {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+}
+
+/* Inline rows two up, one up where the box is narrow. labkit has no columns option yet. */
+.compose-two-up {
+  grid-template-columns: repeat(auto-fit, minmax(max(22ch, calc(50% - 6px)), 1fr));
+  column-gap: 12px;
+}

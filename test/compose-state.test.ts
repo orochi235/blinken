@@ -64,3 +64,28 @@ describe('withLook', () => {
     expect(withLook(withLook(both, 'reverse', false), 'monospace', false)).toEqual(scene);
   });
 });
+
+describe('effect params as pieces change', () => {
+  const tuned: EffectSpec = {
+    name: 't',
+    enter: [{ move: 'cut-on' }, { move: 'drop-in' }],
+    active: [{ move: 'stand' }],
+    params: {
+      drop: { label: 'drop', about: '', to: ['enter.1.ms'] },
+      both: { label: 'both', about: '', to: ['enter.0.lag', 'active.0.ms'] },
+    },
+  };
+
+  it('follows a piece down a place when one before it goes, and drops what pointed at the one gone', () => {
+    expect(removePiece(tuned, 'enter', 0).params).toEqual({
+      drop: { label: 'drop', about: '', to: ['enter.0.ms'] },
+      both: { label: 'both', about: '', to: ['active.0.ms'] },
+    });
+  });
+
+  it('drops a param left driving nothing, and targets a replaced piece lacks', () => {
+    expect(removePiece(tuned, 'enter', 1).params).toEqual({ both: tuned.params?.both });
+    const swapped = setPiece(tuned, 'enter', 1, { move: 'cut-on' });
+    expect(Object.keys(swapped.params ?? {})).toEqual(['both']);
+  });
+});

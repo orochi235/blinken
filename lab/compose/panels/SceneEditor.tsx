@@ -7,6 +7,7 @@ import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
 import { compose, pickedOf, playEffect, useCompose, useEffects } from '../store.js';
 import { SceneLayers } from './SceneLayers.js';
+import { SceneTuning } from './SceneTuning.js';
 import './SceneEditor.css';
 
 const NONE: ReadonlySet<string> = new Set();
@@ -100,6 +101,13 @@ export function SceneEditor() {
           draftConfig={set}
           density={DENSITY}
         />
+      </MotifFrame>
+      <MotifFrame
+        kind="subpanel"
+        title={`${effectTitle(String(scene.effect))} settings`}
+        className="compose-scene-part"
+      >
+        <SceneTuning />
       </MotifFrame>
       <MotifFrame kind="subpanel" title="layers" className="compose-scene-part">
         <SceneLayers />

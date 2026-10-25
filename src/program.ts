@@ -7,6 +7,7 @@ import { MODULATORS } from './modulators/index.js';
 import { place, placeText, rankOf } from './orders.js';
 import { values } from './params.js';
 import { TOGETHER } from './pieces.js';
+import { tuned } from './tuning.js';
 
 /**
  * A layer a scene plays under its message: a built-in's name with true, or a spec, which for a
@@ -24,6 +25,8 @@ export interface Scene extends Look {
   readonly hex: number;
   readonly effect: string | EffectSpec;
   readonly hold?: number;
+  /** Values for what its effect lets a scene tune, by name. */
+  readonly params?: Readonly<Record<string, number>>;
   readonly layers?: Readonly<Record<string, SceneLayer>>;
 }
 
@@ -84,7 +87,7 @@ export function stageProgram(
   return scenes.flatMap((scene, i) => {
     const effect = effectOf(scene, effects);
     const at = placeText(b, scene.text, scene);
-    const s = stageEffect(effect, at, scene.hex, scene.hold);
+    const s = stageEffect(tuned(effect, scene.params), at, scene.hex, scene.hold);
     if (s.ms <= 0) return [];
     const layers = Object.entries(scene.layers ?? {}).flatMap(([name, layer]) => {
       const spec = layerOf(name, layer);

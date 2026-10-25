@@ -1,5 +1,6 @@
 import {
   EFFECTS,
+  type EffectParam,
   type EffectSpec,
   FACE_NAMES,
   type FaceName,
@@ -18,9 +19,10 @@ import {
   SLOTS,
   type Slot,
   type TextStyle,
+  tuningOf,
 } from '@/index.js';
 import { AMBER } from '../demo.js';
-import { BLEND, type ComposeState, HOLD, LAG, type LabLayer } from './state.js';
+import { BLEND, type ComposeState, HOLD, LAG, type LabLayer, pruned } from './state.js';
 
 /* Readers for each part of a link, each keeping only what it knows and naming the rest in `dropped`. */
 
@@ -174,7 +176,26 @@ export function effectOf(name: string, v: unknown, dropped: string[]): EffectSpe
   if (hold !== undefined) out.hold = hold;
   const blend = optional(v.blend, BLEND, `blend in ${name}`, dropped);
   if (blend !== undefined) out.blend = blend;
-  return out as unknown as EffectSpec;
+  const params: Record<string, EffectParam> = {};
+  for (const [key, p] of entriesOf(v.params, `params of ${name}`, dropped)) {
+    const to = isObj(p) && Array.isArray(p.to) ? p.to.filter((t) => typeof t === 'string') : [];
+    if (!safe(key) || !isObj(p) || to.length === 0) {
+      dropped.push(`param ${key} of ${name}`);
+      continue;
+    }
+    params[key] = {
+      label: typeof p.label === 'string' ? p.label : key,
+      about: typeof p.about === 'string' ? p.about : '',
+      to,
+    };
+  }
+  if (Object.keys(params).length) out.params = params;
+  const spec = out as unknown as EffectSpec;
+  // A param naming nothing the effect has is dropped, and named.
+  const kept = pruned(spec);
+  for (const key of Object.keys(spec.params ?? {}))
+    if (!kept.params?.[key]) dropped.push(`param ${key} of ${name}`);
+  return kept;
 }
 
 /** `legacy` reads a scene written while letters were monospace unless `proportional` was set. */
@@ -200,6 +221,13 @@ export function sceneOf(
   const hex = optional(v.hex, HEX, `color in scene ${v.text}`, dropped);
   const face = faceIn(v.face, `face in scene ${v.text}`, dropped);
   const style = styleIn(v.style, `style in scene ${v.text}`, dropped, legacy);
+  const spec = Object.hasOwn(effects, effect)
+    ? effects[effect]
+    : (EFFECTS[effect as keyof typeof EFFECTS] as EffectSpec);
+  const tuning = spec ? tuningOf(spec) : {};
+  const params = paramsOf({ params: tuning }, v.params, `scene ${v.text}`, dropped) as
+    | Record<string, number>
+    | undefined;
   const layers = layersIn(v.layers, `scene ${v.text}`, dropped);
   return {
     text: v.text,
@@ -208,6 +236,7 @@ export function sceneOf(
     ...(hold !== undefined && { hold }),
     ...(face !== undefined && { face }),
     ...(style !== undefined && { style }),
+    ...(params && { params }),
     ...(layers !== undefined && { layers }),
   };
 }

@@ -1,6 +1,8 @@
 import {
   EFFECTS,
+  type EffectParam,
   type EffectSpec,
+  effectOf,
   FACE_NAMES,
   type FaceName,
   LAYERS,
@@ -20,6 +22,7 @@ import {
   type Scene,
   SLOTS,
   type Slot,
+  tuningOf,
 } from '@/index.js';
 import { AMBER } from '../demo.js';
 import { BitReader, BitWriter, widthOf } from './bits.js';
@@ -32,7 +35,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 4;
+export const VERSION = 5;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -194,9 +197,18 @@ function writeEffect(w: BitWriter, name: string, spec: EffectSpec): void {
   if (spec.hold !== undefined) writeNumber(w, HOLD, spec.hold);
   w.flag(spec.blend !== undefined);
   if (spec.blend !== undefined) writeNumber(w, BLEND, spec.blend);
+  const params = Object.entries(spec.params ?? {});
+  w.count(params.length);
+  for (const [name, p] of params) {
+    w.text(name);
+    w.text(p.label);
+    w.text(p.about);
+    w.count(p.to.length);
+    for (const path of p.to) w.text(path);
+  }
 }
 
-function readEffect(r: BitReader): EffectSpec {
+function readEffect(r: BitReader, version: number): EffectSpec {
   const out: Record<string, unknown> = { name: r.text() };
   const about = r.uint(2);
   if (about === ABOUT.builtin)
@@ -211,10 +223,27 @@ function readEffect(r: BitReader): EffectSpec {
   }
   if (r.flag()) out.hold = readNumber(r, HOLD);
   if (r.flag()) out.blend = readNumber(r, BLEND);
+  // Effects carried the settings a scene can tune from version 5.
+  if (version >= 5) {
+    const params: Record<string, EffectParam> = {};
+    for (let i = r.count(); i > 0; i--) {
+      const name = r.text();
+      const label = r.text();
+      const about = r.text();
+      const to = Array.from({ length: r.count() }, () => r.text());
+      Object.defineProperty(params, name, {
+        value: { label, about, to },
+        enumerable: true,
+        writable: true,
+      });
+    }
+    if (Object.keys(params).length) out.params = params;
+  }
   return out as unknown as EffectSpec;
 }
 
-function writeScene(w: BitWriter, scene: Scene, mine: string[]): void {
+function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): void {
+  const mine = Object.keys(effects);
   const effect = scene.effect as string;
   w.text(scene.text);
   w.flag(scene.hex !== AMBER);
@@ -230,9 +259,16 @@ function writeScene(w: BitWriter, scene: Scene, mine: string[]): void {
   w.flag(scene.style?.reverse === true);
   w.flag(scene.style?.monospace === true);
   writeLayers(w, (scene.layers ?? {}) as Record<string, LinkLayer>);
+  const tuning = tuningOf(effectOf(scene, effects));
+  writeParams(w, tuning, scene.params, defaultsOf(tuning));
 }
 
-function readScene(r: BitReader, mine: string[], version: number): Scene {
+/** Each of a tuning's settings at what its effect sets it to. */
+const defaultsOf = (tuning: Params) =>
+  Object.fromEntries(Object.entries(tuning).map(([k, p]) => [k, defaultOf(p)]));
+
+function readScene(r: BitReader, effects: ShareData['effects'], version: number): Scene {
+  const mine = Object.keys(effects);
   const text = r.text();
   const hex = r.flag() ? readNumber(r, HEX) : AMBER;
   const effect = r.flag()
@@ -245,11 +281,19 @@ function readScene(r: BitReader, mine: string[], version: number): Scene {
   const monospace = version >= 4 ? r.flag() : !r.flag();
   const style = { ...(reverse && { reverse }), ...(monospace && { monospace }) };
   const layers = version >= 3 ? readLayers(r) : version === 2 ? readLayers(r, V2_LAYERS) : {};
+  // Scenes carried their effect's tuning from version 5.
+  const params =
+    version >= 5
+      ? (readParams(r, tuningOf(effectOf({ text, hex, effect }, effects))) as
+          | Record<string, number>
+          | undefined)
+      : undefined;
   return {
     text,
     hex,
     effect,
     ...(hold !== undefined && { hold }),
+    ...(params && { params }),
     ...(face !== undefined && { face }),
     ...(Object.keys(style).length && { style }),
     ...(Object.keys(layers).length && { layers }),
@@ -302,7 +346,7 @@ export function pack(data: ShareData): Uint8Array {
       typeof s.effect === 'string' && (mine.includes(s.effect) || EFFECT_NAMES.includes(s.effect)),
   );
   w.count(scenes.length);
-  for (const scene of scenes) writeScene(w, scene, mine);
+  for (const scene of scenes) writeScene(w, scene, data.effects);
   return w.done();
 }
 
@@ -316,11 +360,11 @@ export function unpack(bytes: Uint8Array): ShareData {
   const effects: Record<string, EffectSpec> = {};
   const mine: string[] = [];
   for (let i = r.count(); i > 0; i--) {
-    const spec = readEffect(r);
+    const spec = readEffect(r, version);
     mine.push(spec.name);
     // Defined, not assigned: a link's `__proto__` would otherwise set the prototype.
     Object.defineProperty(effects, spec.name, { value: spec, enumerable: true, writable: true });
   }
-  const program = Array.from({ length: r.count() }, () => readScene(r, mine, version));
+  const program = Array.from({ length: r.count() }, () => readScene(r, effects, version));
   return { effects, program, ...(layers && { layers }) };
 }

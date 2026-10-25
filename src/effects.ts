@@ -11,6 +11,7 @@ import {
   stagePiece,
   type Warning,
 } from './pieces.js';
+import type { EffectParam } from './tuning.js';
 
 /** A message's coming on, standing and going, as pieces in each slot: plain data. */
 export interface EffectSpec {
@@ -28,6 +29,8 @@ export interface EffectSpec {
   readonly blend?: number;
   /** An order over the whole effect: one arc per group, each started a lag after the last. */
   readonly order?: Order;
+  /** What a scene playing it can tune, by name. */
+  readonly params?: Readonly<Record<string, EffectParam>>;
 }
 
 /** An effect as the arcs that play it, each with its start on the owner's clock. */

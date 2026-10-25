@@ -187,7 +187,9 @@ export function playEffect(name: string): void {
     if (!scene) return;
     const spec = library.get()[name];
     if (spec) s.effects[name] = spec;
-    s.program[at] = { ...scene, effect: name };
+    // Tuning belongs to the effect it was set for.
+    const { params: _, ...rest } = scene;
+    s.program[at] = scene.effect === name ? scene : { ...rest, effect: name };
   });
 }
 

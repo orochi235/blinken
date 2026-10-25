@@ -7,8 +7,9 @@ import { FACE_NAMES } from '@/faces.js';
 import { MODULATORS } from '@/modulators/index.js';
 import { MOVES } from '@/moves/index.js';
 import { ORDERS, placeText } from '@/orders.js';
+import { tuningOf } from '@/tuning.js';
 import { BitReader, BitWriter, widthOf } from '../lab/compose/bits.js';
-import { pack, unpack, VERSION } from '../lab/compose/codec.js';
+import { pack, type ShareData, unpack, VERSION } from '../lab/compose/codec.js';
 import { HEX, sceneOf } from '../lab/compose/readers.js';
 import { decode, encode, playable, shareOf } from '../lab/compose/share.js';
 import { BLEND, type ComposeState, HOLD, LAG } from '../lab/compose/state.js';
@@ -212,6 +213,28 @@ describe('packed links', () => {
     expect(state.program.map((s) => s.layers)).toEqual([{ invert: { on: true } }]);
   });
 
+  it('round-trips an effect’s params and each scene’s tuning of its effect', () => {
+    const data = {
+      effects: {
+        mine: {
+          name: 'mine',
+          active: [{ move: 'stand' }, { mod: 'flash' }],
+          hold: 2000,
+          params: { beats: { label: 'beats', about: 'Blinks.', to: ['active.1.flashes'] } },
+        },
+      },
+      program: [
+        { text: 'A', hex: AMBER, effect: 'mine', params: { beats: 5 } },
+        { text: 'B', hex: AMBER, effect: 'fall', params: { drop: 600, blend: 100 } },
+        { text: 'C', hex: AMBER, effect: 'scroll' },
+      ],
+    } as ShareData;
+    expect(unpack(pack(data))).toEqual(data);
+    const { state, dropped } = decode(Buffer.from(pack(data)).toString('base64url'));
+    expect(dropped).toEqual([]);
+    expect(state.program[1]?.params).toEqual({ drop: 600, blend: 100 });
+  });
+
   it('opens a version 3 link as monospace unless it set proportional', () => {
     const w = new BitWriter();
     w.uint(3, 8);
@@ -260,20 +283,23 @@ describe('packed links', () => {
   });
 
   it('is at VERSION for the registries and ranges it was written against', () => {
-    const range = (p: object) =>
+    const one = (p: object) =>
       JSON.stringify(p, ['min', 'max', 'step', 'choices', 'value', 'colors']);
+    // Each setting by name: a key list given to stringify filters names at every level.
+    const range = (params: object) => Object.entries(params).map(([k, p]) => [k, one(p)]);
     const layout = JSON.stringify({
       effects: Object.keys(EFFECTS),
+      tuning: Object.entries(EFFECTS).map(([n, e]) => [n, range(tuningOf(e))]),
       moves: Object.entries(MOVES).map(([n, m]) => [n, m.slot, range(m.params)]),
       mods: Object.entries(MODULATORS).map(([n, m]) => [n, range(m.params)]),
       layers: LAYERS,
       orders: ORDERS,
       faces: FACE_NAMES,
-      numbers: [HOLD, BLEND, LAG, HEX].map(range),
+      numbers: [HOLD, BLEND, LAG, HEX].map(one),
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 4, digest: '75147cfac27a' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 5, digest: 'f479b8f833f4' });
   });
 });
 

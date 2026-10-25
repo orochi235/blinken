@@ -4,12 +4,12 @@ import {
   LAYERS,
   type LayerName,
   type LayerSpec,
-  type NumberParam,
   type ParamValue,
   type Piece,
   piecesOf,
   type Scene,
   type Slot,
+  targetOf,
 } from '@/index.js';
 
 /** Everything the compose lab is editing: its effects, the program, and what is open. */
@@ -25,37 +25,7 @@ export interface LabLayer {
   params?: Record<string, ParamValue>;
 }
 
-/** An effect's or a scene's hold, an effect's blend and an order's lag, as the lab offers them. */
-export const HOLD: NumberParam = {
-  label: 'hold',
-  min: 0,
-  max: 12000,
-  step: 50,
-  value: 0,
-  unit: 'ms',
-  about:
-    'How long the message stands on the sign between coming on and going. Auto uses the standing move’s own length.',
-};
-export const BLEND: NumberParam = {
-  label: 'blend',
-  min: 0,
-  max: 1000,
-  step: 10,
-  value: 0,
-  unit: 'ms',
-  about:
-    'How long each part of the effect crossfades into the next, coming on into standing and standing into going. At 0 they cut over at once.',
-};
-export const LAG: NumberParam = {
-  label: 'lag',
-  min: 0,
-  max: 400,
-  step: 1,
-  value: 0,
-  unit: 'ms',
-  about:
-    'How long each group of dots waits after the group before it, in the order chosen. At 0 they all go together; higher makes a slower sweep.',
-};
+export { BLEND, HOLD, LAG } from '@/index.js';
 
 /** A scene's layer with its built-in's settings under the scene's, off until turned on. */
 export function sceneLayerOf(scene: Scene, name: LayerName): LayerSpec & { on: boolean } {
@@ -79,19 +49,52 @@ export function withSlot(spec: EffectSpec, slot: Slot, pieces: readonly Piece[])
 
 /** An effect with piece `i` of `slot` replaced. */
 export const setPiece = (spec: EffectSpec, slot: Slot, i: number, piece: Piece): EffectSpec =>
-  withSlot(
-    spec,
-    slot,
-    piecesOf(spec[slot]).map((p, j) => (j === i ? piece : p)),
+  pruned(
+    withSlot(
+      spec,
+      slot,
+      piecesOf(spec[slot]).map((p, j) => (j === i ? piece : p)),
+    ),
   );
 
-/** An effect without piece `i` of `slot`. */
+/** An effect without piece `i` of `slot`; its params follow the pieces after it down a place. */
 export const removePiece = (spec: EffectSpec, slot: Slot, i: number): EffectSpec =>
-  withSlot(
-    spec,
-    slot,
-    piecesOf(spec[slot]).filter((_, j) => j !== i),
+  pruned(
+    withTargets(
+      withSlot(
+        spec,
+        slot,
+        piecesOf(spec[slot]).filter((_, j) => j !== i),
+      ),
+      (path) => {
+        const [s, k, key] = path.split('.');
+        if (s !== slot || k === undefined) return path;
+        const at = Number(k);
+        return at === i ? null : at > i ? `${s}.${at - 1}.${key}` : path;
+      },
+    ),
   );
+
+/** An effect with each param's targets passed through `fn`, which drops one by giving null. */
+function withTargets(spec: EffectSpec, fn: (path: string) => string | null): EffectSpec {
+  if (!spec.params) return spec;
+  const params = Object.fromEntries(
+    Object.entries(spec.params).map(([name, p]) => [
+      name,
+      { ...p, to: p.to.flatMap((path) => fn(path) ?? []) },
+    ]),
+  );
+  return { ...spec, params };
+}
+
+/** An effect whose params name only settings it has, a param left driving nothing dropped. */
+export function pruned(spec: EffectSpec): EffectSpec {
+  if (!spec.params) return spec;
+  const kept = withTargets(spec, (path) => (targetOf(spec, path) ? path : null)).params ?? {};
+  const params = Object.fromEntries(Object.entries(kept).filter(([, p]) => p.to.length > 0));
+  const { params: _, ...rest } = spec;
+  return Object.keys(params).length ? { ...rest, params } : rest;
+}
 
 /** An effect with `piece` added last in `slot`. */
 export const addPiece = (spec: EffectSpec, slot: Slot, piece: Piece): EffectSpec =>

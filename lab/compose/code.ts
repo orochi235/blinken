@@ -33,7 +33,7 @@ const withHex = (piece: Piece) => {
   return piece.params ? { ...piece, params: hexParams(thing, piece.params) } : piece;
 };
 
-const KEY_ORDER = ['name', 'about', 'order', 'enter', 'active', 'exit', 'hold', 'blend'];
+const KEY_ORDER = ['name', 'about', 'order', 'enter', 'active', 'exit', 'hold', 'blend', 'params'];
 const effectCode = (spec: EffectSpec) => {
   const out: Record<string, unknown> = {};
   for (const key of KEY_ORDER) {
@@ -77,7 +77,7 @@ export function toCode(state: ComposeState): string {
     Object.entries(state.effects).map(([name, spec]) => [name, effectCode(spec)]),
   );
   const program = state.program.map((scene) => {
-    const { text, hex, effect, hold, face, style } = scene;
+    const { text, hex, effect, hold, params, face, style } = scene;
     // A layer that is on, as true where it keeps its built-in's settings.
     const layers = Object.fromEntries(
       (Object.keys(scene.layers ?? {}) as LayerName[]).flatMap((name): [string, unknown][] => {
@@ -93,6 +93,7 @@ export function toCode(state: ComposeState): string {
       hex: new Hex(hex),
       effect,
       hold,
+      params,
       face,
       style,
       ...(Object.keys(layers).length && { layers }),

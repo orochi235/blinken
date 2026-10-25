@@ -38,20 +38,9 @@
   white-space: nowrap;
 }
 
-.compose-hint {
-  margin: 0;
-  color: var(--wzl-fg-muted);
-}
-
 .compose-slot {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
-}
-
-/* Every designer panel: inline rows two up, one up where its box is narrow. labkit has no columns option yet. */
-.compose-two-up {
-  grid-template-columns: repeat(auto-fit, minmax(max(22ch, calc(50% - 6px)), 1fr));
-  column-gap: 12px;
 }

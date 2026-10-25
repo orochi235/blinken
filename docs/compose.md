@@ -168,9 +168,11 @@ The lab serves two pages: the composer at `/compose` (`lab/compose.html`) and th
   it; it is a convenience, not a save.
 - **The hash is packed bits** (`lab/compose/codec.ts`): each move, modulator, order, face,
   built-in effect and layer is written as its place in its registry, each number as a count of
-  its setting's steps, and settings at their defaults not at all. Reordering a registry or
-  changing a setting's range or step changes what existing links mean, so it bumps `VERSION`;
-  a test pins a digest of the layout to catch it. A link of another version opens as unreadable.
+  its setting's steps, and settings at their defaults not at all. A scene's tuning of its effect
+  is written against that effect's params, so a built-in gaining or losing one changes links too.
+  Reordering a registry, changing a setting's range or step, or changing a built-in's params
+  changes what existing links mean, so it bumps `VERSION`; a test pins a digest of the layout to
+  catch it. Older versions still read; a link from a newer one opens as unreadable.
   Hashes from before packing (base64 JSON, opening `ey`) still read. Deflating the packed bytes
   made them longer, so links are not compressed (2026-10-24).
 
