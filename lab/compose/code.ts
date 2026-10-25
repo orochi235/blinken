@@ -1,13 +1,21 @@
 import {
+  BLEND,
   type EffectSpec,
+  effectOf,
+  HOLD,
+  LAG,
   LAYERS,
   type LayerName,
   MODULATORS,
   MOVES,
+  type NumberParam,
   type Params,
   type Piece,
+  type Scene,
   SLOTS,
   type Slot,
+  tuningOf,
+  values,
 } from '@/index.js';
 import { type ComposeState, sceneLayerOf } from './state.js';
 
@@ -16,25 +24,46 @@ class Hex {
   constructor(readonly n: number) {}
 }
 
-const hexParams = (
+/** A number as it plays: clamped to `p`'s range, as staging and links read it. */
+const held = (p: NumberParam, v: number | undefined) =>
+  v === undefined ? undefined : values({ params: { v: p } }, { v }).v;
+
+/** The settings `params` gives, as they play, with colors written as hex literals. */
+const paramsCode = (
   thing: { readonly params: Params },
   params?: Readonly<Record<string, unknown>>,
-) =>
-  params &&
-  Object.fromEntries(
-    Object.entries(params).map(([k, v]) => {
+) => {
+  if (!params) return params;
+  const playing = values(thing, params as never) as Readonly<Record<string, unknown>>;
+  return Object.fromEntries(
+    Object.keys(params).map((k) => {
       const p = thing.params[k];
+      const v = playing[k];
       return [k, p && 'colors' in p && Array.isArray(v) ? v.map((c) => new Hex(c)) : v];
     }),
   );
+};
+
+const withLag = <O extends { readonly lag?: number }>(order: O | undefined) =>
+  order?.lag === undefined ? order : { ...order, lag: held(LAG, order.lag) };
 
 const withHex = (piece: Piece) => {
   const thing = 'mod' in piece ? MODULATORS[piece.mod] : MOVES[piece.move];
-  return piece.params ? { ...piece, params: hexParams(thing, piece.params) } : piece;
+  const timed =
+    'mod' in piece
+      ? piece.spread && { spread: withLag(piece.spread) }
+      : piece.order && { order: withLag(piece.order) };
+  return { ...piece, ...timed, ...(piece.params && { params: paramsCode(thing, piece.params) }) };
 };
 
 const KEY_ORDER = ['name', 'about', 'order', 'enter', 'active', 'exit', 'hold', 'blend', 'params'];
-const effectCode = (spec: EffectSpec) => {
+const effectCode = (given: EffectSpec) => {
+  const spec: EffectSpec = {
+    ...given,
+    order: withLag(given.order),
+    hold: held(HOLD, given.hold),
+    blend: held(BLEND, given.blend),
+  };
   const out: Record<string, unknown> = {};
   for (const key of KEY_ORDER) {
     const v = spec[key as keyof EffectSpec];
@@ -68,6 +97,18 @@ function lit(v: unknown, indent: number, force = false): string {
   return `${open.trim()}\n${lines.join('\n')}\n${' '.repeat(indent)}${close.trim()}`;
 }
 
+/** A scene's tuning of its effect as it plays: each value held to the range of what it tunes. */
+function tunedCode(scene: Scene, effects: ComposeState['effects']) {
+  if (!scene.params) return undefined;
+  let tuning: Params;
+  try {
+    tuning = tuningOf(effectOf(scene, effects));
+  } catch {
+    return scene.params;
+  }
+  return paramsCode({ params: tuning }, scene.params);
+}
+
 /** Whether two settings records hold the same values. */
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? {}) === JSON.stringify(b ?? {});
 
@@ -77,23 +118,25 @@ export function toCode(state: ComposeState): string {
     Object.entries(state.effects).map(([name, spec]) => [name, effectCode(spec)]),
   );
   const program = state.program.map((scene) => {
-    const { text, hex, effect, hold, params, face, style } = scene;
+    const { text, hex, effect, hold, face, style } = scene;
     // A layer that is on, as true where it keeps its built-in's settings.
     const layers = Object.fromEntries(
       (Object.keys(scene.layers ?? {}) as LayerName[]).flatMap((name): [string, unknown][] => {
         const { on, params } = sceneLayerOf(scene, name);
         if (!on) return [];
         const base = LAYERS[name];
-        if (same(params, base.params)) return [[name, true]];
-        return [[name, { params: hexParams(MODULATORS[base.mod], params) }]];
+        const mod = MODULATORS[base.mod];
+        if (same(values(mod, params as never), values(mod, base.params as never)))
+          return [[name, true]];
+        return [[name, { params: paramsCode(mod, params) }]];
       }),
     );
     return {
       text,
       hex: new Hex(hex),
       effect,
-      hold,
-      params,
+      hold: held(HOLD, hold),
+      params: tunedCode(scene, state.effects),
       face,
       style,
       ...(Object.keys(layers).length && { layers }),

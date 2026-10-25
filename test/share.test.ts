@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { board } from '@/board.js';
 import { EFFECTS } from '@/builtins.js';
-import { stageEffect } from '@/effects.js';
+import { type EffectSpec, stageEffect } from '@/effects.js';
 import { MODULATORS } from '@/modulators/index.js';
 import { placeText } from '@/orders.js';
 import { values } from '@/params.js';
 import type { Scene } from '@/program.js';
+import { BLEND, HOLD, LAG } from '@/tuning.js';
 import { decode, encode, shareOf, toCode } from '../lab/compose/share.js';
 import type { ComposeState } from '../lab/compose/state.js';
 import {
@@ -161,6 +162,33 @@ describe('share', () => {
     expect(code).toContain('colors: [0xff0000, 0x0000ff]');
     expect(code).toContain('layers: { rainbow: { params: { rate: 2, phase: 0.015 } } }');
     expect(code).not.toContain('flip: {');
+  });
+
+  it('writes code with every number held to its range, as it plays', () => {
+    const rate = MODULATORS['hue-cycle'].params.rate;
+    const s = state();
+    s.effects['hold copy'] = {
+      ...(s.effects['hold copy'] as EffectSpec),
+      order: { by: 'column', lag: 99999 },
+      active: [{ mod: 'hue-cycle', spread: { by: 'column', lag: -5 }, params: { rate: 1e9 } }],
+      hold: 99999,
+      blend: 99999,
+    };
+    s.program[1] = {
+      ...(s.program[1] as Scene),
+      hold: 99999,
+      params: { blend: -5 },
+      layers: { rainbow: { params: { rate: -1e9 } } },
+    };
+    const code = toCode(s);
+    expect(code).not.toMatch(/99999|1000000000|-5\b/);
+    expect(code).toContain(`order: { by: "column", lag: ${LAG.max} }`);
+    expect(code).toContain(`spread: { by: "column", lag: ${LAG.min} }`);
+    expect(code).toContain(`params: { rate: ${rate.max} }`);
+    expect(code).toContain(`hold: ${HOLD.max}`);
+    expect(code).toContain(`blend: ${BLEND.max}`);
+    expect(code).toContain(`params: { blend: ${BLEND.min} }`);
+    expect(code).toContain(`rate: ${rate.min}`);
   });
 
   it('writes an untouched layer as true and leaves out layers that are off', () => {
