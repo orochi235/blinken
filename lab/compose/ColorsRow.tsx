@@ -23,6 +23,7 @@ export const colorsRow: ControlRenderer = Object.assign(
               key={i}
               type="color"
               aria-label={`${pref.name ?? 'color'} ${i + 1}`}
+              title={`Color ${i + 1} of ${colors.length}. Click to pick another.`}
               value={hexOf(c)}
               disabled={disabled}
               onChange={(e) => set(colors.map((x, j) => (j === i ? numOf(e.target.value) : x)))}
@@ -32,6 +33,7 @@ export const colorsRow: ControlRenderer = Object.assign(
             type="button"
             className="colors-row-btn"
             title="add a color"
+            aria-label="add a color"
             disabled={disabled}
             onClick={() => set([...colors, colors.at(-1) ?? 0xffffff])}
           >
@@ -41,6 +43,7 @@ export const colorsRow: ControlRenderer = Object.assign(
             type="button"
             className="colors-row-btn"
             title="remove the last color"
+            aria-label="remove the last color"
             disabled={disabled || colors.length <= 1}
             onClick={() => set(colors.slice(0, -1))}
           >
