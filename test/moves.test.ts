@@ -29,9 +29,8 @@ const length = (m: Move, where = at) => m.patch(where, values(m)).duration;
 /** Every face plain, and the standard face in each style. */
 const LOOKS: readonly Look[] = [
   ...FACE_NAMES.map((face) => ({ face })),
-  { style: { reverse: true } },
   { style: { monospace: true } },
-  { face: 'bold', style: { reverse: true, monospace: true } },
+  { face: 'bold', style: { monospace: true } },
   { style: { outline: true } },
   { style: { shadow: true } },
   { face: 'slim', style: { outline: true, shadow: true } },

@@ -10,8 +10,6 @@
 
 ## Known gaps
 
-- The compose lab no longer offers `style.reverse`, which is to become a layer (asked 2026-10-24); a scene that already has it still draws reversed, with no switch to turn it off. The `invert` layer swaps the whole sign, while `reverse` lights only the message's box, following it as it moves.
-- Reverse text has no lit row above or below its letters, since every face fills the sign's 7-row line, so reversed 5 × 7 letters read poorly; a border row would need a taller line.
 - `@msb235/blits-panel@0.1.1` pins weasel `1.12.0` exactly, so with bree on `1.13.0-rc.0` npm nests a second weasel copy under it; `WEASEL=npm` runs and the deployed lab ship both. Needs a blits-panel release on the RC.
 - A tint covering a dot partly is laid over black rather than the message's own color, so a half-covered dot shows a darker tint instead of a blend (`dotColor` in `src/color.ts`).
 - `weasel.config.ts`'s stale-build warning counts every file under a package's `src`, tests included, so editing a test there warns too.

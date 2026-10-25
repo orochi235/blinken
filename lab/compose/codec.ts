@@ -35,7 +35,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 7;
+export const VERSION = 8;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -256,7 +256,6 @@ function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): 
   const face = typeof scene.face === 'string' ? FACE_NAMES.indexOf(scene.face) : -1;
   w.flag(face >= 0);
   if (face >= 0) w.uint(face, widthOf(FACE_NAMES.length));
-  w.flag(scene.style?.reverse === true);
   w.flag(scene.style?.monospace === true);
   w.flag(scene.style?.outline === true);
   w.flag(scene.style?.shadow === true);
@@ -291,19 +290,20 @@ function readScene(r: BitReader, effects: ShareData['effects'], version: number)
     : (EFFECT_NAMES[r.index(EFFECT_NAMES.length)] as string);
   const hold = r.flag() ? readNumber(r, HOLD) : undefined;
   const face = r.flag() ? (FACE_NAMES[r.index(FACE_NAMES.length)] as FaceName) : undefined;
-  const reverse = r.flag();
+  // Reverse text was dropped in version 8; an older link's plays the invert layer instead.
+  const reverse = version < 8 && r.flag();
   // Before version 4 the bit was `proportional`, and a scene without it was monospace.
   const monospace = version >= 4 ? r.flag() : !r.flag();
   // Outline and shadow came in version 7.
   const outline = version >= 7 && r.flag();
   const shadow = version >= 7 && r.flag();
   const style = {
-    ...(reverse && { reverse }),
     ...(monospace && { monospace }),
     ...(outline && { outline }),
     ...(shadow && { shadow }),
   };
-  const layers = version >= 3 ? readLayers(r) : version === 2 ? readLayers(r, V2_LAYERS) : {};
+  const read = version >= 3 ? readLayers(r) : version === 2 ? readLayers(r, V2_LAYERS) : {};
+  const layers = reverse && !read.invert ? { ...read, invert: { on: true } } : read;
   // Scenes carried their effect's tuning from version 5.
   const params =
     version >= 5

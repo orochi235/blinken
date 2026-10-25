@@ -35,8 +35,9 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
   2026-10-24).
 - Outline means hollow letters; shadow is a dim copy one dot down and right, and the two stack
   (2026-10-24).
-- Unanswered: whether `reverse` becomes a layer that follows the message or is dropped for the
-  `invert` layer, and whether a tracking lever is still wanted now kerning is in.
+- Reverse text is dropped for the `invert` layer; old links and files that reversed a scene
+  open with that layer on (2026-10-24).
+- Unanswered: whether a tracking lever is still wanted now kerning is in.
 
 - Every prefs setting carries a tooltip explanation, no ⓘ icons (all projects).
 - Consumers of the user's own libraries build against the sibling checkout by default.

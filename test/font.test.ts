@@ -87,19 +87,6 @@ describe('faces', () => {
 });
 
 describe('styles', () => {
-  it('reverse lights the box and leaves the glyphs dark, with a lit column either side', () => {
-    expect(picture('I', { style: { reverse: true, monospace: true } })).toEqual([
-      '##...##',
-      '###.###',
-      '###.###',
-      '###.###',
-      '###.###',
-      '###.###',
-      '##...##',
-    ]);
-    expect(rasterize('', { style: { reverse: true } }).cols).toBe(0);
-  });
-
   it('advances each glyph by its inked width and a blank', () => {
     expect(picture('I1')).toEqual([
       '###..#..',
@@ -169,7 +156,7 @@ describe('styles', () => {
   });
 
   it('spans each letter, so a letter rasterized alone lines up inside its span', () => {
-    for (const style of [{}, { reverse: true }, { monospace: true }]) {
+    for (const style of [{}, { outline: true }, { monospace: true }]) {
       const text = rasterize('WIN', { style });
       expect(text.letters.reduce((n, l) => n + l.width, 0)).toBe(text.cols);
       text.letters.forEach((span, k) => {

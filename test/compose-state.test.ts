@@ -59,9 +59,9 @@ describe('withLook', () => {
     const slim = withLook(scene, 'face', 'slim');
     expect(slim).toEqual({ ...scene, face: 'slim' });
     expect(withLook(slim, 'face', 'standard')).toEqual(scene);
-    const both = withLook(withLook(scene, 'reverse', true), 'monospace', true);
-    expect(both.style).toEqual({ reverse: true, monospace: true });
-    expect(withLook(withLook(both, 'reverse', false), 'monospace', false)).toEqual(scene);
+    const both = withLook(withLook(scene, 'outline', true), 'monospace', true);
+    expect(both.style).toEqual({ outline: true, monospace: true });
+    expect(withLook(withLook(both, 'outline', false), 'monospace', false)).toEqual(scene);
   });
 });
 

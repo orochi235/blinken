@@ -4,15 +4,13 @@ import { type Face, type FaceName, faceOf } from './faces.js';
 export const ROWS = 7;
 
 /**
- * How text is drawn besides its face. `reverse` lights the message's box and leaves the glyphs
- * dark. `outline` draws each letter hollow: the ring of dots around it lit and the letter dark.
- * `shadow` lays a dim copy of each letter one dot down and right, behind it. Each glyph, outline
+ * How text is drawn besides its face. `outline` draws each letter hollow: the ring of dots
+ * around it lit and the letter dark. `shadow` lays a dim copy of each letter one dot down and right, behind it. Each glyph, outline
  * and shadow included, is kerned by its shape: it slides left until its ink is a blank from the
  * ink before it in the same row and the rows either side, so no two letters touch, even at a
  * corner. `monospace` advances every glyph by its widest instead.
  */
 export interface TextStyle {
-  readonly reverse?: boolean;
   readonly monospace?: boolean;
   readonly outline?: boolean;
   readonly shadow?: boolean;
@@ -161,10 +159,7 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
   const top = style.outline ? 1 : 0;
   const rows = face.rows + top + (style.outline ? 1 : 0) + (style.shadow ? 1 : 0);
   const xs = layout(glyphs, rows, monospace);
-  // Reversed, a blank column leads so the first glyph has a lit edge before it as the last has after.
-  const pad = style.reverse && glyphs.length > 0 ? 1 : 0;
-  const plain = glyphs.reduce((n, g, k) => Math.max(n, (xs[k] as number) + g.width + 1), 0);
-  const cols = plain + pad;
+  const cols = glyphs.reduce((n, g, k) => Math.max(n, (xs[k] as number) + g.width + 1), 0);
   const levels = new Float32Array(cols * rows);
   const owner = new Int32Array(cols).fill(-1);
   const inkOwner = new Int32Array(cols * rows).fill(-1);
@@ -173,7 +168,7 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
     const at = xs[k] as number;
     g.cells.forEach((r, y) => {
       r.forEach((v, x) => {
-        const i = y * cols + pad + at + x;
+        const i = y * cols + at + x;
         // A letter stands in front of the shadow of the one before it.
         if (v > (levels[i] as number)) {
           levels[i] = v;
@@ -181,12 +176,10 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
         }
       });
     });
-    // A reversed letter's span starts at the blank before it; the last also keeps the one after.
-    const width = g.width + 1 + (pad && k === glyphs.length - 1 ? 1 : 0);
+    const width = g.width + 1;
     letters.push({ x: at, width });
     owner.fill(k, at, at + width);
   });
-  if (style.reverse) for (let i = 0; i < levels.length; i++) levels[i] = 1 - (levels[i] as number);
   const level = (x: number, y: number) =>
     x >= 0 && x < cols && y >= 0 && y < rows ? (levels[y * cols + x] as number) : 0;
   return {

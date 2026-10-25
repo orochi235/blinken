@@ -93,7 +93,6 @@ export function Thumbnail({
     effect,
     text,
     face,
-    style?.reverse,
     style?.monospace,
     style?.outline,
     style?.shadow,

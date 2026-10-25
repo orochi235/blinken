@@ -58,7 +58,7 @@ const copies = (): ComposeState => ({
       },
     },
     { text: 'YOU', hex: 0x6dff5a, effect: 'roll copy', hold: 1234.5 },
-    { text: 'ÜBER 🎉', hex: AMBER, effect: 'mine', face: 'slim', style: { reverse: true } },
+    { text: 'ÜBER 🎉', hex: AMBER, effect: 'mine', face: 'slim', style: { outline: true } },
   ],
   editing: {},
 });
@@ -255,6 +255,28 @@ describe('packed links', () => {
     expect(state.program[0]?.params).toEqual({ speed: 60 });
   });
 
+  it('opens a version 7 scene that was reversed with the invert layer on', () => {
+    const w = new BitWriter();
+    w.uint(7, 8);
+    w.count(0);
+    w.count(1);
+    w.text('A');
+    w.flag(false);
+    w.flag(false);
+    w.uint(Object.keys(EFFECTS).indexOf('hold'), widthOf(Object.keys(EFFECTS).length));
+    w.flag(false);
+    w.flag(false);
+    // reverse, then monospace, outline and shadow.
+    w.flag(true);
+    for (let k = 0; k < 3; k++) w.flag(false);
+    for (const _ of Object.keys(LAYERS)) w.flag(false);
+    for (const _ of Object.keys(tuningOf(EFFECTS.hold))) w.flag(false);
+    const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
+    expect(read).toBe(true);
+    expect(state.program[0]?.style).toBeUndefined();
+    expect(state.program[0]?.layers).toEqual({ invert: { on: true } });
+  });
+
   it('round-trips outline and shadow', () => {
     const data = {
       effects: {},
@@ -338,7 +360,7 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 7, digest: 'f13fd810472a' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 8, digest: 'f13fd810472a' });
   });
 });
 

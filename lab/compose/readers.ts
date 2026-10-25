@@ -238,7 +238,9 @@ export function sceneOf(
     : (EFFECTS[effect as keyof typeof EFFECTS] as EffectSpec);
   const tuning = spec ? tuningOf(spec) : {};
   const params = paramsOf({ params: tuning }, v.params, `scene ${v.text}`, dropped);
-  const layers = layersIn(v.layers, `scene ${v.text}`, dropped);
+  const read = layersIn(v.layers, `scene ${v.text}`, dropped);
+  const reversed = isObj(v.style) && v.style.reverse === true;
+  const layers = reversed && !read?.invert ? { ...read, invert: { on: true } } : read;
   return {
     text: v.text,
     hex: Math.round(hex ?? AMBER),
@@ -281,12 +283,13 @@ function faceIn(v: unknown, what: string, dropped: string[]): FaceName | undefin
   return undefined;
 }
 
-const STYLES = ['reverse', 'monospace', 'outline', 'shadow'] as const;
-const LEGACY_STYLES = ['reverse', 'proportional'] as const;
+const STYLES = ['monospace', 'outline', 'shadow'] as const;
+const LEGACY_STYLES = ['proportional'] as const;
 
 /**
  * A link's style for a scene: each switch it knows that is true, the rest named in `dropped`. A
- * `legacy` style's `proportional` is read as the absence of `monospace`.
+ * `legacy` style's `proportional` is read as the absence of `monospace`. `reverse`, since
+ * dropped, is left to the scene's reader, which plays the invert layer for it.
  */
 function styleIn(
   v: unknown,
@@ -299,6 +302,7 @@ function styleIn(
   if (v !== undefined && !isObj(v)) dropped.push(what);
   else
     for (const [key, on] of Object.entries(v ?? {})) {
+      if (key === 'reverse' && typeof on === 'boolean') continue;
       if (!known.includes(key) || typeof on !== 'boolean') dropped.push(`${key} in ${what}`);
       else if (on) out[key] = true;
     }

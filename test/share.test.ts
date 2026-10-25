@@ -219,14 +219,14 @@ describe('share', () => {
 
   it('round-trips a scene’s face and style, and writes them as code', () => {
     const s = state();
-    s.program[0] = { ...(s.program[0] as Scene), face: 'slim', style: { reverse: true } };
+    s.program[0] = { ...(s.program[0] as Scene), face: 'slim', style: { shadow: true } };
     s.program[1] = { ...(s.program[1] as Scene), style: { monospace: true } };
     const { state: back, dropped } = decode(`#${encode(s)}`);
     expect(dropped).toEqual([]);
     expect(back.program).toEqual(s.program);
     const code = toCode(s);
     expect(code).toContain('face: "slim"');
-    expect(code).toContain('style: { reverse: true }');
+    expect(code).toContain('style: { shadow: true }');
     expect(code).toContain('style: { monospace: true }');
   });
 
@@ -296,7 +296,9 @@ describe('share', () => {
     data.program[1].style = { reverse: true, blink: true, proportional: 'yes' };
     const { state: back, dropped } = decode(hashOf(data));
     expect(back.program[0]?.face).toBeUndefined();
-    expect(back.program[1]?.style).toEqual({ reverse: true, monospace: true });
+    expect(back.program[1]?.style).toEqual({ monospace: true });
+    // Reverse text is gone; a scene that had it plays the invert layer.
+    expect(back.program[1]?.layers?.invert).toEqual({ on: true });
     expect(dropped).toEqual([
       'face in scene HI',
       'blink in style in scene THERE',

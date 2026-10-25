@@ -125,7 +125,7 @@ A scene can name the face its message is drawn in and a style for it, as `face` 
 program: [
   { effect: 'hold', text: 'NOW SHOWING', hex: 0xff4030, face: 'bold' },
   { effect: 'scroll', text: 'ALL NIGHT', hex: 0x6dff5a, face: 'slim', style: { monospace: true } },
-  { effect: 'flip', text: 'OPEN', hex: 0xff9a2e, style: { reverse: true } },
+  { effect: 'flip', text: 'OPEN', hex: 0xff9a2e, style: { outline: true } },
 ],
 ```
 
@@ -137,7 +137,7 @@ published pixel fonts, from the 3 × 5 `tom-thumb` to the italic `monogram-itali
 `src/glyphs/fonts/CREDITS.md` names each one's source and license. A face's lines are spaced by
 its body, the height of its capitals: 7 dots for the drawn four, 3 to 7 for the converted ones. A
 glyph that reaches above or below the body, such as a comma's tail, draws there in a ghost row,
-into the gap between lines or the sign's margin; only the sign's edge cuts it. `style.reverse` is inverse video: the message's box lit and its letters dark.
+into the gap between lines or the sign's margin; only the sign's edge cuts it.
 `style.outline` draws each letter hollow, the ring of dots around it lit and the letter dark, and
 `style.shadow` lays a dim copy of each letter one dot down and right, behind it; with both, the
 shadow is the outline's. An outline takes a ghost row above and below the letters and a shadow one
