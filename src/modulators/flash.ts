@@ -6,7 +6,8 @@ const SHARE = { min: 0, max: 1, step: 0.01, unit: 'of the pass' };
 
 /**
  * Gain blinking off within a window of each pass: `flashes` beats across it, each dark for its
- * second half. At its defaults the window is the whole pass and it blinks once a second.
+ * second half. At its defaults the window is the whole pass and it blinks once a pass: once a
+ * second, or once over the hold in an active slot that has one.
  */
 export const flash = modulator({
   name: 'flash',
