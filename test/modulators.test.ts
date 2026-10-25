@@ -160,6 +160,29 @@ describe('modulators', () => {
     expect(row(0, t).gain).toBeLessThan(0.7);
   });
 
+  it('fire tints the top rows yellower than the bottom and keeps gain in range', () => {
+    const at = (y: number, t: number) =>
+      poseAt('fire', t, b.dots.find((d) => d.x === 20 && d.y === y) as Subject, { intensity: 0 });
+    const [top, low] = [at(0, 0).tint, at(6, 0).tint] as number[][];
+    expect(top?.[0]).toBeGreaterThan(low?.[0] as number);
+    expect(top?.[2]).toBeGreaterThan(low?.[2] as number);
+    expect(at(3, 0).gain).toBe(1);
+    for (const t of [0, 250, 1700, 3300])
+      for (const d of b.dots.filter((_, i) => i % 37 === 0)) {
+        const { gain, tint } = poseAt('fire', t, d, { intensity: 0.8 });
+        expect(gain).toBeGreaterThanOrEqual(0.2 - 1e-9);
+        expect(gain).toBeLessThanOrEqual(1);
+        expect(tint?.[3]).toBeCloseTo(3);
+      }
+  });
+
+  it('fire flickers the same way every time and differs from moment to moment', () => {
+    const d = b.dots[200] as Subject;
+    expect(poseAt('fire', 777, d)).toEqual(poseAt('fire', 777, d));
+    const gains = new Set([0, 200, 400, 600, 800].map((t) => poseAt('fire', t, d).gain));
+    expect(gains.size).toBeGreaterThan(1);
+  });
+
   it('shimmer rests between glints and lifts lit, glow, and paleness as one passes', () => {
     const given = { every: 4000, width: 3, angle: 0 };
     for (const d of b.dots.filter((_, i) => i % 13 === 0))

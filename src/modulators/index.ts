@@ -1,6 +1,7 @@
 import { chase } from './chase.js';
 import { palette, twoColor } from './color.js';
 import { desaturate, dim, flare } from './ease.js';
+import { fire } from './fire.js';
 import { flash } from './flash.js';
 import { invert } from './invert.js';
 import type { Modulator } from './modulator.js';
@@ -15,6 +16,7 @@ export {
   chase,
   desaturate,
   dim,
+  fire,
   flare,
   flash,
   hueCycle,
@@ -41,6 +43,7 @@ const modulators = {
   chase,
   invert,
   scanline,
+  fire,
   shimmer,
 };
 export type ModulatorName = keyof typeof modulators;
