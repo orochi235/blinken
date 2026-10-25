@@ -64,6 +64,10 @@ const copies = (): ComposeState => ({
   editing: {},
 });
 
+/** The built-in effects and layers every link up to version 10 named by position. */
+const V10_EFFECTS = Object.keys(EFFECTS).slice(0, 7);
+const V10_LAYERS = Object.keys(LAYERS).slice(0, 3);
+
 const without = ({ editing: _, ...rest }: ComposeState) => rest;
 
 describe('bits', () => {
@@ -198,7 +202,7 @@ describe('packed links', () => {
     w.text('A');
     w.flag(false);
     w.flag(false);
-    w.uint(Object.keys(EFFECTS).indexOf('hold'), widthOf(Object.keys(EFFECTS).length));
+    w.uint(V10_EFFECTS.indexOf('hold'), widthOf(V10_EFFECTS.length));
     for (let k = 0; k < 4; k++) w.flag(false);
     // Sparkle absent; chase and invert there, on, at their built-in settings; rainbow absent.
     w.flag(false);
@@ -244,9 +248,9 @@ describe('packed links', () => {
     w.text('A');
     w.flag(false);
     w.flag(false);
-    w.uint(Object.keys(EFFECTS).indexOf('scroll'), widthOf(Object.keys(EFFECTS).length));
+    w.uint(V10_EFFECTS.indexOf('scroll'), widthOf(V10_EFFECTS.length));
     for (let k = 0; k < 4; k++) w.flag(false);
-    for (const _ of Object.keys(LAYERS)) w.flag(false);
+    for (const _ of V10_LAYERS) w.flag(false);
     // Scroll offered speed and blend in version 5; direction came in 6.
     w.flag(true);
     w.uint(50, widthOf(190 + 2));
@@ -264,18 +268,80 @@ describe('packed links', () => {
     w.text('A');
     w.flag(false);
     w.flag(false);
-    w.uint(Object.keys(EFFECTS).indexOf('hold'), widthOf(Object.keys(EFFECTS).length));
+    w.uint(V10_EFFECTS.indexOf('hold'), widthOf(V10_EFFECTS.length));
     w.flag(false);
     w.flag(false);
     // reverse, then monospace, outline and shadow.
     w.flag(true);
     for (let k = 0; k < 3; k++) w.flag(false);
-    for (const _ of Object.keys(LAYERS)) w.flag(false);
+    for (const _ of V10_LAYERS) w.flag(false);
     for (const _ of Object.keys(tuningOf(EFFECTS.hold))) w.flag(false);
     const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
     expect(read).toBe(true);
     expect(state.program[0]?.style).toBeUndefined();
     expect(state.program[0]?.layers).toEqual({ invert: { on: true } });
+  });
+
+  it('opens a version 10 link by the moves, modulators, effects and layers it had then', () => {
+    const w = new BitWriter();
+    const old = { enter: 6, active: 4, exit: 6 };
+    const at = (slot: keyof typeof old, move: string) => {
+      const names = Object.keys(MOVES).filter((m) => MOVES[m as keyof typeof MOVES].slot === slot);
+      w.flag(false);
+      w.uint(names.indexOf(move), widthOf(old[slot]));
+      w.flag(false);
+      for (const _ of Object.keys(MOVES[move as keyof typeof MOVES].params)) w.flag(false);
+    };
+    w.uint(10, 8);
+    w.count(1);
+    w.text('mine');
+    w.uint(0, 2);
+    w.flag(false);
+    w.count(1);
+    at('enter', 'scroll-in');
+    w.count(2);
+    at('active', 'tile');
+    w.flag(true);
+    w.uint(Object.keys(MODULATORS).indexOf('invert'), widthOf(12));
+    w.flag(false);
+    for (const _ of Object.keys(MODULATORS.invert.params)) w.flag(false);
+    w.count(1);
+    at('exit', 'scroll-out');
+    w.flag(false);
+    w.flag(false);
+    w.count(0);
+    w.count(2);
+    for (const [text, mine] of [
+      ['A', true],
+      ['B', false],
+    ] as const) {
+      w.text(text);
+      w.flag(false);
+      w.flag(mine);
+      if (mine) w.uint(0, widthOf(1));
+      else w.uint(V10_EFFECTS.indexOf('matris'), widthOf(V10_EFFECTS.length));
+      for (let k = 0; k < 6; k++) w.flag(false);
+      for (const name of V10_LAYERS) {
+        w.flag(mine && name === 'invert');
+        if (mine && name === 'invert') {
+          w.flag(true);
+          for (const _ of Object.keys(MODULATORS.invert.params)) w.flag(false);
+        }
+      }
+      const effect = mine ? { name: 'mine' } : EFFECTS.matris;
+      for (const _ of Object.keys(tuningOf(effect as never))) w.flag(false);
+    }
+    const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
+    expect(read).toBe(true);
+    expect(state.effects.mine).toMatchObject({
+      enter: [{ move: 'scroll-in' }],
+      active: [{ move: 'tile' }, { mod: 'invert' }],
+      exit: [{ move: 'scroll-out' }],
+    });
+    expect(state.program.map((s) => [s.effect, s.layers])).toEqual([
+      ['mine', { invert: { on: true } }],
+      ['matris', undefined],
+    ]);
   });
 
   it('round-trips outline, shadow and tracking', () => {
@@ -308,12 +374,12 @@ describe('packed links', () => {
       w.text('A');
       w.flag(false);
       w.flag(false);
-      w.uint(Object.keys(EFFECTS).indexOf('hold'), widthOf(Object.keys(EFFECTS).length));
+      w.uint(V10_EFFECTS.indexOf('hold'), widthOf(V10_EFFECTS.length));
       w.flag(false);
       w.flag(false);
       w.flag(false);
       w.flag(proportional);
-      for (const _ of Object.keys(LAYERS)) w.flag(false);
+      for (const _ of V10_LAYERS) w.flag(false);
     }
     const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
     expect(read).toBe(true);
@@ -335,7 +401,7 @@ describe('packed links', () => {
       w.text(text);
       w.flag(false);
       w.flag(false);
-      w.uint(Object.keys(EFFECTS).indexOf('hold'), widthOf(Object.keys(EFFECTS).length));
+      w.uint(V10_EFFECTS.indexOf('hold'), widthOf(V10_EFFECTS.length));
       for (let k = 0; k < 4; k++) w.flag(false);
     }
     const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
@@ -364,7 +430,7 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 10, digest: 'dcdd7c0d15b1' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 11, digest: '51c38dcf73c7' });
   });
 });
 

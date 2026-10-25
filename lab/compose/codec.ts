@@ -38,7 +38,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * only ever grows at its end; adding to one bumps VERSION too, and records in LENGTHS how long
  * each was before, so an older link reads against the registries it was written with.
  */
-export const VERSION = 10;
+export const VERSION = 11;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -77,7 +77,7 @@ const LENGTHS: readonly {
   mods: number;
   effects: number;
   layers: number;
-}[] = [];
+}[] = [{ until: 10, moves: { enter: 6, active: 4, exit: 6 }, mods: 12, effects: 7, layers: 3 }];
 
 /** The registries a link of `version` names its moves, modulators, effects and layers from. */
 export interface Registries {
