@@ -246,12 +246,18 @@ describe('share', () => {
       effects: {
         mine: { name: 'mine', active: [{ mod: 'sparkle', params: { rate: 0.03 } }] },
       },
-      program: [],
-      layers: { sparkle: { on: true, params: { rate: 0.02 } } },
+      program: [
+        {
+          text: 'HI',
+          hex: 0,
+          effect: 'mine',
+          layers: { sparkle: { on: true, params: { rate: 0.02 } } },
+        },
+      ],
     });
     const { state: back, dropped } = decode(old);
     expect(dropped).toEqual([]);
-    expect(back.layers.sparkle?.params).toEqual({ share: 0.02 });
+    expect(back.program[0]?.layers?.sparkle).toEqual({ on: true, params: { share: 0.02 } });
     expect(back.effects.mine?.active).toEqual([{ mod: 'sparkle', params: { share: 0.03 } }]);
   });
 
