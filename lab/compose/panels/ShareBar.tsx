@@ -20,7 +20,7 @@ export function ShareBar() {
     setShown({ title, text, code });
   };
   return (
-    <div className="compose-share" role="group" aria-label="share">
+    <fieldset className="compose-share" aria-label="share">
       {opened.unreadable && (
         <span className="compose-warning">
           This link could not be read; your draft is unchanged.
@@ -85,6 +85,6 @@ export function ShareBar() {
           onFocus={(e) => e.currentTarget.select()}
         />
       </Dialog>
-    </div>
+    </fieldset>
   );
 }
