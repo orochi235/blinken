@@ -1,4 +1,7 @@
 .compose-hardware {
+  /* Settings pair up only where each column holds a label, a usable track, and the readout; the
+     kit's own floor pairs them sooner, and a value then runs into its neighbor's label. */
+  --lk-control-column-min: 11rem;
   display: flex;
   flex-direction: column;
   gap: 8px;
