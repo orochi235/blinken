@@ -165,7 +165,9 @@ The lab serves two pages: the composer at `/compose` (`lab/compose.html`) and th
   and the layers that are on. "Save" downloads the composition as a JSON file marked
   `"bree": "composition"`, and "load" opens one in place of it as an undoable edit, read as
   forgivingly as a link. The current draft is kept in browser storage, so a reload doesn't lose
-  it; it is a convenience, not a save.
+  it; it is a convenience, not a save. A link that opens over a different draft moves that draft
+  aside, and the last five moved aside are kept: "restore previous draft" steps back through
+  them, newest first, and past the oldest comes round to where it started.
 - **The hash is packed bits** (`lab/compose/codec.ts`): each move, modulator, order, face,
   built-in effect and layer is written as its place in its registry, each number as a count of
   its setting's steps, and settings at their defaults not at all. A scene's tuning of its effect

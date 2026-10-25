@@ -11,6 +11,7 @@ import type { ComposeState } from '../lab/compose/state.js';
 import {
   DRAFT,
   hasPrevious,
+  KEPT,
   load,
   open,
   PREVIOUS,
@@ -345,8 +346,46 @@ describe('the draft in browser storage', () => {
     expect(hasPrevious()).toBe(true);
     expect(restorePrevious()?.program[0]?.text).toBe('HI');
     expect(load()?.program[0]?.text).toBe('HI');
-    expect(decode(localStorage.getItem(PREVIOUS) ?? '').state.program[0]?.text).toBe('LINKED');
+    expect(JSON.parse(localStorage.getItem(PREVIOUS) ?? '')).toEqual([encode(other)]);
     expect(localStorage.getItem(DRAFT)).toBe(encode(state()));
+  });
+
+  const titled = (text: string): ComposeState => ({
+    ...state(),
+    program: [{ text, hex: 0, effect: 'hold' }],
+  });
+
+  it('keeps the last few drafts links replaced, skipping repeats, and steps back through them', () => {
+    vi.stubGlobal('localStorage', store());
+    save(titled('A'));
+    open(`#${encode(titled('B'))}`);
+    open(`#${encode(titled('A'))}`);
+    open(`#${encode(titled('C'))}`);
+    expect(JSON.parse(localStorage.getItem(PREVIOUS) ?? '')).toEqual([
+      encode(titled('A')),
+      encode(titled('B')),
+    ]);
+    const steps = [0, 1, 2].map(() => restorePrevious()?.program[0]?.text);
+    expect(steps).toEqual(['A', 'B', 'C']);
+    expect(load()?.program[0]?.text).toBe('C');
+  });
+
+  it('keeps at most KEPT displaced drafts', () => {
+    vi.stubGlobal('localStorage', store());
+    save(titled('0'));
+    for (let i = 1; i <= KEPT + 3; i++) open(`#${encode(titled(String(i)))}`);
+    const kept: string[] = JSON.parse(localStorage.getItem(PREVIOUS) ?? '');
+    expect(kept).toHaveLength(KEPT);
+    expect(decode(kept[0] ?? '').state.program[0]?.text).toBe(String(KEPT + 2));
+  });
+
+  it('reads a single draft kept before the list, and skips unreadable ones', () => {
+    vi.stubGlobal('localStorage', store());
+    save(titled('NOW'));
+    localStorage.setItem(PREVIOUS, encode(titled('OLD')));
+    expect(restorePrevious()?.program[0]?.text).toBe('OLD');
+    localStorage.setItem(PREVIOUS, JSON.stringify(['not-json!', encode(titled('NOW'))]));
+    expect(restorePrevious()?.program[0]?.text).toBe('NOW');
   });
 
   it('keeps no previous draft when the link holds the same composition', () => {
