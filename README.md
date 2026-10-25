@@ -31,7 +31,7 @@ const sign = createMarquee(canvas, {
 });
 
 sign.setLayer('rainbow', true);
-sign.setLayer('sparkle', true, { rate: 0.02 }); // new params re-cue the layer
+sign.setLayer('sparkle', true, { share: 0.02 }); // new params re-cue the layer
 sign.restart(1); // play this pass from the second scene; later passes start from the first
 sign.seek(1500, { hold: true }); // show the pass 1.5 s in, held there
 sign.seek(1500); // and play on from there

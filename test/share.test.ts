@@ -241,6 +241,20 @@ describe('share', () => {
     expect(back.program[0]?.style).toBeUndefined();
   });
 
+  it('reads sparkle’s old rate setting as its share', () => {
+    const old = hashOf({
+      effects: {
+        mine: { name: 'mine', active: [{ mod: 'sparkle', params: { rate: 0.03 } }] },
+      },
+      program: [],
+      layers: { sparkle: { on: true, params: { rate: 0.02 } } },
+    });
+    const { state: back, dropped } = decode(old);
+    expect(dropped).toEqual([]);
+    expect(back.layers.sparkle?.params).toEqual({ share: 0.02 });
+    expect(back.effects.mine?.active).toEqual([{ mod: 'sparkle', params: { share: 0.03 } }]);
+  });
+
   it('names a face no built-in has and style switches it does not know', () => {
     const data = dataOf(state());
     data.program[0].face = 'gothic';

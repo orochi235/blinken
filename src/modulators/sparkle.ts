@@ -8,7 +8,7 @@ export const sparkle = modulator({
   name: 'sparkle',
   about: 'Stray dots light for a moment at random.',
   params: {
-    rate: {
+    share: {
       label: 'lit at once',
       min: 0,
       max: 0.1,
@@ -31,14 +31,14 @@ export const sparkle = modulator({
   writes: ['lit'],
   on: 'dots',
   patch: (_at, p) => {
-    const below = 1 - p.rate;
+    const below = 1 - p.share;
     const frames = Math.max(1, Math.round(1000 / p.frame));
     return patch<Subject, Pose>(
       frames * p.frame,
       (phase, s) => {
         if (s.kind === 'cell') return { lit: 0 };
         const h = hash(s.x, s.y, Math.floor(phase * frames));
-        return { lit: h > below ? (h - below) / p.rate : 0 };
+        return { lit: h > below ? (h - below) / p.share : 0 };
       },
       { writes: ['lit'] },
     );

@@ -61,6 +61,11 @@ export const entriesOf = (v: unknown, what: string, dropped: string[]): [string,
   return Object.entries(v);
 };
 
+/** Settings renamed since links were first written, old name to new, by what they belong to. */
+const RENAMED = new Map<{ readonly params: Params }, Record<string, string>>([
+  [MODULATORS.sparkle, { rate: 'share' }],
+]);
+
 /**
  * A link's settings for `thing`, in its own key order, each kept only if it is one it has, of its
  * kind; `values` clamps the numbers when it is staged.
@@ -72,6 +77,14 @@ export function paramsOf(
   dropped: string[],
 ): Record<string, ParamValue> | undefined {
   if (!isObj(given)) return undefined;
+  const renamed = RENAMED.get(thing);
+  if (renamed)
+    given = Object.fromEntries(
+      Object.entries(given).map(([k, v]) => [
+        Object.hasOwn(renamed, k) ? (renamed[k] as string) : k,
+        v,
+      ]),
+    );
   const out: Record<string, ParamValue> = {};
   for (const [key, param] of Object.entries(thing.params)) {
     const v = given[key];

@@ -53,7 +53,7 @@ const copies = (): ComposeState => ({
       hex: AMBER,
       effect: 'hold',
       layers: {
-        sparkle: { on: false, params: { rate: 0.022 } },
+        sparkle: { on: false, params: { share: 0.022 } },
         rainbow: { on: true, params: { rate: 0.6 } },
       },
     },
