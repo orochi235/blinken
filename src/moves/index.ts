@@ -9,6 +9,7 @@ import { scrollAcross, scrollIn, scrollOut } from './scroll.js';
 import { assemble, scatter } from './swarm.js';
 import { tile } from './tile.js';
 import { typeOff, typeOn } from './type.js';
+import { wave } from './wave.js';
 
 export * from './move.js';
 export {
@@ -33,6 +34,7 @@ export {
   typeOff,
   typeOn,
   unfold,
+  wave,
 };
 
 const moves = {
@@ -57,6 +59,7 @@ const moves = {
   assemble,
   scatter,
   'bounce-in': bounceIn,
+  wave,
 };
 export type MoveName = keyof typeof moves;
 /** Every move, by name. */

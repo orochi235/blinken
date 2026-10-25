@@ -45,5 +45,15 @@ export const litAt = (at: Placed, led: Led, dx = 0, dy = 0) => {
   return row >= 0 ? at.text.level(led.x - at.left - dx, row - dy) : 0;
 };
 
+/**
+ * How brightly the message, moved `dy` rows down, lights this dot, reading the row the dot would
+ * show from there: unlike `litAt`, it carries the message into the board's margin and line gaps.
+ */
+export const movedAt = (at: Placed, led: Led, dy: number) => {
+  if (led.kind !== 'dot') return 0;
+  const row = at.rowOf({ kind: 'dot', x: led.x, y: led.y - dy });
+  return row >= 0 ? at.text.level(led.x - at.left, row) : 0;
+};
+
 /** `lit` as a dot is given it: a level, or a yes or no as 1 or 0. */
 export const on = (v: boolean | number) => ({ lit: typeof v === 'number' ? v : v ? 1 : 0 });
