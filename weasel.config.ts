@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, watch } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, watch } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
@@ -14,6 +14,38 @@ export const WEASEL =
   process.env.WEASEL !== 'npm' && existsSync(join(beside, 'packages/labkit/dist'))
     ? beside
     : undefined;
+
+/** When `dist` was last built, from its top-level entries, which every build rewrites. */
+const builtAt = (dist: string): number =>
+  existsSync(dist)
+    ? readdirSync(dist).reduce((m, f) => Math.max(m, statSync(join(dist, f)).mtimeMs), 0)
+    : 0;
+
+/** Whether any file under `src` was written after `ms`. */
+const editedSince = (src: string, ms: number): boolean =>
+  existsSync(src) &&
+  readdirSync(src, { recursive: true, encoding: 'utf8' }).some(
+    (f) => statSync(join(src, f)).mtimeMs > ms,
+  );
+
+/** The `@weasel-js` packages bree depends on whose checkout `dist` is older than their `src`. */
+function staleBuilds(root: string): string[] {
+  const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
+  return Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })
+    .filter((name) => name.startsWith('@weasel-js/'))
+    .filter((name) => {
+      const dir = join(root, 'packages', name.slice('@weasel-js/'.length));
+      return editedSince(join(dir, 'src'), builtAt(join(dir, 'dist')));
+    });
+}
+
+if (WEASEL) {
+  const stale = staleBuilds(WEASEL);
+  if (stale.length)
+    console.warn(
+      `bree: serving ${stale.join(', ')} from ${WEASEL}, whose dist is older than its src. Rebuild weasel, or set WEASEL=npm.`,
+    );
+}
 
 /** A file a package's build wrote, by its path under `packages/`. */
 const IN_DIST = /^[^/]+\/dist\//;
