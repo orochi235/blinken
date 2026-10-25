@@ -17,10 +17,10 @@ klieg's `fire({ enter, active, exit })` has the same shape, and bree lines up wi
 
 ## The three levels
 
-| Level       | What it is                                                             | In blits                                                                                      | Example                                   |
-| ----------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **piece**   | One thing dots do, in one order, during one part of an arc             | one `ArcVoice`: a patch, a `stagger`, a `duration`                                            | letters unfold, one letter after the next |
-| **effect**  | Pieces placed in `enter`, `active` and `exit`, with a hold and a blend | one `ArcSpec`                                                                                 | `flip` = unfold · tumble · fold           |
+| Level       | What it is                                                             | In blits                                                                                        | Example                                   |
+| ----------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **piece**   | One thing dots do, in one order, during one part of an arc             | one `ArcVoice`: a patch, a `stagger`, a `duration`                                              | letters unfold, one letter after the next |
+| **effect**  | Pieces placed in `enter`, `active` and `exit`, with a hold and a blend | one `ArcSpec`                                                                                   | `flip` = unfold · tumble · fold           |
 | **program** | Messages, each played with an effect, one after another, under layers  | an owner holding one owner per scene, each holding that scene's arcs, plus looping layer voices | the lab's seven-message show              |
 
 ### Pieces

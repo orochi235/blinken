@@ -1,8 +1,5 @@
 # TODO
 
-## Asked for, not built yet
-
-
 ## Parked
 
 - Authoring an effect's params in the designer: naming a param and picking the settings it changes. Parked 2026-10-24 as more than the lab needs for now; effects declare params in code, as the built-ins do. The section as built is in e294d8a (`lab/compose/designer/ParamsBox.tsx`).
