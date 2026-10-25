@@ -5,9 +5,9 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 
 ## State
 
-- `main` is 19 commits ahead of `origin/main`, unpushed: the labkit compose lab's later polish
-  (stereo sign groups, inverted designer bar, share and undo in the top bar, scrubber fill),
-  undo/redo, tooltips on every setting, sign size, and faces and text styles.
+- `main` is about 40 commits ahead of `origin/main`, unpushed. Besides the labkit compose lab's
+  polish, it holds proportional-by-default kerned text, effect params with scene tuning, the scene
+  panel, resizable columns, and outline and shadow styles.
 - **It can't push yet.** CI and Pages install `@weasel-js/*` from npm, and the lab uses API that
   exists only in the local `~/src/weasel` checkout: `.motif(stereo({ invert }))` in
   `lab/compose/hardware.ts`, `useUndoKeys`, and the label-tooltip help rendering. bree's fleet
@@ -27,6 +27,16 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
   the sign attached.
 
 ## Decisions made in conversation
+
+- Proportional is the default and `monospace` the switch; old links and files still read as
+  monospace (2026-10-24).
+- Kerned letters keep a blank from each other diagonally too, not only across (2026-10-24).
+- Effects declare params in code; authoring them in the designer is parked (see `TODO.md`,
+  2026-10-24).
+- Outline means hollow letters; shadow is a dim copy one dot down and right, and the two stack
+  (2026-10-24).
+- Unanswered: whether `reverse` becomes a layer that follows the message or is dropped for the
+  `invert` layer, and whether a tracking lever is still wanted now kerning is in.
 
 - Every prefs setting carries a tooltip explanation, no ⓘ icons (all projects).
 - Consumers of the user's own libraries build against the sibling checkout by default.
