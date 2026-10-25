@@ -48,6 +48,19 @@ export function fieldOf(p: Param): ConfigEntry {
   return numberField(p);
 }
 
+/** The control for a Param that can be left to something else, its label toggling it; `about` adds what auto means. */
+export function autoFieldOf(p: Param, about: string): ConfigEntry {
+  const words = `${p.about} ${about}`;
+  if ('colors' in p)
+    return f
+      .custom('colors', [...p.colors])
+      .label(p.label)
+      .describe(words)
+      .auto();
+  if ('choices' in p) return f.enum(p.value, p.choices).label(p.label).describe(words).auto();
+  return numberField(p).describe(words).auto();
+}
+
 /** Every Param of a thing as schema fields, keyed as the thing keys them. */
 export const fieldsOf = (params: Params): ConfigShape =>
   Object.fromEntries(Object.entries(params).map(([key, p]) => [key, fieldOf(p)]));

@@ -35,6 +35,11 @@ const effects = {
         about: 'How long the message waits before moving one column. Higher scrolls more slowly.',
         to: ['active.0.step'],
       },
+      direction: {
+        label: 'direction',
+        about: 'Which way the message travels.',
+        to: ['active.0.direction'],
+      },
     },
   },
   flip: {

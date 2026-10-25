@@ -35,7 +35,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 5;
+export const VERSION = 6;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -263,6 +263,19 @@ function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): 
   writeParams(w, tuning, scene.params, defaultsOf(tuning));
 }
 
+/** Built-in params added since version 5, by the version that added them and the effect. */
+const ADDED: Record<number, Record<string, readonly string[]>> = { 6: { scroll: ['direction'] } };
+
+/** What a scene could tune on `effect` in a link of `version`: today's, less what came later. */
+function tuningAt(effect: EffectSpec, version: number): Params {
+  const later = new Set(
+    Object.entries(ADDED).flatMap(([v, by]) =>
+      Number(v) > version ? (by[effect.name] ?? []) : [],
+    ),
+  );
+  return Object.fromEntries(Object.entries(tuningOf(effect)).filter(([k]) => !later.has(k)));
+}
+
 /** Each of a tuning's settings at what its effect sets it to. */
 const defaultsOf = (tuning: Params) =>
   Object.fromEntries(Object.entries(tuning).map(([k, p]) => [k, defaultOf(p)]));
@@ -284,9 +297,7 @@ function readScene(r: BitReader, effects: ShareData['effects'], version: number)
   // Scenes carried their effect's tuning from version 5.
   const params =
     version >= 5
-      ? (readParams(r, tuningOf(effectOf({ text, hex, effect }, effects))) as
-          | Record<string, number>
-          | undefined)
+      ? readParams(r, tuningAt(effectOf({ text, hex, effect }, effects), version))
       : undefined;
   return {
     text,

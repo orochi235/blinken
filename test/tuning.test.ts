@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { board } from '@/board.js';
 import { EFFECTS } from '@/builtins.js';
-import { stageEffect } from '@/effects.js';
+import { type EffectSpec, stageEffect } from '@/effects.js';
 import { placeText } from '@/orders.js';
 import { type MovePiece, piecesOf } from '@/pieces.js';
 import { stageProgram } from '@/program.js';
@@ -20,11 +20,10 @@ describe('effect params', () => {
   it('offers what an effect declares, defaulting to its own settings, then blend and lag', () => {
     const fall = tuningOf(EFFECTS.fall);
     expect(Object.keys(fall)).toEqual(['drop', 'scatter', 'blend']);
-    expect(fall.drop?.value).toBe(350);
-    expect(fall.drop?.label).toBe('drop time');
-    expect(fall.scatter?.value).toBe(9);
+    expect(fall.drop).toMatchObject({ value: 350, label: 'drop time' });
+    expect(fall.scatter).toMatchObject({ value: 9 });
     expect(Object.keys(tuningOf(EFFECTS.hold))).toEqual(['flashes', 'blend', 'lag']);
-    expect(tuningOf(EFFECTS.hold).lag?.value).toBe(14);
+    expect(tuningOf(EFFECTS.hold).lag).toMatchObject({ value: 14 });
   });
 
   it('writes a value to everything it drives, held to its range, ignoring names it lacks', () => {
@@ -39,6 +38,24 @@ describe('effect params', () => {
       order: { by: 'column', lag: 30 },
       blend: 200,
     });
+  });
+
+  it('tunes a choice and a list of colors, ignoring a value its setting cannot take', () => {
+    expect(tuningOf(EFFECTS.scroll).direction).toMatchObject({
+      choices: ['left', 'right'],
+      value: 'left',
+    });
+    const right = tuned(EFFECTS.scroll, { direction: 'right' });
+    expect(piecesOf(right.active)[0]?.params?.direction).toBe('right');
+    expect(tuned(EFFECTS.scroll, { direction: 'up' })).toEqual(EFFECTS.scroll);
+    const glow = {
+      name: 'glow',
+      active: [{ move: 'stand' }, { mod: 'palette' }],
+      params: { colors: { label: 'colors', about: '', to: ['active.1.colors'] } },
+    } as EffectSpec;
+    expect('colors' in (tuningOf(glow).colors ?? {})).toBe(true);
+    const red = tuned(glow, { colors: [0xff0000, 0x00ff00] });
+    expect(piecesOf(red.active)[1]?.params?.colors).toEqual([0xff0000, 0x00ff00]);
   });
 
   it('stages a scene with its effect as the scene tunes it', () => {

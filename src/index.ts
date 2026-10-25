@@ -88,4 +88,14 @@ export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
 export { cueLayer, effectOf, layerOf, play, type Scene, type SceneLayer } from './program.js';
 export { createThumbnail, type Thumbnail, type ThumbnailOptions } from './thumbnail.js';
 export { createTicker, type Ticker } from './ticker.js';
-export { BLEND, type EffectParam, HOLD, LAG, targetOf, tuned, tuningOf } from './tuning.js';
+export {
+  BLEND,
+  type EffectParam,
+  fits,
+  HOLD,
+  LAG,
+  sameKind,
+  targetOf,
+  tuned,
+  tuningOf,
+} from './tuning.js';

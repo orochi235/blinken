@@ -235,6 +235,34 @@ describe('packed links', () => {
     expect(state.program[1]?.params).toEqual({ drop: 600, blend: 100 });
   });
 
+  it('reads a version 5 scene’s tuning against the params its effect had then', () => {
+    const w = new BitWriter();
+    w.uint(5, 8);
+    w.count(0);
+    w.count(1);
+    w.text('A');
+    w.flag(false);
+    w.flag(false);
+    w.uint(Object.keys(EFFECTS).indexOf('scroll'), widthOf(Object.keys(EFFECTS).length));
+    for (let k = 0; k < 4; k++) w.flag(false);
+    for (const _ of Object.keys(LAYERS)) w.flag(false);
+    // Scroll offered speed and blend in version 5; direction came in 6.
+    w.flag(true);
+    w.uint(50, widthOf(190 + 2));
+    w.flag(false);
+    const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
+    expect(read).toBe(true);
+    expect(state.program[0]?.params).toEqual({ speed: 60 });
+  });
+
+  it('round-trips a choice param', () => {
+    const data = {
+      effects: {},
+      program: [{ text: 'A', hex: AMBER, effect: 'scroll', params: { direction: 'right' } }],
+    } as ShareData;
+    expect(unpack(pack(data))).toEqual(data);
+  });
+
   it('opens a version 3 link as monospace unless it set proportional', () => {
     const w = new BitWriter();
     w.uint(3, 8);
@@ -299,7 +327,7 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 5, digest: 'f479b8f833f4' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 6, digest: 'd7dcc0df26df' });
   });
 });
 

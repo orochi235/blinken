@@ -1,6 +1,7 @@
 import { ControlPanel, isAuto } from '@weasel-js/labkit';
-import { effectOf, tuningOf } from '@/index.js';
-import { DENSITY, numberField, schemaFor, shownValues, storedValue } from '../schema.js';
+import { effectOf, type ParamValue, tuningOf } from '@/index.js';
+import { RENDERERS } from '../ColorsRow.js';
+import { autoFieldOf, DENSITY, schemaFor, shownValues, storedValue } from '../schema.js';
 import { compose, pickedOf, useCompose, useEffects } from '../store.js';
 
 /** The picked scene's effect's own settings, each at the effect's value until the scene sets it. */
@@ -16,10 +17,7 @@ export function SceneTuning() {
     return <p className="compose-hint">This effect has nothing a scene can tune.</p>;
   const schema = schemaFor(`tuning:${JSON.stringify(tuning)}`, () =>
     Object.fromEntries(
-      Object.entries(tuning).map(([k, p]) => [
-        k,
-        numberField(p).auto().describe(`${p.about} Auto keeps the effect’s own.`),
-      ]),
+      Object.entries(tuning).map(([k, p]) => [k, autoFieldOf(p, 'Auto keeps the effect’s own.')]),
     ),
   );
   const given = scene.params ?? {};
@@ -31,7 +29,7 @@ export function SceneTuning() {
         const { [path]: _, ...others } = was.params ?? {};
         const params = isAuto(v)
           ? others
-          : { ...others, [path]: storedValue(tuning, path, v) as number };
+          : { ...others, [path]: storedValue(tuning, path, v) as ParamValue };
         const { params: __, ...rest } = was;
         s.program[at] = Object.keys(params).length ? { ...rest, params } : rest;
       },
@@ -42,12 +40,18 @@ export function SceneTuning() {
       schema={schema}
       config={shownValues(
         tuning,
-        Object.fromEntries(names.map((k) => [k, given[k] ?? tuning[k]?.value])),
+        Object.fromEntries(
+          names.map((k) => {
+            const p = tuning[k];
+            return [k, given[k] ?? (p && ('colors' in p ? p.colors : p.value))];
+          }),
+        ),
       )}
       auto={new Set(names.filter((k) => given[k] === undefined))}
       setConfig={set}
       draftConfig={set}
       density={DENSITY}
+      renderers={RENDERERS}
       className="compose-two-up"
       pack="pairs"
       layout="inline"

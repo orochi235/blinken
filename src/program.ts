@@ -5,7 +5,7 @@ import { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './ef
 import { type Look, rasterize } from './font.js';
 import { MODULATORS } from './modulators/index.js';
 import { place, placeText, rankOf } from './orders.js';
-import { values } from './params.js';
+import { type ParamValue, values } from './params.js';
 import { TOGETHER } from './pieces.js';
 import { tuned } from './tuning.js';
 
@@ -26,7 +26,7 @@ export interface Scene extends Look {
   readonly effect: string | EffectSpec;
   readonly hold?: number;
   /** Values for what its effect lets a scene tune, by name. */
-  readonly params?: Readonly<Record<string, number>>;
+  readonly params?: Readonly<Record<string, ParamValue>>;
   readonly layers?: Readonly<Record<string, SceneLayer>>;
 }
 

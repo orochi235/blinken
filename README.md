@@ -89,8 +89,8 @@ one before it ends.
 
 An effect's `params` are what a scene playing it can tune, each with a label, an `about`, and the
 settings it drives in `to`: `enter.0.ms` is the first enter piece's `ms`, `enter.0.lag` that
-piece's order lag, and `lag` or `blend` the effect's own. Its range and default come from the first
-of them. A scene sets them by name, and `blend`, and `lag` on an effect with an order, are always
+piece's order lag, and `lag` or `blend` the effect's own. It takes the kind, range and default of
+the first of them, a number, a choice or a list of colors, and the rest must be of the same kind. A scene sets them by name, and `blend`, and `lag` on an effect with an order, are always
 there besides:
 
 ```ts

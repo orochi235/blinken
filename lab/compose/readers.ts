@@ -225,9 +225,7 @@ export function sceneOf(
     ? effects[effect]
     : (EFFECTS[effect as keyof typeof EFFECTS] as EffectSpec);
   const tuning = spec ? tuningOf(spec) : {};
-  const params = paramsOf({ params: tuning }, v.params, `scene ${v.text}`, dropped) as
-    | Record<string, number>
-    | undefined;
+  const params = paramsOf({ params: tuning }, v.params, `scene ${v.text}`, dropped);
   const layers = layersIn(v.layers, `scene ${v.text}`, dropped);
   return {
     text: v.text,

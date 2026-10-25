@@ -7,6 +7,7 @@ import {
   type Piece,
   piecesOf,
   SLOTS,
+  sameKind,
   targetOf,
 } from '@/index.js';
 import { IconButton } from '../IconButton.js';
@@ -30,10 +31,17 @@ function targetsOf(spec: EffectSpec): { path: string; label: string }[] {
       });
       const thing = 'mod' in piece ? MODULATORS[piece.mod] : MOVES[piece.move];
       for (const [key, p] of Object.entries(thing.params))
-        if ('min' in p) out.push({ path: `${slot}.${i}.${key}`, label: `${head} ${p.label}` });
+        out.push({ path: `${slot}.${i}.${key}`, label: `${head} ${p.label}` });
     });
   return out.filter((t) => targetOf(spec, t.path));
 }
+
+/** Whether `path` takes the same values as the setting `p` drives first, so `p` can drive it too. */
+const fitsWith = (spec: EffectSpec, p: EffectParam, path: string) => {
+  const first = p.to[0] === undefined ? undefined : targetOf(spec, p.to[0]);
+  const it = targetOf(spec, path);
+  return !first || (it !== undefined && sameKind(first.param, it.param));
+};
 
 /** `base`, or `base 2`, `base 3`… : the first name `taken` lacks. */
 const freeName = (base: string, taken: Readonly<Record<string, unknown>>) => {
@@ -98,28 +106,30 @@ export function ParamsBox({ spec }: { spec: EffectSpec }) {
           </span>
           <fieldset className="compose-param-targets">
             <legend className="compose-about">
-              drives — its range and default come from the first
+              drives — its kind, range and default come from the first
             </legend>
-            {targets.map((t) => (
-              <label key={t.path} className="compose-check">
-                <input
-                  type="checkbox"
-                  checked={p.to.includes(t.path)}
-                  // The last setting stays: a param that drives nothing is no param.
-                  disabled={p.to.length === 1 && p.to[0] === t.path}
-                  onChange={(e) => {
-                    const on = e.target.checked;
-                    editEffect((spec) =>
-                      withParam(spec, name, (q) => ({
-                        ...q,
-                        to: on ? [...q.to, t.path] : q.to.filter((x) => x !== t.path),
-                      })),
-                    );
-                  }}
-                />
-                {t.label}
-              </label>
-            ))}
+            {targets
+              .filter((t) => fitsWith(spec, p, t.path))
+              .map((t) => (
+                <label key={t.path} className="compose-check">
+                  <input
+                    type="checkbox"
+                    checked={p.to.includes(t.path)}
+                    // The last setting stays: a param that drives nothing is no param.
+                    disabled={p.to.length === 1 && p.to[0] === t.path}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      editEffect((spec) =>
+                        withParam(spec, name, (q) => ({
+                          ...q,
+                          to: on ? [...q.to, t.path] : q.to.filter((x) => x !== t.path),
+                        })),
+                      );
+                    }}
+                  />
+                  {t.label}
+                </label>
+              ))}
           </fieldset>
         </div>
       ))}

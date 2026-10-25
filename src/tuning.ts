@@ -1,7 +1,7 @@
 import type { EffectSpec } from './effects.js';
 import { MODULATORS } from './modulators/index.js';
 import { MOVES, SLOTS, type Slot } from './moves/index.js';
-import type { NumberParam } from './params.js';
+import type { NumberParam, Param, ParamValue } from './params.js';
 import { type Piece, piecesOf } from './pieces.js';
 
 /** An effect's or a scene's hold, an effect's blend and an order's lag, as controls offer them. */
@@ -39,7 +39,8 @@ export const LAG: NumberParam = {
 /**
  * A setting a scene can tune on an effect. `to` names the settings its value is written to:
  * `enter.0.ms` is the first enter piece's `ms`, `enter.0.lag` that piece's order or spread lag, and
- * `lag` or `blend` the effect's own. Its range, step and default come from the first of them.
+ * `lag` or `blend` the effect's own. It takes the kind, range and default of the first of them;
+ * the rest must be settings of the same kind.
  */
 export interface EffectParam {
   readonly label: string;
@@ -49,14 +50,31 @@ export interface EffectParam {
 
 /** A setting `to` names in `effect`: what it is and what the effect sets it to. */
 interface Target {
-  readonly param: NumberParam;
-  readonly value: number;
+  readonly param: Param;
+  readonly value: ParamValue;
 }
 
 const thingOf = (piece: Piece) => ('mod' in piece ? MODULATORS[piece.mod] : MOVES[piece.move]);
 const lagOf = (piece: Piece) => ('mod' in piece ? piece.spread?.lag : piece.order?.lag);
+const defaultOf = (p: Param): ParamValue => ('colors' in p ? p.colors : p.value);
 
-/** The number setting `path` names in `effect`, or undefined for one it does not have. */
+/** Whether `v` is a value of `p`'s kind, one of its choices for a choice. */
+export const fits = (p: Param, v: unknown): v is ParamValue =>
+  'colors' in p
+    ? Array.isArray(v) && v.length > 0 && v.every((c) => Number.isFinite(c))
+    : 'choices' in p
+      ? typeof v === 'string' && p.choices.includes(v)
+      : typeof v === 'number' && Number.isFinite(v);
+
+/** Whether two settings take the same values, so one param can drive both. */
+export const sameKind = (a: Param, b: Param) =>
+  'colors' in a
+    ? 'colors' in b
+    : 'choices' in a
+      ? 'choices' in b && JSON.stringify(a.choices) === JSON.stringify(b.choices)
+      : 'min' in b;
+
+/** The setting `path` names in `effect`, or undefined for one it does not have. */
 export function targetOf(effect: EffectSpec, path: string): Target | undefined {
   if (path === 'lag')
     return effect.order ? { param: LAG, value: effect.order.lag ?? 0 } : undefined;
@@ -67,48 +85,56 @@ export function targetOf(effect: EffectSpec, path: string): Target | undefined {
   if (!piece) return undefined;
   if (key === 'lag') return { param: LAG, value: lagOf(piece) ?? 0 };
   const param = Object.hasOwn(thingOf(piece).params, key) ? thingOf(piece).params[key] : undefined;
-  if (!param || !('min' in param)) return undefined;
+  if (!param) return undefined;
   const given = piece.params?.[key];
-  return { param, value: typeof given === 'number' ? given : param.value };
+  return { param, value: fits(param, given) ? given : defaultOf(param) };
 }
 
 /**
- * What a scene can tune on `effect`: each param it declares whose first target it has, as a number
- * setting defaulting to what the effect sets there, then `blend`, and `lag` for an effect with an
- * order, unless it declares those names itself.
+ * What a scene can tune on `effect`: each param it declares whose first target it has, as that
+ * setting under the param's words, defaulting to what the effect sets there; then `blend`, and
+ * `lag` for an effect with an order, unless it declares those names itself.
  */
-export function tuningOf(effect: EffectSpec): Record<string, NumberParam> {
-  const out: Record<string, NumberParam> = {};
+export function tuningOf(effect: EffectSpec): Record<string, Param> {
+  const out: Record<string, Param> = {};
+  const add = (name: string, t: Target, words: { label: string; about: string }) => {
+    out[name] =
+      'colors' in t.param
+        ? { ...t.param, ...words, colors: t.value as readonly number[] }
+        : ({ ...t.param, ...words, value: t.value } as Param);
+  };
   for (const [name, p] of Object.entries(effect.params ?? {})) {
     const first = p.to[0] === undefined ? undefined : targetOf(effect, p.to[0]);
-    if (first) out[name] = { ...first.param, label: p.label, about: p.about, value: first.value };
+    if (first) add(name, first, p);
   }
   for (const name of ['blend', 'lag']) {
     const t = targetOf(effect, name);
-    if (t && !Object.hasOwn(out, name)) out[name] = { ...t.param, value: t.value };
+    if (t && !Object.hasOwn(out, name)) add(name, t, t.param);
   }
   return out;
 }
 
-const clamp = (p: NumberParam, v: number) => Math.min(p.max, Math.max(p.min, v));
+/** `v` held to `p`: a number clamped to its range, anything else as it is. */
+const held = (p: Param, v: ParamValue) =>
+  'min' in p && typeof v === 'number' ? Math.min(p.max, Math.max(p.min, v)) : v;
 
 /** `piece` with the setting `key` set to `v`. */
-function setOn(piece: Piece, key: string, v: number): Piece {
+function setOn(piece: Piece, key: string, v: ParamValue): Piece {
   if (key === 'lag')
     return 'mod' in piece
-      ? { ...piece, spread: { ...(piece.spread ?? { by: 'together' }), lag: v } }
-      : { ...piece, order: { ...(piece.order ?? { by: 'together' }), lag: v } };
+      ? { ...piece, spread: { ...(piece.spread ?? { by: 'together' }), lag: v as number } }
+      : { ...piece, order: { ...(piece.order ?? { by: 'together' }), lag: v as number } };
   return { ...piece, params: { ...piece.params, [key]: v } } as Piece;
 }
 
-/** `effect` with `path`'s setting set to `v`, held to that setting's own range. */
-function setAt(effect: EffectSpec, path: string, v: number): EffectSpec {
+/** `effect` with `path`'s setting set to `v`; a value that setting cannot take changes nothing. */
+function setAt(effect: EffectSpec, path: string, v: ParamValue): EffectSpec {
   const target = targetOf(effect, path);
-  if (!target) return effect;
-  const value = clamp(target.param, v);
+  if (!target || !fits(target.param, v)) return effect;
+  const value = held(target.param, v);
   if (path === 'lag')
-    return { ...effect, order: { ...(effect.order ?? { by: 'together' }), lag: value } };
-  if (path === 'blend') return { ...effect, blend: value };
+    return { ...effect, order: { ...(effect.order ?? { by: 'together' }), lag: value as number } };
+  if (path === 'blend') return { ...effect, blend: value as number };
   const [slot, index, key] = path.split('.') as [Slot, string, string];
   const pieces = [...piecesOf(effect[slot])];
   pieces[Number(index)] = setOn(pieces[Number(index)] as Piece, key, value);
@@ -121,16 +147,16 @@ function setAt(effect: EffectSpec, path: string, v: number): EffectSpec {
  */
 export function tuned(
   effect: EffectSpec,
-  given: Readonly<Record<string, number>> | undefined,
+  given: Readonly<Record<string, ParamValue>> | undefined,
 ): EffectSpec {
   if (!given) return effect;
   const tuning = tuningOf(effect);
   let out = effect;
   for (const [name, v] of Object.entries(given)) {
     const p = Object.hasOwn(tuning, name) ? tuning[name] : undefined;
-    if (!p || !Number.isFinite(v)) continue;
+    if (!p || !fits(p, v)) continue;
     const to = effect.params?.[name]?.to ?? [name];
-    for (const path of to) out = setAt(out, path, clamp(p, v));
+    for (const path of to) out = setAt(out, path, held(p, v));
   }
   return out;
 }
