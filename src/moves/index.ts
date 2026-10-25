@@ -2,6 +2,7 @@ import { bounceIn } from './bounce.js';
 import { cutOff, cutOn, stand } from './cut.js';
 import { dropIn, dropOut } from './drop.js';
 import { fold, tumble, unfold } from './fold.js';
+import { melt } from './melt.js';
 import type { Move } from './move.js';
 import { rainIn, rainOut } from './rain.js';
 import { reelIn, rollAway } from './reel.js';
@@ -20,6 +21,7 @@ export {
   dropIn,
   dropOut,
   fold,
+  melt,
   rainIn,
   rainOut,
   reelIn,
@@ -60,6 +62,7 @@ const moves = {
   scatter,
   'bounce-in': bounceIn,
   wave,
+  melt,
 };
 export type MoveName = keyof typeof moves;
 /** Every move, by name. */
