@@ -16,6 +16,10 @@ interface Live {
   /** The rate the sign plays at. */
   rate: number;
   sign: Marquee | null;
+  /** Whether the scrubber holds the sign still, which a sign built to replace it keeps. */
+  held: boolean;
+  /** Where the last sign's pass stood when it was taken down, for the next one to play on from. */
+  resume: number | undefined;
   listeners: Set<() => void>;
   undo: Undo;
 }
@@ -46,6 +50,8 @@ function begin(): Live {
     solo: false,
     rate: 1,
     sign: null,
+    held: false,
+    resume: undefined,
     listeners: new Set(),
   } as Live;
   l.undo = createUndo({
@@ -65,6 +71,7 @@ function replay(from: number): void {
   const { sign } = live;
   if (!sign) return;
   sign.setEffects(live.state.effects);
+  live.held = false;
   sign.restart(0);
   if (live.solo || from <= 0) return;
   const at = sign.pass()?.scenes.find((s) => s.scene >= from);
@@ -126,7 +133,11 @@ export const compose = {
   /** Where the sign's pass stands, or null with no sign or nothing playing. */
   pass: (): Pass | null => live.sign?.pass() ?? null,
   /** Moves the sign's pass to `ms`, held there with `hold`. */
-  seek: (ms: number, hold = false) => live.sign?.seek(ms, { hold }),
+  seek(ms: number, hold = false) {
+    if (!live.sign) return;
+    live.held = hold;
+    live.sign.seek(ms, { hold });
+  },
   /** The program scene a scene of the pass plays: soloed, the pass is the picked scene alone. */
   sceneOf: (p: PassScene): number => (live.solo ? pickedOf(live.state) : p.scene),
   /** The rate the sign plays at, which a sign built later takes too. */
@@ -138,10 +149,15 @@ export const compose = {
   },
   /** The sign the page drew, or null while there is none. */
   sign: () => live.sign,
-  /** Hands the store the sign the page drew, or null when it is gone. */
+  /**
+   * Hands the store the sign the page drew, or null when it is gone. A sign built to replace one
+   * plays on from where the last one's pass stood, still held if it was.
+   */
   attach(next: Marquee | null) {
+    if (!next) live.resume = live.sign?.pass()?.at;
     live.sign = next;
     if (next && live.rate !== 1) next.ramp(live.rate, 0);
+    if (next && live.resume !== undefined) next.seek(live.resume, { hold: live.held });
     notify();
   },
 };

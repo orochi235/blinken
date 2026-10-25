@@ -21,13 +21,11 @@ function equip(m: Marquee, hardware: Hardware): void {
 
 /**
  * The sign the composition plays on, with the hardware it is built from. A new size or border
- * builds a new sign, which plays on from where the old one's pass stood.
+ * builds a new sign, which plays on from where the old one's pass stood, still held if it was.
  */
 export function Sign({ hardware }: { hardware: Hardware }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const sign = useRef<Marquee | null>(null);
-  /** Where the last sign's pass stood when it was taken down. */
-  const resume = useRef<number | undefined>(undefined);
   const latest = useRef(hardware);
   latest.current = hardware;
   const { cols, rows } = hardware.size;
@@ -46,9 +44,7 @@ export function Sign({ hardware }: { hardware: Hardware }) {
     equip(m, latest.current);
     sign.current = m;
     compose.attach(m);
-    if (resume.current !== undefined) m.seek(resume.current);
     return () => {
-      resume.current = m.pass()?.at;
       compose.attach(null);
       sign.current = null;
       m.destroy();
