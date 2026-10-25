@@ -36,7 +36,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 9;
+export const VERSION = 10;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -269,7 +269,10 @@ function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): 
 }
 
 /** Built-in params added since version 5, by the version that added them and the effect. */
-const ADDED: Record<number, Record<string, readonly string[]>> = { 6: { scroll: ['direction'] } };
+const ADDED: Record<number, Record<string, readonly string[]>> = {
+  6: { scroll: ['direction'] },
+  10: { tile: ['rows', 'gap'] },
+};
 
 /** What a scene could tune on `effect` in a link of `version`: today's, less what came later. */
 function tuningAt(effect: EffectSpec, version: number): Params {

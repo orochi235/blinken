@@ -141,6 +141,17 @@ const effects = {
         about: 'How long the rows wait before moving one column. Higher scrolls more slowly.',
         to: ['active.0.step'],
       },
+      rows: {
+        label: 'row gap',
+        about: 'How many blank rows separate one row of text from the next.',
+        to: ['active.0.leading'],
+      },
+      gap: {
+        label: 'gap',
+        about:
+          'How many blank columns separate each copy of the message from the next along a row.',
+        to: ['active.0.gap'],
+      },
     },
   },
 } as const satisfies Record<string, EffectSpec>;
