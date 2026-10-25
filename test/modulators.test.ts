@@ -250,6 +250,40 @@ describe('modulators', () => {
     expect(glint(40, 6, 45)).toBe(1);
   });
 
+  it('aurora keeps its hue within half its range either way, drifting and closing its loop', () => {
+    const given = { range: 120, speed: 0.1 };
+    for (const t of [0, 1300, 4100, 7700])
+      for (const d of b.dots.filter((_, i) => i % 7 === 0))
+        expect(Math.abs(poseAt('aurora', t, d, given).hue as number)).toBeLessThanOrEqual(60);
+    const d = b.dots[123] as Subject;
+    expect(poseAt('aurora', 0, d, given).hue).toBeCloseTo(
+      poseAt('aurora', 9999.99, d, given).hue as number,
+      3,
+    );
+    const across = new Set(
+      b.dots.slice(0, 80).map((s) => poseAt('aurora', 0, s, given).hue?.toFixed(2)),
+    );
+    expect(across.size).toBeGreaterThan(20);
+  });
+
+  it('gradient runs from its first color to its last, across or down', () => {
+    const colors = [0xff0000, 0x0000ff];
+    const tint = (x: number, y: number, direction = 'across') =>
+      poseAt('gradient', 0, b.dots.find((d) => d.x === x && d.y === y) as Subject, {
+        colors,
+        direction,
+      }).tint as number[];
+    const end = (hex: number) => oklab(hex).map((v) => expect.closeTo(v * 3, 3));
+    expect(tint(0, 3)).toEqual(end(0xff0000));
+    expect(tint(79, 3)).toEqual(end(0x0000ff));
+    expect(tint(10, 0, 'down')).toEqual(end(0xff0000));
+    expect(tint(10, 6, 'down')).toEqual(end(0x0000ff));
+    expect(tint(10, 3, 'down')).toEqual(tint(70, 3, 'down'));
+    expect(poseAt('gradient', 0, b.dots[5] as Subject)).toEqual(
+      poseAt('gradient', 700, b.dots[5] as Subject),
+    );
+  });
+
   for (const name of names) {
     it(`${name} writes only the channels it declares`, () => {
       const m = MODULATORS[name];

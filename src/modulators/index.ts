@@ -1,9 +1,11 @@
+import { aurora } from './aurora.js';
 import { chase } from './chase.js';
 import { palette, twoColor } from './color.js';
 import { desaturate, dim, flare } from './ease.js';
 import { fire } from './fire.js';
 import { flash } from './flash.js';
 import { glitch } from './glitch.js';
+import { gradient } from './gradient.js';
 import { invert } from './invert.js';
 import type { Modulator } from './modulator.js';
 import { neon } from './neon.js';
@@ -14,6 +16,7 @@ import { bloom, hueCycle, pulse } from './wave.js';
 
 export * from './modulator.js';
 export {
+  aurora,
   bloom,
   chase,
   desaturate,
@@ -22,6 +25,7 @@ export {
   flare,
   flash,
   glitch,
+  gradient,
   hueCycle,
   invert,
   neon,
@@ -51,6 +55,8 @@ const modulators = {
   glitch,
   neon,
   shimmer,
+  aurora,
+  gradient,
 };
 export type ModulatorName = keyof typeof modulators;
 /** Every modulator, by name. */
