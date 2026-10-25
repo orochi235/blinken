@@ -12,3 +12,6 @@
 - A scene's hold on an effect that has none still plays an active piece once over it, but the designer only offers that auto length when the effect itself has a hold.
 - "Copy as code" clamps a scene's tuning to its ranges but still prints a value of the wrong kind, which tuning ignores when it plays.
 - A pointer-cancel on the scrubber ends its drag but leaves the sign held.
+- `wave` on a 7-row sign clips a letter's top or bottom row at each step, since the font leaves no spare rows; it reads cleanly from 9 rows up.
+- `swarm` on a message about as wide as the sign fills it with in-flight dots, so the scatter reads as a haze rather than separate dots.
+- `bounce-in` falls only within its own line's rows, not from the top of the sign, so on a tall sign it starts partway down.
