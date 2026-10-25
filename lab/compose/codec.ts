@@ -34,7 +34,9 @@ import { BLEND, HOLD, LAG } from './state.js';
  * A composition packed into bits, using what bree already knows: each move, modulator, order,
  * face, built-in effect and layer is its place in its registry, and each number is a count of its
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
- * order or a setting's range or step changes what old links mean, so it bumps VERSION.
+ * order or a setting's range or step changes what old links mean, so it bumps VERSION. A registry
+ * only ever grows at its end; adding to one bumps VERSION too, and records in LENGTHS how long
+ * each was before, so an older link reads against the registries it was written with.
  */
 export const VERSION = 10;
 
@@ -67,6 +69,37 @@ const movesIn = Object.fromEntries(
     Object.keys(MOVES).filter((m) => MOVES[m as keyof typeof MOVES].slot === slot),
   ]),
 ) as Record<Slot, string[]>;
+
+/** How long each registry was in links up to version `until`, oldest first. */
+const LENGTHS: readonly {
+  until: number;
+  moves: Readonly<Record<Slot, number>>;
+  mods: number;
+  effects: number;
+  layers: number;
+}[] = [];
+
+/** The registries a link of `version` names its moves, modulators, effects and layers from. */
+export interface Registries {
+  movesIn: Readonly<Record<Slot, readonly string[]>>;
+  mods: readonly string[];
+  effects: readonly string[];
+  layers: readonly string[];
+}
+
+function registriesAt(version: number): Registries {
+  const at = LENGTHS.find((l) => version <= l.until);
+  if (!at) return { movesIn, mods: MOD_NAMES, effects: EFFECT_NAMES, layers: LAYER_NAMES };
+  return {
+    movesIn: Object.fromEntries(SLOTS.map((s) => [s, movesIn[s].slice(0, at.moves[s])])) as Record<
+      Slot,
+      string[]
+    >,
+    mods: MOD_NAMES.slice(0, at.mods),
+    effects: EFFECT_NAMES.slice(0, at.effects),
+    layers: LAYER_NAMES.slice(0, at.layers),
+  };
+}
 
 /** About text that is a built-in's is written as which built-in. */
 const ABOUT = { none: 0, builtin: 1, text: 2 } as const;
@@ -162,14 +195,14 @@ function writePiece(w: BitWriter, slot: Slot, piece: Piece): void {
   }
 }
 
-function readPiece(r: BitReader, slot: Slot): Piece {
+function readPiece(r: BitReader, slot: Slot, reg: Registries): Piece {
   if (r.flag()) {
-    const mod = MOD_NAMES[r.index(MOD_NAMES.length)] as keyof typeof MODULATORS;
+    const mod = reg.mods[r.index(reg.mods.length)] as keyof typeof MODULATORS;
     const spread = readOrder(r);
     const params = readParams(r, MODULATORS[mod].params);
     return { mod, ...(spread && { spread }), ...(params && { params }) };
   }
-  const move = movesIn[slot][r.index(movesIn[slot].length)] as keyof typeof MOVES;
+  const move = reg.movesIn[slot][r.index(reg.movesIn[slot].length)] as keyof typeof MOVES;
   const order = readOrder(r);
   const params = readParams(r, MOVES[move].params);
   return { move, ...(order && { order }), ...(params && { params }) };
@@ -209,17 +242,17 @@ function writeEffect(w: BitWriter, name: string, spec: EffectSpec): void {
   }
 }
 
-function readEffect(r: BitReader, version: number): EffectSpec {
+function readEffect(r: BitReader, version: number, reg: Registries): EffectSpec {
   const out: Record<string, unknown> = { name: r.text() };
   const about = r.uint(2);
   if (about === ABOUT.builtin)
-    out.about = EFFECTS[EFFECT_NAMES[r.index(EFFECT_NAMES.length)] as keyof typeof EFFECTS].about;
+    out.about = EFFECTS[reg.effects[r.index(reg.effects.length)] as keyof typeof EFFECTS].about;
   else if (about === ABOUT.text) out.about = r.text();
   else if (about !== ABOUT.none) throw new RangeError('bree: a link has an unknown about');
   const order = readOrder(r);
   if (order) out.order = order;
   for (const slot of SLOTS) {
-    const pieces = Array.from({ length: r.count() }, () => readPiece(r, slot));
+    const pieces = Array.from({ length: r.count() }, () => readPiece(r, slot, reg));
     if (pieces.length) out[slot] = pieces;
   }
   if (r.flag()) out.hold = readNumber(r, HOLD);
@@ -288,13 +321,18 @@ function tuningAt(effect: EffectSpec, version: number): Params {
 const defaultsOf = (tuning: Params) =>
   Object.fromEntries(Object.entries(tuning).map(([k, p]) => [k, defaultOf(p)]));
 
-function readScene(r: BitReader, effects: ShareData['effects'], version: number): Scene {
+function readScene(
+  r: BitReader,
+  effects: ShareData['effects'],
+  version: number,
+  reg: Registries,
+): Scene {
   const mine = Object.keys(effects);
   const text = r.text();
   const hex = r.flag() ? readNumber(r, HEX) : AMBER;
   const effect = r.flag()
     ? (mine[r.index(mine.length)] as string)
-    : (EFFECT_NAMES[r.index(EFFECT_NAMES.length)] as string);
+    : (reg.effects[r.index(reg.effects.length)] as string);
   const hold = r.flag() ? readNumber(r, HOLD) : undefined;
   const face = r.flag() ? (FACE_NAMES[r.index(FACE_NAMES.length)] as FaceName) : undefined;
   // Reverse text was dropped in version 8; an older link's plays the invert layer instead.
@@ -312,7 +350,8 @@ function readScene(r: BitReader, effects: ShareData['effects'], version: number)
     ...(shadow && { shadow }),
     ...(tracking !== undefined && { tracking }),
   };
-  const read = version >= 3 ? readLayers(r) : version === 2 ? readLayers(r, V2_LAYERS) : {};
+  const read =
+    version >= 3 ? readLayers(r, reg.layers) : version === 2 ? readLayers(r, V2_LAYERS) : {};
   const layers = reverse && !read.invert ? { ...read, invert: { on: true } } : read;
   // Scenes carried their effect's tuning from version 5.
   const params =
@@ -351,10 +390,7 @@ function writeLayers(w: BitWriter, layers: Record<string, LinkLayer>): void {
   }
 }
 
-function readLayers(
-  r: BitReader,
-  names: readonly string[] = LAYER_NAMES,
-): Record<string, LinkLayer> {
+function readLayers(r: BitReader, names: readonly string[]): Record<string, LinkLayer> {
   const layers: Record<string, LinkLayer> = {};
   for (const name of names) {
     if (!r.flag()) continue;
@@ -388,14 +424,15 @@ export function unpack(bytes: Uint8Array): ShareData {
   if (version < 1 || version > VERSION) throw new RangeError('bree: a link from another version');
   // Version 1 wrote the layers once, for the whole program, ahead of the effects.
   const layers = version === 1 ? readLayers(r, V1_LAYERS) : undefined;
+  const reg = registriesAt(version);
   const effects: Record<string, EffectSpec> = {};
   const mine: string[] = [];
   for (let i = r.count(); i > 0; i--) {
-    const spec = readEffect(r, version);
+    const spec = readEffect(r, version, reg);
     mine.push(spec.name);
     // Defined, not assigned: a link's `__proto__` would otherwise set the prototype.
     Object.defineProperty(effects, spec.name, { value: spec, enumerable: true, writable: true });
   }
-  const program = Array.from({ length: r.count() }, () => readScene(r, effects, version));
+  const program = Array.from({ length: r.count() }, () => readScene(r, effects, version, reg));
   return { effects, program, ...(layers && { layers }) };
 }
