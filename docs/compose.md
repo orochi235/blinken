@@ -86,21 +86,28 @@ slot set `tint` outright, since averaging two colors is rarely what was meant.
   (blits's `wave` shapes, sine, triangle, saw and square, with cycles and phase; or a named easing
   curve for one-way ramps), a depth, and an order, which here gives each dot its phase.
 
-| Modulator               | Channel  | Curve                            | Spread                        |
-| ----------------------- | -------- | -------------------------------- | ----------------------------- |
-| flash                   | `gain`   | square                           | together                      |
-| blink, pulse, breathe   | `gain`   | square / triangle / sine         | together, or by letter        |
-| rainbow (today's layer) | `hue`    | saw                              | by column                     |
-| color sweep             | `hue`    | saw                              | center out, by row, by letter |
-| palette step            | `tint`   | stepped through a list of colors | together, by letter, random   |
-| two-color pulse         | `tint`   | sine between two colors          | any                           |
-| fade to gray, flare     | `chroma` | easing                           | together                      |
-| bloom pulse, flare      | `glow`   | sine / easing                    | together, or by letter        |
-| chase (today's layer)   | `lit`    | square                           | by border cell                |
-| sparkle (today's layer) | `lit`    | random flicker                   | random                        |
-| invert (a layer)        | `invert` | steady, or square / sine / tri   | together, or by column        |
+| Modulator               | Channel                 | Curve                                 | Spread                        |
+| ----------------------- | ----------------------- | ------------------------------------- | ----------------------------- |
+| flash                   | `gain`                  | square                                | together                      |
+| blink, pulse, breathe   | `gain`                  | square / triangle / sine              | together, or by letter        |
+| rainbow (today's layer) | `hue`                   | saw                                   | by column                     |
+| color sweep             | `hue`                   | saw                                   | center out, by row, by letter |
+| palette step            | `tint`                  | stepped through a list of colors      | together, by letter, random   |
+| two-color pulse         | `tint`                  | sine between two colors               | any                           |
+| fade to gray, flare     | `chroma`                | easing                                | together                      |
+| bloom pulse, flare      | `glow`                  | sine / easing                         | together, or by letter        |
+| chase (today's layer)   | `lit`                   | square                                | by border cell                |
+| sparkle (today's layer) | `lit`                   | random flicker                        | random                        |
+| invert (a layer)        | `invert`                | steady, or square / sine / tri        | together, or by column        |
+| scanline (a layer)      | `gain`, `glow`          | a band rolling down the rows          | ignores it                    |
+| fire (a layer)          | `gain`, `tint`          | rising value noise, colored by height | ignores it                    |
+| glitch (a layer)        | `hue`, `gain`, `invert` | seeded bursts in bands of rows        | ignores it                    |
+| neon (a layer)          | `gain`, `glow`          | steady, seeded stutters out           | by letter, each a tube        |
+| shimmer (a layer)       | `lit`, `glow`, `chroma` | a leaning glint now and then          | ignores it                    |
+| aurora (a layer)        | `hue`                   | summed sines over columns and rows    | ignores it                    |
+| gradient (a layer)      | `tint`                  | still, a ramp through its colors      | ignores it                    |
 
-Today's three layers are modulators that happen to loop under the whole program. So a **layer**
+The built-in layers are modulators that happen to loop under the whole program. So a **layer**
 becomes a place a modulator plays, under the program or inside one effect's slot, not a separate
 kind of thing. Planes are not layers: a layer plays on planes like any piece.
 
@@ -144,7 +151,7 @@ board, each placed where the scene before it ends and holding that scene's arcs.
 whole-effect order starts a lag apart. Every scene's hold is finite, so its length is known when
 it is staged. Under the program play any number of modulators looping as
 layers, each with a weight and its settings; the built-in layers are `sparkle`, `chase`,
-`rainbow`, and `invert`. `createMarquee` takes `effects` (a name
+`rainbow`, `invert`, `scanline`, `fire`, `glitch`, `neon`, `shimmer`, `aurora`, and `gradient`. `createMarquee` takes `effects` (a name
 → `EffectSpec` table added to the built-ins), so a program can name effects designed elsewhere.
 
 ## The compose lab

@@ -75,7 +75,8 @@ costs only the ones on screen. `createTicker({ fps })` makes a ticker of your ow
 
 A piece is one thing happening to the dots. A move places the text: `stand` holds it, `scroll-across`
 carries it over the sign, `tumble` turns each letter end over end. A modulator changes how the dots
-look while it plays: `flash`, `pulse`, `hue-cycle`, `sparkle`, `chase`. Each declares its tuning as
+look while it plays: `flash`, `pulse`, `hue-cycle`, `sparkle`, `chase`, and filters that dress the
+whole sign — `scanline`, `fire`, `glitch`, `neon`, `shimmer`, `aurora`, and `gradient`. Each declares its tuning as
 `params`, plain data giving each number's label, range and default, for a control panel to be
 built from. `flash` blinks a number of times within a window of each pass, `from` and `to` as
 shares of it, which is how `hold` flashes three times in the middle third of its hold.
@@ -112,7 +113,12 @@ The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Mat
 built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the border's bulbs
 stepping around; `rainbow`, a hue running across the sign that recolors whatever is lit; and
 `invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when spread by
-column. They are in `LAYERS`. A layer plays under the whole sign through `layers` on
+column; `scanline`, a bright band rolling down the rows like a CRT's; `fire`, a rising flicker from
+deep red at the bottom to yellow at the top; `glitch`, rare bursts in which bands of rows jump color,
+drop out or flip; `neon`, letters buzzing like failing tubes, a few worse than the rest (a layer cannot see the
+message, so there each six columns are a tube); `shimmer`,
+a slanted glint sweeping across now and then; `aurora`, colors drifting in soft bands; and
+`gradient`, a still blend of colors from edge to edge. They are in `LAYERS`. A layer plays under the whole sign through `layers` on
 `createMarquee`, or under one scene through that scene's `layers`, by the same names:
 `{ rainbow: true }`, or `{ rainbow: { params: { arc: 90 } } }` laid over the built-in's settings.
 A scene's layer runs as long as the scene, and `on: false` keeps its settings without playing it.

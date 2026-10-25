@@ -160,6 +160,13 @@ const layers = {
   sparkle: { mod: 'sparkle' },
   rainbow: { mod: 'hue-cycle', spread: { by: 'column' }, params: { rate: 0.4, phase: 0.015 } },
   invert: { mod: 'invert' },
+  scanline: { mod: 'scanline' },
+  fire: { mod: 'fire' },
+  glitch: { mod: 'glitch' },
+  neon: { mod: 'neon', spread: { by: 'letter' } },
+  shimmer: { mod: 'shimmer' },
+  aurora: { mod: 'aurora' },
+  gradient: { mod: 'gradient' },
 } as const satisfies Record<string, LayerSpec>;
 
 export type EffectName = keyof typeof effects;

@@ -1,6 +1,7 @@
 // Screenshots each text effect alone (`?show=<name>`) at a few moments, and the rainbow layer over
 // a held message, into `--out <dir>` (default shots/), for looking at what an effect draws.
-// `--only flip,tile` takes just those.
+// `--only flip,tile` takes just those. `--layer fire,neon` shoots a held message under each of
+// those built-in layers instead, sparkle off, at `--moments 700,1500` (ms) if given.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -14,8 +15,9 @@ const out = arg('--out', 'shots');
 const only = arg('--only', null)?.split(',');
 mkdirSync(out, { recursive: true });
 
-const MOMENTS = [700, 1500, 2500, 3300];
-const views = [
+const layers = arg('--layer', null)?.split(',');
+const MOMENTS = arg('--moments', '700,1500,2500,3300').split(',').map(Number);
+const effectViews = [
   { name: 'hold', query: '?show=hold' },
   { name: 'scroll', query: '?show=scroll' },
   { name: 'flip', query: '?show=flip' },
@@ -24,6 +26,9 @@ const views = [
   { name: 'tile', query: '?show=tile&cols=120&rows=40' },
   { name: 'rainbow', query: '?show=hold', click: '#rainbow' },
 ].filter((v) => !only || only.includes(v.name));
+const views = layers
+  ? layers.map((name) => ({ name, query: '?show=hold', click: `#${name}`, off: '#sparkle' }))
+  : effectViews;
 
 const { origin, close } = await serve();
 const browser = await chromium.launch({ headless: true });
@@ -34,6 +39,7 @@ try {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(`${origin}${v.query}&nopanel`, { waitUntil: 'networkidle' });
+    if (v.off) await page.uncheck(v.off);
     if (v.click) await page.click(v.click);
     const start = Date.now();
     for (const t of MOMENTS) {
