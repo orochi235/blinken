@@ -8,6 +8,18 @@ export type Slot = 'enter' | 'active' | 'exit';
 /** The slots in the order they play. */
 export const SLOTS: readonly Slot[] = ['enter', 'active', 'exit'];
 
+/**
+ * For an active move: whether the message stands where `stand` shows it as the move starts, an
+ * enter move having left it there, and whether it must stand there as it ends, for an exit move.
+ */
+export interface Joins {
+  readonly from: boolean;
+  readonly to: boolean;
+}
+
+/** An active move with no enter or exit move beside it. */
+export const LOOSE: Joins = { from: false, to: false };
+
 /** One thing the message's dots do over a stretch of time, written for one slot of an effect. */
 export interface Move<P extends Params = Params> {
   readonly kind: 'move';
@@ -18,7 +30,7 @@ export interface Move<P extends Params = Params> {
   /** Written for text wider than the board, so it never clips. Default false. */
   readonly wide?: boolean;
   /** Writes `lit` only; its duration is one pass, before any order's delay. */
-  patch(at: Placed, p: Values<P>): Patch<Led, Pose>;
+  patch(at: Placed, p: Values<P>, joins?: Joins): Patch<Led, Pose>;
 }
 
 /** Declares a move, keeping its params' keys in the type `patch` sees. */

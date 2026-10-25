@@ -94,6 +94,23 @@ describe('moves', () => {
     expect(Math.max(...left)).toBeLessThan(5);
   });
 
+  it('scroll-across carries on from an enter move and comes round again for an exit move', () => {
+    const m = MOVES['scroll-across'];
+    const p = values(m) as never;
+    const frame = (joins: { from: boolean; to: boolean }, t: number) => {
+      const patch = m.patch(at, p, joins);
+      return b.dots.map((d) => patch.at(Math.min(1, t / patch.duration), d, setting).lit ?? 0);
+    };
+    const both = { from: true, to: true };
+    expect(frame(both, 0)).toEqual(shown());
+    expect(frame(both, STEP * 3)).toEqual(shown(at.left - 3));
+    expect(frame(both, length(m))).toEqual(shown());
+    // It takes as long to come round as to cross from edge to edge.
+    expect(m.patch(at, p, both).duration).toBe(length(m));
+    expect(frame({ from: true, to: false }, 0)).toEqual(shown());
+    expect(frame({ from: false, to: true }, Number.MAX_SAFE_INTEGER)).toEqual(shown());
+  });
+
   it('scroll-across crosses the other way when rightward', () => {
     const m = MOVES['scroll-across'];
     const step = STEP;

@@ -1,7 +1,7 @@
 import type { ArcVoice } from '@msb235/blits';
 import type { Pose, Subject } from './board.js';
 import { MODULATORS, type ModulatorName } from './modulators/index.js';
-import { MOVES, type MoveName, type Slot } from './moves/index.js';
+import { type Joins, LOOSE, MOVES, type MoveName, type Slot } from './moves/index.js';
 import { delayOf, type Order, type Placed, rankOf, spanOf } from './orders.js';
 import { type Params, type ParamValue, values } from './params.js';
 import type { Channel } from './planes.js';
@@ -66,7 +66,7 @@ function settingsOf(
 
 /**
  * A piece as the arc voice that plays it in `slot`; modulators and `active` moves loop. `hold` is
- * the effect's, where one is given.
+ * the effect's, where one is given, and `joins` says an active move's neighbors hold the message.
  */
 export function stagePiece(
   piece: Piece,
@@ -74,6 +74,7 @@ export function stagePiece(
   at: Placed,
   subjects: readonly Subject[],
   hold?: number,
+  joins: Joins = LOOSE,
 ): StagedPiece {
   const loop = slot === 'active';
   if ('mod' in piece) {
@@ -91,7 +92,7 @@ export function stagePiece(
   if (move.slot !== slot) throw new Error(`bree: ${piece.move} is an ${move.slot} move`);
   const p = settingsOf(move, piece, slot, hold);
   const order = piece.order ?? TOGETHER;
-  const pass = move.patch(at, p) as ArcVoice<Subject, Pose>['patch'];
+  const pass = move.patch(at, p, joins) as ArcVoice<Subject, Pose>['patch'];
   const voice: ArcVoice<Subject, Pose> = {
     patch: pass,
     subjects,

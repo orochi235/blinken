@@ -79,9 +79,14 @@ export function stageEffect(
   const given = hold ?? effect.hold;
   const lists = SLOTS.map((slot) => piecesOf(effect[slot]));
   const pieceAt = (s: number, i: number) => (lists[s] ?? [])[i] as Piece;
+  // An enter move leaves the message standing, and an exit move starts from it standing.
+  const hasMove = (s: number) => (lists[s] ?? []).some((p) => 'move' in p);
+  const joins = { from: hasMove(0), to: hasMove(2) };
   const stageAll = (subjects: readonly Subject[], keep: (piece: Piece) => boolean) =>
     SLOTS.map((slot, s) =>
-      (lists[s] ?? []).filter(keep).map((piece) => stagePiece(piece, slot, at, subjects, given)),
+      (lists[s] ?? [])
+        .filter(keep)
+        .map((piece) => stagePiece(piece, slot, at, subjects, given, joins)),
     );
   // Every piece staged once on the first group gives the warnings and the part lengths.
   const first = stageAll(groups[0] ?? [], () => true);

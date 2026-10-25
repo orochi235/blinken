@@ -2,7 +2,7 @@ import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { Values } from '../params.js';
-import { move } from './move.js';
+import { LOOSE, move } from './move.js';
 
 const PARAMS = {
   direction: {
@@ -33,18 +33,28 @@ const edges = (at: Placed, p: Scroll) => {
   };
 };
 
-const crossing = (p: Scroll, from: number, to: number) => Math.max(1, Math.abs(to - from)) * p.step;
-
-/** The message sliding a whole column at a time, its left edge going from `from` to `to`. */
-function slide(at: Placed, p: Scroll, from: number, to: number) {
-  const steps = Math.abs(to - from);
-  const sign = Math.sign(to - from);
+/**
+ * The message sliding a whole column at a time, its left edge going from each leg's start to its
+ * end in turn: a later leg starts where the one before left the sign, at the other edge.
+ */
+function slide(at: Placed, p: Scroll, ...legs: (readonly [number, number])[]) {
+  const steps = legs.map(([from, to]) => Math.abs(to - from));
+  const total = steps.reduce((a, b) => a + b, 0);
+  /** The left edge `k` columns into the slide. */
+  const edgeAt = (k: number) => {
+    for (const [i, [from, to]] of legs.entries()) {
+      const n = steps[i] as number;
+      if (k <= n || i === legs.length - 1) return from + Math.sign(to - from) * Math.min(k, n);
+      k -= n;
+    }
+    return 0;
+  };
   return patch<Led, Pose>(
-    crossing(p, from, to),
+    Math.max(1, total) * p.step,
     (phase, led) => {
-      const moved = Math.min(steps, Math.floor(phase * steps));
+      const x = edgeAt(Math.min(total, Math.floor(phase * total)));
       const row = at.rowOf(led);
-      return { lit: row >= 0 && at.text.lit(led.x - (from + sign * moved), row) ? 1 : 0 };
+      return { lit: row >= 0 && at.text.lit(led.x - x, row) ? 1 : 0 };
     },
     { writes: ['lit'] },
   );
@@ -57,7 +67,7 @@ export const scrollIn = move({
   slot: 'enter',
   params: PARAMS,
   wide: true,
-  patch: (at, p) => slide(at, p, edges(at, p).off, edges(at, p).rest),
+  patch: (at, p) => slide(at, p, [edges(at, p).off, edges(at, p).rest]),
 });
 
 /** The message sliding out of an edge from where `stand` shows it. */
@@ -67,15 +77,25 @@ export const scrollOut = move({
   slot: 'exit',
   params: PARAMS,
   wide: true,
-  patch: (at, p) => slide(at, p, edges(at, p).rest, edges(at, p).away),
+  patch: (at, p) => slide(at, p, [edges(at, p).rest, edges(at, p).away]),
 });
 
-/** The message crossing the whole sign, in at one edge and out at the other. */
+/**
+ * The message crossing the whole sign, in at one edge and out at the other. After an enter move it
+ * starts where that left the message standing, and before an exit move it comes round again to
+ * stand there, so the effect never jumps.
+ */
 export const scrollAcross = move({
   name: 'scroll-across',
-  about: 'Crosses the sign, in at one edge and out at the other.',
+  about:
+    'Crosses the sign, in at one edge and out at the other, carrying on from where an enter move leaves the message and coming back round for an exit move.',
   slot: 'active',
   params: PARAMS,
   wide: true,
-  patch: (at, p) => slide(at, p, edges(at, p).off, edges(at, p).away),
+  patch: (at, p, joins = LOOSE) => {
+    const { off, away, rest } = edges(at, p);
+    const start = joins.from ? rest : off;
+    if (!joins.to) return slide(at, p, [start, away]);
+    return start === rest ? slide(at, p, [rest, away], [off, rest]) : slide(at, p, [off, rest]);
+  },
 });
