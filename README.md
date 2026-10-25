@@ -108,8 +108,10 @@ fall: {
 `tuningOf(effect)` lists them as number settings, defaulting to what the effect sets, and
 `tuned(effect, values)` is the effect as those values set it.
 
-The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Matrix rain), and
-`tile`, in `EFFECTS`. The
+The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Matrix rain),
+`tile`, `type` (typed on behind a cursor and backspaced off), `swarm` (dots flying together and
+apart), `bounce` (letters bouncing in), `wave` (letters riding a wave), `melt` (dripping off the
+bottom), and `shear` (halves sliding in from opposite edges), in `EFFECTS`. The
 built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the border's bulbs
 stepping around; `rainbow`, a hue running across the sign that recolors whatever is lit; and
 `invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when spread by

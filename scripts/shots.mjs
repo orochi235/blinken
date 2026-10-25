@@ -1,7 +1,7 @@
 // Screenshots each text effect alone (`?show=<name>`) at a few moments, and the rainbow layer over
 // a held message, into `--out <dir>` (default shots/), for looking at what an effect draws.
-// `--only flip,tile` takes just those. `--layer fire,neon` shoots a held message under each of
-// those built-in layers instead, sparkle off, at `--moments 700,1500` (ms) if given.
+// `--only flip,tile` takes just those, and `--at 300,900` shoots at those ms instead. `--layer
+// fire,neon` shoots a held message under each of those built-in layers instead, sparkle off.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -16,7 +16,7 @@ const only = arg('--only', null)?.split(',');
 mkdirSync(out, { recursive: true });
 
 const layers = arg('--layer', null)?.split(',');
-const MOMENTS = arg('--moments', '700,1500,2500,3300').split(',').map(Number);
+const MOMENTS = arg('--at', '700,1500,2500,3300').split(',').map(Number);
 const effectViews = [
   { name: 'hold', query: '?show=hold' },
   { name: 'scroll', query: '?show=scroll' },
@@ -24,6 +24,12 @@ const effectViews = [
   { name: 'roll', query: '?show=roll' },
   { name: 'fall', query: '?show=fall' },
   { name: 'tile', query: '?show=tile&cols=120&rows=40' },
+  { name: 'type', query: '?show=type' },
+  { name: 'swarm', query: '?show=swarm' },
+  { name: 'bounce', query: '?show=bounce' },
+  { name: 'wave', query: '?show=wave&rows=9' },
+  { name: 'melt', query: '?show=melt' },
+  { name: 'shear', query: '?show=shear' },
   { name: 'rainbow', query: '?show=hold', click: '#rainbow' },
 ].filter((v) => !only || only.includes(v.name));
 const views = layers

@@ -33,7 +33,7 @@ A piece is a **move** played in an **order**.
   move: `together`, `column` (left to right, or right to left), `center` (out from the middle),
   `letter` (one letter after the next), `random` (from a hash of the column). Each takes a lag in ms.
 
-Moves come out of today's six effects:
+Moves and the built-in effects that use them:
 
 | Move                   | Slot     | From                              | Settings                              |
 | ---------------------- | -------- | --------------------------------- | ------------------------------------- |
@@ -47,6 +47,12 @@ Moves come out of today's six effects:
 | scroll across          | active   | scroll                            | column time, direction                |
 | tile                   | active   | tile                              | tilt, column time, gaps, brick offset |
 | flash                  | active   | hold                              | flashes                               |
+| type on / type off     | in / out | type                              | letter time, cursor                   |
+| assemble / scatter     | in / out | swarm                             | fly time, spread, swirl, seed         |
+| bounce in              | in       | bounce                            | bounce time, bounces                  |
+| wave                   | active   | wave                              | height, wavelength, wave time, moves  |
+| melt                   | out      | melt                              | melt time, streak, stagger, seed      |
+| split in / split out   | in / out | shear                             | slide time, top half                  |
 
 **An order can apply inside a piece or to the whole effect.** Inside a piece it is that voice's
 `stagger`. Applied to the whole effect, the effect is staged as one arc per group (per letter, per

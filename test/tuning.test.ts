@@ -17,6 +17,24 @@ describe('effect params', () => {
     }
   });
 
+  it('offers every param the moving built-ins declare, each tuning what it names', () => {
+    const cases = {
+      type: ['speed', 120, 'enter.0.ms'],
+      swarm: ['swirl', 0.5, 'exit.0.swirl'],
+      bounce: ['bounces', 2, 'enter.0.bounces'],
+      wave: ['height', 2, 'active.0.height'],
+      melt: ['streak', 6, 'exit.0.tail'],
+      shear: ['slide', 1200, 'exit.0.ms'],
+    } as const;
+    for (const [name, [param, value, path]] of Object.entries(cases)) {
+      const effect = EFFECTS[name as keyof typeof EFFECTS];
+      expect(Object.keys(tuningOf(effect)), name).toEqual(
+        expect.arrayContaining(Object.keys(effect.params ?? {})),
+      );
+      expect(targetOf(tuned(effect, { [param]: value }), path)?.value, name).toBe(value);
+    }
+  });
+
   it('offers what an effect declares, defaulting to its own settings, then blend and lag', () => {
     const fall = tuningOf(EFFECTS.fall);
     expect(Object.keys(fall)).toEqual(['drop', 'scatter', 'blend']);
