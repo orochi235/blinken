@@ -1,3 +1,4 @@
+import { bounceIn } from './bounce.js';
 import { cutOff, cutOn, stand } from './cut.js';
 import { dropIn, dropOut } from './drop.js';
 import { fold, tumble, unfold } from './fold.js';
@@ -12,6 +13,7 @@ import { typeOff, typeOn } from './type.js';
 export * from './move.js';
 export {
   assemble,
+  bounceIn,
   cutOff,
   cutOn,
   dropIn,
@@ -54,6 +56,7 @@ const moves = {
   'type-off': typeOff,
   assemble,
   scatter,
+  'bounce-in': bounceIn,
 };
 export type MoveName = keyof typeof moves;
 /** Every move, by name. */
