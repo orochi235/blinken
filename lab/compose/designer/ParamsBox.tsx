@@ -105,8 +105,11 @@ export function ParamsBox({ spec }: { spec: EffectSpec }) {
             />
           </span>
           <fieldset className="compose-param-targets">
-            <legend className="compose-about">
-              drives — its kind, range and default come from the first
+            <legend
+              className="compose-about"
+              title="A scene setting this param writes its value into every setting ticked here. The control the scene sees, its range and its starting value come from the first one ticked; only settings of that kind are listed."
+            >
+              changes these settings
             </legend>
             {targets
               .filter((t) => fitsWith(spec, p, t.path))
