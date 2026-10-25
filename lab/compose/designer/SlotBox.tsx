@@ -23,6 +23,7 @@ export function SlotBox({
           key={`${i}:${'mod' in piece ? piece.mod : piece.move}`}
           slot={slot}
           piece={piece}
+          hold={spec.hold}
           // Every write reads the slot as it stands now, not the `spec` this card drew from.
           onEdit={(fn) =>
             editEffect((e) => {
