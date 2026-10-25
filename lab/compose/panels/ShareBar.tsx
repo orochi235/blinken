@@ -61,7 +61,7 @@ export function ShareBar() {
       {hasPrevious() && (
         <Button
           size="sm"
-          tooltip="swap back the draft this link replaced; this one is kept as the previous"
+          tooltip="swap in the last draft a link replaced, keeping this one at the back; press again to step further back through the last five"
           onClick={() => {
             if (restorePrevious()) location.reload();
           }}

@@ -72,19 +72,18 @@ const RENAMED = new Map<{ readonly params: Params }, Record<string, string>>([
  */
 export function paramsOf(
   thing: { readonly params: Params },
-  given: unknown,
+  raw: unknown,
   where: string,
   dropped: string[],
 ): Record<string, ParamValue> | undefined {
-  if (!isObj(given)) return undefined;
-  const renamed = RENAMED.get(thing);
-  if (renamed)
-    given = Object.fromEntries(
-      Object.entries(given).map(([k, v]) => [
-        Object.hasOwn(renamed, k) ? (renamed[k] as string) : k,
-        v,
-      ]),
-    );
+  if (!isObj(raw)) return undefined;
+  const renamed = RENAMED.get(thing) ?? {};
+  const given: Record<string, unknown> = Object.fromEntries(
+    Object.entries(raw).map(([k, v]) => [
+      Object.hasOwn(renamed, k) ? (renamed[k] as string) : k,
+      v,
+    ]),
+  );
   const out: Record<string, ParamValue> = {};
   for (const [key, param] of Object.entries(thing.params)) {
     const v = given[key];

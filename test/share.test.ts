@@ -4,7 +4,7 @@ import { EFFECTS } from '@/builtins.js';
 import { type EffectSpec, stageEffect } from '@/effects.js';
 import { MODULATORS } from '@/modulators/index.js';
 import { placeText } from '@/orders.js';
-import { values } from '@/params.js';
+import { type NumberParam, values } from '@/params.js';
 import type { Scene } from '@/program.js';
 import { BLEND, HOLD, LAG } from '@/tuning.js';
 import { decode, encode, shareOf, toCode } from '../lab/compose/share.js';
@@ -165,7 +165,7 @@ describe('share', () => {
   });
 
   it('writes code with every number held to its range, as it plays', () => {
-    const rate = MODULATORS['hue-cycle'].params.rate;
+    const rate = MODULATORS['hue-cycle'].params.rate as NumberParam;
     const s = state();
     s.effects['hold copy'] = {
       ...(s.effects['hold copy'] as EffectSpec),
