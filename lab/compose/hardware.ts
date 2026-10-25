@@ -1,5 +1,6 @@
-import { f } from '@weasel-js/labkit';
+import { f, usePersistedState } from '@weasel-js/labkit';
 import { stereo } from '@weasel-js/ui/components/MotifFrame';
+import { useMemo } from 'react';
 import { type ChoiceParam, FADE, MODULATORS, type NumberParam, SIZE } from '@/index.js';
 import { marqueeSlider } from './MarqueeSlider.js';
 import { fieldOf, schemaFor, shownValues, storedValue } from './schema.js';
@@ -178,6 +179,19 @@ export function hardwareOf(kept: unknown): Hardware {
       ),
     ]),
   ) as Hardware;
+}
+
+/** The lab records the sign's hardware is kept in, under compose's name, which every page opens. */
+export const SIGN_RECORDS = 'bree-compose';
+
+/**
+ * The sign's hardware, shared by every page under a `<Persistence>` of `SIGN_RECORDS`, and a
+ * change to it. It belongs to the sign, not the composition, so it stays out of drafts and links.
+ */
+export function useHardware(): [Hardware, (fn: (h: Hardware) => Hardware) => void] {
+  const [kept, setKept] = usePersistedState<Hardware>('sign', HARDWARE, { scope: 'lab' });
+  const hardware = useMemo(() => hardwareOf(kept), [kept]);
+  return [hardware, (fn) => setKept((h) => fn(hardwareOf(h)))];
 }
 
 /** Hardware as the panel's controls show it, each scaled number multiplied up. */

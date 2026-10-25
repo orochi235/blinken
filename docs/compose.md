@@ -162,11 +162,14 @@ layers, each with a weight and its settings; the built-in layers are `sparkle`, 
 
 ## The compose lab
 
-The lab serves two pages: the composer at `/compose` (`lab/compose.html`) and the player at `/play` (`lab/play.html`); `/` sends a visitor on to the player.
+The lab serves three pages: the composer at `/compose` (`lab/compose.html`), the effect designer at `/effects` (`lab/effects.html`), and the player at `/play` (`lab/play.html`); `/` sends a visitor on to the player. The composer's and the designer's titles switch between the two.
 - **Effect designer.** Pick an effect to edit, or start a new one. Each slot (enter, active,
   exit) lists its pieces. A move shows its order, lag and settings; a modulator shows its channel,
   curve, depth and spread. All of the controls are built from the pieces' `params` data. Add a piece to layer it. Hold and blend are
-  sliders. A sign previews the effect looping on a sample message.
+  sliders. On the effects page, beside a library of every effect, the open one loops on a full
+  sign built from the composer's hardware, on a message typed above it, with the composer's
+  playback controls: play and pause, a frame at a time, speed, a scrubber, and a focus that loops
+  its enter, active, or exit alone.
 - **Program.** Scenes as a list: text, color, which effect, an optional hold. Add, remove,
   reorder. Layers are modulators under the program, with on/off and their own sliders; this needs
   `setLayer(name, on, params)` on `createMarquee`.

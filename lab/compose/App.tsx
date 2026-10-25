@@ -5,10 +5,10 @@ import {
   Split,
   usePersistedState,
 } from '@weasel-js/labkit';
-import { useMemo, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import { PAGES } from '../pages.js';
 import './App.css';
-import { HARDWARE, type Hardware, hardwareOf } from './hardware.js';
+import { SIGN_RECORDS, useHardware } from './hardware.js';
 import { FontPanel } from './panels/FontPanel.js';
 import { GalleryPanel } from './panels/GalleryPanel.js';
 import { HardwarePanel } from './panels/HardwarePanel.js';
@@ -17,8 +17,9 @@ import { ProgramPanel } from './panels/ProgramPanel.js';
 import { SceneEditor } from './panels/SceneEditor.js';
 import { ShareBar } from './panels/ShareBar.js';
 import { UndoBar } from './panels/UndoBar.js';
-import { Scrubber } from './Scrubber.js';
+import { type SceneLook, Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
+import { compose, playing, useCompose } from './store.js';
 
 /** The side columns' widths, px, until they are dragged. */
 const PANES = { left: 300, right: 320 };
@@ -40,11 +41,16 @@ const useNarrow = () =>
     () => narrowQuery().matches,
   );
 
+/** The scrubber over the program, each scene in its own text and color. */
+function ProgramScrubber() {
+  const { program } = useCompose();
+  const look: SceneLook = (s) => program[compose.sceneOf(s)];
+  return <Scrubber player={compose} look={look} />;
+}
+
 /** The lab: the sign on top; under it playback and the program, the effects and the picked scene, and the sign's hardware and faces. */
 function Compose() {
-  // The hardware belongs to the sign, not the composition, so it stays out of drafts and links.
-  const [kept, setKept] = usePersistedState<Hardware>('sign', HARDWARE, { scope: 'lab' });
-  const hardware = useMemo(() => hardwareOf(kept), [kept]);
+  const [hardware, setHardware] = useHardware();
   const [widths, setWidths] = usePersistedState('panes', PANES, { scope: 'lab' });
   const narrow = useNarrow();
   const left = (
@@ -61,21 +67,19 @@ function Compose() {
   );
   const right = (
     <>
-      <HardwarePanel hardware={hardware} setHardware={(fn) => setKept((h) => fn(hardwareOf(h)))} />
-      <FontPanel
-        setRows={(rows) =>
-          setKept((h) => {
-            const now = hardwareOf(h);
-            return { ...now, size: { ...now.size, rows } };
-          })
-        }
-      />
+      <HardwarePanel hardware={hardware} setHardware={setHardware} />
+      <FontPanel setRows={(rows) => setHardware((h) => ({ ...h, size: { ...h.size, rows } }))} />
     </>
   );
   return (
     <div className="compose">
-      <Sign hardware={hardware} />
-      <Scrubber />
+      <Sign
+        hardware={hardware}
+        program={playing}
+        effects={() => compose.get().effects}
+        onSign={compose.attach}
+      />
+      <ProgramScrubber />
       <div className="compose-columns" data-stacked={narrow || undefined}>
         {narrow ? (
           <>
@@ -131,7 +135,7 @@ export function App() {
         </>
       }
     >
-      <Persistence storageKey="bree-compose" storage={localStorageAdapter}>
+      <Persistence storageKey={SIGN_RECORDS} storage={localStorageAdapter}>
         <Compose />
       </Persistence>
     </LabShell>

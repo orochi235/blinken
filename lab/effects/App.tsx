@@ -1,25 +1,30 @@
-import { LabShell } from '@weasel-js/labkit';
+import { LabShell, localStorageAdapter, Persistence } from '@weasel-js/labkit';
 import '../compose/App.css';
 import { DesignerPanel } from '../compose/designer/DesignerPanel.js';
+import { SIGN_RECORDS } from '../compose/hardware.js';
 import { PAGES } from '../pages.js';
 import './App.css';
 import { LibraryBar } from './LibraryBar.js';
 import { LibraryPanel } from './LibraryPanel.js';
-import { PreviewPanel } from './PreviewPanel.js';
+import { PreviewPanel, PreviewPlayback } from './PreviewPanel.js';
 
 /** The effects page: the library down one side, and the open effect playing over its designer. */
 export function App() {
   return (
     <LabShell title="bree effects" mode="dark" pages={PAGES} header={<LibraryBar />}>
-      <div className="effects-panes">
-        <div className="compose-pane">
-          <LibraryPanel />
+      {/* compose's records, for the sign's hardware the two pages share. */}
+      <Persistence storageKey={SIGN_RECORDS} storage={localStorageAdapter}>
+        <div className="effects-panes">
+          <div className="compose-pane">
+            <LibraryPanel />
+          </div>
+          <div className="compose-pane">
+            <PreviewPanel />
+            <PreviewPlayback />
+            <DesignerPanel />
+          </div>
         </div>
-        <div className="compose-pane">
-          <PreviewPanel />
-          <DesignerPanel />
-        </div>
-      </div>
+      </Persistence>
     </LabShell>
   );
 }

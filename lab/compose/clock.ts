@@ -1,18 +1,17 @@
 import type { Pass } from '@/index.js';
-import { compose } from './store.js';
+import type { Player } from './player.js';
 
-const watchers = new Set<(pass: Pass | null) => void>();
+const watchers = new Map<(pass: Pass | null) => void, Player>();
 let raf = 0;
 
 const tick = () => {
   raf = requestAnimationFrame(tick);
-  const pass = compose.pass();
-  for (const w of watchers) w(pass);
+  for (const [w, player] of watchers) w(player.pass());
 };
 
-/** Calls `fn` every animation frame with where the sign's pass stands, until the returned stop. */
-export function watchPass(fn: (pass: Pass | null) => void): () => void {
-  watchers.add(fn);
+/** Calls `fn` every animation frame with where `player`'s pass stands, until the returned stop. */
+export function watchPass(player: Player, fn: (pass: Pass | null) => void): () => void {
+  watchers.set(fn, player);
   if (watchers.size === 1) raf = requestAnimationFrame(tick);
   return () => {
     watchers.delete(fn);

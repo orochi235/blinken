@@ -54,7 +54,7 @@ export function ProgramPanel() {
   // The playing scene's row fills behind its content as the scene plays, read off the sign's pass.
   useEffect(
     () =>
-      watchPass((pass) => {
+      watchPass(compose, (pass) => {
         const now = pass && sceneAt(pass);
         const playing = now ? compose.sceneOf(now) : -1;
         const done = now && pass ? Math.min(1, (pass.at - now.start) / now.ms) : 0;

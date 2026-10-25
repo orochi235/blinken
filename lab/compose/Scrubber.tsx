@@ -1,8 +1,8 @@
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from 'react';
 import type { Pass, PassScene } from '@/index.js';
 import { sceneAt, watchPass } from './clock.js';
+import type { Player } from './player.js';
 import { hexOf } from './schema.js';
-import { compose, useCompose } from './store.js';
 import './Scrubber.css';
 
 /** How far an arrow key moves the pass. */
@@ -12,11 +12,14 @@ const spansOf = (pass: Pass | null) => pass?.scenes ?? [];
 const keyOf = (scenes: readonly PassScene[]) => scenes.map((s) => `${s.scene}:${s.ms}`).join(' ');
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 
+/** What a scene of the pass shows on the track: its message, in its color. */
+export type SceneLook = (s: PassScene) => { text: string; hex: number } | undefined;
+
 /** The playhead as a screen reader says it: how far in, of how long, and in which scene. */
-function valueText(pass: Pass | null): string {
+function valueText(pass: Pass | null, look: SceneLook): string {
   if (!pass) return 'nothing playing';
   const now = sceneAt(pass);
-  const text = now ? compose.get().program[compose.sceneOf(now)]?.text : undefined;
+  const text = now ? look(now)?.text : undefined;
   const where = `${seconds(pass.at)} of ${seconds(pass.length)}`;
   return text ? `${where}, in ${text}` : where;
 }
@@ -25,16 +28,17 @@ function valueText(pass: Pass | null): string {
  * The pass playing now, its scenes end to end, with a playhead on the sign's own clock. A press
  * holds the sign at that moment and follows a drag; letting go plays on from there.
  */
-export function Scrubber() {
-  const state = useCompose();
+export function Scrubber({ player, look }: { player: Player; look: SceneLook }) {
   const track = useRef<HTMLDivElement>(null);
   const [scenes, setScenes] = useState<readonly PassScene[]>([]);
   const held = useRef(false);
   const length = useRef(0);
+  const looks = useRef(look);
+  looks.current = look;
 
   useEffect(
     () =>
-      watchPass((pass) => {
+      watchPass(player, (pass) => {
         const next = spansOf(pass);
         setScenes((was) => (keyOf(was) === keyOf(next) ? was : next));
         length.current = pass?.length ?? 0;
@@ -44,9 +48,9 @@ export function Scrubber() {
         el.style.setProperty('--at', at.toFixed(5));
         el.setAttribute('aria-valuenow', String(Math.round(pass?.at ?? 0)));
         el.setAttribute('aria-valuemax', String(Math.round(length.current)));
-        el.setAttribute('aria-valuetext', valueText(pass));
+        el.setAttribute('aria-valuetext', valueText(pass, looks.current));
       }),
-    [],
+    [player],
   );
 
   useEffect(() => {
@@ -65,49 +69,46 @@ export function Scrubber() {
       role="slider"
       tabIndex={0}
       aria-label="where the pass is"
-      title="Where the sign is in the program. Press or drag to hold it at a moment, and let go to play on from there; ← and → step a quarter second."
+      title="Where the sign is in its pass. Press or drag to hold it at a moment, and let go to play on from there; ← and → step a quarter second."
       aria-valuemin={0}
       aria-valuenow={0}
       onKeyDown={(e) => {
         const by = { ArrowLeft: -STEP_MS, ArrowRight: STEP_MS }[e.key];
-        const pass = compose.pass();
+        const pass = player.pass();
         if (by === undefined || !pass) return;
         e.preventDefault();
-        compose.seek(pass.at + by);
+        player.seek(pass.at + by);
       }}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
         held.current = true;
-        compose.seek(msAt(e), true);
+        player.seek(msAt(e), true);
       }}
       onPointerMove={(e) => {
-        if (held.current) compose.seek(msAt(e), true);
+        if (held.current) player.seek(msAt(e), true);
       }}
       onPointerUp={(e) => {
         if (!held.current) return;
         held.current = false;
-        compose.seek(msAt(e));
+        player.seek(msAt(e));
       }}
       onPointerCancel={() => {
         held.current = false;
       }}
     >
-      {scenes.map((s) => {
-        const index = compose.sceneOf(s);
-        return (
-          <span
-            key={`${s.scene}:${s.start}`}
-            className="compose-scrubber-scene"
-            title={state.program[index]?.text}
-          >
-            {state.program[index]?.text}
-          </span>
-        );
-      })}
+      {scenes.map((s) => (
+        <span
+          key={`${s.scene}:${s.start}`}
+          className="compose-scrubber-scene"
+          title={look(s)?.text}
+        >
+          {look(s)?.text}
+        </span>
+      ))}
       {/* The same scenes in their own colors, shown only left of the playhead. */}
       <div className="compose-scrubber-played" aria-hidden="true">
         {scenes.map((s) => {
-          const scene = state.program[compose.sceneOf(s)];
+          const scene = look(s);
           return (
             <span
               key={`${s.scene}:${s.start}`}

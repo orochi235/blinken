@@ -1,7 +1,3 @@
-.effects-preview .compose-thumbnail {
-  height: 140px;
-}
-
 /* The text sits at the bar's far end, see-through, as the font search does. */
 .compose-panel-actions:has(.effects-preview-text) {
   flex: 1;
@@ -13,4 +9,9 @@
   width: 16em;
   min-width: 0;
   margin-inline-start: auto;
+}
+
+/* The scrubber's own gutter is for compose's page edge; inside a panel, the panel's padding is enough. */
+.effects-preview .compose-scrubber {
+  margin: 0;
 }

@@ -1,7 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { type Border, createMarquee, type Marquee, scatter } from '@/index.js';
+import {
+  type Border,
+  createMarquee,
+  type EffectSpec,
+  type Marquee,
+  type Scene,
+  scatter,
+} from '@/index.js';
 import type { Hardware } from './hardware.js';
-import { compose, playing } from './store.js';
 import './Sign.css';
 
 /** How the hardware's border lights its bulbs; with none, nothing is asked of a sign with none. */
@@ -20,32 +26,45 @@ function equip(m: Marquee, hardware: Hardware): void {
 }
 
 /**
- * The sign the composition plays on, with the hardware it is built from. A new size or border
- * builds a new sign, which plays on from where the old one's pass stood, still held if it was.
+ * A sign built from `hardware` playing `program`, handed to `onSign` as it is made and as null as
+ * it goes. A new size or border builds a new sign; carrying the pass over to it is `onSign`'s job.
  */
-export function Sign({ hardware }: { hardware: Hardware }) {
+export function Sign({
+  hardware,
+  program,
+  effects,
+  onSign,
+}: {
+  hardware: Hardware;
+  /** Read by the sign each pass. */
+  program: () => readonly Scene[];
+  /** Read as each sign is built; later changes are the owner's to give the sign. */
+  effects: () => Readonly<Record<string, EffectSpec>>;
+  onSign: (m: Marquee | null) => void;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const sign = useRef<Marquee | null>(null);
-  const latest = useRef(hardware);
-  latest.current = hardware;
+  const latest = useRef({ hardware, program, effects, onSign });
+  latest.current = { hardware, program, effects, onSign };
   const { cols, rows } = hardware.size;
   // A border coming or going changes the sign's margin, so it builds a new sign as a size does.
   const bordered = hardware.border.bulbs !== 'none';
 
   useEffect(() => {
     if (!canvas.current) return;
+    const { hardware: h, program: p, effects: e, onSign: handTo } = latest.current;
     const m = createMarquee(canvas.current, {
       cols,
       rows,
-      border: bordered && borderOf(latest.current),
-      program: playing,
-      effects: compose.get().effects,
+      border: bordered && borderOf(h),
+      program: p,
+      effects: e(),
     });
-    equip(m, latest.current);
+    equip(m, h);
     sign.current = m;
-    compose.attach(m);
+    handTo(m);
     return () => {
-      compose.attach(null);
+      handTo(null);
       sign.current = null;
       m.destroy();
     };
