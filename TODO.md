@@ -5,6 +5,10 @@
 - A tracking lever on the font panel. Proportional spacing already fixes most of the faces' own spacing, so ask whether it is still wanted before building it (asked 2026-10-24).
 - Outlines and block shadows as font layers, added around or behind the letters programmatically (asked 2026-10-24).
 
+## Parked
+
+- Authoring an effect's params in the designer: naming a param and picking the settings it changes. Parked 2026-10-24 as more than the lab needs for now; effects declare params in code, as the built-ins do. The section as built is in e294d8a (`lab/compose/designer/ParamsBox.tsx`).
+
 ## Known gaps
 
 - The compose lab no longer offers `style.reverse`, which is to become a layer (asked 2026-10-24); a scene that already has it still draws reversed, with no switch to turn it off. The `invert` layer swaps the whole sign, while `reverse` lights only the message's box, following it as it moves.

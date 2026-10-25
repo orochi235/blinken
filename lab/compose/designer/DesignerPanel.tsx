@@ -7,7 +7,6 @@ import './DesignerPanel.css';
 import { EffectPicker } from './EffectPicker.js';
 import { builtinOf, deleteOpen } from './edit.js';
 import { designer, useDesk } from './open.js';
-import { ParamsBox } from './ParamsBox.js';
 import { SlotBox } from './SlotBox.js';
 import { WholeEffect } from './WholeEffect.js';
 
@@ -76,7 +75,6 @@ export function DesignerPanel() {
           {SLOTS.map((slot) => (
             <SlotBox key={slot} slot={slot} spec={spec} warnings={warnings.get(slot) ?? []} />
           ))}
-          <ParamsBox spec={spec} />
         </>
       )}
     </Panel>
