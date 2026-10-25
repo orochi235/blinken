@@ -7,6 +7,7 @@ import type { Move } from './move.js';
 import { rainIn, rainOut } from './rain.js';
 import { reelIn, rollAway } from './reel.js';
 import { scrollAcross, scrollIn, scrollOut } from './scroll.js';
+import { splitIn, splitOut } from './split.js';
 import { assemble, scatter } from './swarm.js';
 import { tile } from './tile.js';
 import { typeOff, typeOn } from './type.js';
@@ -30,6 +31,8 @@ export {
   scrollAcross,
   scrollIn,
   scrollOut,
+  splitIn,
+  splitOut,
   stand,
   tile,
   tumble,
@@ -63,6 +66,8 @@ const moves = {
   'bounce-in': bounceIn,
   wave,
   melt,
+  'split-in': splitIn,
+  'split-out': splitOut,
 };
 export type MoveName = keyof typeof moves;
 /** Every move, by name. */
