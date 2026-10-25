@@ -82,7 +82,7 @@ export const tile = move({
         const moved = phase * period;
         const col = Math.floor(along + (odd ? p.brick * period - moved : moved));
         const x = ((col % period) + period) % period;
-        return { lit: text.lit(x, y) ? 1 : 0 };
+        return { lit: text.level(x, y) };
       },
       { writes: ['lit'] },
     );

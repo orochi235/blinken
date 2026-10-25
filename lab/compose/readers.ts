@@ -269,7 +269,7 @@ function faceIn(v: unknown, what: string, dropped: string[]): FaceName | undefin
   return undefined;
 }
 
-const STYLES = ['reverse', 'monospace'] as const;
+const STYLES = ['reverse', 'monospace', 'outline', 'shadow'] as const;
 const LEGACY_STYLES = ['reverse', 'proportional'] as const;
 
 /**

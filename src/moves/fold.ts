@@ -27,7 +27,7 @@ function turned(at: Placed) {
     if (row < 0) return { lit: 0 };
     const s = Math.cos(angle);
     if (Math.abs(s) < 0.18) return { lit: row === mid && any[x] ? 1 : 0 };
-    return { lit: text.lit(x, Math.round(mid + (row - mid) / s)) ? 1 : 0 };
+    return { lit: text.level(x, Math.round(mid + (row - mid) / s)) };
   };
 }
 

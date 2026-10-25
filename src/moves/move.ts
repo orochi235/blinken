@@ -39,11 +39,11 @@ export const move = <P extends Params>(m: Omit<Move<P>, 'kind'>): Move<P> => ({
   ...m,
 });
 
-/** Whether the message, shifted `dx` dots right of where it stands, lights this dot. */
+/** How brightly the message, shifted `dx` dots right of where it stands, lights this dot. */
 export const litAt = (at: Placed, led: Led, dx = 0, dy = 0) => {
   const row = at.rowOf(led);
-  return row >= 0 && at.text.lit(led.x - at.left - dx, row - dy);
+  return row >= 0 ? at.text.level(led.x - at.left - dx, row - dy) : 0;
 };
 
-/** `lit` as the 0 or 1 a dot is given. */
-export const on = (yes: boolean) => ({ lit: yes ? 1 : 0 });
+/** `lit` as a dot is given it: a level, or a yes or no as 1 or 0. */
+export const on = (v: boolean | number) => ({ lit: typeof v === 'number' ? v : v ? 1 : 0 });

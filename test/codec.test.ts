@@ -255,6 +255,17 @@ describe('packed links', () => {
     expect(state.program[0]?.params).toEqual({ speed: 60 });
   });
 
+  it('round-trips outline and shadow', () => {
+    const data = {
+      effects: {},
+      program: [
+        { text: 'A', hex: AMBER, effect: 'hold', style: { outline: true, shadow: true } },
+        { text: 'B', hex: AMBER, effect: 'hold', style: { shadow: true } },
+      ],
+    } as ShareData;
+    expect(unpack(pack(data))).toEqual(data);
+  });
+
   it('round-trips a choice param', () => {
     const data = {
       effects: {},
@@ -327,7 +338,7 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 6, digest: 'd7dcc0df26df' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 7, digest: 'd7dcc0df26df' });
   });
 });
 

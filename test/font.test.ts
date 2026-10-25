@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { board } from '@/board.js';
 import { EFFECTS } from '@/builtins.js';
 import { stageEffect } from '@/effects.js';
-import { CHARS, FACE_NAMES, FACES, type Face, faceOf, rasterize } from '@/font.js';
+import { CHARS, FACE_NAMES, FACES, type Face, faceOf, rasterize, SHADOW } from '@/font.js';
 import { placeText, rankOf } from '@/orders.js';
 import { stageProgram } from '@/program.js';
 
@@ -134,6 +134,33 @@ describe('styles', () => {
     expect(rasterize('LO', { face: 'slim' }).letters.map((l) => l.x)).toEqual([0, 4]);
     // A space keeps its width: nothing slides into it.
     expect(rasterize('I I').letters.map((l) => l.x)).toEqual([0, 4, 8]);
+  });
+
+  it('outlines a letter hollow, a row above and below and a blank kept between letters', () => {
+    const hi = rasterize('HI', { style: { outline: true } });
+    expect(picture('HI', { style: { outline: true } })).toEqual([
+      '###.###.#####.',
+      '#.#.#.#.#...#.',
+      '#.#.#.#.##.##.',
+      '#.###.#..#.#..',
+      '#.....#..#.#..',
+      '#.###.#..#.#..',
+      '#.#.#.#.##.##.',
+      '#.#.#.#.#...#.',
+      '###.###.#####.',
+    ]);
+    expect([hi.rows, hi.above, hi.below]).toEqual([9, 1, 1]);
+  });
+
+  it('lays a dim shadow a dot down and right, behind the letter', () => {
+    const i = rasterize('I', { style: { shadow: true } });
+    expect([i.cols, i.rows, i.below]).toEqual([5, 8, 1]);
+    expect(i.level(0, 0)).toBe(1);
+    expect(i.level(2, 1)).toBeCloseTo(SHADOW);
+    expect(i.level(3, 7)).toBeCloseTo(SHADOW);
+    // The letter covers its own shadow.
+    expect(i.level(1, 1)).toBe(1);
+    expect(i.lit(0, 7)).toBe(false);
   });
 
   it('monospace advances every glyph by the face’s widest and a blank', () => {

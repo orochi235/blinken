@@ -35,7 +35,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION.
  */
-export const VERSION = 6;
+export const VERSION = 7;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -258,6 +258,8 @@ function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): 
   if (face >= 0) w.uint(face, widthOf(FACE_NAMES.length));
   w.flag(scene.style?.reverse === true);
   w.flag(scene.style?.monospace === true);
+  w.flag(scene.style?.outline === true);
+  w.flag(scene.style?.shadow === true);
   writeLayers(w, (scene.layers ?? {}) as Record<string, LinkLayer>);
   const tuning = tuningOf(effectOf(scene, effects));
   writeParams(w, tuning, scene.params, defaultsOf(tuning));
@@ -292,7 +294,15 @@ function readScene(r: BitReader, effects: ShareData['effects'], version: number)
   const reverse = r.flag();
   // Before version 4 the bit was `proportional`, and a scene without it was monospace.
   const monospace = version >= 4 ? r.flag() : !r.flag();
-  const style = { ...(reverse && { reverse }), ...(monospace && { monospace }) };
+  // Outline and shadow came in version 7.
+  const outline = version >= 7 && r.flag();
+  const shadow = version >= 7 && r.flag();
+  const style = {
+    ...(reverse && { reverse }),
+    ...(monospace && { monospace }),
+    ...(outline && { outline }),
+    ...(shadow && { shadow }),
+  };
   const layers = version >= 3 ? readLayers(r) : version === 2 ? readLayers(r, V2_LAYERS) : {};
   // Scenes carried their effect's tuning from version 5.
   const params =

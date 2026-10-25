@@ -21,7 +21,7 @@ function litAt(m: Move, t: number, where = at, given: Record<string, unknown> = 
 
 const shown = (left = at.left, text = at.text) => {
   const rowOf = place(b, text).rowOf;
-  return b.dots.map((d) => (rowOf(d) >= 0 && text.lit(d.x - left, rowOf(d)) ? 1 : 0));
+  return b.dots.map((d) => (rowOf(d) >= 0 ? text.level(d.x - left, rowOf(d)) : 0));
 };
 const STEP = (MOVES['scroll-across'].params.step as { value: number }).value;
 const length = (m: Move, where = at) => m.patch(where, values(m)).duration;
@@ -32,6 +32,9 @@ const LOOKS: readonly Look[] = [
   { style: { reverse: true } },
   { style: { monospace: true } },
   { face: 'bold', style: { reverse: true, monospace: true } },
+  { style: { outline: true } },
+  { style: { shadow: true } },
+  { face: 'slim', style: { outline: true, shadow: true } },
 ];
 const lookName = (look: Look) =>
   [look.face ?? 'standard', ...Object.keys(look.style ?? {})].join(' ');

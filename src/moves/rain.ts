@@ -55,10 +55,10 @@ type Rain = Values<typeof RAIN_PARAMS>;
 
 /**
  * `drops` streams per column, each starting at its own random delay and falling past the bottom
- * with its tail; `shown(led, passed)` says whether a dot shows the message once some drop has or
- * while none has passed it.
+ * with its tail; `shown(led, passed)` is how brightly a dot shows the message once some drop has
+ * or while none has passed it.
  */
-function rain(at: Placed, p: Rain, shown: (led: Led, passed: boolean) => boolean) {
+function rain(at: Placed, p: Rain, shown: (led: Led, passed: boolean) => number | false) {
   const rows = at.board.rows;
   const delays = Array.from({ length: at.board.cols }, (_, x) =>
     Array.from({ length: p.drops }, (_, j) => p.spread * hash(x, j, rows)),
@@ -77,7 +77,7 @@ function rain(at: Placed, p: Rain, shown: (led: Led, passed: boolean) => boolean
         lit = Math.max(lit, (1 - behind / (p.tail + 1)) * flick);
       }
     }
-    return { lit: shown(led, passed) ? 1 : lit };
+    return { lit: Math.max(lit, shown(led, passed) || 0) };
   };
 }
 

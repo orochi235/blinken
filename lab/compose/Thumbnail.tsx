@@ -65,7 +65,7 @@ export function Thumbnail({
   const handed = useRef(onHandle);
   handed.current = onHandle;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a style is the same while its two flags are.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a style is the same while its flags are.
   useEffect(() => {
     if (!canvas.current) return;
     const t = createThumbnail(canvas.current, {
@@ -95,6 +95,8 @@ export function Thumbnail({
     face,
     style?.reverse,
     style?.monospace,
+    style?.outline,
+    style?.shadow,
     cols,
     rows,
     still,

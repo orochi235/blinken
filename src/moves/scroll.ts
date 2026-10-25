@@ -54,7 +54,7 @@ function slide(at: Placed, p: Scroll, ...legs: (readonly [number, number])[]) {
     (phase, led) => {
       const x = edgeAt(Math.min(total, Math.floor(phase * total)));
       const row = at.rowOf(led);
-      return { lit: row >= 0 && at.text.lit(led.x - x, row) ? 1 : 0 };
+      return { lit: row >= 0 ? at.text.level(led.x - x, row) : 0 };
     },
     { writes: ['lit'] },
   );

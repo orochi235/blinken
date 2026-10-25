@@ -7,7 +7,7 @@ import { litAt, move, on } from './move.js';
 const glyphs = new Map<string, Bitmap>();
 /** One letter alone in the look of `text`, which draws it where `text` draws its letters. */
 const glyph = (text: Bitmap, ch: string) => {
-  const key = `${text.face.name} ${text.style.reverse ? 'r' : ''}${text.style.monospace ? 'm' : ''} ${ch}`;
+  const key = `${text.face.name} ${JSON.stringify(text.style)} ${ch}`;
   let g = glyphs.get(key);
   if (g === undefined) {
     g = rasterize(ch, text);
@@ -64,11 +64,13 @@ export const reelIn = move({
         const j = Math.floor(r / pitch);
         const y = ((r % pitch) + pitch) % pitch;
         const u = x - (text.letters[k] as { x: number }).x;
-        const yes =
-          j >= 0 &&
-          y < text.rows &&
-          (j < reel.length ? (reel[j] as Bitmap).lit(u, y) : text.lit(x, y));
-        return on(yes);
+        const level =
+          j >= 0 && y < text.rows
+            ? j < reel.length
+              ? (reel[j] as Bitmap).level(u, y)
+              : text.level(x, y)
+            : 0;
+        return on(level);
       },
       { writes: ['lit'] },
     );

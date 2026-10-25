@@ -3,7 +3,6 @@
 ## Asked for, not built yet
 
 - A tracking lever on the font panel. Proportional spacing already fixes most of the faces' own spacing, so ask whether it is still wanted before building it (asked 2026-10-24).
-- Outlines and block shadows as font layers, added around or behind the letters programmatically (asked 2026-10-24).
 
 ## Parked
 

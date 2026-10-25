@@ -57,6 +57,18 @@ export function SceneEditor() {
             .describe(
               'Gives every letter the same width, the face’s widest, as on a fixed-pitch sign. Off, each letter takes its own width, so narrow letters like I sit closer to their neighbors.',
             ),
+          outline: f
+            .boolean(false)
+            .label('outline')
+            .describe(
+              'Draws each letter hollow: the ring of dots around it lit and the letter itself dark. It takes a row above and below the letters.',
+            ),
+          shadow: f
+            .boolean(false)
+            .label('shadow')
+            .describe(
+              'Lays a dim copy of each letter one dot down and to the right, behind it. It takes a row below the letters.',
+            ),
         }),
       ),
     [key],
@@ -72,7 +84,8 @@ export function SceneEditor() {
       (s) => {
         const was = s.program[at];
         if (!was) return;
-        if (path === 'monospace') s.program[at] = withLook(was, 'monospace', v === true);
+        if (path === 'monospace' || path === 'outline' || path === 'shadow')
+          s.program[at] = withLook(was, path, v === true);
         else if (path === 'text') s.program[at] = { ...was, text: String(v) || ' ' };
         else if (path === 'color') s.program[at] = { ...was, hex: numOf(String(v)) };
         else if (isAuto(v)) {
@@ -95,6 +108,8 @@ export function SceneEditor() {
             effect: String(scene.effect),
             hold: scene.hold ?? 3000,
             monospace: scene.style?.monospace === true,
+            outline: scene.style?.outline === true,
+            shadow: scene.style?.shadow === true,
           }}
           auto={scene.hold === undefined ? OWN_HOLD : NONE}
           setConfig={set}

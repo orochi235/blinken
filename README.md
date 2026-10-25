@@ -138,6 +138,11 @@ published pixel fonts, from the 3 × 5 `tom-thumb` to the italic `monogram-itali
 its body, the height of its capitals: 7 dots for the drawn four, 3 to 7 for the converted ones. A
 glyph that reaches above or below the body, such as a comma's tail, draws there in a ghost row,
 into the gap between lines or the sign's margin; only the sign's edge cuts it. `style.reverse` is inverse video: the message's box lit and its letters dark.
+`style.outline` draws each letter hollow, the ring of dots around it lit and the letter dark, and
+`style.shadow` lays a dim copy of each letter one dot down and right, behind it; with both, the
+shadow is the outline's. An outline takes a ghost row above and below the letters and a shadow one
+below, and both are kerned like the letters, so outlined letters keep a blank between them.
+`text.level(x, y)` gives each dot's brightness, 0 to 1, where `lit` only says whether it lights.
 Each letter is kerned by its shape, sliding left until its ink is a blank from the ink before it in
 its own row and the rows either side, so letters never touch, even at a corner. An I takes three columns, and nj serif's J still tucks its
 tail under an N.
