@@ -11,6 +11,7 @@ export const GLYPHS = {
   undo: 'core:undo' as IconName,
   redo: 'core:redo' as IconName,
   add: 'ui:add' as IconName,
+  duplicate: 'core:duplicate' as IconName,
   loop: 'ui:loop' as IconName,
   rewind: 'ui:rewind' as IconName,
   image: 'core:image' as IconName,

@@ -1,7 +1,7 @@
-import { newEffect, openEffect } from '../compose/designer/edit.js';
+import { builtinOf, newEffect, openEffect } from '../compose/designer/edit.js';
 import { designer, useDesk } from '../compose/designer/open.js';
 import { IconButton } from '../compose/IconButton.js';
-import { useLibrary } from '../compose/library.js';
+import { freeLibraryName, library, useLibrary } from '../compose/library.js';
 import { useLive } from '../compose/live.js';
 import { Panel } from '../compose/Panel.js';
 import { effectTitle } from '../compose/schema.js';
@@ -20,7 +20,15 @@ export function LibraryPanel() {
       title="library"
       className="effects-library"
       actions={
-        <IconButton glyph="add" label="start a new effect in the library" onClick={newEffect} />
+        <>
+          <IconButton
+            glyph="duplicate"
+            label="copy the open effect into the library under a new name, and open the copy"
+            disabled={open === undefined}
+            onClick={duplicateOpen}
+          />
+          <IconButton glyph="add" label="start a new effect in the library" onClick={newEffect} />
+        </>
       }
     >
       <ul className="compose-rows">
@@ -33,6 +41,18 @@ export function LibraryPanel() {
     </Panel>
   );
 }
+
+/** Copies the open effect, the library's or a built-in, under a free name, and opens the copy. */
+const duplicateOpen = () =>
+  designer.change(() => {
+    const n = designer.open();
+    if (n === undefined) return;
+    const spec = library.get()[n] ?? builtinOf(n);
+    if (!spec) return;
+    const name = freeLibraryName(`${n} copy`);
+    library.put({ ...spec, name });
+    designer.setOpen(name);
+  });
 
 /** One effect: its name over a small sign held on its telling moment, playing it while hovered. */
 function LibraryRow({ tile, open }: { tile: EffectTile; open: boolean }) {
