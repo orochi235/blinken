@@ -1,0 +1,8 @@
+/* Capped so the sign, its playback and the diagram fit an 800px window together. */
+.effects-diagram-canvas {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  border-radius: var(--wzl-radius-sm, 4px);
+  background: var(--wzl-surface-sunken);
+}
