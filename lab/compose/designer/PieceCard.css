@@ -28,6 +28,6 @@
 }
 
 .compose-piece[data-picked] {
-  outline: 2px solid var(--wzl-accent);
+  outline: 2px solid var(--wzl-focus-ring);
   outline-offset: 1px;
 }

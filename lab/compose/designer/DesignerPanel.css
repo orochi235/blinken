@@ -45,6 +45,8 @@
   min-width: 0;
 }
 
-.compose-slot[data-picked] > .compose-heading {
-  color: var(--wzl-accent);
+.compose-slot[data-picked] {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--wzl-radius-sm, 4px);
 }
