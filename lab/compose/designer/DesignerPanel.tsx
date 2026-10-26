@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { board, placeText, SIZE, SLOTS, type Slot, stageEffect, type Warning } from '@/index.js';
+import { SLOTS } from '@/index.js';
 import { IconButton } from '../IconButton.js';
 import { useLibrary } from '../library.js';
 import { Panel } from '../Panel.js';
@@ -8,10 +7,8 @@ import { EffectPicker } from './EffectPicker.js';
 import { builtinOf, deleteOpen } from './edit.js';
 import { designer, useDesk } from './open.js';
 import { SlotBox } from './SlotBox.js';
+import { useStaged } from './staged.js';
 import { WholeEffect } from './WholeEffect.js';
-
-/** The sign the designer stages on to find its warnings: the shopfront size. */
-const BOARD = board(SIZE.cols, SIZE.rows);
 
 /**
  * The effect designer: pick an effect, or start one, and edit its pieces, hold and blend. Its
@@ -25,19 +22,7 @@ export function DesignerPanel() {
   const own = name !== undefined && Object.hasOwn(shelf, name);
   const spec = name === undefined ? undefined : own ? shelf[name] : builtinOf(name);
 
-  const warnings = useMemo(() => {
-    const at = new Map<Slot | 'effect', string[]>();
-    if (!spec) return at;
-    let found: readonly Warning[];
-    try {
-      found = stageEffect(spec, placeText(BOARD, text || ' '), 0xffffff).warnings;
-    } catch (e) {
-      found = [{ text: (e as Error).message }];
-    }
-    for (const w of found.filter((w) => w.rows === undefined))
-      at.set(w.slot ?? 'effect', [...(at.get(w.slot ?? 'effect') ?? []), w.text]);
-    return at;
-  }, [spec, text]);
+  const warnings = useStaged(spec, text)?.warnings ?? new Map<string, readonly string[]>();
 
   return (
     <Panel
