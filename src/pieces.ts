@@ -47,6 +47,10 @@ export const TOGETHER: Order = { by: 'together' };
 export const piecesOf = (p: SlotPieces | undefined): readonly Piece[] =>
   p === undefined ? [] : Array.isArray(p) ? (p as readonly Piece[]) : [p as Piece];
 
+/** The channels a piece writes: a move draws the message on `lit`; a modulator writes what it names. */
+export const writesOf = (piece: Piece): readonly Channel[] =>
+  'mod' in piece ? MODULATORS[piece.mod].writes : ['lit'];
+
 /** A piece's settings; in `active` with a hold, an `ms` it leaves unset is one pass over the hold. */
 function settingsOf(
   thing: { readonly params: Params },
@@ -86,7 +90,7 @@ export function stagePiece(
       subjects: own,
       ...(loop && { loop: true }),
     };
-    return { voice, writes: mod.writes, warnings: [] };
+    return { voice, writes: writesOf(piece), warnings: [] };
   }
   const move = MOVES[piece.move];
   if (move.slot !== slot) throw new Error(`bree: ${piece.move} is an ${move.slot} move`);
@@ -104,5 +108,5 @@ export function stagePiece(
   const warnings = clips
     ? [{ slot, text: `${piece.move} clips ${at.label ?? 'the message'}` }]
     : [];
-  return { voice, writes: ['lit'], warnings };
+  return { voice, writes: writesOf(piece), warnings };
 }

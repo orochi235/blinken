@@ -5,7 +5,7 @@ import { rasterize } from '@/font.js';
 import { MOVES } from '@/moves/index.js';
 import { place } from '@/orders.js';
 import { values } from '@/params.js';
-import { stagePiece } from '@/pieces.js';
+import { stagePiece, writesOf } from '@/pieces.js';
 
 const b = board(40, 7);
 const at = place(b, rasterize('HI'));
@@ -62,5 +62,11 @@ describe('pieces', () => {
     const { warnings } = stagePiece({ move: 'cut-on' }, 'enter', wide, wide.board.dots);
     expect(warnings).toEqual([{ slot: 'enter', text: 'cut-on clips HELLO WORLD' }]);
     expect(stagePiece({ move: 'scroll-in' }, 'enter', wide, wide.board.dots).warnings).toEqual([]);
+  });
+
+  it('says which channels a piece writes: a move lit, a modulator what it names', () => {
+    expect(writesOf({ move: 'scroll-in' })).toEqual(['lit']);
+    expect(writesOf({ mod: 'flare' })).toEqual(['glow']);
+    expect(writesOf({ mod: 'glitch' })).toEqual(['hue', 'gain', 'invert']);
   });
 });

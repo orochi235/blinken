@@ -82,6 +82,7 @@ export {
   type MovePiece,
   type Piece,
   piecesOf,
+  writesOf,
   type SlotPieces,
   type Warning,
 } from './pieces.js';
