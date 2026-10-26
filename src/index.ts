@@ -82,9 +82,9 @@ export {
   type MovePiece,
   type Piece,
   piecesOf,
-  writesOf,
   type SlotPieces,
   type Warning,
+  writesOf,
 } from './pieces.js';
 export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
 export { cueLayer, effectOf, layerOf, play, type Scene, type SceneLayer } from './program.js';

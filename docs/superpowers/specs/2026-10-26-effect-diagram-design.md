@@ -18,11 +18,11 @@ A switch in the diagram's title bar picks one of three views of the same effect.
 starts in **both**; picking a node moves to the view that suits it (a modulator to signal, a step
 to time); after that the switch is the user's and nothing changes it (2026-10-26).
 
-| View   | Nodes                                                                   | Edges                                                         |
-|--------|-------------------------------------------------------------------------|---------------------------------------------------------------|
-| signal | each piece, labeled with its slot; a node per channel something writes; the sign | piece → each channel it writes; channel → sign        |
-| time   | the enter, active and exit steps, each with its length; each step's pieces | step → step, labeled with the blend; step → its pieces     |
-| both   | steps as containers holding their pieces; channels along the bottom      | the steps' sequence; piece → channel                          |
+| View   | Nodes                                                                            | Edges                                                  |
+| ------ | -------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| signal | each piece, labeled with its slot; a node per channel something writes; the sign | piece → each channel it writes; channel → sign         |
+| time   | the enter, active and exit steps, each with its length; each step's pieces       | step → step, labeled with the blend; step → its pieces |
+| both   | steps as containers holding their pieces; channels along the bottom              | the steps' sequence; piece → channel                   |
 
 A piece's channels are its `writes` (`StagedPiece.writes`): a move writes `lit`, a modulator what
 its definition names.
@@ -30,7 +30,6 @@ its definition names.
 ## What dragging changes
 
 Each lands as its own step, in this order:
-
 1. **Pick** — built (2026-10-26): `designer/graph.ts`, `designer/EffectDiagram.tsx`, and the
    picked id on the designer's desk (`designer/open.ts`).
 2. **Rewire.** A modulator that is one curve on one channel — the ease family (`dim`,
