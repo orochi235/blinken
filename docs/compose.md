@@ -169,7 +169,9 @@ The lab serves three pages: the composer at `/compose` (`lab/compose.html`), the
   sliders. On the effects page, beside a library of every effect, the open one loops on a full
   sign built from the composer's hardware, on a message typed above it, with the composer's
   playback controls: play and pause, a frame at a time, speed, a scrubber, and a focus that loops
-  its enter, active, or exit alone.
+  its enter, active, or exit alone. Above the cards, a diagram draws the open effect as signal
+  flow (each piece into the channels it drives), as time (enter, active, and exit in order), or
+  both; picking a node marks its card, and picking a card marks its node.
 - **Program.** Scenes as a list: text, color, which effect, an optional hold. Add, remove,
   reorder. Layers are modulators under the program, with on/off and their own sliders; this needs
   `setLayer(name, on, params)` on `createMarquee`.

@@ -1,8 +1,8 @@
 # Effect diagram
 
-**Status: not built (2026-10-26).** This designs the diagram the effects page is to compose
-effects on; none of it exists yet. Steps land in the order below, and this doc gets cut down to the
-unbuilt ones as each lands.
+**Status: views and pick built (2026-10-26); steps 2–5 below are not.** This designs the diagram
+the effects page composes effects on. Steps land in the order below, and this doc gets cut down to
+the unbuilt ones as each lands.
 
 For whoever builds or extends the effects page (`lab/effects.html`). It answers what the diagram
 draws, what dragging on it changes, and where its code lives.
@@ -31,8 +31,8 @@ its definition names.
 
 Each lands as its own step, in this order:
 
-1. **Pick.** A node picked on the diagram scrolls the card designer to that piece or step and
-   marks it; a card picked marks its node.
+1. **Pick** — built (2026-10-26): `designer/graph.ts`, `designer/EffectDiagram.tsx`, and the
+   picked id on the designer's desk (`designer/open.ts`).
 2. **Rewire.** A modulator that is one curve on one channel — the ease family (`dim`,
    `desaturate`, `flare`, …) and the wave family — gains a `channel` setting, its present channel
    the default, so no saved effect or link changes (2026-10-26, over swapping to a sibling
