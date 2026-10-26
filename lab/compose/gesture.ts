@@ -5,15 +5,17 @@ let press = 0;
 let down = false;
 let focus = 0;
 
-addEventListener('pointerdown', () => {
-  press += 1;
-  down = true;
-});
 // A control may commit its last value on the same pointerup, so the press ends a turn later.
 const lift = () => setTimeout(() => (down = false));
-addEventListener('pointerup', lift);
-addEventListener('pointercancel', lift);
-addEventListener('focusin', () => (focus += 1));
+if (typeof window !== 'undefined') {
+  addEventListener('pointerdown', () => {
+    press += 1;
+    down = true;
+  });
+  addEventListener('pointerup', lift);
+  addEventListener('pointercancel', lift);
+  addEventListener('focusin', () => (focus += 1));
+}
 
 /**
  * The gesture an edit belongs to, so undo takes a gesture's edits as one step: everything one

@@ -6,12 +6,14 @@ import { type Library, library } from '../library.js';
 interface Desk {
   open: string | undefined;
   text: string;
+  /** The diagram node, and so the card, picked: a graph id. */
+  picked: string | undefined;
   past: { library: Library; open: string | undefined; gesture?: string }[];
   future: { library: Library; open: string | undefined }[];
 }
 
 const LIMIT = 200;
-const desk: Desk = { open: undefined, text: 'HELLO', past: [], future: [] };
+const desk: Desk = { open: undefined, text: 'HELLO', picked: undefined, past: [], future: [] };
 const listeners = new Set<() => void>();
 let version = 0;
 const notify = () => {
@@ -33,6 +35,13 @@ export const designer = {
   },
   setOpen(name: string | undefined) {
     desk.open = name;
+    desk.picked = undefined;
+    notify();
+  },
+  picked: () => desk.picked,
+  setPicked(id: string | undefined) {
+    if (desk.picked === id) return;
+    desk.picked = id;
     notify();
   },
   setText(text: string) {
@@ -58,6 +67,8 @@ export const designer = {
     if (!step) return;
     desk.future.push({ library: library.get(), open: desk.open });
     desk.open = step.open;
+    // An undone edit can take the picked piece with it.
+    desk.picked = undefined;
     library.replace(step.library);
   },
   redo() {
@@ -65,6 +76,7 @@ export const designer = {
     if (!step) return;
     desk.past.push({ library: library.get(), open: desk.open });
     desk.open = step.open;
+    desk.picked = undefined;
     library.replace(step.library);
   },
 };
