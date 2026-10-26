@@ -2,7 +2,10 @@ import { type EffectSpec, piecesOf, type Slot } from '@/index.js';
 import { PlainSelect } from '../PlainSelect.js';
 import { addPiece, removePiece, setPiece } from '../state.js';
 import { editEffect, pieceOf, pieceOptions } from './edit.js';
+import { idOf } from './graph.js';
+import { designer, useDesk } from './open.js';
 import { PieceCard } from './PieceCard.js';
+import { usePickedBox } from './picking.js';
 
 /** One slot of the open effect: its pieces, a way to add one, and what staging it warned. */
 export function SlotBox({
@@ -14,8 +17,16 @@ export function SlotBox({
   slot: Slot;
   warnings: readonly string[];
 }) {
+  useDesk();
+  const step = idOf({ kind: 'step', slot });
+  const box = usePickedBox<HTMLElement>(designer.picked() === step);
   return (
-    <section className={`compose-slot compose-slot-${slot}`} aria-label={slot}>
+    <section
+      ref={box}
+      className={`compose-slot compose-slot-${slot}`}
+      aria-label={slot}
+      data-picked={designer.picked() === step || undefined}
+    >
       <h3 className="compose-heading">{slot}</h3>
       {piecesOf(spec[slot]).map((piece, i) => (
         <PieceCard
@@ -32,6 +43,8 @@ export function SlotBox({
             })
           }
           onRemove={() => editEffect((e) => removePiece(e, slot, i))}
+          picked={designer.picked() === idOf({ kind: 'piece', slot, index: i })}
+          onPick={() => designer.setPicked(idOf({ kind: 'piece', slot, index: i }))}
         />
       ))}
       <PlainSelect

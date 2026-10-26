@@ -16,6 +16,7 @@ import { DENSITY, fieldOf, numberField, schemaFor, shownValues, storedValue } fr
 import { LAG } from '../state.js';
 import { keyOf, pieceOf, pieceOptions } from './edit.js';
 import './PieceCard.css';
+import { usePickedBox } from './picking.js';
 
 const NONE: ReadonlySet<string> = new Set();
 const PER_HOLD: ReadonlySet<string> = new Set(['ms']);
@@ -68,6 +69,8 @@ export function PieceCard({
   hold,
   onEdit,
   onRemove,
+  picked,
+  onPick,
 }: {
   slot: Slot;
   piece: Piece;
@@ -75,7 +78,12 @@ export function PieceCard({
   hold: number | undefined;
   onEdit: (fn: (now: Piece) => Piece) => void;
   onRemove: () => void;
+  /** Whether the diagram has this piece picked. */
+  picked: boolean;
+  /** Picks this piece, as using any of its controls does. */
+  onPick: () => void;
 }) {
+  const box = usePickedBox<HTMLDivElement>(picked);
   const thing = thingOf(piece);
   const config = {
     ...('mod' in piece
@@ -99,7 +107,13 @@ export function PieceCard({
   const held = perHold(slot, piece, hold);
   const auto = held && piece.params?.ms === undefined ? PER_HOLD : NONE;
   return (
-    <div className={'mod' in piece ? 'compose-piece is-mod' : 'compose-piece is-move'}>
+    <div
+      ref={box}
+      className={'mod' in piece ? 'compose-piece is-mod' : 'compose-piece is-move'}
+      data-picked={picked || undefined}
+      onPointerDownCapture={onPick}
+      onFocusCapture={onPick}
+    >
       <div className="compose-piece-head">
         <PlainSelect
           aria-label="piece"

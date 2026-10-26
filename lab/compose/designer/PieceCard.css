@@ -26,3 +26,8 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+.compose-piece[data-picked] {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: 1px;
+}
