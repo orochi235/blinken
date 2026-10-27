@@ -75,6 +75,14 @@ A move is paced this way by declaring `rests(at, params)`: where in its own time
 `release`, where it plays on from after the last wait, or null when its settings pace it by time.
 Staging turns them into the effect's `stops`, which `layOut` places in pass time.
 
+### Grids
+
+`grid: 'hex'` sets each row of dots half a dot left of the one above, rows √3/2 apart, so every
+dot has six neighbors a pitch away. Text and effects still count dots by column and row, so the
+columns run on a slant and the text leans like italics; the border follows the dots round. A
+function `(x, y) => [x, y]` places dots a grid of your own way, in pitches, and the sign is
+fitted to wherever they land. Default `square`.
+
 ## Thumbnails
 
 `createThumbnail` loops one effect on a small sign, for a preview beside its name:

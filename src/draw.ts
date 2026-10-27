@@ -1,6 +1,7 @@
 import type { Board, Led } from './board.js';
 import { dotColor } from './color.js';
 import { type Afflictions, afflict, afflictions, type Defect } from './defects.js';
+import { GRIDS, type Grid } from './grid.js';
 import { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
 
 /** The mix's columns for each light, in the order the sign was given them; `tint` holds four per light. */
@@ -79,14 +80,15 @@ function css(hex: number): string {
 }
 
 /**
- * A sign drawn on `canvas`, each of `leds` at its place; the mix's columns arrive in that order.
- * Unless `backed` is false its housing is painted dark, rather than left showing the page.
+ * A sign drawn on `canvas`, each of `leds` at its place on `grid`; the mix's columns arrive in that
+ * order. Unless `backed` is false its housing is painted dark, rather than left showing the page.
  */
 export function createSign(
   canvas: HTMLCanvasElement,
   b: Board,
   leds: readonly Led[],
   backed = true,
+  grid: Grid = GRIDS.square,
 ): Sign {
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   const glow = document.createElement('canvas');
@@ -103,8 +105,13 @@ export function createSign(
   let pitch = 0;
 
   const box = canvas.parentElement as HTMLElement;
-  const across = b.cols + 2 * b.margin;
-  const down = b.rows + 2 * b.margin;
+  const at = leds.map((led) => grid(led.x, led.y));
+  const dotsAt = at.filter((_, i) => leds[i]?.kind === 'dot');
+  const pad = b.margin + 0.5;
+  const left = Math.min(...dotsAt.map(([x]) => x)) - pad;
+  const top = Math.min(...dotsAt.map(([, y]) => y)) - pad;
+  const across = Math.max(...dotsAt.map(([x]) => x)) + pad - left;
+  const down = Math.max(...dotsAt.map(([, y]) => y)) + pad - top;
 
   /** Fits the sign in its box, as large as both of the box's sides allow. */
   function resize(): void {
@@ -121,8 +128,8 @@ export function createSign(
       hctx.fillStyle = '#0d0a08';
       hctx.fillRect(0, 0, housing.width, housing.height);
     }
-    for (const led of leds) {
-      const [x, y] = place(led);
+    for (const [i, led] of leds.entries()) {
+      const [x, y] = place(i);
       hctx.fillStyle = led.kind === 'bulb' ? '#2b2118' : '#21150f';
       hctx.beginPath();
       hctx.arc(x, y, radius(led), 0, Math.PI * 2);
@@ -130,10 +137,10 @@ export function createSign(
     }
   }
 
-  const place = (led: Led): [number, number] => [
-    (led.x + b.margin + 0.5) * pitch,
-    (led.y + b.margin + 0.5) * pitch,
-  ];
+  const place = (i: number): [number, number] => {
+    const [x, y] = at[i] as readonly [number, number];
+    return [(x - left) * pitch, (y - top) * pitch];
+  };
   const radius = (led: Led) => pitch * (led.kind === 'bulb' ? 0.42 : 0.36);
 
   const watch = new ResizeObserver(resize);
@@ -156,7 +163,7 @@ export function createSign(
         const led = leds[i] as Led;
         const shine = now * Math.min(gain[i] ?? 1, 1);
         const hex = dotColor(tint, i * 4, hue[i] ?? 0, chroma[i] ?? 1, fallback);
-        const [x, y] = place(led);
+        const [x, y] = place(i);
         const r = radius(led);
         bctx.globalAlpha = shine;
         bctx.fillStyle = css(hex);

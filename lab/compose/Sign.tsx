@@ -3,6 +3,7 @@ import {
   type Border,
   createMarquee,
   type EffectSpec,
+  type GridName,
   type Marquee,
   type Scene,
   scatter,
@@ -46,7 +47,7 @@ export function Sign({
   const sign = useRef<Marquee | null>(null);
   const latest = useRef({ hardware, program, effects, onSign });
   latest.current = { hardware, program, effects, onSign };
-  const { cols, rows } = hardware.size;
+  const { cols, rows, grid } = hardware.size;
   // A border coming or going changes the sign's margin, so it builds a new sign as a size does.
   const bordered = hardware.border.bulbs !== 'none';
 
@@ -56,6 +57,7 @@ export function Sign({
     const m = createMarquee(canvas.current, {
       cols,
       rows,
+      grid: grid as GridName,
       border: bordered && borderOf(h),
       program: p,
       effects: e(),
@@ -68,7 +70,7 @@ export function Sign({
       sign.current = null;
       m.destroy();
     };
-  }, [cols, rows, bordered]);
+  }, [cols, rows, grid, bordered]);
 
   useEffect(() => {
     if (sign.current) equip(sign.current, hardware);

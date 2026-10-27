@@ -46,6 +46,7 @@ export {
   type Span,
   type TextStyle,
 } from './font.js';
+export { GRIDS, type Grid, type GridName, gridOf } from './grid.js';
 export {
   createMarquee,
   type Follow,

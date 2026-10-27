@@ -1,7 +1,7 @@
 import { f, usePersistedState } from '@weasel-js/labkit';
 import { stereo } from '@weasel-js/ui/components/MotifFrame';
 import { useMemo } from 'react';
-import { type ChoiceParam, FADE, MODULATORS, type NumberParam, SIZE } from '@/index.js';
+import { type ChoiceParam, FADE, GRIDS, MODULATORS, type NumberParam, SIZE } from '@/index.js';
 import { marqueeSlider } from './MarqueeSlider.js';
 import { fieldOf, schemaFor, shownValues, storedValue } from './schema.js';
 
@@ -47,6 +47,13 @@ const GROUPS = {
       about:
         'How many dots down the sign is. Each line of the message takes its letters\u2019 height and a dot between, so a taller sign stacks more lines; one too short shows the top of the letters.',
     },
+    grid: {
+      label: 'grid',
+      choices: Object.keys(GRIDS),
+      value: 'square',
+      about:
+        'How the dots are set out: square rows and columns, or a hex grid where each row sits half a dot left of the one above, which leans the text like italics.',
+    } satisfies ChoiceParam,
   },
   border: {
     bulbs: {

@@ -5,6 +5,7 @@ import type { Defect } from './defects.js';
 import { createSign, paintBulbs, type SignColumns, signColumns } from './draw.js';
 import type { EffectSpec, Stop } from './effects.js';
 import { faceOf } from './font.js';
+import { type Grid, type GridName, gridOf } from './grid.js';
 import { cueLayers, type LayerOption } from './layers.js';
 import type { Fade, Ghost } from './optics.js';
 import type { ParamValue } from './params.js';
@@ -28,6 +29,11 @@ export interface MarqueeOptions {
   /** Dots across and down. Default 80 × 7, one line of text. */
   readonly cols?: number;
   readonly rows?: number;
+  /**
+   * How the dots are set out: `square`, `hex`, or a grid of your own placing each column and row.
+   * Only the drawing reads it; text and effects still count dots by column and row. Default square.
+   */
+  readonly grid?: GridName | Grid;
   /**
    * The messages it plays, in a loop. A function is read again at the start of every pass, so a
    * program can follow inputs that change. Default: nothing, until `setProgram`.
@@ -156,7 +162,9 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const cols = signColumns(leds.length);
   const cells = signColumns(b.cells.length);
   const drawing = opts.draw ?? true;
-  const sign = drawing ? createSign(canvas, b, leds, opts.housing ?? true) : null;
+  const sign = drawing
+    ? createSign(canvas, b, leds, opts.housing ?? true, gridOf(opts.grid))
+    : null;
   if (opts.defects) sign?.setDefects(opts.defects);
   if (opts.fade) sign?.setFade(opts.fade);
   if (opts.ghost) sign?.setGhost(opts.ghost);
