@@ -5,17 +5,10 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 
 ## State
 
-- `main` is about 40 commits ahead of `origin/main`, unpushed. Besides the labkit compose lab's
-  polish, it holds proportional-by-default kerned text, effect params with scene tuning, the scene
-  panel, resizable columns, and outline and shadow styles.
-- **It can't push yet.** CI and Pages install `@weasel-js/*` from npm, and the lab uses API that
-  exists only in the local `~/src/weasel` checkout: `.motif(stereo({ invert }))` in
-  `lab/compose/hardware.ts`, `useUndoKeys`, and the label-tooltip help rendering. bree's fleet
-  typecheck fails on exactly those, as expected. Pushing needs a weasel release (labkit and ui)
-  and a bump here first.
-- weasel `main` holds this work (labkit motif option, inline two-up default, stereo invert and
-  spacing, `useUndoKeys`, row help on labels) on top of 100+ other sessions' unpushed commits.
-  Releasing it is the user's call.
+- `main` is pushed (2026-10-26). CI and Pages install weasel `1.13.0-rc.0` from npm, which carries
+  everything the lab used up to then. Weasel API newer than that (the diagram fit fix, the palette
+  drop) works locally through the checkout and needs a weasel release and a bump here before it
+  reaches CI or the deployed lab.
 
 ## How the lab runs
 
