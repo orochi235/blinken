@@ -251,3 +251,50 @@ describe('parts', () => {
     expect(parts.exit.start + parts.exit.ms).toBe(ms);
   });
 });
+
+describe('stops', () => {
+  const typed: EffectSpec = {
+    name: 'typed',
+    enter: { move: 'type-on', params: { pace: 'input' } },
+    active: { move: 'stand' },
+    exit: { move: 'type-off', params: { pace: 'input', ms: 60 } },
+    hold: 500,
+  };
+  const restsOf = (name: MoveName, given: Record<string, unknown>) => {
+    const m = MOVES[name];
+    const rests = m.rests?.(at, { ...values(m), ...given } as never);
+    if (!rests) throw new Error(`${name} paced by input has rests`);
+    return rests;
+  };
+
+  it('has none for an effect paced by time', () => {
+    expect(stageEffect(flip, at, HEX).stops).toEqual([]);
+  });
+
+  it('places each paced piece’s rests and release where its slot starts, in time order', () => {
+    const staged = stageEffect(typed, at, HEX);
+    const on = restsOf('type-on', { pace: 'input' });
+    const off = restsOf('type-off', { pace: 'input', ms: 60 });
+    const exit = staged.parts.exit.start;
+    expect(staged.stops).toEqual([
+      ...on.at.map((t) => ({ at: t })),
+      { at: on.release, release: true },
+      ...off.at.map((t) => ({ at: exit + t })),
+      { at: exit + off.release, release: true },
+    ]);
+  });
+
+  it('interleaves the groups of an order by their lag', () => {
+    const lagged = { ...typed, exit: undefined, order: { by: 'letter', lag: 40 } } as const;
+    const staged = stageEffect(lagged, at, HEX);
+    const on = restsOf('type-on', { pace: 'input' });
+    const groups = groupsOf(lagged.order, at).length;
+    const want = Array.from({ length: groups }, (_, g) => [
+      ...on.at.map((t) => ({ at: g * 40 + t })),
+      { at: g * 40 + on.release, release: true as const },
+    ])
+      .flat()
+      .sort((a, b) => a.at - b.at);
+    expect(staged.stops).toEqual(want);
+  });
+});

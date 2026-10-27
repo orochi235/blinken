@@ -177,6 +177,12 @@ const effects = {
         about: 'What stands where the next letter lands: a block, a single column, or nothing.',
         to: ['enter.0.cursor', 'exit.0.cursor'],
       },
+      pace: {
+        label: 'pace',
+        about:
+          'Time types on its own. Input waits for a press before each letter typed and each backspaced.',
+        to: ['enter.0.pace', 'exit.0.pace'],
+      },
     },
   },
   swarm: {

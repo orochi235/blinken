@@ -15,3 +15,12 @@
 .effects-preview .compose-scrubber {
   margin: 0;
 }
+
+.effects-preview-keys {
+  border-radius: 4px;
+}
+
+.effects-preview-keys:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring, currentColor);
+  outline-offset: 2px;
+}

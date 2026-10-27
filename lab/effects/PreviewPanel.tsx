@@ -34,7 +34,21 @@ export function PreviewPanel() {
         </span>
       }
     >
-      <Sign hardware={hardware} program={program} effects={NO_EFFECTS} onSign={preview.attach} />
+      <div
+        className="effects-preview-keys"
+        role="application"
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: it takes key presses, each typing the next letter of an effect paced by input
+        tabIndex={0}
+        aria-label="preview sign"
+        title="With an effect's pace set to input, click here and press any key to type each letter."
+        onKeyDown={(e) => {
+          if (e.metaKey || e.ctrlKey || e.altKey || e.key === 'Tab') return;
+          e.preventDefault();
+          preview.step();
+        }}
+      >
+        <Sign hardware={hardware} program={program} effects={NO_EFFECTS} onSign={preview.attach} />
+      </div>
       <Scrubber player={preview} look={look} />
       {designer.open() === undefined && (
         <p className="compose-hint">Open an effect from the library to play it here.</p>

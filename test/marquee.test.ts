@@ -2,7 +2,7 @@ import { mix, watched } from '@msb235/blits';
 import { describe, expect, it, vi } from 'vitest';
 import { board, KIT, type Led, type Pose, SIZE, type Subject } from '@/board.js';
 import { EFFECTS } from '@/builtins.js';
-import { stageEffect } from '@/effects.js';
+import { type EffectSpec, stageEffect } from '@/effects.js';
 import { rasterize } from '@/font.js';
 import { createMarquee } from '@/marquee.js';
 import { chase } from '@/modulators/index.js';
@@ -349,6 +349,45 @@ describe('createMarquee', () => {
     } finally {
       error.mockRestore();
     }
+  });
+
+  describe('paced by input', () => {
+    const per = 110;
+    const typed: EffectSpec = {
+      name: 'typed',
+      enter: { move: 'type-on', params: { pace: 'input', ms: per } },
+      active: { move: 'stand' },
+      hold: 300,
+    };
+    const program: Scene[] = [{ effect: 'typed', text: 'HI', hex: 0xff9a2e }];
+
+    it('holds at each rest until step, and plays on from the release', async () => {
+      await withSign({ program, effects: { typed } }, (sign, step) => {
+        step(1000);
+        expect(sign.pass()?.at).toBe(per / 2);
+        sign.step();
+        step(2000);
+        expect(sign.pass()?.at).toBe(per + per / 2);
+        sign.step();
+        expect(sign.pass()?.at).toBe(2 * per);
+        step(2100);
+        expect(sign.pass()?.at).toBe(2 * per + 100);
+      });
+    });
+
+    it('ignores step while playing, and a seek drops the hold', async () => {
+      await withSign({ program, effects: { typed } }, (sign, step) => {
+        // The pass starts at the first frame.
+        step(20);
+        sign.step();
+        step(40);
+        expect(sign.pass()?.at).toBe(20);
+        step(1000);
+        sign.seek(2 * per);
+        step(1100);
+        expect(sign.pass()?.at).toBe(2 * per + 100);
+      });
+    });
   });
 
   describe('pass and seek', () => {

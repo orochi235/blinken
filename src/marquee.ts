@@ -3,7 +3,7 @@ import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from 
 import { type Border, cueBorder } from './border.js';
 import type { Defect } from './defects.js';
 import { createSign, paintBulbs, type SignColumns, signColumns } from './draw.js';
-import type { EffectSpec } from './effects.js';
+import type { EffectSpec, Stop } from './effects.js';
 import { faceOf } from './font.js';
 import { cueLayers, type LayerOption } from './layers.js';
 import type { Fade, Ghost } from './optics.js';
@@ -115,6 +115,11 @@ export interface Marquee {
    * at that moment until a seek without it, or the next restart.
    */
   seek(ms: number, opts?: { hold?: boolean }): void;
+  /**
+   * Moves a pass waiting for input on: to its next rest, or from the last one to where it plays on.
+   * Does nothing while it is not waiting; a host calls it on a key press or any input it likes.
+   */
+  step(): void;
   /** Turns a layer on or off, or sets the weight it plays at; `params` re-cue it with them. */
   setLayer(name: string, on: boolean | number, params?: Readonly<Record<string, ParamValue>>): void;
   /** The color of a lit dot nothing has tinted. */
@@ -163,6 +168,11 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   let pass: Handle<Subject> | null = null;
   let scenes: readonly PassScene[] = [];
   let length = 0;
+  let stops: readonly Stop[] = [];
+  /** The stop the pass is waiting at, or null while it is not waiting. */
+  let held: number | null = null;
+  /** Where the pass stood at the last frame, so a rest it ran past since holds it. */
+  let passed = Number.NEGATIVE_INFINITY;
   const clock = new PassClock();
   /** A pass ended; the next starts at the next frame, so one that ends at once cannot spin. */
   let due = false;
@@ -184,7 +194,9 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     const offset = from > 0 && from < all.length ? from : 0;
     const chosen = offset ? all.slice(offset) : all;
     staged = stageProgram(b, chosen, effects);
-    ({ scenes, length } = layOut(staged, offset));
+    ({ scenes, length, stops } = layOut(staged, offset));
+    held = null;
+    passed = Number.NEGATIVE_INFINITY;
     if (chosen.length > 0) cue();
     else pass = null;
   };
@@ -201,6 +213,20 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     fresh.seek(at);
     fresh.rate = rate;
     clock.set(m.now, at, rate);
+    held = null;
+    passed = at;
+  };
+  /** Holds the pass at the first rest it has reached since the last frame. */
+  const rest = () => {
+    if (pass === null || held !== null) return;
+    const now = clock.read(m.now);
+    const i = stops.findIndex((s) => !s.release && s.at > passed && s.at <= now);
+    if (i < 0) {
+      passed = now;
+      return;
+    }
+    moveTo((stops[i] as Stop).at, 0);
+    held = i;
   };
 
   /**
@@ -247,6 +273,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       early = null;
     }
     clock.settle(m.now);
+    rest();
     m.pull(b.dots, cols);
     m.pull(b.cells, cells);
     paintBulbs(b, cells, cols);
@@ -334,9 +361,22 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       if (!synced) {
         early = { at, rate };
         clock.set(Number.NaN, at, rate);
+        held = null;
+        passed = at;
         return;
       }
       moveTo(at, rate);
+    },
+    step() {
+      if (held === null) return;
+      const k = held + 1;
+      const next = stops[k];
+      if (next === undefined) {
+        moveTo((stops[held] as Stop).at, 1);
+        return;
+      }
+      moveTo(next.at, next.release ? 1 : 0);
+      if (!next.release) held = k;
     },
     setLayer(name, on, params) {
       layers.set(name, on, params);

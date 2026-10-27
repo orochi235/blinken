@@ -1,4 +1,4 @@
-import type { Stretch } from './effects.js';
+import type { Stop, Stretch } from './effects.js';
 import type { Slot } from './moves/index.js';
 import type { StagedScene } from './program.js';
 
@@ -17,22 +17,27 @@ export interface Pass {
   readonly scenes: readonly PassScene[];
 }
 
-/** Staged scenes laid end to end, numbered by their place in the program, `offset` scenes in. */
+/**
+ * Staged scenes laid end to end, numbered by their place in the program, `offset` scenes in, and
+ * where the pass waits for input.
+ */
 export function layOut(
   staged: readonly StagedScene[],
   offset: number,
-): { scenes: PassScene[]; length: number } {
+): { scenes: PassScene[]; length: number; stops: Stop[] } {
   let start = 0;
+  const stops: Stop[] = [];
   const scenes = staged.map((s) => {
     const at = start;
     const parts = Object.fromEntries(
       Object.entries(s.staged.parts).map(([slot, p]) => [slot, { start: at + p.start, ms: p.ms }]),
     ) as Record<Slot, Stretch>;
     const out = { scene: s.scene + offset, start, ms: s.staged.ms, parts };
+    for (const stop of s.staged.stops) stops.push({ ...stop, at: at + stop.at });
     start += s.staged.ms;
     return out;
   });
-  return { scenes, length: start };
+  return { scenes, length: start, stops };
 }
 
 /**

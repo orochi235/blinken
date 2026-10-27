@@ -20,6 +20,15 @@ export interface Joins {
 /** An active move with no enter or exit move beside it. */
 export const LOOSE: Joins = { from: false, to: false };
 
+/**
+ * Where a move paced by input waits in its own time, ms, and where it plays on from after the
+ * last wait.
+ */
+export interface Rests {
+  readonly at: readonly number[];
+  readonly release: number;
+}
+
 /** One thing the message's dots do over a stretch of time, written for one slot of an effect. */
 export interface Move<P extends Params = Params> {
   readonly kind: 'move';
@@ -29,6 +38,8 @@ export interface Move<P extends Params = Params> {
   readonly params: P;
   /** Written for text wider than the board, so it never clips. Default false. */
   readonly wide?: boolean;
+  /** Where it waits for input, or null when its settings pace it by time. Default: never. */
+  rests?(at: Placed, p: Values<P>): Rests | null;
   /** Writes `lit` only; its duration is one pass, before any order's delay. */
   patch(at: Placed, p: Values<P>, joins?: Joins): Patch<Led, Pose>;
 }

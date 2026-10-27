@@ -54,6 +54,39 @@ describe('type-on and type-off', () => {
     expect(lit(end + 500)).toBeGreaterThan(message);
   });
 
+  it('has no rests paced by time', () => {
+    expect(m.rests?.(at, values(m) as never)).toBeNull();
+  });
+
+  it('paced by input, rests mid-letter with each letter down, and releases with the last', () => {
+    const rests = m.rests?.(at, { ...values(m), pace: 'input' } as never);
+    expect(rests).toEqual({
+      at: Array.from({ length: n }, (_, k) => k * per + per / 2),
+      release: n * per,
+    });
+    // Rest k shows k letters, as halfway through typing letter k does.
+    for (const [k, r] of (rests?.at ?? []).entries())
+      expect(frame(m, r)).toEqual(frame(m, k * per + 0.75 * per));
+  });
+
+  it('backspacing paced by input, rests on each letter left and releases with none', () => {
+    const off = MOVES['type-off'];
+    const given: Record<string, unknown> = { ...values(off), pace: 'input' };
+    const rests = off.rests?.(at, given as never);
+    const per = given.ms as number;
+    if (!rests) throw new Error('type-off paced by input has rests');
+    expect(rests.at).toHaveLength(n);
+    const on = (t: number) => frame(m, t, { ms: per });
+    const offAt = (t: number) => frame(off, t, given);
+    // First the whole message with the cursor on after it, then one letter fewer at each rest.
+    expect(offAt(rests.at[0] as number)).toEqual(on(n * per + 110));
+    for (let k = 1; k < n; k++)
+      expect(offAt(rests.at[k] as number)).toEqual(on((n - k) * per + per / 2));
+    // Just past the release no letter is left.
+    expect(offAt(rests.release + 1)).toEqual(on(0));
+    expect(rests.at).toEqual([...rests.at].sort((a, b) => a - b));
+  });
+
   it('backspaces as type-on types, in reverse', () => {
     const off = MOVES['type-off'];
     const len = length(off);

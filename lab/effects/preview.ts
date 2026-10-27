@@ -25,8 +25,10 @@ let resume: number | undefined;
 let shown = JSON.stringify(previewScene());
 
 /** The effects page's sign, which the playback controls and the scrubber drive. */
-export const preview: Player & { attach(next: Marquee | null): void } = {
+export const preview: Player & { attach(next: Marquee | null): void; step(): void } = {
   pass: () => sign?.pass() ?? null,
+  /** Moves an effect paced by input on a letter. */
+  step: () => sign?.step(),
   seek(ms, hold = false) {
     held = hold;
     sign?.seek(ms, { hold });

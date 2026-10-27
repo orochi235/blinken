@@ -45,6 +45,14 @@ export interface StagedEffect {
    */
   readonly parts: Readonly<Record<Slot, Stretch>>;
   readonly warnings: readonly Warning[];
+  /** Where it waits for input and plays on again, from the owner's 0, in time order. */
+  readonly stops: readonly Stop[];
+}
+
+/** A moment a pass paced by input waits at, or with `release`, plays on from. */
+export interface Stop {
+  readonly at: number;
+  readonly release?: true;
 }
 
 /** A stretch of time, ms: where it starts and how long it lasts. */
@@ -157,7 +165,22 @@ export function stageEffect(
     active: { start: enter + span, ms: Math.max(0, held - span) },
     exit: { start: enter + held, ms: exit + span },
   };
-  return { arcs, ms, parts, warnings };
+  // Every group's pieces wait where the first group's do, a lag later each.
+  const starts = [0, enter, enter + held];
+  const own = first.flatMap((pieces, s) =>
+    pieces.flatMap(({ rests }) =>
+      rests
+        ? [
+            ...rests.at.map((t) => ({ at: (starts[s] as number) + t })),
+            { at: (starts[s] as number) + rests.release, release: true as const },
+          ]
+        : [],
+    ),
+  );
+  const stops = groups
+    .flatMap((_, g) => own.map((stop) => ({ ...stop, at: stop.at + g * lag })))
+    .sort((a, b) => a.at - b.at);
+  return { arcs, ms, parts, warnings, stops };
 }
 
 /** Cues a staged effect's arcs under `owner`, each at its start; one of several is named by its index. */

@@ -24,6 +24,13 @@ const TYPE_PARAMS = {
     about:
       'What stands where the next letter lands: a block as wide as the letter, a single column, or nothing.',
   },
+  pace: {
+    label: 'pace',
+    choices: ['time', 'input'],
+    value: 'time',
+    about:
+      'Time takes a letter time per letter. Input waits for a press before each letter: a key in the lab, the sign’s step() anywhere else.',
+  },
 } as const;
 type Typing = Values<typeof TYPE_PARAMS>;
 
@@ -55,6 +62,9 @@ function typing(at: Placed, p: Typing) {
   };
   return {
     ms,
+    /** Mid-letter with `k` letters down, for `k` from 0, and the last letter down. */
+    rests: p.pace === 'input' ? Array.from({ length: n }, (_, k) => k * p.ms + p.ms / 2) : null,
+    release: n * p.ms,
     draw(t: number, led: Led) {
       const row = at.rowOf(led);
       if (row < 0) return on(false);
@@ -79,6 +89,10 @@ export const typeOn = move({
   about: 'Letters appear one at a time left to right behind a cursor, which blinks and goes.',
   slot: 'enter',
   params: TYPE_PARAMS,
+  rests(at, p) {
+    const { rests, release } = typing(at, p);
+    return rests && { at: rests, release };
+  },
   patch(at, p) {
     const { ms, draw } = typing(at, p);
     return patch<Led, Pose>(ms, (phase, led) => draw(phase * ms, led), { writes: ['lit'] });
@@ -91,6 +105,15 @@ export const typeOff = move({
   about: 'A cursor blinks after the message, then backspaces it away right to left.',
   slot: 'exit',
   params: TYPE_PARAMS,
+  rests(at, p) {
+    const { ms, rests } = typing(at, p);
+    if (!rests) return null;
+    const n = rests.length;
+    // Type-on's rests backward from the whole message, with the cursor on after it where there is one.
+    const full = n * p.ms + (p.cursor === 'off' ? 0 : BLINK / 2);
+    const typed = [full, ...rests.slice(1).reverse()];
+    return { at: typed.map((t) => ms - t), release: ms - p.ms / 2 };
+  },
   patch(at, p) {
     const { ms, draw } = typing(at, p);
     return patch<Led, Pose>(ms, (phase, led) => draw((1 - phase) * ms, led), { writes: ['lit'] });

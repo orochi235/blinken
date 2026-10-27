@@ -1,7 +1,7 @@
 import type { ArcVoice } from '@msb235/blits';
 import type { Pose, Subject } from './board.js';
 import { MODULATORS, type ModulatorName } from './modulators/index.js';
-import { type Joins, LOOSE, MOVES, type MoveName, type Slot } from './moves/index.js';
+import { type Joins, LOOSE, MOVES, type MoveName, type Rests, type Slot } from './moves/index.js';
 import { delayOf, type Order, type Placed, rankOf, spanOf } from './orders.js';
 import { type Params, type ParamValue, values } from './params.js';
 import type { Channel } from './planes.js';
@@ -38,6 +38,8 @@ export interface StagedPiece {
   readonly voice: ArcVoice<Subject, Pose>;
   readonly writes: readonly Channel[];
   readonly warnings: readonly Warning[];
+  /** Where it waits for input, from its own start; absent when it is paced by time. */
+  readonly rests?: Rests;
 }
 
 /** Every subject at once: the order a piece plays in when it names none. */
@@ -108,5 +110,6 @@ export function stagePiece(
   const warnings = clips
     ? [{ slot, text: `${piece.move} clips ${at.label ?? 'the message'}` }]
     : [];
-  return { voice, writes: writesOf(piece), warnings };
+  const rests = move.rests?.(at, p) ?? null;
+  return { voice, writes: writesOf(piece), warnings, ...(rests && { rests }) };
 }

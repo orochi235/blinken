@@ -344,6 +344,52 @@ describe('packed links', () => {
     ]);
   });
 
+  it('opens a version 11 link by the settings its moves and effects had then, before pace', () => {
+    const w = new BitWriter();
+    const enter = Object.keys(MOVES).filter((m) => MOVES[m as keyof typeof MOVES].slot === 'enter');
+    const CURSORS = ['block', 'line', 'off'];
+    w.uint(11, 8);
+    w.count(1);
+    w.text('mine');
+    w.uint(0, 2);
+    w.flag(false);
+    w.count(1);
+    w.flag(false);
+    w.uint(enter.indexOf('type-on'), widthOf(enter.length));
+    w.flag(false);
+    // Type-on had a letter time and a cursor in version 11, and no pace.
+    w.flag(false);
+    w.flag(true);
+    w.uint(CURSORS.indexOf('line'), widthOf(CURSORS.length));
+    w.count(0);
+    w.count(0);
+    w.flag(false);
+    w.flag(false);
+    w.count(0);
+    w.count(2);
+    for (const mine of [true, false]) {
+      w.text('A');
+      w.flag(false);
+      w.flag(mine);
+      if (mine) w.uint(0, widthOf(1));
+      else w.uint(Object.keys(EFFECTS).indexOf('type'), widthOf(Object.keys(EFFECTS).length));
+      for (let k = 0; k < 6; k++) w.flag(false);
+      for (const _ of Object.keys(LAYERS)) w.flag(false);
+      const tuning = Object.keys(tuningOf((mine ? { name: 'mine' } : EFFECTS.type) as never));
+      for (const key of tuning.filter((k) => k !== 'pace')) {
+        w.flag(!mine && key === 'cursor');
+        if (!mine && key === 'cursor') w.uint(CURSORS.indexOf('off'), widthOf(CURSORS.length));
+      }
+    }
+    const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
+    expect(read).toBe(true);
+    expect(state.effects.mine?.enter).toEqual([{ move: 'type-on', params: { cursor: 'line' } }]);
+    expect(state.program.map((s) => [s.effect, s.params])).toEqual([
+      ['mine', undefined],
+      ['type', { cursor: 'off' }],
+    ]);
+  });
+
   it('round-trips outline, shadow and tracking', () => {
     const data = {
       effects: {},
@@ -430,7 +476,7 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 11, digest: '51c38dcf73c7' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 12, digest: '276db7808402' });
   });
 });
 

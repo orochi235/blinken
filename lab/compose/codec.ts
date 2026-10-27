@@ -38,7 +38,7 @@ import { BLEND, HOLD, LAG } from './state.js';
  * only ever grows at its end; adding to one bumps VERSION too, and records in LENGTHS how long
  * each was before, so an older link reads against the registries it was written with.
  */
-export const VERSION = 11;
+export const VERSION = 12;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -195,7 +195,7 @@ function writePiece(w: BitWriter, slot: Slot, piece: Piece): void {
   }
 }
 
-function readPiece(r: BitReader, slot: Slot, reg: Registries): Piece {
+function readPiece(r: BitReader, slot: Slot, reg: Registries, version: number): Piece {
   if (r.flag()) {
     const mod = reg.mods[r.index(reg.mods.length)] as keyof typeof MODULATORS;
     const spread = readOrder(r);
@@ -204,7 +204,7 @@ function readPiece(r: BitReader, slot: Slot, reg: Registries): Piece {
   }
   const move = reg.movesIn[slot][r.index(reg.movesIn[slot].length)] as keyof typeof MOVES;
   const order = readOrder(r);
-  const params = readParams(r, MOVES[move].params);
+  const params = readParams(r, paramsAt(MOVES[move].params, move, version, MOVE_ADDED));
   return { move, ...(order && { order }), ...(params && { params }) };
 }
 
@@ -252,7 +252,7 @@ function readEffect(r: BitReader, version: number, reg: Registries): EffectSpec 
   const order = readOrder(r);
   if (order) out.order = order;
   for (const slot of SLOTS) {
-    const pieces = Array.from({ length: r.count() }, () => readPiece(r, slot, reg));
+    const pieces = Array.from({ length: r.count() }, () => readPiece(r, slot, reg, version));
     if (pieces.length) out[slot] = pieces;
   }
   if (r.flag()) out.hold = readNumber(r, HOLD);
@@ -301,21 +301,32 @@ function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): 
   writeParams(w, tuning, scene.params, defaultsOf(tuning));
 }
 
-/** Built-in params added since version 5, by the version that added them and the effect. */
-const ADDED: Record<number, Record<string, readonly string[]>> = {
+/** Settings added by name since links began, by the version that added them. */
+type Added = Record<number, Record<string, readonly string[]>>;
+
+/** Built-in effects' params added since version 5. */
+const ADDED: Added = {
   6: { scroll: ['direction'] },
   10: { tile: ['rows', 'gap'] },
+  12: { type: ['pace'] },
 };
 
-/** What a scene could tune on `effect` in a link of `version`: today's, less what came later. */
-function tuningAt(effect: EffectSpec, version: number): Params {
+/** Moves' settings added since version 11. */
+const MOVE_ADDED: Added = {
+  12: { 'type-on': ['pace'], 'type-off': ['pace'] },
+};
+
+/** `params` as `name` had them in a link of `version`: today's, less what `added` says came later. */
+function paramsAt(params: Params, name: string, version: number, added: Added): Params {
   const later = new Set(
-    Object.entries(ADDED).flatMap(([v, by]) =>
-      Number(v) > version ? (by[effect.name] ?? []) : [],
-    ),
+    Object.entries(added).flatMap(([v, by]) => (Number(v) > version ? (by[name] ?? []) : [])),
   );
-  return Object.fromEntries(Object.entries(tuningOf(effect)).filter(([k]) => !later.has(k)));
+  return Object.fromEntries(Object.entries(params).filter(([k]) => !later.has(k)));
 }
+
+/** What a scene could tune on `effect` in a link of `version`. */
+const tuningAt = (effect: EffectSpec, version: number): Params =>
+  paramsAt(tuningOf(effect), effect.name, version, ADDED);
 
 /** Each of a tuning's settings at what its effect sets it to. */
 const defaultsOf = (tuning: Params) =>

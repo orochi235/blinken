@@ -53,6 +53,28 @@ so `ramp` slows it with everything else. `seek(ms)` moves that pass to `ms` from
 into a scene that has ended as readily as forward, and `{ hold: true }` keeps it there until a seek
 without it or the next restart.
 
+### Paced by input
+
+`type-on` and `type-off` take a `pace` setting, `time` by default. Set to `input`, the sign holds
+before each letter and moves on when `sign.step()` is called, however long that takes; bind it to
+whatever input you like, such as a key press. The built-in `type` effect lets a scene set it:
+
+```ts
+{ effect: 'type', text: 'HELLO', hex: 0xff9a2e, params: { pace: 'input' } },
+// …
+addEventListener('keydown', () => sign.step()); // each press types the next letter
+```
+
+Typing on, it waits first with the cursor showing and nothing typed, and the press that puts the
+last letter down lets the cursor's blink and the rest of the pass play on; backspacing mirrors it. Each press jumps
+straight to the next letter rather than playing up to it. A seek or a restart drops the wait, and a
+looping program waits again on its next pass. Layers keep playing while it waits, and `pass()`,
+the scrubber and thumbnails keep the nominal timing.
+
+A move is paced this way by declaring `rests(at, params)`: where in its own time it waits, and
+`release`, where it plays on from after the last wait, or null when its settings pace it by time.
+Staging turns them into the effect's `stops`, which `layOut` places in pass time.
+
 ## Thumbnails
 
 `createThumbnail` loops one effect on a small sign, for a preview beside its name:
