@@ -32,15 +32,21 @@ try {
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(origin + w.query, { waitUntil: 'networkidle' });
-    // Into the first held message, past its wipe on.
+    // Into the first held message, past its wipe on, then the brightest of a few frames, since
+    // a flash or sparkle can catch any one frame dim.
     await page.waitForTimeout(2200);
-    const lit = await page.evaluate(() => {
-      const c = document.getElementById('sign');
-      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-      let n = 0;
-      for (let k = 0; k < d.length; k += 4) if (d[k] > 160) n++;
-      return n;
-    });
+    let lit = 0;
+    for (let s = 0; s < 5; s++) {
+      if (s) await page.waitForTimeout(150);
+      const n = await page.evaluate(() => {
+        const c = document.getElementById('sign');
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        let n = 0;
+        for (let k = 0; k < d.length; k += 4) if (d[k] > 160) n++;
+        return n;
+      });
+      lit = Math.max(lit, n);
+    }
     const cost = await page.evaluate(() => document.getElementById('cost')?.value ?? '');
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     await page.screenshot({ path: join(shots, `${w.name}.png`) });
