@@ -5,10 +5,8 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 
 ## State
 
-- `main` is pushed (2026-10-26). CI and Pages install weasel `1.13.0-rc.0` from npm, which carries
-  everything the lab used up to then. Weasel API newer than that (the diagram fit fix, the palette
-  drop) works locally through the checkout and needs a weasel release and a bump here before it
-  reaches CI or the deployed lab.
+- Dependencies are on weasel `1.15.0`, blits `0.16.1`, blits-panel `0.4.1` and vitest 5 (2026-11-01).
+  CI and Pages install those from npm; the lab and tests use the sibling checkouts where present.
 
 ## How the lab runs
 

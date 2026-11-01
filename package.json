@@ -36,28 +36,28 @@
     "shots": "npm run lab:build && node scripts/shots.mjs"
   },
   "dependencies": {
-    "@msb235/blits": "0.12.1"
+    "@msb235/blits": "^0.16.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.8",
-    "@msb235/blits-panel": "0.1.1",
-    "@types/node": "^26.6.5",
+    "@biomejs/biome": "^2.6.4",
+    "@msb235/blits-panel": "0.4.1",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
-    "@weasel-js/animator": "1.13.0-rc.0",
-    "@weasel-js/core": "1.13.0-rc.0",
-    "@weasel-js/diagram": "1.13.0-rc.0",
-    "@weasel-js/font": "1.13.0-rc.0",
-    "@weasel-js/history": "1.13.0-rc.0",
-    "@weasel-js/labkit": "1.13.0-rc.0",
-    "@weasel-js/theme": "1.13.0-rc.0",
-    "@weasel-js/ui": "1.13.0-rc.0",
-    "playwright": "1.63.0",
+    "@weasel-js/animator": "1.15.0",
+    "@weasel-js/core": "1.15.0",
+    "@weasel-js/diagram": "1.15.0",
+    "@weasel-js/font": "1.15.0",
+    "@weasel-js/history": "1.15.0",
+    "@weasel-js/labkit": "1.15.0",
+    "@weasel-js/theme": "1.15.0",
+    "@weasel-js/ui": "1.15.0",
+    "playwright": "1.64.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "typescript": "^7.0.2",
     "vite": "^8.2.1",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.5"
   }
 }
