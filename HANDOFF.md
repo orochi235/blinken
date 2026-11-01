@@ -7,6 +7,8 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 
 - Dependencies are on weasel `1.15.0`, blits `0.16.1`, blits-panel `0.4.1` and vitest 5 (2026-11-01).
   CI and Pages install those from npm; the lab and tests use the sibling checkouts where present.
+- An audit on 2026-11-01 fixed what it found; what it left is in `TODO.md`. `main` is ahead of
+  `origin` and unpushed.
 
 ## How the lab runs
 
