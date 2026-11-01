@@ -3,7 +3,8 @@ import { AMBER } from './color.js';
 import type { EffectSpec } from './effects.js';
 import { type Look, ROWS, rasterize } from './font.js';
 import { liveliest } from './liveliest.js';
-import { createMarquee, type Follow, type Marquee } from './marquee.js';
+import { createMarquee } from './marquee.js';
+import type { Follow, Marquee } from './marquee-api.js';
 import { rowsToShow } from './orders.js';
 import { createTicker, type Ticker } from './ticker.js';
 

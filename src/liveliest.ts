@@ -1,5 +1,6 @@
 import { shownLit, signColumns } from './draw.js';
-import { createMarquee, type MarqueeOptions } from './marquee.js';
+import { createMarquee } from './marquee.js';
+import type { MarqueeOptions } from './marquee-api.js';
 import type { Ticker } from './ticker.js';
 
 /** How many moments of the pass are weighed, at least. */

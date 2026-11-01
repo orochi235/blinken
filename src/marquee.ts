@@ -1,153 +1,20 @@
-import { type Handle, type Mix, mix } from '@msb235/blits';
-import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
-import { type Border, cueBorder } from './border.js';
+import { type Handle, mix } from '@msb235/blits';
+import { board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
+import { cueBorder } from './border.js';
 import { AMBER } from './color.js';
-import type { Defect } from './defects.js';
-import { createSign, type Lamps, paintBulbs, type SignColumns, signColumns } from './draw.js';
-import type { EffectSpec, Stop } from './effects.js';
+import { createSign, paintBulbs, signColumns } from './draw.js';
+import type { Stop } from './effects.js';
 import { faceOf } from './font.js';
-import { type Grid, type GridName, gridOf } from './grid.js';
-import { cueLayers, type LayerOption } from './layers.js';
-import type { Fade, Ghost } from './optics.js';
-import type { ParamValue } from './params.js';
-import { layOut, type Pass, PassClock, type PassScene } from './pass.js';
-import { PLANES, type Plane } from './planes.js';
-import { cueProgram, effectOf, type Scene, type StagedScene, stageProgram } from './program.js';
-import { createTicker, type Ticker } from './ticker.js';
+import { gridOf } from './grid.js';
+import { cueLayers } from './layers.js';
+import type { Marquee, MarqueeOptions } from './marquee-api.js';
+import { layOut, PassClock, type PassScene } from './pass.js';
+import { PLANES } from './planes.js';
+import { cueProgram, effectOf, type StagedScene, stageProgram } from './program.js';
+import { createTicker } from './ticker.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
 const AWAY_MS = 250;
-
-/** What one frame cost, smoothed over about twenty frames. */
-export interface FrameCost {
-  /** `sync` plus one `pull` of every light, ms. */
-  readonly mixMs: number;
-  /** The canvas work, ms; 0 with `draw: false`. */
-  readonly drawMs: number;
-}
-
-export interface MarqueeOptions {
-  /** Dots across and down. Default 80 × 7, one line of text. */
-  readonly cols?: number;
-  readonly rows?: number;
-  /**
-   * How the dots are set out: `square`, `hex`, or a grid of your own placing each column and row.
-   * Only the drawing reads it; text and effects still count dots by column and row. Default square.
-   */
-  readonly grid?: GridName | Grid;
-  /**
-   * The messages it plays, in a loop. A function is read again at the start of every pass, so a
-   * program can follow inputs that change. Default: nothing, until `setProgram`.
-   */
-  readonly program?: readonly Scene[] | (() => readonly Scene[]);
-  /** Effects scenes can name, ahead of the built-ins. */
-  readonly effects?: Readonly<Record<string, EffectSpec>>;
-  /**
-   * Layers by name: a built-in's name with on, off or a weight, or a full spec under any name.
-   * Default: none.
-   */
-  readonly layers?: Partial<Record<string, LayerOption>>;
-  /**
-   * The border of bulbs round the dots and how they light, or false for none, which also takes
-   * away the margin they stand in. Fixed once made, but `setBorder` changes how they light.
-   * Default unlit bulbs.
-   */
-  readonly border?: false | Border;
-  /**
-   * Another sign whose planes this one takes over, each dot from the dot at the same place on it:
-   * `color` makes a preview wear what the main sign is wearing while keeping its own shape.
-   * `source` is read every frame, so it can follow a sign that is replaced. Default none.
-   */
-  readonly follow?: Follow;
-  /** False leaves the housing round the dots see-through rather than dark. Default true. */
-  readonly housing?: boolean;
-  /** The color of a lit dot nothing has tinted. Default amber. */
-  readonly color?: number;
-  /** The mix's rate. Default 1. */
-  readonly rate?: number;
-  /** Broken lights, which show their fault whatever the program asks; `scatter` makes some. Default none. */
-  readonly defects?: readonly Defect[];
-  /** How fast its lights light and go dark, ms. Default 12 up, 110 down, like a filament. */
-  readonly fade?: Fade;
-  /** How much an unlit dot shows of its lit row and column, as a multiplexed sign does. Default none. */
-  readonly ghost?: Ghost;
-  /** How its lights are sized, spaced, lit and bloom. Default: fitted to the parent, as built. */
-  readonly lamps?: Lamps;
-  /** False runs the mix without drawing, for timing it alone. Default true. */
-  readonly draw?: boolean;
-  /**
-   * The clock its frames run on; signs sharing one draw from one animation frame callback, and a
-   * throttled one draws them less often. Default a ticker of its own, every display frame.
-   */
-  readonly ticker?: Ticker;
-  /** Called after every frame with what it cost. */
-  readonly onFrame?: (cost: FrameCost) => void;
-  /**
-   * What debuggers call its mix. Default `marquee #<canvas id> <cols>×<rows>`, or without an id
-   * `marquee <cols>×<rows>`.
-   */
-  readonly name?: string;
-}
-
-/** Which sign a marquee follows, and in which planes. */
-export interface Follow {
-  readonly source: () => Marquee | null;
-  readonly planes: readonly Plane[];
-}
-
-export interface Marquee {
-  readonly board: Board;
-  /** Its dots and border bulbs as the last frame drew them, every channel. */
-  readonly columns: SignColumns;
-  /**
-   * Draws the last frame again without running the mix, taking what it follows afresh: for a
-   * still that follows a moving sign.
-   */
-  repaint(): void;
-  /**
-   * Marks dots to draw swapped, lit for dark and dark for lit, over whatever the mix gives them:
-   * a text selection or a caret on a sign that is being typed into. Null marks none.
-   */
-  setHighlight(marked: ((dot: Led) => boolean) | null): void;
-  /** The mix lighting it, for cueing voices of your own on its dots and border cells. */
-  readonly mix: Mix<Subject, Pose>;
-  /** Replaces the program from the next pass; throws on a scene naming no effect or face. */
-  setProgram(program: readonly Scene[] | (() => readonly Scene[])): void;
-  /** Replaces the effects scenes can name, from the next pass; throws if a scene names none of them. */
-  setEffects(effects: Readonly<Record<string, EffectSpec>>): void;
-  /** Starts the program over at `fromScene`, fading the pass playing now at once. */
-  restart(fromScene?: number): void;
-  /** Where the pass playing now stands, on the mix clock, so rate changes count; null while none plays. */
-  pass(): Pass | null;
-  /**
-   * Moves the pass playing now to `ms` from its start, clamped to its length. With `hold`, it stays
-   * at that moment until a seek without it, or the next restart.
-   */
-  seek(ms: number, opts?: { hold?: boolean }): void;
-  /**
-   * Moves a pass waiting for input on: to its next rest, or from the last one to where it plays on.
-   * Does nothing while it is not waiting; a host calls it on a key press or any input it likes.
-   */
-  step(): void;
-  /** Turns a layer on or off, or sets the weight it plays at; `params` re-cue it with them. */
-  setLayer(name: string, on: boolean | number, params?: Readonly<Record<string, ParamValue>>): void;
-  /** The color of a lit dot nothing has tinted. */
-  setColor(hex: number): void;
-  /** Ramps the mix's rate to `rate` over `ms`. */
-  ramp(rate: number, ms?: number): void;
-  /** Replaces the broken lights. */
-  setDefects(defects: readonly Defect[]): void;
-  /** Sets how fast its lights light and go dark. */
-  setFade(fade: Fade): void;
-  /** Sets how much an unlit dot shows of its lit row and column. */
-  setGhost(ghost: Ghost): void;
-  /** Sets how its lights are sized, spaced, lit and bloom. */
-  setLamps(lamps: Lamps): void;
-  /** Sets how the border's bulbs light; a sign made with no border has none to light. */
-  setBorder(border: Border): void;
-  /** Stops the frame loop, lets go of the canvas, and takes its mix off the debuggers' list. */
-  destroy(): void;
-}
 
 /**
  * A sign on `canvas`, playing its program in a loop under whichever layers are on. It sizes the

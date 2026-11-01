@@ -7,7 +7,6 @@ import {
   effectOf,
   FACE_NAMES,
   type FaceName,
-  fits,
   LAYERS,
   type LayerName,
   type LayerSpec,
@@ -15,9 +14,6 @@ import {
   MODULATORS,
   MOVES,
   type ModulatorName,
-  type NumberParam,
-  ORDERS,
-  type Order,
   type Params,
   type ParamValue,
   type Piece,
@@ -28,8 +24,29 @@ import {
   tuningOf,
 } from '@/index.js';
 import { BitReader, BitWriter, widthOf } from './bits.js';
-import { HEX, isSeed } from './readers.js';
-import { BLEND, HOLD, LAG } from './state.js';
+import {
+  readNumber,
+  readOrder,
+  readParams,
+  writeNumber,
+  writeOrder,
+  writeParams,
+} from './fields.js';
+import { HEX } from './readers.js';
+import {
+  EFFECT_NAMES,
+  LAYER_NAMES,
+  MOD_NAMES,
+  MOVE_ADDED,
+  movesIn,
+  paramsAt,
+  type Registries,
+  registriesAt,
+  tuningAt,
+  V1_LAYERS,
+  V2_LAYERS,
+} from './registries.js';
+import { BLEND, HOLD } from './state.js';
 
 /*
  * A composition packed into bits, using what bree already knows: each move, modulator, order,
@@ -54,126 +71,8 @@ export interface ShareData {
   layers?: Record<string, LinkLayer>;
 }
 
-const EFFECT_NAMES = Object.keys(EFFECTS);
-const MOD_NAMES = Object.keys(MODULATORS);
-const LAYER_NAMES = Object.keys(LAYERS) as LayerName[];
-/**
- * The layers a version 1 link wrote program-wide and a version 2 link wrote per scene, in their
- * order, whatever LAYERS holds now. Chase has since moved to the sign's border, so it is read and
- * dropped.
- */
-const V1_LAYERS = ['sparkle', 'chase', 'rainbow'] as const;
-const V2_LAYERS = ['sparkle', 'chase', 'rainbow', 'invert'] as const;
-const movesIn = Object.fromEntries(
-  SLOTS.map((slot) => [
-    slot,
-    Object.keys(MOVES).filter((m) => MOVES[m as keyof typeof MOVES].slot === slot),
-  ]),
-) as Record<Slot, string[]>;
-
-/** How long each registry was in links up to version `until`, oldest first. */
-const LENGTHS: readonly {
-  until: number;
-  moves: Readonly<Record<Slot, number>>;
-  mods: number;
-  effects: number;
-  layers: number;
-}[] = [{ until: 10, moves: { enter: 6, active: 4, exit: 6 }, mods: 12, effects: 7, layers: 3 }];
-
-/** The registries a link of `version` names its moves, modulators, effects and layers from. */
-export interface Registries {
-  movesIn: Readonly<Record<Slot, readonly string[]>>;
-  mods: readonly string[];
-  effects: readonly string[];
-  layers: readonly string[];
-}
-
-function registriesAt(version: number): Registries {
-  const at = LENGTHS.find((l) => version <= l.until);
-  if (!at) return { movesIn, mods: MOD_NAMES, effects: EFFECT_NAMES, layers: LAYER_NAMES };
-  return {
-    movesIn: Object.fromEntries(SLOTS.map((s) => [s, movesIn[s].slice(0, at.moves[s])])) as Record<
-      Slot,
-      string[]
-    >,
-    mods: MOD_NAMES.slice(0, at.mods),
-    effects: EFFECT_NAMES.slice(0, at.effects),
-    layers: LAYER_NAMES.slice(0, at.layers),
-  };
-}
-
 /** About text that is a built-in's is written as which built-in. */
 const ABOUT = { none: 0, builtin: 1, text: 2 } as const;
-
-const stepsOf = (p: NumberParam) => Math.round((p.max - p.min) / p.step);
-const onStep = (p: NumberParam, k: number) => Number((p.min + k * p.step).toPrecision(12));
-const same = (a: ParamValue, b: ParamValue) => JSON.stringify(a) === JSON.stringify(b);
-
-/** A number as its count of `p`'s steps; one off its steps or range escapes to a full float. */
-function writeNumber(w: BitWriter, p: NumberParam, v: number): void {
-  const steps = stepsOf(p);
-  const k = Math.round((v - p.min) / p.step);
-  if (k >= 0 && k <= steps && onStep(p, k) === v) w.uint(k, widthOf(steps + 2));
-  else {
-    w.uint(steps + 1, widthOf(steps + 2));
-    w.float(v);
-  }
-}
-
-function readNumber(r: BitReader, p: NumberParam): number {
-  const k = r.index(stepsOf(p) + 2);
-  return k === stepsOf(p) + 1 ? r.float() : onStep(p, k);
-}
-
-/** Each of `params` that differs from `base`'s or its own default, flagged in the params' order. */
-function writeParams(
-  w: BitWriter,
-  params: Params,
-  given: Readonly<Record<string, ParamValue>> | undefined,
-  base: Readonly<Record<string, ParamValue>> = {},
-): void {
-  for (const [key, p] of Object.entries(params)) {
-    const v = given?.[key];
-    const kept = v !== undefined && fits(p, v) && !same(v, base[key] ?? defaultOf(p));
-    w.flag(kept);
-    if (!kept) continue;
-    if ('colors' in p) {
-      w.count((v as number[]).length);
-      for (const c of v as number[]) writeNumber(w, HEX, c);
-    } else if ('choices' in p) w.uint(p.choices.indexOf(v as string), widthOf(p.choices.length));
-    else writeNumber(w, p, v as number);
-  }
-}
-
-function readParams(r: BitReader, params: Params): Record<string, ParamValue> | undefined {
-  const out: Record<string, ParamValue> = {};
-  for (const [key, p] of Object.entries(params)) {
-    if (!r.flag()) continue;
-    if ('colors' in p) out[key] = Array.from({ length: r.count() }, () => readNumber(r, HEX));
-    else if ('choices' in p) out[key] = p.choices[r.index(p.choices.length)] as string;
-    else out[key] = readNumber(r, p);
-  }
-  return Object.keys(out).length ? out : undefined;
-}
-
-function writeOrder(w: BitWriter, order: Order | undefined): void {
-  w.flag(order !== undefined);
-  if (!order) return;
-  w.uint(ORDERS.indexOf(order.by), widthOf(ORDERS.length));
-  w.flag(order.lag !== undefined);
-  if (order.lag !== undefined) writeNumber(w, LAG, order.lag);
-  const seed = isSeed(order.seed) ? order.seed : undefined;
-  w.flag(seed !== undefined);
-  if (seed !== undefined) w.int(seed);
-}
-
-function readOrder(r: BitReader): Order | undefined {
-  if (!r.flag()) return undefined;
-  const by = ORDERS[r.index(ORDERS.length)] as Order['by'];
-  const lag = r.flag() ? readNumber(r, LAG) : undefined;
-  const seed = r.flag() ? r.int() : undefined;
-  return { by, ...(lag !== undefined && { lag }), ...(seed !== undefined && { seed }) };
-}
 
 function writePiece(w: BitWriter, slot: Slot, piece: Piece): void {
   w.flag('mod' in piece);
@@ -293,33 +192,6 @@ function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): 
   const tuning = tuningOf(effectOf(scene, effects));
   writeParams(w, tuning, scene.params, defaultsOf(tuning));
 }
-
-/** Settings added by name since links began, by the version that added them. */
-type Added = Record<number, Record<string, readonly string[]>>;
-
-/** Built-in effects' params added since version 5. */
-const ADDED: Added = {
-  6: { scroll: ['direction'] },
-  10: { tile: ['rows', 'gap'] },
-  12: { type: ['pace'] },
-};
-
-/** Moves' settings added since version 11. */
-const MOVE_ADDED: Added = {
-  12: { 'type-on': ['pace'], 'type-off': ['pace'] },
-};
-
-/** `params` as `name` had them in a link of `version`: today's, less what `added` says came later. */
-function paramsAt(params: Params, name: string, version: number, added: Added): Params {
-  const later = new Set(
-    Object.entries(added).flatMap(([v, by]) => (Number(v) > version ? (by[name] ?? []) : [])),
-  );
-  return Object.fromEntries(Object.entries(params).filter(([k]) => !later.has(k)));
-}
-
-/** What a scene could tune on `effect` in a link of `version`. */
-const tuningAt = (effect: EffectSpec, version: number): Params =>
-  paramsAt(tuningOf(effect), effect.name, version, ADDED);
 
 /** Each of a tuning's settings at what its effect sets it to. */
 const defaultsOf = (tuning: Params) =>

@@ -56,13 +56,8 @@ export {
 } from './font.js';
 export { GRIDS, type Grid, type GridName, gridOf } from './grid.js';
 export type { LayerOption } from './layers.js';
-export {
-  createMarquee,
-  type Follow,
-  type FrameCost,
-  type Marquee,
-  type MarqueeOptions,
-} from './marquee.js';
+export { createMarquee } from './marquee.js';
+export type { Follow, FrameCost, Marquee, MarqueeOptions } from './marquee-api.js';
 export { MODULATORS, type Modulator, type ModulatorName } from './modulators/index.js';
 export {
   type Joins,
