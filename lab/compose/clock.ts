@@ -1,23 +1,12 @@
-import type { Pass } from '@/index.js';
+import { createTicker, type Pass } from '@/index.js';
 import type { Player } from './player.js';
 
-const watchers = new Map<(pass: Pass | null) => void, Player>();
-let raf = 0;
-
-const tick = () => {
-  raf = requestAnimationFrame(tick);
-  for (const [w, player] of watchers) w(player.pass());
-};
+/** One frame loop for every readout that follows a pass, shared rather than one each. */
+const ticker = createTicker();
 
 /** Calls `fn` every animation frame with where `player`'s pass stands, until the returned stop. */
-export function watchPass(player: Player, fn: (pass: Pass | null) => void): () => void {
-  watchers.set(fn, player);
-  if (watchers.size === 1) raf = requestAnimationFrame(tick);
-  return () => {
-    watchers.delete(fn);
-    if (watchers.size === 0) cancelAnimationFrame(raf);
-  };
-}
+export const watchPass = (player: Player, fn: (pass: Pass | null) => void): (() => void) =>
+  ticker.add(() => fn(player.pass()));
 
 /** The scene of `pass` playing at its `at`: the last one past its end, undefined with none. */
 export const sceneAt = (pass: Pass) =>

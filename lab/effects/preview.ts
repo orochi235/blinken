@@ -4,8 +4,6 @@ import { library, shelved } from '../compose/library.js';
 import type { Player } from '../compose/player.js';
 import { STILL } from '../compose/Thumbnail.js';
 
-/** The preview's color: a sodium amber, as the thumbnails are. */
-
 /**
  * The one scene the preview loops: the open effect, the library's spec itself so no effects map
  * has to name it, on the preview text; with nothing open, the text standing still.
