@@ -316,3 +316,14 @@ describe('stops', () => {
     expect(staged.stops).toEqual(want);
   });
 });
+
+describe('times given through the API', () => {
+  it('reads a negative hold, lag or blend as 0 and a NaN one as unset', () => {
+    const plain = stageEffect(flip, at, HEX, 0);
+    expect(stageEffect(flip, at, HEX, -500).ms).toBe(plain.ms);
+    expect(stageEffect(flip, at, HEX, Number.NaN).ms).toBe(stageEffect(flip, at, HEX).ms);
+    const lagged = { ...flip, order: { by: 'column', lag: -40 }, blend: -1 } as const;
+    const none = { ...flip, order: { by: 'column', lag: 0 }, blend: 0 } as const;
+    expect(stageEffect(lagged, at, HEX).ms).toBe(stageEffect(none, at, HEX).ms);
+  });
+});

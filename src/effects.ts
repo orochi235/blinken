@@ -3,6 +3,7 @@ import type { Pose, Subject } from './board.js';
 import { MODULATORS } from './modulators/index.js';
 import { SLOTS, type Slot } from './moves/index.js';
 import { groupsOf, type Order, type Placed, rowsToShow } from './orders.js';
+import { duration } from './params.js';
 import {
   type Piece,
   piecesOf,
@@ -82,9 +83,9 @@ export function stageEffect(
   hold?: number,
 ): StagedEffect {
   const groups = effect.order ? groupsOf(effect.order, at) : [at.board.dots];
-  const lag = effect.order?.lag ?? 0;
+  const lag = duration(effect.order?.lag) ?? 0;
   const span = (groups.length - 1) * lag;
-  const given = hold ?? effect.hold;
+  const given = duration(hold) ?? duration(effect.hold);
   const lists = SLOTS.map((slot) => piecesOf(effect[slot]));
   const pieceAt = (s: number, i: number) => (lists[s] ?? [])[i] as Piece;
   // An enter move leaves the message standing, and an exit move starts from it standing.
@@ -136,7 +137,7 @@ export function stageEffect(
       spec[slot] = [{ ...pin, duration }, ...(parts[s] ?? []).map(weighed)];
     });
     return {
-      spec: { ...spec, hold: active, blend: effect.blend ?? 0 } as ArcSpec<Subject, Pose>,
+      spec: { ...spec, hold: active, blend: duration(effect.blend) ?? 0 } as ArcSpec<Subject, Pose>,
       start,
     };
   };

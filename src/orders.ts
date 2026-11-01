@@ -1,6 +1,7 @@
 import { type Board, board as boardOf, type Led, leftOf, type Subject } from './board.js';
 import { type Bitmap, type Look, rasterize } from './font.js';
 import { hash } from './hash.js';
+import { duration } from './params.js';
 
 export type OrderBy =
   | 'together'
@@ -146,7 +147,7 @@ export function rankOf(order: Order, at: Placed): (s: Subject) => number {
 /** The delay of a subject: its rank times the lag. */
 export function delayOf(order: Order, at: Placed): (s: Subject) => number {
   const rank = rankOf(order, at);
-  const lag = order.lag ?? 0;
+  const lag = duration(order.lag) ?? 0;
   return (s) => rank(s) * lag;
 }
 

@@ -1,7 +1,15 @@
 import { f, usePersistedState } from '@weasel-js/labkit';
 import { stereo } from '@weasel-js/ui/components/MotifFrame';
 import { useMemo } from 'react';
-import { type ChoiceParam, FADE, GRIDS, MODULATORS, type NumberParam, SIZE } from '@/index.js';
+import {
+  type ChoiceParam,
+  FADE,
+  fits,
+  GRIDS,
+  MODULATORS,
+  type NumberParam,
+  SIZE,
+} from '@/index.js';
 import { marqueeSlider } from './MarqueeSlider.js';
 import { fieldOf, schemaFor, shownValues, storedValue } from './schema.js';
 
@@ -179,9 +187,8 @@ export function hardwareOf(kept: unknown): Hardware {
         entries(params).map(([key, param]) => {
           const p = param as NumberParam | ChoiceParam;
           const got = k[g]?.[key];
-          if ('choices' in p)
-            return [key, typeof got === 'string' && p.choices.includes(got) ? got : p.value];
-          return [key, typeof got === 'number' ? Math.min(p.max, Math.max(p.min, got)) : p.value];
+          if (!fits(p, got)) return [key, p.value];
+          return [key, 'min' in p ? Math.min(p.max, Math.max(p.min, got as number)) : got];
         }),
       ),
     ]),

@@ -1,7 +1,7 @@
 import type { EffectSpec } from './effects.js';
 import { MODULATORS } from './modulators/index.js';
 import { MOVES, SLOTS, type Slot } from './moves/index.js';
-import type { NumberParam, Param, ParamValue } from './params.js';
+import { defaultOf, fits, held, type NumberParam, type Param, type ParamValue } from './params.js';
 import { type Piece, piecesOf } from './pieces.js';
 
 /** An effect's or a scene's hold, an effect's blend and an order's lag, as controls offer them. */
@@ -56,15 +56,6 @@ interface Target {
 
 const thingOf = (piece: Piece) => ('mod' in piece ? MODULATORS[piece.mod] : MOVES[piece.move]);
 const lagOf = (piece: Piece) => ('mod' in piece ? piece.spread?.lag : piece.order?.lag);
-const defaultOf = (p: Param): ParamValue => ('colors' in p ? p.colors : p.value);
-
-/** Whether `v` is a value of `p`'s kind, one of its choices for a choice. */
-export const fits = (p: Param, v: unknown): v is ParamValue =>
-  'colors' in p
-    ? Array.isArray(v) && v.length > 0 && v.every((c) => Number.isFinite(c))
-    : 'choices' in p
-      ? typeof v === 'string' && p.choices.includes(v)
-      : typeof v === 'number' && Number.isFinite(v);
 
 /** Whether two settings take the same values, so one param can drive both. */
 export const sameKind = (a: Param, b: Param) =>
@@ -113,10 +104,6 @@ export function tuningOf(effect: EffectSpec): Record<string, Param> {
   }
   return out;
 }
-
-/** `v` held to `p`: a number clamped to its range, anything else as it is. */
-const held = (p: Param, v: ParamValue) =>
-  'min' in p && typeof v === 'number' ? Math.min(p.max, Math.max(p.min, v)) : v;
 
 /** `piece` with the setting `key` set to `v`. */
 function setOn(piece: Piece, key: string, v: ParamValue): Piece {

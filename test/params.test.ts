@@ -10,6 +10,12 @@ const params = {
 } satisfies Params;
 
 describe('values', () => {
+  it('gives the default for a value of the wrong kind, NaN among them', () => {
+    const bad = { speed: Number.NaN, mode: 'z', tints: [] } as never;
+    expect(values({ params }, bad)).toEqual(values({ params }));
+    expect(values({ params }, { speed: 'fast' } as never).speed).toBe(4);
+  });
+
   it('fills defaults for every kind and keeps given values', () => {
     expect(values({ params })).toEqual({ speed: 4, mode: 'a', tints: [0xff0000, 0x00ff00] });
     expect(values({ params }, { speed: 7, mode: 'b', tints: [1] })).toEqual({

@@ -1,10 +1,12 @@
 import {
+  defaultOf,
   EFFECTS,
   type EffectParam,
   type EffectSpec,
   effectOf,
   FACE_NAMES,
   type FaceName,
+  fits,
   LAYERS,
   type LayerName,
   type LayerSpec,
@@ -15,7 +17,6 @@ import {
   type NumberParam,
   ORDERS,
   type Order,
-  type Param,
   type Params,
   type ParamValue,
   type Piece,
@@ -106,7 +107,6 @@ const ABOUT = { none: 0, builtin: 1, text: 2 } as const;
 
 const stepsOf = (p: NumberParam) => Math.round((p.max - p.min) / p.step);
 const onStep = (p: NumberParam, k: number) => Number((p.min + k * p.step).toPrecision(12));
-const defaultOf = (p: Param): ParamValue => ('colors' in p ? p.colors : p.value);
 const same = (a: ParamValue, b: ParamValue) => JSON.stringify(a) === JSON.stringify(b);
 
 /** A number as its count of `p`'s steps; one off its steps or range escapes to a full float. */
@@ -124,14 +124,6 @@ function readNumber(r: BitReader, p: NumberParam): number {
   const k = r.index(stepsOf(p) + 2);
   return k === stepsOf(p) + 1 ? r.float() : onStep(p, k);
 }
-
-/** Whether `v` is of `p`'s kind, so it can be written as one. */
-const fits = (p: Param, v: ParamValue) =>
-  'colors' in p
-    ? Array.isArray(v) && v.every((c) => typeof c === 'number')
-    : 'choices' in p
-      ? typeof v === 'string' && p.choices.includes(v)
-      : typeof v === 'number';
 
 /** Each of `params` that differs from `base`'s or its own default, flagged in the params' order. */
 function writeParams(
