@@ -297,4 +297,22 @@ describe('stops', () => {
       .sort((a, b) => a.at - b.at);
     expect(staged.stops).toEqual(want);
   });
+
+  it('puts off a piece’s rests by each delay its own order gives its dots', () => {
+    const own = {
+      ...typed,
+      exit: undefined,
+      enter: { move: 'type-on', params: { pace: 'input' }, order: { by: 'row', lag: 15 } },
+    } as const;
+    const staged = stageEffect(own as EffectSpec, at, HEX);
+    const on = restsOf('type-on', { pace: 'input' });
+    const delays = [...new Set(at.board.dots.map((d) => d.y * 15))].sort((a, b) => a - b);
+    const want = delays
+      .flatMap((d) => [
+        ...on.at.map((t) => ({ at: d + t })),
+        { at: d + on.release, release: true as const },
+      ])
+      .sort((a, b) => a.at - b.at);
+    expect(staged.stops).toEqual(want);
+  });
 });

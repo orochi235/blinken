@@ -40,6 +40,11 @@ export interface StagedPiece {
   readonly warnings: readonly Warning[];
   /** Where it waits for input, from its own start; absent when it is paced by time. */
   readonly rests?: Rests;
+  /**
+   * Each delay its own order gives its dots, least first, so the rests are folded in once a
+   * delay; present with `rests`.
+   */
+  readonly delays?: readonly number[];
 }
 
 /** Every subject at once: the order a piece plays in when it names none. */
@@ -98,11 +103,12 @@ export function stagePiece(
   if (move.slot !== slot) throw new Error(`bree: ${piece.move} is an ${move.slot} move`);
   const p = settingsOf(move, piece, slot, hold);
   const order = piece.order ?? TOGETHER;
+  const delay = delayOf(order, at);
   const pass = move.patch(at, p, joins) as ArcVoice<Subject, Pose>['patch'];
   const voice: ArcVoice<Subject, Pose> = {
     patch: pass,
     subjects,
-    stagger: delayOf(order, at),
+    stagger: delay,
     duration: pass.duration + spanOf(order, at),
     ...(loop && { loop: true }),
   };
@@ -111,5 +117,9 @@ export function stagePiece(
     ? [{ slot, text: `${piece.move} clips ${at.label ?? 'the message'}` }]
     : [];
   const rests = move.rests?.(at, p) ?? null;
-  return { voice, writes: writesOf(piece), warnings, ...(rests && { rests }) };
+  if (!rests) return { voice, writes: writesOf(piece), warnings };
+  const delays = [...new Set(subjects.filter((s) => s.kind === 'dot').map(delay))].sort(
+    (a, b) => a - b,
+  );
+  return { voice, writes: writesOf(piece), warnings, rests, delays };
 }

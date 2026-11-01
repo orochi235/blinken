@@ -165,15 +165,19 @@ export function stageEffect(
     active: { start: enter + span, ms: Math.max(0, held - span) },
     exit: { start: enter + held, ms: exit + span },
   };
-  // Every group's pieces wait where the first group's do, a lag later each.
+  // Every group's pieces wait where the first group's do, a lag later each, and within a group
+  // a piece's own order puts off each of its dots' rests by that dot's delay.
   const starts = [0, enter, enter + held];
   const own = first.flatMap((pieces, s) =>
-    pieces.flatMap(({ rests }) =>
+    pieces.flatMap(({ rests, delays = [0] }) =>
       rests
-        ? [
-            ...rests.at.map((t) => ({ at: (starts[s] as number) + t })),
-            { at: (starts[s] as number) + rests.release, release: true as const },
-          ]
+        ? delays.flatMap((d) => {
+            const from = (starts[s] as number) + d;
+            return [
+              ...rests.at.map((t) => ({ at: from + t })),
+              { at: from + rests.release, release: true as const },
+            ];
+          })
         : [],
     ),
   );
