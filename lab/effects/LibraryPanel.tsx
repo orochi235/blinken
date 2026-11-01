@@ -1,7 +1,7 @@
 import { builtinOf, newEffect, openEffect } from '../compose/designer/edit.js';
 import { designer, useDesk } from '../compose/designer/open.js';
 import { IconButton } from '../compose/IconButton.js';
-import { freeLibraryName, library, useLibrary } from '../compose/library.js';
+import { freeLibraryName, library, shelved, useLibrary } from '../compose/library.js';
 import { useLive } from '../compose/live.js';
 import { Panel } from '../compose/Panel.js';
 import { effectTitle } from '../compose/schema.js';
@@ -47,7 +47,7 @@ const duplicateOpen = () =>
   designer.change(() => {
     const n = designer.open();
     if (n === undefined) return;
-    const spec = library.get()[n] ?? builtinOf(n);
+    const spec = shelved(library.get(), n) ?? builtinOf(n);
     if (!spec) return;
     const name = freeLibraryName(`${n} copy`);
     library.put({ ...spec, name });

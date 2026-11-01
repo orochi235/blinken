@@ -1,6 +1,6 @@
 import type { Marquee, Scene } from '@/index.js';
 import { designer } from '../compose/designer/open.js';
-import { library } from '../compose/library.js';
+import { library, shelved } from '../compose/library.js';
 import type { Player } from '../compose/player.js';
 import { STILL } from '../compose/Thumbnail.js';
 
@@ -13,7 +13,7 @@ const HEX = 0xff9a2e;
  */
 export function previewScene(): Scene {
   const name = designer.open();
-  const effect = name === undefined ? STILL : (library.get()[name] ?? name);
+  const effect = name === undefined ? STILL : (shelved(library.get(), name) ?? name);
   return { effect, text: designer.text() || ' ', hex: HEX };
 }
 

@@ -2,7 +2,7 @@ import { DiagramView, diagramScene } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import { ToggleBar } from '@weasel-js/ui';
 import { useMemo, useState } from 'react';
-import { useLibrary } from '../library.js';
+import { shelved, useLibrary } from '../library.js';
 import { Panel } from '../Panel.js';
 import { builtinOf } from './edit.js';
 import { graphOf, partOf, VIEWS, type View, viewFor } from './graph.js';
@@ -27,7 +27,7 @@ export function EffectDiagram() {
   useDesk();
   const shelf = useLibrary();
   const name = designer.open();
-  const spec = name === undefined ? undefined : (shelf[name] ?? builtinOf(name));
+  const spec = name === undefined ? undefined : (shelved(shelf, name) ?? builtinOf(name));
   const staged = useStaged(spec, designer.text());
   const [view, setView] = useState<View>('both');
   const [chosen, setChosen] = useState(false);

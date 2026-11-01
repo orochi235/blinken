@@ -1,6 +1,6 @@
 import { SLOTS } from '@/index.js';
 import { IconButton } from '../IconButton.js';
-import { useLibrary } from '../library.js';
+import { shelved, useLibrary } from '../library.js';
 import { Panel } from '../Panel.js';
 import './DesignerPanel.css';
 import { EffectPicker } from './EffectPicker.js';
@@ -20,7 +20,7 @@ export function DesignerPanel() {
   const name = designer.open();
   const text = designer.text();
   const own = name !== undefined && Object.hasOwn(shelf, name);
-  const spec = name === undefined ? undefined : own ? shelf[name] : builtinOf(name);
+  const spec = name === undefined ? undefined : own ? shelved(shelf, name) : builtinOf(name);
 
   const warnings = useStaged(spec, text)?.warnings ?? new Map<string, readonly string[]>();
 

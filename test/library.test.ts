@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { freeLibraryName, library, libraryJson, parseLibrary } from '../lab/compose/library.js';
+import { freeLibraryName, library, libraryJson, parseLibrary, shelved } from '../lab/compose/library.js';
 
 const stand = (name: string, hold = 1000) => ({ name, active: [{ move: 'stand' as const }], hold });
 
@@ -29,5 +29,14 @@ describe('the effects library', () => {
     expect(library.rename('a', 'c')).toBe(true);
     expect(Object.keys(library.get()).sort()).toEqual(['b', 'c']);
     expect(freeLibraryName('hold')).toBe('hold 2');
+  });
+});
+
+describe('shelved', () => {
+  it('finds only the library’s own effects, never a name every object inherits', () => {
+    const effects = { mine: stand('mine') };
+    expect(shelved(effects, 'mine')?.name).toBe('mine');
+    expect(shelved(effects, 'toString')).toBeUndefined();
+    expect(shelved(effects, 'constructor')).toBeUndefined();
   });
 });

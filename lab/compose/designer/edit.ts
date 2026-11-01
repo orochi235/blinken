@@ -8,7 +8,7 @@ import {
   type Piece,
   type Slot,
 } from '@/index.js';
-import { freeLibraryName, library } from '../library.js';
+import { freeLibraryName, library, shelved } from '../library.js';
 import { designer } from './open.js';
 
 /** Replaces the open effect with `fn` of it; a built-in is copied into the library first. */
@@ -16,7 +16,7 @@ export const editEffect = (fn: (spec: EffectSpec) => EffectSpec) =>
   designer.change(() => {
     const n = designer.open();
     if (n === undefined) return;
-    const own = library.get()[n];
+    const own = shelved(library.get(), n);
     if (own) {
       library.put(fn(own));
       return;

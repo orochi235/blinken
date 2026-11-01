@@ -1,7 +1,7 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import { type Board, board, type Marquee, type Pass, type PassScene, SIZE } from '@/index.js';
 import { gestureKey } from './gesture.js';
-import { type Library, library } from './library.js';
+import { type Library, library, shelved } from './library.js';
 import type { ComposeState } from './state.js';
 import { open, save } from './storage.js';
 import { createUndo, type Undo } from './undo.js';
@@ -172,7 +172,7 @@ function adopted(s: ComposeState, shelf: Library): ComposeState | null {
   let changed = false;
   for (const scene of s.program) {
     const name = String(scene.effect);
-    const spec = shelf[name];
+    const spec = shelved(shelf, name);
     if (!spec || JSON.stringify(spec) === JSON.stringify(s.effects[name])) continue;
     next.effects[name] = spec;
     changed = true;
@@ -201,7 +201,7 @@ export function playEffect(name: string): void {
     const at = pickedOf(s);
     const scene = s.program[at];
     if (!scene) return;
-    const spec = library.get()[name];
+    const spec = shelved(library.get(), name);
     if (spec) s.effects[name] = spec;
     // Tuning belongs to the effect it was set for.
     const { params: _, ...rest } = scene;

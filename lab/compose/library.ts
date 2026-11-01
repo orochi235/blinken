@@ -8,6 +8,10 @@ export const LIBRARY = 'bree-effects-library';
 /** The effects designed on the effects page, by name: what compose offers beside the built-ins. */
 export type Library = Readonly<Record<string, EffectSpec>>;
 
+/** The library's effect `name`: its own, never one an object inherits, such as `toString`. */
+export const shelved = (shelf: Library, name: string): EffectSpec | undefined =>
+  Object.hasOwn(shelf, name) ? shelf[name] : undefined;
+
 const listeners = new Set<() => void>();
 let shelf: Library = read();
 

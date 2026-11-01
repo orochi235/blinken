@@ -240,7 +240,9 @@ export function sceneOf(
   const style = styleIn(v.style, `style in scene ${v.text}`, dropped, legacy);
   const spec = Object.hasOwn(effects, effect)
     ? effects[effect]
-    : (EFFECTS[effect as keyof typeof EFFECTS] as EffectSpec);
+    : Object.hasOwn(EFFECTS, effect)
+      ? (EFFECTS[effect as keyof typeof EFFECTS] as EffectSpec)
+      : undefined;
   const tuning = spec ? tuningOf(spec) : {};
   const params = paramsOf({ params: tuning }, v.params, `scene ${v.text}`, dropped);
   const read = layersIn(v.layers, `scene ${v.text}`, dropped);
