@@ -23,9 +23,11 @@ const PER_HOLD: ReadonlySet<string> = new Set(['ms']);
 
 const thingOf = (piece: Piece) => ('mod' in piece ? MODULATORS[piece.mod] : MOVES[piece.move]);
 
-/** In `active` with a hold, a length left unset is one pass over the hold: its `ms` can be auto. */
-const perHold = (slot: Slot, piece: Piece, hold: number | undefined) =>
-  slot === 'active' && hold !== undefined && hold > 0 && 'ms' in thingOf(piece).params;
+/**
+ * In `active`, a length left unset is one pass over the hold, the effect's or a scene's: its `ms`
+ * can be auto, even in an effect with no hold of its own.
+ */
+const perHold = (slot: Slot, piece: Piece) => slot === 'active' && 'ms' in thingOf(piece).params;
 
 const schemaOf = (slot: Slot, piece: Piece, held: boolean) =>
   schemaFor(`${slot}:${keyOf(piece)}${held ? ':held' : ''}`, () => {
@@ -36,7 +38,9 @@ const schemaOf = (slot: Slot, piece: Piece, held: boolean) =>
         key === 'ms' && held
           ? numberField(p as NumberParam)
               .auto()
-              .describe(`${p.about} Auto makes one pass over the hold.`)
+              .describe(
+                `${p.about} Auto makes one pass over the hold, the effect’s or a scene’s, and plays this length where neither sets one.`,
+              )
           : fieldOf(p),
       ]),
     );
@@ -66,7 +70,6 @@ const schemaOf = (slot: Slot, piece: Piece, held: boolean) =>
 export function PieceCard({
   slot,
   piece,
-  hold,
   onEdit,
   onRemove,
   picked,
@@ -74,8 +77,6 @@ export function PieceCard({
 }: {
   slot: Slot;
   piece: Piece;
-  /** The effect's hold, which an `active` piece's unset length plays one pass over. */
-  hold: number | undefined;
   onEdit: (fn: (now: Piece) => Piece) => void;
   onRemove: () => void;
   /** Whether the diagram has this piece picked. */
@@ -104,7 +105,7 @@ export function PieceCard({
       const { params: __, ...bare } = now;
       return (Object.keys(params).length ? { ...bare, params } : bare) as Piece;
     });
-  const held = perHold(slot, piece, hold);
+  const held = perHold(slot, piece);
   const auto = held && piece.params?.ms === undefined ? PER_HOLD : NONE;
   return (
     <div
