@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { freeLibraryName, library, libraryJson, parseLibrary, shelved } from '../lab/compose/library.js';
+import {
+  freeLibraryName,
+  library,
+  libraryJson,
+  parseLibrary,
+  shelved,
+} from '../lab/compose/library.js';
 
 const stand = (name: string, hold = 1000) => ({ name, active: [{ move: 'stand' as const }], hold });
 
