@@ -21,11 +21,14 @@ const builtAt = (dist: string): number =>
     ? readdirSync(dist).reduce((m, f) => Math.max(m, statSync(join(dist, f)).mtimeMs), 0)
     : 0;
 
-/** Whether any file under `src` was written after `ms`. */
+/** A test beside the source, which a build leaves out of `dist`. */
+const TEST = /(^|\/)(__tests__|test)\/|\.(test|spec)\.[cm]?[jt]sx?$/;
+
+/** Whether any file under `src` that the build takes was written after `ms`. */
 const editedSince = (src: string, ms: number): boolean =>
   existsSync(src) &&
   readdirSync(src, { recursive: true, encoding: 'utf8' }).some(
-    (f) => statSync(join(src, f)).mtimeMs > ms,
+    (f) => !TEST.test(f) && statSync(join(src, f)).mtimeMs > ms,
   );
 
 /** The `@weasel-js` packages bree depends on whose checkout `dist` is older than their `src`. */
