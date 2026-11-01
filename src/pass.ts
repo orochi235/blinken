@@ -10,9 +10,13 @@ export interface PassScene {
   readonly parts: Readonly<Record<Slot, Stretch>>;
 }
 
-/** Where the pass playing now stands: ms into it, how long it is, and its scenes end to end. */
+/**
+ * Where the pass playing now stands: ms into it, how long it is, its scenes end to end, and
+ * whether it is waiting for input at a rest.
+ */
 export interface Pass {
   readonly at: number;
+  readonly waiting: boolean;
   readonly length: number;
   readonly scenes: readonly PassScene[];
 }

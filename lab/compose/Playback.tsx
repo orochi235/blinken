@@ -38,6 +38,9 @@ export function Playback({
   rewindLabel: string;
 }) {
   const [paused, setPaused] = useState(false);
+  /** The sign waits at a rest for input, which holds it as a pause does. */
+  const [waiting, setWaiting] = useState(false);
+  const still = paused || waiting;
   const [rate, setRate] = useState(player.rate());
   const [focus, setFocus] = useState(foci[0]?.name ?? '');
   const readout = useRef<HTMLSpanElement>(null);
@@ -51,6 +54,7 @@ export function Playback({
     () =>
       watchPass(player, (pass) => {
         if (!pass) return;
+        setWaiting(pass.waiting);
         // An edit replays the sign, which plays it again: a held pass that moves isn't held.
         if (held.current && was.current !== null && Math.abs(pass.at - was.current) > 1)
           setPaused(false);
@@ -82,7 +86,7 @@ export function Playback({
   };
   const toggle = () => {
     const at = player.pass()?.at ?? 0;
-    const next = !paused;
+    const next = !still;
     setPaused(next);
     held.current = next;
     was.current = at;
@@ -122,9 +126,15 @@ export function Playback({
           onClick={() => step(-FRAME_MS)}
         />
         <IconButton
-          glyph={paused ? 'play' : 'pause'}
-          label={paused ? 'play on from here (Space)' : 'hold the sign where it is (Space)'}
-          pressed={paused}
+          glyph={still ? 'play' : 'pause'}
+          label={
+            paused
+              ? 'play on from here (Space)'
+              : waiting
+                ? 'waiting for a key; play on from here (Space)'
+                : 'hold the sign where it is (Space)'
+          }
+          pressed={still}
           onClick={toggle}
         />
         <IconButton

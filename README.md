@@ -35,7 +35,7 @@ sign.setLayer('sparkle', true, { share: 0.02 }); // new params re-cue the layer
 sign.restart(1); // play this pass from the second scene; later passes start from the first
 sign.seek(1500, { hold: true }); // show the pass 1.5 s in, held there
 sign.seek(1500); // and play on from there
-sign.pass(); // { at, length, scenes: [{ scene, start, ms }, …] }, or null while nothing plays
+sign.pass(); // { at, length, waiting, scenes: [{ scene, start, ms }, …] }, or null while nothing plays
 sign.destroy();
 ```
 
@@ -68,8 +68,8 @@ addEventListener('keydown', () => sign.step()); // each press types the next let
 Typing on, it waits first with the cursor showing and nothing typed, and the press that puts the
 last letter down lets the cursor's blink and the rest of the pass play on; backspacing mirrors it. Each press jumps
 straight to the next letter rather than playing up to it. A seek or a restart drops the wait, and a
-looping program waits again on its next pass. Layers keep playing while it waits, and `pass()`,
-the scrubber and thumbnails keep the nominal timing.
+looping program waits again on its next pass. Layers keep playing while it waits, `pass()` says
+`waiting: true`, and its `at`, the scrubber and thumbnails keep the nominal timing.
 
 A move is paced this way by declaring `rests(at, params)`: where in its own time it waits, and
 `release`, where it plays on from after the last wait, or null when its settings pace it by time.

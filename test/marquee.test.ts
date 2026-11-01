@@ -364,12 +364,12 @@ describe('createMarquee', () => {
     it('holds at each rest until step, and plays on from the release', async () => {
       await withSign({ program, effects: { typed } }, (sign, step) => {
         step(1000);
-        expect(sign.pass()?.at).toBe(per / 2);
+        expect(sign.pass()).toMatchObject({ at: per / 2, waiting: true });
         sign.step();
         step(2000);
-        expect(sign.pass()?.at).toBe(per + per / 2);
+        expect(sign.pass()).toMatchObject({ at: per + per / 2, waiting: true });
         sign.step();
-        expect(sign.pass()?.at).toBe(2 * per);
+        expect(sign.pass()).toMatchObject({ at: 2 * per, waiting: false });
         step(2100);
         expect(sign.pass()?.at).toBe(2 * per + 100);
       });
@@ -384,6 +384,7 @@ describe('createMarquee', () => {
         expect(sign.pass()?.at).toBe(20);
         step(1000);
         sign.seek(2 * per);
+        expect(sign.pass()?.waiting).toBe(false);
         step(1100);
         expect(sign.pass()?.at).toBe(2 * per + 100);
       });

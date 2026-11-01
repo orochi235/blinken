@@ -364,7 +364,12 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     },
     pass() {
       if (pass === null || length === 0) return null;
-      return { at: Math.min(length, Math.max(0, clock.read(m.now))), length, scenes };
+      return {
+        at: Math.min(length, Math.max(0, clock.read(m.now))),
+        length,
+        scenes,
+        waiting: held !== null,
+      };
     },
     seek(ms, opts = {}) {
       if (pass === null) return;
