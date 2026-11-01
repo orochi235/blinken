@@ -3,6 +3,7 @@ import { board } from '@/board.js';
 import { rasterize } from '@/font.js';
 import { bounced } from '@/moves/bounce.js';
 import { type Joins, LOOSE, MOVES, type Move } from '@/moves/index.js';
+import { clearAbove } from '@/moves/move.js';
 import { place } from '@/orders.js';
 import { values } from '@/params.js';
 
@@ -127,9 +128,20 @@ describe('bounce-in', () => {
 
   it('shows the message above its place mid-bounce', () => {
     const m = MOVES['bounce-in'];
-    const above = bounced(at.text.rows + 1, 3);
+    const above = bounced(clearAbove(at), 3);
     const t = [0.3, 0.5, 0.7].find((f) => Math.round(above(f)) > 0) ?? 0.5;
     expect(frame(m, t * length(m))).not.toEqual(standing);
+  });
+
+  it('starts above the whole sign and comes in at its top, however tall the sign', () => {
+    const tall = board(48, 30);
+    const placed = place(tall, rasterize('HELLO'));
+    const patch = MOVES['bounce-in'].patch(placed, values(MOVES['bounce-in']) as never, LOOSE);
+    const litRows = (phase: number) =>
+      tall.dots.filter((d) => (patch.at(phase, d, setting).lit ?? 0) > 0).map((d) => d.y);
+    expect(litRows(0)).toEqual([]);
+    const first = [...Array(200).keys()].map((i) => litRows(i / 1000)).find((r) => r.length);
+    expect(Math.min(...(first ?? [99]))).toBe(0);
   });
 });
 

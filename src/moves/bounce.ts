@@ -1,6 +1,6 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
-import { litAt, move, on } from './move.js';
+import { clearAbove, move, movedAt, on } from './move.js';
 
 /** How high each bounce rises against the one before. */
 const REBOUND = 0.4;
@@ -34,7 +34,7 @@ export function bounced(height: number, bounces: number) {
   };
 }
 
-/** The message dropping in from above and bouncing to rest. */
+/** The message dropping in from above the sign and bouncing to rest. */
 export const bounceIn = move({
   name: 'bounce-in',
   about: 'The message drops in from above and bounces to rest, each bounce lower than the last.',
@@ -59,10 +59,10 @@ export const bounceIn = move({
     },
   },
   patch(at, p) {
-    const above = bounced(at.text.rows + 1, p.bounces);
+    const above = bounced(clearAbove(at), p.bounces);
     return patch<Led, Pose>(
       p.ms,
-      (phase, led) => on(litAt(at, led, 0, -Math.round(above(phase)))),
+      (phase, led) => on(movedAt(at, led, -Math.round(above(phase)))),
       {
         writes: ['lit'],
       },

@@ -56,6 +56,14 @@ export const litAt = (at: Placed, led: Led, dx = 0, dy = 0) => {
   return row >= 0 ? at.text.level(led.x - at.left - dx, row - dy) : 0;
 };
 
+/** How far the message moves up to clear the sign: one row past the lowest row any line shows. */
+export const clearAbove = (at: Placed) => {
+  let h = 0;
+  for (let y = 0; y < at.board.rows + at.text.rows; y++)
+    if (at.rowOf({ kind: 'dot', x: 0, y }) >= 0) h = y + 1;
+  return h;
+};
+
 /**
  * How brightly the message, moved `dy` rows down, lights this dot, reading the row the dot would
  * show from there: unlike `litAt`, it carries the message into the board's margin and line gaps.
