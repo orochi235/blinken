@@ -37,4 +37,12 @@ describe('dotColor', () => {
     expect(dotColor(none, 0, 120, 1, 0xff0000)).toBe(dotColor(oklab(0xff0000), 0, 120, 1, 0));
     expect(dotColor(none, 0, 0, 0, 0xff4030)).toBe(dotColor(oklab(0xff4030), 0, 0, 0, 0));
   });
+
+  it('lays a tint covering the dot partly over the fallback, not over black', () => {
+    const half = oklab(0x0000ff).map((v, k) => (k < 3 ? v * 0.5 : 0.5));
+    const [r, , b] = bytes(dotColor(half, 0, 0, 1, 0xff0000));
+    expect(r).toBeGreaterThan(64);
+    expect(b).toBeGreaterThan(64);
+    expect(dotColor(half, 0, 0, 1, 0xff0000)).not.toBe(dotColor(half, 0, 0, 1, 0));
+  });
 });
