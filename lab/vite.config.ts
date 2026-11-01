@@ -20,6 +20,7 @@ export default defineConfig({
         play: page('play.html'),
         compose: page('compose.html'),
         effects: page('effects.html'),
+        paint: page('paint.html'),
       },
     },
   },

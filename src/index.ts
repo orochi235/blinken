@@ -25,6 +25,7 @@ export {
 } from './defects.js';
 export {
   createSign,
+  frameOf,
   paintBulbs,
   type Sign,
   type SignColumns,

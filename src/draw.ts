@@ -80,6 +80,23 @@ function css(hex: number): string {
 }
 
 /**
+ * The sign's extent on `grid`, in pitches: its top left corner, and how far it runs across and
+ * down. A point `p` pitches in sits at `p - left` (or `- top`) of the canvas's pitch-sized units.
+ */
+export function frameOf(
+  b: Board,
+  grid: Grid = GRIDS.square,
+): { left: number; top: number; across: number; down: number } {
+  const dotsAt = b.dots.map((d) => grid(d.x, d.y));
+  const pad = b.margin + 0.5;
+  const left = Math.min(...dotsAt.map(([x]) => x)) - pad;
+  const top = Math.min(...dotsAt.map(([, y]) => y)) - pad;
+  const across = Math.max(...dotsAt.map(([x]) => x)) + pad - left;
+  const down = Math.max(...dotsAt.map(([, y]) => y)) + pad - top;
+  return { left, top, across, down };
+}
+
+/**
  * A sign drawn on `canvas`, each of `leds` at its place on `grid`; the mix's columns arrive in that
  * order. Unless `backed` is false its housing is painted dark, rather than left showing the page.
  */
@@ -106,12 +123,7 @@ export function createSign(
 
   const box = canvas.parentElement as HTMLElement;
   const at = leds.map((led) => grid(led.x, led.y));
-  const dotsAt = at.filter((_, i) => leds[i]?.kind === 'dot');
-  const pad = b.margin + 0.5;
-  const left = Math.min(...dotsAt.map(([x]) => x)) - pad;
-  const top = Math.min(...dotsAt.map(([, y]) => y)) - pad;
-  const across = Math.max(...dotsAt.map(([x]) => x)) + pad - left;
-  const down = Math.max(...dotsAt.map(([, y]) => y)) + pad - top;
+  const { left, top, across, down } = frameOf(b, grid);
 
   /** Fits the sign in its box, as large as both of the box's sides allow. */
   function resize(): void {

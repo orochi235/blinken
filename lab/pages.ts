@@ -4,4 +4,5 @@ import type { LabShellProps } from '@weasel-js/labkit';
 export const PAGES: NonNullable<LabShellProps['pages']> = [
   { href: 'compose.html', label: 'compose' },
   { href: 'effects.html', label: 'effects' },
+  { href: 'paint.html', label: 'paint' },
 ];
