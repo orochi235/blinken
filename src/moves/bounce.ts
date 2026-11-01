@@ -60,12 +60,8 @@ export const bounceIn = move({
   },
   patch(at, p) {
     const above = bounced(clearAbove(at), p.bounces);
-    return patch<Led, Pose>(
-      p.ms,
-      (phase, led) => on(movedAt(at, led, -Math.round(above(phase)))),
-      {
-        writes: ['lit'],
-      },
-    );
+    return patch<Led, Pose>(p.ms, (phase, led) => on(movedAt(at, led, -Math.round(above(phase)))), {
+      writes: ['lit'],
+    });
   },
 });
