@@ -16,7 +16,10 @@ function OpenDiagram() {
   return <EffectDiagram key={designer.open() ?? ''} />;
 }
 
-/** The effects page: the library down one side, and the open effect playing over its designer. */
+/**
+ * The effects page: the library down one side, and the open effect playing over its diagram, with
+ * its designer beside them where the window is wide enough and under them where it is not.
+ */
 export function App() {
   return (
     <LabShell title="bree effects" mode="dark" pages={PAGES} header={<LibraryBar />}>
@@ -26,11 +29,15 @@ export function App() {
           <div className="compose-pane">
             <LibraryPanel />
           </div>
-          <div className="compose-pane">
-            <PreviewPanel />
-            <PreviewPlayback />
-            <OpenDiagram />
-            <DesignerPanel />
+          <div className="compose-pane effects-stage">
+            <div className="effects-watch">
+              <PreviewPanel />
+              <PreviewPlayback />
+              <OpenDiagram />
+            </div>
+            <div className="effects-design">
+              <DesignerPanel />
+            </div>
           </div>
         </div>
       </Persistence>

@@ -7,6 +7,32 @@
   padding: 12px;
 }
 
+/* Side by side, each scrolling on its own, so picking a card never carries the diagram away. */
+.effects-watch,
+.effects-design {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+@media (min-width: 1201px) {
+  .compose-pane.effects-stage {
+    flex-direction: row;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  /* Out to the pane's edge, so a picked card's outline isn't cut off by its scroll box. */
+  .effects-watch,
+  .effects-design {
+    flex: 1;
+    margin-inline: -6px;
+    padding: 0 6px 6px;
+    overflow: auto;
+  }
+}
+
 @media (max-width: 900px) {
   .effects-panes {
     grid-template-columns: minmax(0, 1fr);
