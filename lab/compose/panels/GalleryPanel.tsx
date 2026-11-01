@@ -147,6 +147,7 @@ function Strip({
     let speed = 0;
     let dragging = false;
     const move = (m: globalThis.PointerEvent) => {
+      if (m.pointerId !== e.pointerId) return;
       if (!dragging && Math.abs(m.clientX - start) < DRAG_PX) return;
       if (!dragging) {
         dragging = true;
@@ -159,9 +160,10 @@ function Strip({
       last = { x: m.clientX, t: m.timeStamp };
     };
     const up = (u: globalThis.PointerEvent) => {
-      target.removeEventListener('pointermove', move);
-      target.removeEventListener('pointerup', up);
-      target.removeEventListener('pointercancel', up);
+      if (u.pointerId !== e.pointerId) return;
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', up);
       // A pointer that stopped before letting go flings nothing.
       if (!fling || !dragging || u.timeStamp - last.t > STILL_MS) return;
       let v = speed * by();
@@ -175,9 +177,10 @@ function Strip({
       };
       coast.current = requestAnimationFrame(glide);
     };
-    target.addEventListener('pointermove', move);
-    target.addEventListener('pointerup', up);
-    target.addEventListener('pointercancel', up);
+    // On the window: until a drag captures the pointer, a release off the row reaches only it.
+    addEventListener('pointermove', move);
+    addEventListener('pointerup', up);
+    addEventListener('pointercancel', up);
   };
   // A drag of the row ends in a click on whatever tile it let go over, which picks nothing.
   const swallowClick = () =>
