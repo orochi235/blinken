@@ -191,6 +191,12 @@ describe('share', () => {
     expect(code).toContain(`rate: ${rate.min}`);
   });
 
+  it('leaves out a tuning value of the wrong kind, which tuning ignores as it plays', () => {
+    const s = state();
+    s.program[1] = { ...(s.program[1] as Scene), params: { blend: 'loud' } } as never;
+    expect(toCode(s)).not.toContain('loud');
+  });
+
   it('writes an untouched layer as true and leaves out layers that are off', () => {
     const s = state();
     s.program[1] = {

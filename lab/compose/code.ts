@@ -2,6 +2,7 @@ import {
   BLEND,
   type EffectSpec,
   effectOf,
+  fits,
   HOLD,
   LAG,
   LAYERS,
@@ -97,7 +98,10 @@ function lit(v: unknown, indent: number, force = false): string {
   return `${open.trim()}\n${lines.join('\n')}\n${' '.repeat(indent)}${close.trim()}`;
 }
 
-/** A scene's tuning of its effect as it plays: each value held to the range of what it tunes. */
+/**
+ * A scene's tuning of its effect as it plays: each value held to the range of what it tunes, and
+ * a value tuning ignores, of the wrong kind or tuning nothing, left out.
+ */
 function tunedCode(scene: Scene, effects: ComposeState['effects']) {
   if (!scene.params) return undefined;
   let tuning: Params;
@@ -106,7 +110,13 @@ function tunedCode(scene: Scene, effects: ComposeState['effects']) {
   } catch {
     return scene.params;
   }
-  return paramsCode({ params: tuning }, scene.params);
+  const playing = Object.fromEntries(
+    Object.entries(scene.params).filter(([k, v]) => {
+      const p = Object.hasOwn(tuning, k) ? tuning[k] : undefined;
+      return p !== undefined && fits(p, v);
+    }),
+  );
+  return Object.keys(playing).length ? paramsCode({ params: tuning }, playing) : undefined;
 }
 
 /** Whether two settings records hold the same values. */
