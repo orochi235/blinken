@@ -36,6 +36,10 @@ export const HEX: NumberParam = {
   about: 'The color the message lights in.',
 };
 
+/** A seed a shuffle can use: a whole number the hash reads as itself, within 32 bits. */
+export const isSeed = (v: unknown): v is number =>
+  Number.isInteger(v) && Math.abs(v as number) <= 0x7fff_ffff;
+
 export const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -116,7 +120,7 @@ function orderOf(v: unknown, where: string, dropped: string[]): Order | undefine
     return undefined;
   }
   const lag = optional(v.lag, LAG, `lag in ${where}`, dropped);
-  const seed = Number.isInteger(v.seed) ? (v.seed as number) : undefined;
+  const seed = isSeed(v.seed) ? v.seed : undefined;
   return {
     by: v.by as OrderBy,
     ...(lag !== undefined && { lag }),

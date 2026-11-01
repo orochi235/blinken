@@ -27,7 +27,7 @@ import {
 } from '@/index.js';
 import { AMBER } from '../demo.js';
 import { BitReader, BitWriter, widthOf } from './bits.js';
-import { HEX } from './readers.js';
+import { HEX, isSeed } from './readers.js';
 import { BLEND, HOLD, LAG } from './state.js';
 
 /*
@@ -170,8 +170,9 @@ function writeOrder(w: BitWriter, order: Order | undefined): void {
   w.uint(ORDERS.indexOf(order.by), widthOf(ORDERS.length));
   w.flag(order.lag !== undefined);
   if (order.lag !== undefined) writeNumber(w, LAG, order.lag);
-  w.flag(order.seed !== undefined);
-  if (order.seed !== undefined) w.int(order.seed);
+  const seed = isSeed(order.seed) ? order.seed : undefined;
+  w.flag(seed !== undefined);
+  if (seed !== undefined) w.int(seed);
 }
 
 function readOrder(r: BitReader): Order | undefined {

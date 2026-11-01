@@ -102,6 +102,15 @@ describe('packed links', () => {
     expect(without(back)).toEqual(without(copies()));
   });
 
+  it('leaves out a seed too large to shuffle by, so the link still reads', () => {
+    const s = copies();
+    const flip = s.effects['flip copy'] as (typeof s.effects)[string];
+    s.effects['flip copy'] = { ...flip, order: { by: 'random', seed: 1e20 } };
+    const { state: back, read } = decode(encode(s));
+    expect(read).toBe(true);
+    expect(back.effects['flip copy']?.order).toEqual({ by: 'random' });
+  });
+
   it('writes no setting that is at its default', () => {
     const s = copies();
     const spec = s.effects.mine as ComposeState['effects'][string];
