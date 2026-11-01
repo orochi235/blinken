@@ -32,7 +32,13 @@ export {
   type SignColumns,
   signColumns,
 } from './draw.js';
-export { type EffectSpec, type StagedEffect, type Stretch, stageEffect } from './effects.js';
+export {
+  type EffectSpec,
+  type StagedEffect,
+  type Stop,
+  type Stretch,
+  stageEffect,
+} from './effects.js';
 export {
   type Bitmap,
   CHARS,
@@ -49,6 +55,7 @@ export {
   type TextStyle,
 } from './font.js';
 export { GRIDS, type Grid, type GridName, gridOf } from './grid.js';
+export type { LayerOption } from './layers.js';
 export {
   createMarquee,
   type Follow,
@@ -57,7 +64,15 @@ export {
   type MarqueeOptions,
 } from './marquee.js';
 export { MODULATORS, type Modulator, type ModulatorName } from './modulators/index.js';
-export { MOVES, type Move, type MoveName, SLOTS, type Slot } from './moves/index.js';
+export {
+  type Joins,
+  MOVES,
+  type Move,
+  type MoveName,
+  type Rests,
+  SLOTS,
+  type Slot,
+} from './moves/index.js';
 export { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
 export {
   ORDERS,
@@ -72,6 +87,8 @@ export {
 export {
   type ChoiceParam,
   type ColorsParam,
+  defaultOf,
+  fits,
   type NumberParam,
   type Param,
   type Params,
@@ -96,7 +113,6 @@ export { createTicker, type Ticker } from './ticker.js';
 export {
   BLEND,
   type EffectParam,
-  fits,
   HOLD,
   LAG,
   sameKind,
