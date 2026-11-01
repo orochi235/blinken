@@ -53,8 +53,8 @@ export function Playback({
   useEffect(
     () =>
       watchPass(player, (pass) => {
+        setWaiting(pass?.waiting ?? false);
         if (!pass) return;
-        setWaiting(pass.waiting);
         // An edit replays the sign, which plays it again: a held pass that moves isn't held.
         if (held.current && was.current !== null && Math.abs(pass.at - was.current) > 1)
           setPaused(false);
