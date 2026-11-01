@@ -65,8 +65,22 @@ export interface Sign {
   setFade(fade: Fade): void;
   /** Sets how much an unlit dot shows of its lit row and column. */
   setGhost(ghost: Ghost): void;
+  /** Sets how its lights are sized, spaced, lit and bloom. */
+  setLamps(lamps: Lamps): void;
   /** Stops following its parent's size. */
   destroy(): void;
+}
+
+/** How a sign's lights look, all of them alike. Each is optional; left out, the default holds. */
+export interface Lamps {
+  /** A dot's diameter, as a share of the pitch; a border bulb is 7/6 of a dot. Default 0.72. */
+  size?: number;
+  /** CSS pixels from one dot to the next. Default: as large as fits the canvas's parent. */
+  pitch?: number;
+  /** Multiplies how brightly each light shows. Default 1. */
+  brightness?: number;
+  /** Multiplies how far each light blooms. Default 1; 0 blooms nothing. */
+  glow?: number;
 }
 
 const hexCss = new Map<number, string>();
@@ -118,6 +132,7 @@ export function createSign(
   let broken: Afflictions = afflictions(leds, []);
   let fade: Fade = FADE;
   let leak: Ghost = {};
+  let lamps: Lamps = {};
   let clock = 0;
   let pitch = 0;
 
@@ -127,7 +142,7 @@ export function createSign(
 
   /** Fits the sign in its box, as large as both of the box's sides allow. */
   function resize(): void {
-    const css = Math.min(box.clientWidth / across, box.clientHeight / down);
+    const css = lamps.pitch ?? Math.min(box.clientWidth / across, box.clientHeight / down);
     canvas.style.width = `${Math.floor(css * across)}px`;
     canvas.style.height = `${Math.floor(css * down)}px`;
     pitch = css * devicePixelRatio;
@@ -153,7 +168,7 @@ export function createSign(
     const [x, y] = at[i] as readonly [number, number];
     return [(x - left) * pitch, (y - top) * pitch];
   };
-  const radius = (led: Led) => pitch * (led.kind === 'bulb' ? 0.42 : 0.36);
+  const radius = (led: Led) => (pitch * (lamps.size ?? 0.72) * (led.kind === 'bulb' ? 7 : 6)) / 12;
 
   const watch = new ResizeObserver(resize);
   watch.observe(box);
@@ -162,6 +177,8 @@ export function createSign(
   return {
     render({ lit, gain, tint, hue, chroma, glow: halo, invert }, fallback, dt) {
       clock += dt;
+      const bright = Math.max(lamps.brightness ?? 1, 0);
+      const spread = Math.max(lamps.glow ?? 1, 0);
       gctx.clearRect(0, 0, glow.width, glow.height);
       bctx.clearRect(0, 0, body.width, body.height);
       for (let i = 0; i < leds.length; i++) {
@@ -173,7 +190,7 @@ export function createSign(
         const now = (shown[i] ?? 0) + (ghost[i] ?? 0) * (broken.scale[i] ?? 1);
         if (now < 0.02) continue;
         const led = leds[i] as Led;
-        const shine = now * Math.min(gain[i] ?? 1, 1);
+        const shine = Math.min(now * Math.min(gain[i] ?? 1, 1) * bright, 1);
         const hex = dotColor(tint, i * 4, hue[i] ?? 0, chroma[i] ?? 1, fallback);
         const [x, y] = place(i);
         const r = radius(led);
@@ -187,7 +204,7 @@ export function createSign(
         bctx.beginPath();
         bctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
         bctx.fill();
-        const bloom = haloRadius(r, halo[i] ?? 1);
+        const bloom = haloRadius(r, (halo[i] ?? 1) * spread);
         if (bloom > 0) {
           gctx.globalAlpha = shine;
           gctx.fillStyle = css(hex);
@@ -205,7 +222,7 @@ export function createSign(
       if (!backed) ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(housing, 0, 0);
       ctx.globalCompositeOperation = 'lighter';
-      ctx.filter = `blur(${(pitch * 0.9).toFixed(1)}px)`;
+      ctx.filter = `blur(${(pitch * 0.9 * spread).toFixed(1)}px)`;
       ctx.drawImage(glow, 0, 0);
       ctx.filter = 'none';
       ctx.drawImage(body, 0, 0);
@@ -219,6 +236,10 @@ export function createSign(
     },
     setGhost(next) {
       leak = next;
+    },
+    setLamps(next) {
+      lamps = next;
+      resize();
     },
     destroy() {
       watch.disconnect();

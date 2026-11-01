@@ -2,7 +2,7 @@ import { type Handle, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
 import { type Border, cueBorder } from './border.js';
 import type { Defect } from './defects.js';
-import { createSign, paintBulbs, type SignColumns, signColumns } from './draw.js';
+import { createSign, type Lamps, paintBulbs, type SignColumns, signColumns } from './draw.js';
 import type { EffectSpec, Stop } from './effects.js';
 import { faceOf } from './font.js';
 import { type Grid, type GridName, gridOf } from './grid.js';
@@ -70,6 +70,8 @@ export interface MarqueeOptions {
   readonly fade?: Fade;
   /** How much an unlit dot shows of its lit row and column, as a multiplexed sign does. Default none. */
   readonly ghost?: Ghost;
+  /** How its lights are sized, spaced, lit and bloom. Default: fitted to the parent, as built. */
+  readonly lamps?: Lamps;
   /** False runs the mix without drawing, for timing it alone. Default true. */
   readonly draw?: boolean;
   /**
@@ -138,6 +140,8 @@ export interface Marquee {
   setFade(fade: Fade): void;
   /** Sets how much an unlit dot shows of its lit row and column. */
   setGhost(ghost: Ghost): void;
+  /** Sets how its lights are sized, spaced, lit and bloom. */
+  setLamps(lamps: Lamps): void;
   /** Sets how the border's bulbs light; a sign made with no border has none to light. */
   setBorder(border: Border): void;
   /** Stops the frame loop, lets go of the canvas, and takes its mix off the debuggers' list. */
@@ -168,6 +172,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   if (opts.defects) sign?.setDefects(opts.defects);
   if (opts.fade) sign?.setFade(opts.fade);
   if (opts.ghost) sign?.setGhost(opts.ghost);
+  if (opts.lamps) sign?.setLamps(opts.lamps);
   let color = opts.color ?? AMBER;
 
   let program = opts.program ?? [];
@@ -403,6 +408,9 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     },
     setGhost(ghost) {
       sign?.setGhost(ghost);
+    },
+    setLamps(lamps) {
+      sign?.setLamps(lamps);
     },
     setBorder(next) {
       border.set(next);

@@ -26,6 +26,7 @@ export {
 export {
   createSign,
   frameOf,
+  type Lamps,
   paintBulbs,
   type Sign,
   type SignColumns,
