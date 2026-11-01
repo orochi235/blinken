@@ -101,13 +101,19 @@ export function frameOf(
   b: Board,
   grid: Grid = GRIDS.square,
 ): { left: number; top: number; across: number; down: number } {
-  const dotsAt = b.dots.map((d) => grid(d.x, d.y));
+  // One pass rather than spreading every dot into Math.min, which a large sign overflows.
+  let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const d of b.dots) {
+    const [x, y] = grid(d.x, d.y);
+    x0 = Math.min(x0, x);
+    y0 = Math.min(y0, y);
+    x1 = Math.max(x1, x);
+    y1 = Math.max(y1, y);
+  }
   const pad = b.margin + 0.5;
-  const left = Math.min(...dotsAt.map(([x]) => x)) - pad;
-  const top = Math.min(...dotsAt.map(([, y]) => y)) - pad;
-  const across = Math.max(...dotsAt.map(([x]) => x)) + pad - left;
-  const down = Math.max(...dotsAt.map(([, y]) => y)) + pad - top;
-  return { left, top, across, down };
+  const left = x0 - pad;
+  const top = y0 - pad;
+  return { left, top, across: x1 + pad - left, down: y1 + pad - top };
 }
 
 /**
@@ -172,11 +178,26 @@ export function createSign(
 
   const watch = new ResizeObserver(resize);
   watch.observe(box);
+  // A move to a screen of another pixel ratio resizes nothing, so the ratio is watched too.
+  let ratio: MediaQueryList | null = null;
+  const onRatio = () => {
+    resize();
+    followRatio();
+  };
+  const followRatio = () => {
+    ratio?.removeEventListener('change', onRatio);
+    ratio =
+      typeof matchMedia === 'function' ? matchMedia(`(resolution: ${devicePixelRatio}dppx)`) : null;
+    ratio?.addEventListener('change', onRatio);
+  };
+  followRatio();
   resize();
 
   return {
     render({ lit, gain, tint, hue, chroma, glow: halo, invert }, fallback, dt) {
       clock += dt;
+      // A canvas with no size, its box unlaid or hidden, can't be drawn from.
+      if (canvas.width === 0 || canvas.height === 0) return;
       const bright = Math.max(lamps.brightness ?? 1, 0);
       const spread = Math.max(lamps.glow ?? 1, 0);
       gctx.clearRect(0, 0, glow.width, glow.height);
@@ -243,6 +264,7 @@ export function createSign(
     },
     destroy() {
       watch.disconnect();
+      ratio?.removeEventListener('change', onRatio);
     },
   };
 }

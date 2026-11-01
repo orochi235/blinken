@@ -86,6 +86,20 @@ describe('createTicker', () => {
     expect(frames).toHaveLength(2);
   });
 
+  it('calls the rest when one throws', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const ticker = createTicker();
+    const seen: string[] = [];
+    ticker.add(() => {
+      throw new Error('boom');
+    });
+    ticker.add(() => seen.push('b'));
+    frame(16);
+    expect(seen).toEqual(['b']);
+    expect(error).toHaveBeenCalledTimes(1);
+    error.mockRestore();
+  });
+
   it('ticks on every other 60 Hz frame at 30 fps', () => {
     const ticker = createTicker({ fps: 30 });
     const at: number[] = [];

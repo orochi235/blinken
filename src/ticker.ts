@@ -23,7 +23,14 @@ export function createTicker(opts: { fps?: number } = {}): Ticker {
     raf = requestAnimationFrame(tick);
     if (now - last < every) return;
     last = now;
-    for (const fn of fns) fn(now);
+    // One animation that throws must not stop the rest drawing.
+    for (const fn of fns) {
+      try {
+        fn(now);
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
   return {
     add(fn) {
