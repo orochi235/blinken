@@ -1,8 +1,7 @@
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from 'react';
-import type { Pass, PassScene } from '@/index.js';
+import { cssOf, type Pass, type PassScene } from '@/index.js';
 import { sceneAt, watchPass } from './clock.js';
 import type { Player } from './player.js';
-import { hexOf } from './schema.js';
 import './Scrubber.css';
 
 /** How far an arrow key moves the pass. */
@@ -117,7 +116,7 @@ export function Scrubber({ player, look }: { player: Player; look: SceneLook }) 
               key={`${s.scene}:${s.start}`}
               className="compose-scrubber-scene"
               // A scene's own color has no class to name it; the custom property is all that varies.
-              style={{ '--scene-color': hexOf(scene?.hex ?? 0) } as CSSProperties}
+              style={{ '--scene-color': cssOf(scene?.hex ?? 0) } as CSSProperties}
             >
               {scene?.text}
             </span>

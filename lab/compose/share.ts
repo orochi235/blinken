@@ -1,4 +1,5 @@
-import { AMBER, demo } from '../demo.js';
+import { AMBER } from '@/index.js';
+import { demo } from '../demo.js';
 import { pack, type ShareData, unpack } from './codec.js';
 import { effectOf, entriesOf, isObj, layersIn, sceneOf } from './readers.js';
 import type { ComposeState } from './state.js';

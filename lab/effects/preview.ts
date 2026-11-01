@@ -1,11 +1,10 @@
-import type { Marquee, Scene } from '@/index.js';
+import { AMBER, type Marquee, type Scene } from '@/index.js';
 import { designer } from '../compose/designer/open.js';
 import { library, shelved } from '../compose/library.js';
 import type { Player } from '../compose/player.js';
 import { STILL } from '../compose/Thumbnail.js';
 
 /** The preview's color: a sodium amber, as the thumbnails are. */
-const HEX = 0xff9a2e;
 
 /**
  * The one scene the preview loops: the open effect, the library's spec itself so no effects map
@@ -14,7 +13,7 @@ const HEX = 0xff9a2e;
 export function previewScene(): Scene {
   const name = designer.open();
   const effect = name === undefined ? STILL : (shelved(library.get(), name) ?? name);
-  return { effect, text: designer.text() || ' ', hex: HEX };
+  return { effect, text: designer.text() || ' ', hex: AMBER };
 }
 
 let sign: Marquee | null = null;

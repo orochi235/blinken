@@ -1,5 +1,19 @@
 import { oklab, toHex } from '@msb235/blits';
 
+/** The color of a lit dot nothing has tinted, unless a sign is given another. */
+export const AMBER = 0xff9a2e;
+
+const hexCss = new Map<number, string>();
+/** A 0xRRGGBB number as CSS `#rrggbb`, cached, since a frame asks for the same few each time. */
+export function cssOf(hex: number): string {
+  let s = hexCss.get(hex);
+  if (s === undefined) {
+    s = `#${hex.toString(16).padStart(6, '0')}`;
+    hexCss.set(hex, s);
+  }
+  return s;
+}
+
 const pose = [0, 0, 0, 0];
 const part = [0, 0, 0, 0];
 let plainHex = Number.NaN;

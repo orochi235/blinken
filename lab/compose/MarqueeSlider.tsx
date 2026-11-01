@@ -2,6 +2,7 @@ import { type ControlRenderer, PropertyRow } from '@weasel-js/labkit';
 import { Slider } from '@weasel-js/ui';
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react';
 import {
+  AMBER,
   createThumbnail,
   FACES,
   marginOf,
@@ -10,6 +11,7 @@ import {
   type Thumbnail,
 } from '@/index.js';
 import './MarqueeSlider.css';
+import { times } from './schema.js';
 import { STILL } from './Thumbnail.js';
 
 /** The face a readout's numbers are set in: the sign's own 5 × 7, the clearest digits it has. */
@@ -17,7 +19,6 @@ const FACE = 'standard';
 /** Fixed pitch, so a character is a run of columns and a space is a digit's width. */
 const STYLE = { monospace: true } as const;
 const ROWS = FACES[FACE].rows;
-const times = (n: number, by: number) => Number((n * by).toPrecision(12));
 
 /**
  * A number as a small sign shows it, the sign kept for the life of the row: a new value is a new
@@ -60,7 +61,7 @@ function Readout({
   useEffect(() => {
     const t = sign.current;
     if (!t) return;
-    t.marquee.setProgram([{ effect: STILL, text, face: FACE, style: STYLE, hex: 0xff9a2e }]);
+    t.marquee.setProgram([{ effect: STILL, text, face: FACE, style: STYLE, hex: AMBER }]);
     t.marquee.restart();
     t.play(false, 100);
   }, [text]);

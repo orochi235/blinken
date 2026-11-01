@@ -1,7 +1,8 @@
 import { type ControlRenderer, PropertyRow } from '@weasel-js/labkit';
 import './ColorsRow.css';
+import { cssOf } from '@/index.js';
 import { linesRow } from './LinesRow.js';
-import { hexOf, numOf } from './schema.js';
+import { numOf } from './schema.js';
 
 /** A ColorsParam's row: its label, with its description as a tooltip, then a swatch per color and buttons to add one or drop the last. */
 export const colorsRow: ControlRenderer = Object.assign(
@@ -25,7 +26,7 @@ export const colorsRow: ControlRenderer = Object.assign(
               type="color"
               aria-label={`${pref.name ?? 'color'} ${i + 1}`}
               title={`Color ${i + 1} of ${colors.length}. Click to pick another.`}
-              value={hexOf(c)}
+              value={cssOf(c)}
               disabled={disabled}
               onChange={(e) => set(colors.map((x, j) => (j === i ? numOf(e.target.value) : x)))}
             />

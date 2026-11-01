@@ -1,11 +1,10 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
-import type { Scene } from '@/index.js';
-import { AMBER } from '../../demo.js';
+import { AMBER, cssOf, type Scene } from '@/index.js';
 import { sceneAt, watchPass } from '../clock.js';
 import { IconButton } from '../IconButton.js';
 import { Panel } from '../Panel.js';
 import { ScenePreview } from '../ScenePreview.js';
-import { effectTitle, hexOf } from '../schema.js';
+import { effectTitle } from '../schema.js';
 import { moveScene } from '../state.js';
 import { compose, pickedOf, useCompose } from '../store.js';
 import '../Row.css';
@@ -147,7 +146,7 @@ export function ProgramPanel() {
               <span
                 className="compose-scene-dot"
                 // A scene's own color has no class to name it; the custom property is all that varies.
-                style={{ '--scene-color': hexOf(scene.hex) } as CSSProperties}
+                style={{ '--scene-color': cssOf(scene.hex) } as CSSProperties}
               />
               {thumbs ? (
                 <ScenePreview scene={scene} effects={state.effects} live={hovered === i} />

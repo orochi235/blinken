@@ -2,6 +2,7 @@ import { Button, LabShell, useUndoKeys } from '@weasel-js/labkit';
 import { useEffect, useRef, useState } from 'react';
 import { GRIDS, type GridName } from '@/index.js';
 import { IconButton } from '../compose/IconButton.js';
+import { numOf } from '../compose/schema.js';
 import { PAGES } from '../pages.js';
 import { LampsBar } from './LampsBar.js';
 import {
@@ -12,7 +13,7 @@ import {
   type Shape,
   type Tool,
 } from './model.js';
-import { hexOf, PALETTE, Palette, type Swatch } from './Palette.js';
+import { PALETTE, Palette, type Swatch } from './Palette.js';
 import { createPainter, type Painter } from './painter.js';
 import { paint, usePaint } from './store.js';
 import { TextBar } from './TextBar.js';
@@ -30,7 +31,7 @@ export function App() {
   const [level, setLevel] = useState(1);
   useUndoKeys(paint);
 
-  const hex = swatch === 'custom' ? hexOf(custom) : PALETTE[swatch];
+  const hex = swatch === 'custom' ? numOf(custom) : PALETTE[swatch];
   const brush = useRef<Brush>({ tool, hex, level, size, shape });
   brush.current = { tool, hex, level, size, shape };
   const stamp = stamps.find((s) => s.id === picked) ?? null;
@@ -50,7 +51,7 @@ export function App() {
             }}
             onCustom={(css) => {
               setCustom(css);
-              if (editing) paint.editPicked({ hex: hexOf(css) });
+              if (editing) paint.editPicked({ hex: numOf(css) });
             }}
           />
           <IconButton glyph="undo" label="undo" disabled={!paint.canUndo()} onClick={paint.undo} />

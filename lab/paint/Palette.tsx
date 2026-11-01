@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import './Palette.css';
+import { cssOf } from '@/index.js';
 
 /** Lite-Brite's pegs and the hues between them, a warm white, and white. */
 export const PALETTE = {
@@ -21,9 +22,6 @@ export const PALETTE = {
   white: 0xffffff,
 } as const;
 export type Swatch = keyof typeof PALETTE | 'custom';
-
-const cssOf = (hex: number) => `#${hex.toString(16).padStart(6, '0')}`;
-export const hexOf = (s: string) => Number.parseInt(s.slice(1), 16);
 
 /** The color swatches, and a well for a color of your own. */
 export function Palette({

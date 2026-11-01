@@ -1,6 +1,5 @@
-import type { Scene } from '@/index.js';
+import { AMBER, type Scene } from '@/index.js';
 
-export const AMBER = 0xff9a2e;
 export const RED = 0xff4030;
 export const GREEN = 0x6dff5a;
 

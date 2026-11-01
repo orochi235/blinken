@@ -1,10 +1,10 @@
 import { ControlPanel, f, isAuto, resolveConfigSchema } from '@weasel-js/labkit';
 import { MotifFrame } from '@weasel-js/ui';
 import { useMemo } from 'react';
-import { EFFECTS, LOOK } from '@/index.js';
+import { cssOf, EFFECTS, LOOK } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
 import { Panel } from '../Panel.js';
-import { DENSITY, effectTitle, hexOf, numberField, numOf } from '../schema.js';
+import { DENSITY, effectTitle, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
 import { compose, pickedOf, playEffect, useCompose, useEffects } from '../store.js';
 import { SceneLayers } from './SceneLayers.js';
@@ -112,7 +112,7 @@ export function SceneEditor() {
           schema={schema}
           config={{
             text: scene.text,
-            color: hexOf(scene.hex),
+            color: cssOf(scene.hex),
             effect: String(scene.effect),
             hold: scene.hold ?? 3000,
             monospace: scene.style?.monospace === true,

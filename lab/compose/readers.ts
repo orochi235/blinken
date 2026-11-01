@@ -1,4 +1,5 @@
 import {
+  AMBER,
   EFFECTS,
   type EffectParam,
   type EffectSpec,
@@ -22,7 +23,6 @@ import {
   type TextStyle,
   tuningOf,
 } from '@/index.js';
-import { AMBER } from '../demo.js';
 import { BLEND, type ComposeState, HOLD, LAG, type LabLayer, pruned } from './state.js';
 
 /* Readers for each part of a link, each keeping only what it knows and naming the rest in `dropped`. */

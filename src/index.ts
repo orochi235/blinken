@@ -12,7 +12,7 @@ export {
 } from './board.js';
 export { type Border, type BorderVoice, cueBorder } from './border.js';
 export { EFFECTS, type EffectName, LAYERS, type LayerName, type LayerSpec } from './builtins.js';
-export { dotColor } from './color.js';
+export { AMBER, cssOf, dotColor } from './color.js';
 export {
   type Afflictions,
   afflict,

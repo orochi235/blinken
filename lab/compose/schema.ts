@@ -9,7 +9,8 @@ import type { NumberParam, Param, Params } from '@/index.js';
 
 /** What a control multiplies a setting by to show it; 1 for any but a scaled number. */
 const scaleOf = (p: Param | undefined) => (p && 'min' in p && p.scale) || 1;
-const times = (n: number, by: number) => Number((n * by).toPrecision(12));
+/** `n` scaled by `by`, without the float noise a product picks up. */
+export const times = (n: number, by: number) => Number((n * by).toPrecision(12));
 
 /** The control a NumberParam asks for: a slider over its range, in its step and unit, scaled to show. */
 export const numberField = (p: NumberParam, label = p.label) => {
@@ -77,8 +78,7 @@ export function schemaFor(key: string, build: () => ConfigShape): ResolvedConfig
   return s;
 }
 
-/** A 0xRRGGBB number as a color input's `#rrggbb`, and back. */
-export const hexOf = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
+/** A color input's `#rrggbb` as a 0xRRGGBB number, as `cssOf` turns it back. */
 export const numOf = (hex: string) => Number.parseInt(hex.slice(1, 7), 16);
 
 /** How an effect's name reads wherever the lab shows it. */

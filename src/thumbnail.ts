@@ -1,4 +1,5 @@
 import { board } from './board.js';
+import { AMBER } from './color.js';
 import type { EffectSpec } from './effects.js';
 import { type Look, ROWS, rasterize } from './font.js';
 import { liveliest } from './liveliest.js';
@@ -146,7 +147,7 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
       {
         effect: opts.effect,
         text,
-        hex: opts.hex ?? 0xff9a2e,
+        hex: opts.hex ?? AMBER,
         face: opts.face,
         style: opts.style,
       },

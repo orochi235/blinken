@@ -1,6 +1,7 @@
 import { type Handle, type Mix, mix } from '@msb235/blits';
 import { type Board, board, KIT, type Led, type Pose, SIZE, type Subject } from './board.js';
 import { type Border, cueBorder } from './border.js';
+import { AMBER } from './color.js';
 import type { Defect } from './defects.js';
 import { createSign, type Lamps, paintBulbs, type SignColumns, signColumns } from './draw.js';
 import type { EffectSpec, Stop } from './effects.js';
@@ -147,8 +148,6 @@ export interface Marquee {
   /** Stops the frame loop, lets go of the canvas, and takes its mix off the debuggers' list. */
   destroy(): void;
 }
-
-const AMBER = 0xff9a2e;
 
 /**
  * A sign on `canvas`, playing its program in a loop under whichever layers are on. It sizes the

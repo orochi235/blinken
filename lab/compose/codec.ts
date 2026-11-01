@@ -1,4 +1,5 @@
 import {
+  AMBER,
   defaultOf,
   EFFECTS,
   type EffectParam,
@@ -26,7 +27,6 @@ import {
   type Slot,
   tuningOf,
 } from '@/index.js';
-import { AMBER } from '../demo.js';
 import { BitReader, BitWriter, widthOf } from './bits.js';
 import { HEX, isSeed } from './readers.js';
 import { BLEND, HOLD, LAG } from './state.js';

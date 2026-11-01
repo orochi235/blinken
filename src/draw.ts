@@ -1,5 +1,5 @@
 import type { Board, Led } from './board.js';
-import { dotColor } from './color.js';
+import { cssOf, dotColor } from './color.js';
 import { type Afflictions, afflict, afflictions, type Defect } from './defects.js';
 import { GRIDS, type Grid } from './grid.js';
 import { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
@@ -81,16 +81,6 @@ export interface Lamps {
   brightness?: number;
   /** Multiplies how far each light blooms. Default 1; 0 blooms nothing. */
   glow?: number;
-}
-
-const hexCss = new Map<number, string>();
-function css(hex: number): string {
-  let s = hexCss.get(hex);
-  if (s === undefined) {
-    s = `#${hex.toString(16).padStart(6, '0')}`;
-    hexCss.set(hex, s);
-  }
-  return s;
 }
 
 /**
@@ -216,7 +206,7 @@ export function createSign(
         const [x, y] = place(i);
         const r = radius(led);
         bctx.globalAlpha = shine;
-        bctx.fillStyle = css(hex);
+        bctx.fillStyle = cssOf(hex);
         bctx.beginPath();
         bctx.arc(x, y, r, 0, Math.PI * 2);
         bctx.fill();
@@ -228,7 +218,7 @@ export function createSign(
         const bloom = haloRadius(r, (halo[i] ?? 1) * spread);
         if (bloom > 0) {
           gctx.globalAlpha = shine;
-          gctx.fillStyle = css(hex);
+          gctx.fillStyle = cssOf(hex);
           gctx.beginPath();
           gctx.arc(x, y, bloom, 0, Math.PI * 2);
           gctx.fill();
