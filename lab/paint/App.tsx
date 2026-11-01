@@ -3,91 +3,56 @@ import { useEffect, useRef, useState } from 'react';
 import { GRIDS, type GridName } from '@/index.js';
 import { IconButton } from '../compose/IconButton.js';
 import { PAGES } from '../pages.js';
-import { type Brush, createPainter, type Layout } from './painter.js';
+import { LampsBar } from './LampsBar.js';
+import {
+  type Brush,
+  type LampSettings,
+  type Layout,
+  lampsOf,
+  type Shape,
+  type Tool,
+} from './model.js';
+import { hexOf, PALETTE, Palette, type Swatch } from './Palette.js';
+import { createPainter, type Painter } from './painter.js';
 import { paint, usePaint } from './store.js';
+import { TextBar } from './TextBar.js';
+import { Tools } from './Tools.js';
 import './App.css';
-
-/** Lite-Brite's pegs, and white. */
-const PALETTE = {
-  red: 0xff3030,
-  orange: 0xff8a1e,
-  yellow: 0xffe23a,
-  green: 0x4dff5a,
-  blue: 0x3a8cff,
-  violet: 0xb05aff,
-  pink: 0xff5ac8,
-  white: 0xffffff,
-} as const;
-type Swatch = keyof typeof PALETTE | 'custom' | 'erase';
-
-const hexOf = (s: string) => Number.parseInt(s.slice(1), 16);
 
 /** The paint page: a board of LEDs to light dot by dot, MS Paint style. */
 export function App() {
-  const { layout } = usePaint();
+  const { layout, lamps, stamps, picked } = usePaint();
   const [swatch, setSwatch] = useState<Swatch>('red');
   const [custom, setCustom] = useState('#40e0d0');
+  const [tool, setTool] = useState<Tool>('paint');
+  const [shape, setShape] = useState<Shape>('round');
   const [size, setSize] = useState(1);
+  const [level, setLevel] = useState(1);
   useUndoKeys(paint);
 
-  const brush = useRef<Brush>({ hex: PALETTE.red, size: 1 });
-  brush.current = {
-    hex: swatch === 'erase' ? null : swatch === 'custom' ? hexOf(custom) : PALETTE[swatch],
-    size,
-  };
+  const hex = swatch === 'custom' ? hexOf(custom) : PALETTE[swatch];
+  const brush = useRef<Brush>({ tool, hex, level, size, shape });
+  brush.current = { tool, hex, level, size, shape };
+  const stamp = stamps.find((s) => s.id === picked) ?? null;
+  const editing = tool === 'text' && stamp !== null;
 
   return (
     <LabShell title="bree paint" mode="dark" pages={PAGES} header={<LayoutBar layout={layout} />}>
       <div className="paint-page">
-        <div className="paint-tools">
-          {(Object.keys(PALETTE) as (keyof typeof PALETTE)[]).map((name) => (
-            <button
-              key={name}
-              type="button"
-              className="paint-swatch"
-              data-color={name}
-              aria-label={name}
-              title={name}
-              aria-pressed={swatch === name}
-              onClick={() => setSwatch(name)}
-            />
-          ))}
-          <label
-            className="paint-swatch paint-custom"
-            title="a color of your own"
-            data-on={swatch === 'custom'}
-          >
-            <input
-              type="color"
-              value={custom}
-              aria-label="a color of your own"
-              onClick={() => setSwatch('custom')}
-              onChange={(e) => {
-                setCustom(e.currentTarget.value);
-                setSwatch('custom');
-              }}
-            />
-          </label>
-          <button
-            type="button"
-            className="paint-swatch paint-erase"
-            aria-label="erase"
-            title="erase (or drag with the right button)"
-            aria-pressed={swatch === 'erase'}
-            onClick={() => setSwatch('erase')}
+        <LampsBar lamps={lamps} />
+        <div className="paint-row">
+          <Palette
+            swatch={swatch}
+            custom={custom}
+            onSwatch={(s) => {
+              setSwatch(s);
+              if (editing && s !== 'custom') paint.editPicked({ hex: PALETTE[s] });
+            }}
+            onCustom={(css) => {
+              setCustom(css);
+              if (editing) paint.editPicked({ hex: hexOf(css) });
+            }}
           />
-          <label className="paint-size" title="How many dots across the brush paints.">
-            brush
-            <input
-              type="range"
-              min={1}
-              max={15}
-              step={1}
-              value={size}
-              onChange={(e) => setSize(Number(e.currentTarget.value))}
-            />
-            <output className="paint-readout">{size}</output>
-          </label>
           <IconButton glyph="undo" label="undo" disabled={!paint.canUndo()} onClick={paint.undo} />
           <IconButton glyph="redo" label="redo" disabled={!paint.canRedo()} onClick={paint.redo} />
           <Button
@@ -98,36 +63,71 @@ export function App() {
             clear
           </Button>
         </div>
-        <Board layout={layout} brush={brush} />
+        <Tools
+          tool={tool}
+          shape={shape}
+          size={size}
+          level={level}
+          onTool={setTool}
+          onShape={setShape}
+          onSize={setSize}
+          onLevel={(n) => {
+            setLevel(n);
+            if (editing) paint.editPicked({ level: n });
+          }}
+        />
+        {tool === 'text' && <TextBar picked={stamp} layout={layout} hex={hex} level={level} />}
+        <Board layout={layout} lamps={lamps} brush={brush} tool={tool} />
       </div>
     </LabShell>
   );
 }
 
 /** The board, rebuilt for each layout; the picture it shows follows the store. */
-function Board({ layout, brush }: { layout: Layout; brush: { current: Brush } }) {
+function Board({
+  layout,
+  lamps,
+  brush,
+  tool,
+}: {
+  layout: Layout;
+  lamps: LampSettings;
+  brush: { current: Brush };
+  tool: Tool;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const overlay = useRef<HTMLCanvasElement>(null);
+  const painter = useRef<Painter | null>(null);
   const { cols, rows, grid } = layout;
 
   useEffect(() => {
-    if (!canvas.current) return;
-    const p = createPainter(
-      canvas.current,
-      { cols, rows, grid },
-      paint.get().picture,
-      () => brush.current,
-      paint.setPicture,
-    );
-    const off = paint.subscribe(() => p.setPicture(paint.get().picture));
+    if (!canvas.current || !overlay.current) return;
+    const p = createPainter(canvas.current, overlay.current, { cols, rows, grid }, paint.get(), {
+      brush: () => brush.current,
+      onPaint: paint.setPicture,
+      onStamps: (s) => paint.setStamps(s),
+      onPick: paint.pick,
+    });
+    p.setLamps(lampsOf(paint.get().lamps));
+    painter.current = p;
+    const off = paint.subscribe(() => p.show(paint.get()));
     return () => {
       off();
       p.destroy();
+      painter.current = null;
     };
   }, [cols, rows, grid, brush]);
 
+  useEffect(() => painter.current?.setLamps(lampsOf(lamps)), [lamps]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the outline follows the tool, read through the brush ref.
+  useEffect(() => painter.current?.redraw(), [tool]);
+
   return (
-    <div className="paint-board">
-      <canvas ref={canvas} />
+    <div className="paint-board" data-fit={lamps.fit}>
+      <div className="paint-stage" data-tool={tool}>
+        <canvas ref={canvas} />
+        <canvas ref={overlay} className="paint-overlay" />
+      </div>
     </div>
   );
 }
@@ -150,7 +150,7 @@ function LayoutBar({ layout }: { layout: Layout }) {
     </label>
   );
   return (
-    <div className="paint-bar">
+    <div className="paint-row">
       <label className="paint-field">
         grid
         <select
