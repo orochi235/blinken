@@ -93,7 +93,10 @@ export function Scrubber({ player, look }: { player: Player; look: SceneLook }) 
         player.seek(msAt(e));
       }}
       onPointerCancel={() => {
+        if (!held.current) return;
         held.current = false;
+        const pass = player.pass();
+        if (pass) player.seek(pass.at);
       }}
     >
       {scenes.map((s) => (
