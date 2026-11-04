@@ -85,3 +85,9 @@ test('bloom spread by row folds on the GPU as the CPU does', (d) =>
     ['glow'],
     [90, 520, 951],
   ));
+
+/** A tenth of one 8-bit step, as blits allows a color: what f32 leaves after its trip through linear sRGB. */
+const COLOR = 1e-3;
+
+test('chase folds on the GPU as the CPU does', (d) =>
+  agree(dev(d), { mod: 'chase', params: { dim: 0.2 } }, ['lit', 'tint'], [40, 250, 470], COLOR));

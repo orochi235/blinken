@@ -302,7 +302,7 @@ describe('modulators', () => {
 describe('modulator shaders', () => {
   const orders = ['together', 'column', 'column-reverse', 'center', 'row'] as const;
   for (const name of names.filter((n) => MODULATORS[n].shader))
-    it(`${name}: the shader's at gives what patch does for a dot, and rests for a cell`, () => {
+    it(`${name}: the shader's at gives what patch does where it plays, and rests elsewhere`, () => {
       const m = MODULATORS[name];
       const p = values(m) as never;
       const rest = Object.fromEntries(m.writes.map((c) => [c, KIT[c].rest]));
@@ -313,10 +313,11 @@ describe('modulator shaders', () => {
         checked++;
         const plain = m.patch(at, p, rankOf({ by }, at));
         expect(sp.duration).toBe(plain.duration);
+        const dots = b.dots.filter((_, k) => k % 7 === 0);
+        const [on, off] = m.on === 'cells' ? [b.cells, dots] : [dots, b.cells];
         for (const phase of [0, 0.137, 0.5, 0.861])
-          for (const s of b.dots.filter((_, k) => k % 7 === 0))
-            expect(sp.at(phase, s, setting)).toEqual(plain.at(phase, s, setting));
-        for (const cell of b.cells) expect(sp.at(0.3, cell, setting)).toEqual(rest);
+          for (const s of on) expect(sp.at(phase, s, setting)).toEqual(plain.at(phase, s, setting));
+        for (const s of off) expect(sp.at(0.3, s, setting)).toEqual(rest);
       }
       expect(checked).toBeGreaterThan(0);
     });
