@@ -20,6 +20,9 @@ export function digest(r) {
   };
 }
 
+/** A run's record, by name; onto keeps its own files beside them. */
+export const RECORD = /^\d{4}-.*\.json$/;
+
 const n = (x, w, d) => x.toFixed(d).padStart(w);
 
 // `node scripts/bench-digest.mjs <label>` prints that label's runs as a Markdown table, averaging
@@ -29,7 +32,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const dir = new URL('../bench/runs/', import.meta.url);
   const label = process.argv[2];
   const cells = new Map();
-  for (const f of readdirSync(dir).sort()) {
+  for (const f of readdirSync(dir)
+    .filter((f) => RECORD.test(f))
+    .sort()) {
     const r = JSON.parse(readFileSync(new URL(f, dir), 'utf8'));
     if (r.label !== label || r.error) continue;
     const key = `${r.asked.lights} ${r.backend}`;

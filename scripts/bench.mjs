@@ -9,7 +9,7 @@ import { cpus, hostname, loadavg, platform, release, totalmem } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { digest } from './bench-digest.mjs';
+import { digest, RECORD } from './bench-digest.mjs';
 import { serve } from './serve.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -31,7 +31,7 @@ const stack = arg('stack', 'sparkle,rainbow,chase');
 
 mkdirSync(runs, { recursive: true });
 const old = readdirSync(runs)
-  .filter((f) => f.endsWith('.json'))
+  .filter((f) => RECORD.test(f))
   .sort()
   .reverse();
 // Room is left for this sweep's records, so the directory ends it at the newest 200 or fewer.

@@ -23,7 +23,9 @@ throughput rather than the display. The first second is warmup and is left out o
 
 Every run's record goes to `bench/runs/<time>-<backend>-<lights>.json` (gitignored). It holds every
 frame's raw mix and draw times, the machine, load, Chrome version, GPU adapter, and the bree and
-blits commits. The sweep prunes the directory to the newest 200 records when it starts.
+blits commits. On a fleet node the blits commit names the node's checkout, which onto syncs newer
+files over: the runs below record blits `dd75131` but built the files of `1919a94`. The sweep
+prunes the directory to the newest 200 records when it starts.
 `node scripts/bench-digest.mjs <label>` prints one label's runs as the table below.
 
 Timed runs go to a quiet fleet node with a GPU, not to a machine in use:
@@ -55,45 +57,54 @@ teitou (Apple M5 Max, 18 cores), Chrome 156.0.8078.4, 1280 × 800 viewport at de
 
 What the table says:
 
-- **The mix is the frame** from 20,000 lights up, on every backend. Drawing on the GPU takes
-  2D's 23 ms of drawing at 80,000 lights down to 4 ms on WebGL and under 1 ms on WebGPU.
+- **The mix is most of the frame** from 20,000 lights up: all of it on WebGPU, nine tenths on
+  WebGL, and two thirds on 2D at 80,000 lights. What a frame takes beyond its mix (p50 gap less
+  mean mix) at 80,000 lights is 20.7 ms on 2D, 4.0 ms on WebGL and none measurable on WebGPU.
+- **2D's draw at 80,000 lights** read 22.94 ms here against 16.00 ms in the baseline, though round 1
+  changed nothing it draws. The row was not repeated.
 - **WebGPU's mix costs more than the CPU mixer's** today. blits's gpu engine folds a channel on
   the GPU only when every voice writing it can run there. A scene's move is held by its scene's
   owner, which blits does not yet fold on the GPU, so `lit` stays on the CPU. The shader patches
   bree stages for WebGPU then run their CPU versions, which cost more than the plain patches the
   other backends use.
-- **WebGL at 1,000 lights** stalls about 2 ms in its draw every second to fourth frame. At over
-  700 fps that is the GPU pushing back on the frames queued ahead of it; capped at a display's
-  rate it would not show.
+- **WebGL at 1,000 lights** stalls about 2 ms in its draw every second to fourth frame, in two runs
+  of the records. The likely cause, inferred and not measured, is the GPU pushing back on frames
+  queued ahead of it at over 700 fps, which a display-capped frame rate would not reach.
 
 ## Rounds
 
-| round | change | cost | gain |
-| :---- | :----- | :--- | :--- |
+| round          | change                                            | cost                                          | gain                                                                                                                        |
+| :------------- | :------------------------------------------------ | :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
 | 1 (2026-11-04) | Cue a layer only while it is on (`src/layers.ts`) | 51 lines changed in `src/layers.ts`, one test | at 20,000 lights: 2D 23.8 → 53.8 fps, WebGL 27.8 → 113.9, WebGPU 23.7 → 61.1; at 80,000: 5.3 → 15.6, 5.9 → 20.4, 5.4 → 13.8 |
 
-**Round 1.** A profile of the 20,000-light mix put most of the time in blits visiting each voice's
-subjects, and a count of voices found every built-in layer cued, off ones at weight 0. blits still
-visits a weight-0 voice's every subject each frame: in a local probe at 20,000 lights, a sign with
-no program and every layer off took 32 ms a frame to mix before this change and 1.8 ms after. Now a layer is cued while its weight is above 0 and faded out when it drops to 0. A
-layer turned on later is sought to where its loop would have been, so it shows exactly what it
-did before (`test/marquee.test.ts`, "a layer turned on late"). Layers also take a plain number for
-a weight instead of a `level` signal, which blits's gpu engine refuses to fold.
+**Round 1.** A Chrome CPU profile of the 20,000-light mix (not kept) put most of the time in blits
+visiting each voice's subjects, and a count of voices found every built-in layer cued, off ones at
+weight 0. blits still visits a weight-0 voice's every subject each frame: in a local probe at 20,000
+lights, a sign with no program and every layer off took 32 ms a frame to mix before this change and
+1.8 ms after (a node script on a busy machine, not recorded). Now a layer is cued while its weight
+is above 0 and faded out when it drops to 0. A layer turned on later is sought to where its loop
+would have been, so it shows exactly what it did before (`test/marquee.test.ts`, "a layer turned on
+late"). Layers also take a plain number for a weight instead of a `level` signal, which blits's gpu
+engine refuses to fold.
 
-### Where tuning stopped (2026-11-04)
+### Where tuning paused (2026-11-04)
 
-Round 1 bought 2.3× to 4.1× at 20,000 lights. The candidates left, from Chrome CPU profiles of the
-bench page on this branch:
+Tuning paused for scope, not because returns had fallen off. Round 1 bought 2.3× to 4.1× at
+20,000 lights, and the next candidate measured would cut WebGPU's mix by about 40%.
 
-- **The CPU fold itself.** Nearly all of the 2D and WebGL mix is inside blits's fill engine, which
-  bree calls but does not own. It is a blits change, not a bree round.
-- **Plain patches on WebGPU while `lit` stays on the CPU.** Staging plain patches on WebGPU took its
-  mix from 13.8 to 8.3 ms at 20,000 lights, level with WebGL's. That was an A/B on a busy machine,
-  so the ratio is the finding, not the times. Not taken: blits is building GPU folding for
-  owner-held voices, after which the shader patches are the faster path, and choosing per channel
-  in bree would copy blits's eligibility rules.
-- **2D drawing.** In the profile, the drawing code's own time is 6.5% of a 2D frame at 80,000
-  lights; the rest of the draw is the canvas filling and blurring, which a round may not change.
+- **Plain patches on WebGPU while `lit` stays on the CPU.** Staging plain patches instead of shader
+  patches on WebGPU took it from 70 to 115 fps at 20,000 lights, its mix from 13.9 to 8.3 ms, level
+  with WebGL's. That was a local comparison on a busy machine (records labeled `probe-r2-before`
+  and `probe-r2-plainall`, in that machine's gitignored `bench/runs/` until pruned), so the ratio
+  is the finding, not the times. The comparison changed two lines; shipping it means either staging plain patches on WebGPU
+  everywhere, which undoes the move and modulator shaders until blits folds owners, or choosing
+  per channel in bree, which copies blits's eligibility rules. It was not taken because blits's
+  phase 3, folding owner-held voices on the GPU, is landing and is expected to make the shader
+  patches the faster path.
+- **The CPU fold itself.** In Chrome CPU profiles of the bench page (not kept), most of the 2D and
+  WebGL mix sat in blits's fill engine, which bree calls but does not own.
+- **2D drawing.** In the same profiles, the drawing code's own time was 6.5% of a 2D frame at 80,000
+  lights; the rest of the draw was the canvas filling and blurring, which a round may not change.
 
-The next round would be the WebGPU staging above, once blits's owner-held folding lands: re-run
-the sweep then and see whether WebGPU's mix drops below WebGL's.
+A round 2 sweep follows once blits's owner support lands, to see where WebGPU's mix then stands
+against WebGL's.
