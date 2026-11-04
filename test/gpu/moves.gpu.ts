@@ -84,3 +84,15 @@ test('stand folds on the GPU as the CPU does', (d) => agree(dev(d), 'stand'));
 test('cut-on folds on the GPU as the CPU does', (d) => agree(dev(d), 'cut-on'));
 
 test('cut-off folds on the GPU as the CPU does', (d) => agree(dev(d), 'cut-off'));
+
+test('scroll-in and scroll-out, both ways, fold on the GPU as the CPU does', async (d) => {
+  for (const name of ['scroll-in', 'scroll-out'] as const)
+    for (const direction of ['left', 'right']) await agree(dev(d), name, { direction });
+});
+
+test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
+  for (const from of [false, true])
+    for (const to of [false, true])
+      for (const direction of ['left', 'right'])
+        await agree(dev(d), 'scroll-across', { direction }, { from, to });
+});
