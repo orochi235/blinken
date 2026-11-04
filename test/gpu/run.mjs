@@ -55,6 +55,7 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 let failed = 0;
+let started = '(none)';
 let finished;
 const done = new Promise((r) => {
   finished = r;
@@ -64,6 +65,8 @@ page.on('console', (m) => {
   if (t.startsWith('__gpu__ ')) {
     const e = JSON.parse(t.slice(8));
     if (e.kind === 'adapter') console.log(`adapter ${e.info}`);
+    if (e.kind === 'start') started = e.name;
+    if (e.kind === 'note') console.log(`      ${e.text}`);
     if (e.kind === 'result') {
       if (!e.ok) failed++;
       console.log(
@@ -79,8 +82,15 @@ page.on('pageerror', (e) => {
   failed++;
   finished();
 });
+const WATCHDOG_MS = 120_000;
+const watchdog = setTimeout(() => {
+  console.log(`no result after ${WATCHDOG_MS / 1000} s; last test started: ${started}`);
+  failed++;
+  finished();
+}, WATCHDOG_MS);
 await page.goto(`http://localhost:${server.address().port}/`);
 await done;
+clearTimeout(watchdog);
 await browser.close();
 server.close();
 console.log(failed === 0 ? 'all passed' : `${failed} failed`);

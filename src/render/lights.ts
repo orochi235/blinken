@@ -15,6 +15,9 @@ export interface Material {
   readonly coreAlpha: number;
 }
 
+/** A dot's diameter as a share of the pitch, where `lamps.size` leaves it unset. */
+export const LAMP_SIZE = 0.72;
+
 export const LED: Material = { name: 'led', core: 0.45, coreTint: 0xfff4e0, coreAlpha: 0.55 };
 
 /** Where each light sits and how big it is, in pitches, in the order the sign was given its lights. */

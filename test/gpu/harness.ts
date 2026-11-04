@@ -11,6 +11,11 @@ export function test(name: string, fn: Test['fn']): void {
   tests.push({ name, fn });
 }
 
+/** Prints a line under the running test, for a measurement worth keeping in the log. */
+export function note(text: string): void {
+  say({ kind: 'note', text });
+}
+
 /** Throws where `got` is not within f32 tolerance of `want`. */
 export function close(got: number, want: number, what: string, absolute = 1e-5): void {
   if (!(Math.abs(got - want) <= absolute + 1e-4 * Math.abs(want)))
@@ -64,6 +69,7 @@ export async function runAll(): Promise<void> {
   say({ kind: 'adapter', info: `${adapter.info?.vendor} ${adapter.info?.architecture}` });
   const device = (await adapter.requestDevice()) as GpuDevice;
   for (const [k, t] of tests.entries()) {
+    say({ kind: 'start', name: t.name });
     try {
       await t.fn(device);
       say({ kind: 'result', i: k + 1, n: tests.length, ok: true, name: t.name });

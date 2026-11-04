@@ -4,7 +4,8 @@ import type { Defect } from './defects.js';
 import { frameOf, GRIDS, type Grid } from './grid.js';
 import { type Fade, type Ghost, type SignColumns, shownLit } from './optics.js';
 import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from './render/bloom-params.js';
-import { LED, radiusOf } from './render/lights.js';
+import { fitCanvas } from './render/fit.js';
+import { LAMP_SIZE, LED, radiusOf } from './render/lights.js';
 import { createOpticsFrame, lit } from './render/optics-frame.js';
 
 export { frameOf, type SignColumns, shownLit };
@@ -93,19 +94,15 @@ export function createSign(
   let lamps: Lamps = {};
   let pitch = 0;
 
-  const box = canvas.parentElement as HTMLElement;
   const at = leds.map((led) => grid(led.x, led.y));
   const { left, top, across, down } = frameOf(b, grid);
 
-  /** Fits the sign in its box, as large as both of the box's sides allow. */
-  function resize(): void {
-    const css = lamps.pitch ?? Math.min(box.clientWidth / across, box.clientHeight / down);
-    canvas.style.width = `${Math.floor(css * across)}px`;
-    canvas.style.height = `${Math.floor(css * down)}px`;
-    pitch = css * devicePixelRatio;
-    for (const c of [canvas, glow, body, housing]) {
-      c.width = Math.round(pitch * across);
-      c.height = Math.round(pitch * down);
+  /** Sizes the offscreen canvases to match and repaints the housing. */
+  function sized(next: number): void {
+    pitch = next;
+    for (const c of [glow, body, housing]) {
+      c.width = canvas.width;
+      c.height = canvas.height;
     }
     const hctx = housing.getContext('2d') as CanvasRenderingContext2D;
     if (backed) {
@@ -125,24 +122,8 @@ export function createSign(
     const [x, y] = at[i] as readonly [number, number];
     return [(x - left) * pitch, (y - top) * pitch];
   };
-  const radius = (led: Led) => pitch * (lamps.size ?? 0.72) * radiusOf(led.kind);
-
-  const watch = new ResizeObserver(resize);
-  watch.observe(box);
-  // A move to a screen of another pixel ratio resizes nothing, so the ratio is watched too.
-  let ratio: MediaQueryList | null = null;
-  const onRatio = () => {
-    resize();
-    followRatio();
-  };
-  const followRatio = () => {
-    ratio?.removeEventListener('change', onRatio);
-    ratio =
-      typeof matchMedia === 'function' ? matchMedia(`(resolution: ${devicePixelRatio}dppx)`) : null;
-    ratio?.addEventListener('change', onRatio);
-  };
-  followRatio();
-  resize();
+  const radius = (led: Led) => pitch * (lamps.size ?? LAMP_SIZE) * radiusOf(led.kind);
+  const fit = fitCanvas(canvas, across, down, () => lamps.pitch, sized);
 
   return {
     render(cols, fallback, dt) {
@@ -208,11 +189,10 @@ export function createSign(
     },
     setLamps(next) {
       lamps = next;
-      resize();
+      fit.refit();
     },
     destroy() {
-      watch.disconnect();
-      ratio?.removeEventListener('change', onRatio);
+      fit.stop();
     },
   };
 }
