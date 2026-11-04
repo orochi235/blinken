@@ -3,6 +3,7 @@ import { type GpuDevice, gpu as gpuEngine, gpuOf } from '@msb235/blits/gpu';
 import type { Board, Led, Pose, Subject } from '../board.js';
 import { createSign, paintBulbs, type Sign, type SignColumns } from '../draw.js';
 import type { Grid } from '../grid.js';
+import { fieldsOf } from '../modulators/shader.js';
 import { type Backend, pickBackend } from './backend.js';
 import type { Gpu } from './gpu.js';
 import { createWebGlSign } from './webgl/sign.js';
@@ -47,10 +48,6 @@ export interface DrawingOptions {
   readonly backed: boolean;
   readonly grid: Grid;
 }
-
-/** The numbers each shader patch reads from a subject. */
-const fieldsOf = (s: Subject): Record<string, number> =>
-  s.kind === 'cell' ? { x: 0, y: 0, cell: 1, i: s.i } : { x: s.x, y: s.y, cell: 0, i: 0 };
 
 const canWebgl = () => typeof WebGL2RenderingContext !== 'undefined';
 

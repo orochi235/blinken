@@ -109,39 +109,45 @@ const shuffle = (cols: number, seed: number): readonly number[] => {
   return ranks;
 };
 
+/** The column of a board `cols` wide a dot or bulb stands in, the nearest edge for a bulb past it. */
+const colOf = (cols: number, s: Led) => Math.min(cols - 1, Math.max(0, Math.round(s.x)));
+
+/** The orders whose rank is a closed form of a subject's place and the board's width, by code. */
+export const CLOSED: Partial<Record<OrderBy, number>> = {
+  together: 0,
+  column: 1,
+  'column-reverse': 2,
+  center: 3,
+  row: 4,
+};
+
+/** A subject's rank under the order whose `CLOSED` code is `by`, on a board `cols` wide. */
+export function closedRank(by: number, cols: number, s: Subject): number {
+  if (by === 0) return 0;
+  if (s.kind === 'cell') return s.i;
+  if (by === 1) return colOf(cols, s);
+  if (by === 2) return cols - 1 - colOf(cols, s);
+  if (by === 3) return Math.floor(Math.abs(colOf(cols, s) - (cols - 1) / 2));
+  return s.y;
+}
+
 /** The rank of a subject: an integer from 0, equal ranks acting together. */
 export function rankOf(order: Order, at: Placed): (s: Subject) => number {
   const { cols } = at.board;
-  const colOf = (s: Led) => Math.min(cols - 1, Math.max(0, Math.round(s.x)));
-  const pick = (dot: (s: Led) => number) => (s: Subject) => {
-    if (order.by === 'together') return 0;
-    return s.kind === 'cell' ? s.i : dot(s);
-  };
-  switch (order.by) {
-    case 'together':
-      return pick(() => 0);
-    case 'column':
-      return pick(colOf);
-    case 'column-reverse':
-      return pick((s) => cols - 1 - colOf(s));
-    case 'center':
-      return pick((s) => Math.floor(Math.abs(colOf(s) - (cols - 1) / 2)));
-    case 'row':
-      return pick((s) => s.y);
-    case 'letter': {
-      const { text } = at;
-      const last = Math.max(0, text.letters.length - 1);
-      return pick((s) => {
-        const x = Math.floor(s.x - at.left);
-        const y = s.kind === 'dot' ? at.rowOf(s) : undefined;
-        return x < 0 ? 0 : x >= text.cols ? last : Math.max(0, text.letterAt(x, y));
-      });
-    }
-    case 'random': {
-      const ranks = shuffle(cols, order.seed ?? 1);
-      return pick((s) => ranks[colOf(s)] as number);
-    }
+  const closed = CLOSED[order.by];
+  if (closed !== undefined) return (s) => closedRank(closed, cols, s);
+  const pick = (dot: (s: Led) => number) => (s: Subject) => (s.kind === 'cell' ? s.i : dot(s));
+  if (order.by === 'letter') {
+    const { text } = at;
+    const last = Math.max(0, text.letters.length - 1);
+    return pick((s) => {
+      const x = Math.floor(s.x - at.left);
+      const y = s.kind === 'dot' ? at.rowOf(s) : undefined;
+      return x < 0 ? 0 : x >= text.cols ? last : Math.max(0, text.letterAt(x, y));
+    });
   }
+  const ranks = shuffle(cols, order.seed ?? 1);
+  return pick((s) => ranks[colOf(cols, s)] as number);
 }
 
 /** The delay of a subject: its rank times the lag. */

@@ -4,6 +4,7 @@ import { EFFECTS, LAYERS, type LayerSpec } from './builtins.js';
 import { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 import { type Look, rasterize } from './font.js';
 import { MODULATORS } from './modulators/index.js';
+import { ranked, stretch } from './modulators/shader.js';
 import { type Placed, place, placeText, rankOf } from './orders.js';
 import { type ParamValue, values } from './params.js';
 import { TOGETHER } from './pieces.js';
@@ -133,12 +134,32 @@ export function play(
  * A layer's modulator on the board, one cycle a pass, and the subjects it plays on. A scene's layer
  * is placed against its message, so a spread by letter follows the letters; a sign's has none.
  */
-function layerPatch(b: Board, layer: LayerSpec, at: Placed = place(b, rasterize(''))) {
+function layerPatch(
+  b: Board,
+  layer: LayerSpec,
+  at: Placed = place(b, rasterize('')),
+): { patch: Patch<Subject, Pose>; subjects: readonly Subject[] } {
   const mod = MODULATORS[layer.mod];
+  const p = values(mod, layer.params as never);
+  const order = layer.spread ?? TOGETHER;
+  const shaded = mod.shader?.(at, p, ranked(order, b));
+  if (shaded) return { patch: shaded, subjects: everyOf(b) };
   return {
-    patch: mod.patch(at, values(mod, layer.params as never), rankOf(layer.spread ?? TOGETHER, at)),
+    patch: mod.patch(at, p, rankOf(order, at)),
     subjects: mod.on === 'cells' ? b.cells : b.dots,
   };
+}
+
+const every = new WeakMap<Board, readonly Subject[]>();
+
+/** A board's dots and cells, the one list a shader layer plays on, as the gpu engine needs. */
+function everyOf(b: Board): readonly Subject[] {
+  let all = every.get(b);
+  if (!all) {
+    all = [...b.dots, ...b.cells];
+    every.set(b, all);
+  }
+  return all;
 }
 
 /** A layer for one scene: its cycles laid end to end through one pass `ms` long, against `at`. */
@@ -150,6 +171,9 @@ function stageLayer(
   at?: Placed,
 ): StagedLayer {
   const { patch: cycle, subjects } = layerPatch(b, layer, at);
+  const weight = layer.weight ?? 1;
+  const shaded = stretch(cycle, ms);
+  if (shaded) return { name, patch: shaded, subjects, weight };
   const cycles = ms / Math.max(1, cycle.duration);
   if (cycle.form !== 'fn') throw new Error(`bree: layer ${name} is not a plain patch`);
   const stretched = patch<Subject, Pose>(
@@ -157,7 +181,7 @@ function stageLayer(
     (phase, subject, setting) => cycle.at((phase * cycles) % 1, subject, setting),
     { writes: cycle.writes, ...(cycle.kit && { kit: cycle.kit }) },
   );
-  return { name, patch: stretched, subjects, weight: layer.weight ?? 1 };
+  return { name, patch: stretched, subjects, weight };
 }
 
 /** Cues a layer's modulator looping on its subjects for good, weighted by `weight` (a `level`, say). */

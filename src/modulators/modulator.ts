@@ -3,6 +3,7 @@ import type { Pose, Subject } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { NumberParam, Params, Values } from '../params.js';
 import type { Channel } from '../planes.js';
+import type { ModShader, Ranked } from './shader.js';
 
 /** One channel of the sign driven along a curve over time, phased over the sign by an order. */
 export interface Modulator<P extends Params = Params> {
@@ -16,6 +17,12 @@ export interface Modulator<P extends Params = Params> {
   readonly on: 'dots' | 'cells';
   /** Its duration is one cycle (or one pass). `rank` gives each subject a phase shift, never a start delay, so a loop has no warm-up. */
   patch(at: Placed, p: Values<P>, rank: (s: Subject) => number): Patch<Subject, Pose>;
+  /**
+   * The same cycle as a shader patch the gpu engine folds, on every dot and cell, reading its rank
+   * from `rank` (the order and board width a closed-form spread gives, null for any other). Absent,
+   * or giving null, where its math has no shader for that spread.
+   */
+  shader?(at: Placed, p: Values<P>, rank: Ranked | null): ModShader | null;
 }
 
 /** Declares a modulator, keeping its params' keys in the type `patch` sees. */
