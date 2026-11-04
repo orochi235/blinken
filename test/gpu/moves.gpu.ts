@@ -101,6 +101,11 @@ test('type-on and type-off, each cursor, fold on the GPU as the CPU does', async
 
 test('roll-away folds on the GPU as the CPU does', (d) => agree(dev(d), 'roll-away'));
 
+test('split-in and split-out, both ways, fold on the GPU as the CPU does', async (d) => {
+  for (const name of ['split-in', 'split-out'] as const)
+    for (const direction of ['left', 'right']) await agree(dev(d), name, { direction });
+});
+
 test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
   for (const from of [false, true])
     for (const to of [false, true])
