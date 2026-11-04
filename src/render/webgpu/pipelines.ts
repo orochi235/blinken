@@ -1,13 +1,27 @@
 import { rgb } from '../../color.js';
-import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from '../bloom-params.js';
+import { BLOOM, HOUSING } from '../bloom-params.js';
 import { gaussian, TAPS } from '../blur.js';
-import { LED, type LightTable } from '../lights.js';
+import { LED } from '../lights.js';
+import { VIEW } from '../placement.js';
+import { GEOM, type Prims } from '../prims.js';
+import { SOCKET_COLORS, WIRE_SHARE } from '../sign2d.js';
 import { BUFFER, STAGE, TEXTURE } from './usage.js';
-import { BLUR_WGSL, BODY_WGSL, COPY_WGSL, GLOW_WGSL, HOUSING_WGSL } from './wgsl-draw.js';
+import {
+  BLUR_WGSL,
+  BODY_WGSL,
+  COPY_WGSL,
+  GLOW_WGSL,
+  HOUSING_WGSL,
+  LOOK_FLOATS,
+} from './wgsl-draw.js';
 
-/** How the lights are drawn this frame: the pitch in device pixels, and `Lamps`' size and glow. */
+/**
+ * How the lights are drawn this frame: the pitch in device pixels a full-canvas blur spreads by,
+ * whether there is one, and `Lamps`' size and glow.
+ */
 export interface Look {
   readonly pitch: number;
+  readonly blurred: boolean;
   readonly lamp: number;
   readonly glow: number;
 }
@@ -15,7 +29,9 @@ export interface Look {
 /** The WebGL sign's draw (`webgl/sign.ts`) in WebGPU, from the optics' `shows` buffer. */
 export interface Painter {
   /** Makes the targets for a canvas `w` × `h` and paints the housing into one. */
-  size(w: number, h: number, look: Look, backed: boolean): void;
+  size(w: number, h: number, look: Look, backed: boolean, views: Float32Array): void;
+  /** Paints the housing again, the views having moved. */
+  repaint(look: Look, backed: boolean, views: Float32Array): void;
   /** Records the frame into `enc`, drawn to `view`. */
   draw(enc: GPUCommandEncoder, view: GPUTextureView, look: Look): void;
   destroy(): void;
@@ -42,10 +58,11 @@ interface Target {
 export function createPainter(
   device: GPUDevice,
   format: GPUTextureFormat,
-  table: LightTable,
+  prims: Prims,
   shows: GPUBuffer,
+  viewCount: number,
 ): Painter {
-  const n = table.n;
+  const n = prims.n;
   const V = STAGE.VERTEX;
   const F = STAGE.FRAGMENT;
   const lightLayout = device.createBindGroupLayout({
@@ -53,6 +70,9 @@ export function createPainter(
       { binding: 0, visibility: V | F, buffer: { type: 'uniform' } },
       { binding: 1, visibility: V, buffer: { type: 'read-only-storage' } },
       { binding: 2, visibility: V, buffer: { type: 'read-only-storage' } },
+      { binding: 3, visibility: V, buffer: { type: 'read-only-storage' } },
+      { binding: 4, visibility: V, buffer: { type: 'read-only-storage' } },
+      { binding: 5, visibility: V | F, buffer: { type: 'read-only-storage' } },
     ],
   });
   const texEntries: GPUBindGroupLayoutEntry[] = [
@@ -89,35 +109,48 @@ export function createPainter(
   const copy = pipe(COPY_WGSL, copyLayout, format, undefined, false);
   const copyAdd = pipe(COPY_WGSL, copyLayout, format, ADD, false);
 
-  const fixedData = new Float32Array(Math.max(n, 1) * 4);
-  for (let i = 0; i < n; i++)
-    fixedData.set(
-      [table.at[i * 2] ?? 0, table.at[i * 2 + 1] ?? 0, table.radius[i] ?? 0, table.shape[i] ?? 0],
-      i * 4,
+  const storage = (data: Float32Array<ArrayBuffer> | Uint32Array<ArrayBuffer>, label: string) => {
+    const buf = device.createBuffer({
+      size: Math.max(16, data.byteLength),
+      usage: BUFFER.STORAGE | BUFFER.COPY_DST,
+      label: `bree ${label}`,
+    });
+    if (data.byteLength > 0) device.queue.writeBuffer(buf, 0, data);
+    return buf;
+  };
+  const info = new Uint32Array(Math.max(n, 1) * 4);
+  for (let k = 0; k < n; k++)
+    info.set(
+      [prims.kind[k] ?? 0, prims.light[k] ?? 0, prims.view[k] ?? 0, prims.socket[k] ?? 0],
+      k * 4,
     );
-  const fixed = device.createBuffer({
-    size: fixedData.byteLength,
-    usage: BUFFER.STORAGE | BUFFER.COPY_DST,
-  });
-  device.queue.writeBuffer(fixed, 0, fixedData);
+  const geomBuf = storage(prims.geom.length > 0 ? prims.geom : new Float32Array(GEOM), 'prims');
+  const infoBuf = storage(info, 'prim info');
+  const viewsBuf = storage(new Float32Array(Math.max(viewCount, 1) * VIEW), 'views');
+  const pointsBuf = storage(prims.points.length > 0 ? prims.points : new Float32Array(2), 'points');
   const uniform = (size: number) =>
     device.createBuffer({ size, usage: BUFFER.UNIFORM | BUFFER.COPY_DST });
-  const lightU = uniform(80);
+  const lightU = uniform(LOOK_FLOATS * 4);
   const blurU = [uniform(BLUR_FLOATS * 4), uniform(BLUR_FLOATS * 4)] as const;
   const lights = device.createBindGroup({
     layout: lightLayout,
-    entries: [lightU, fixed, shows].map((buffer, binding) => ({ binding, resource: { buffer } })),
+    entries: [lightU, geomBuf, shows, infoBuf, viewsBuf, pointsBuf].map((buffer, binding) => ({
+      binding,
+      resource: { buffer },
+    })),
   });
   const sampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
-  const lightData = new Float32Array(20);
-  lightData.set([LED.core, LED.coreAlpha], 5);
-  lightData.set([...rgb(DOT_COLOR), 1, ...rgb(BULB_COLOR), 1, ...rgb(LED.coreTint), 1], 8);
+  const lightData = new Float32Array(LOOK_FLOATS);
+  lightData.set([LED.core, LED.coreAlpha, WIRE_SHARE], 4);
+  lightData.set([...rgb(LED.coreTint), 1], 12);
+  for (let k = 0; k < 6; k++) lightData.set([...rgb(SOCKET_COLORS[k] ?? 0), 1], 16 + k * 4);
 
   let canvas = { w: 0, h: 0 };
   let half = { w: 1, h: 1 };
   let targets: { house: Target; splat: Target; across: Target; blurred: Target } | null = null;
   let groups: {
     house: GPUBindGroup;
+    splat: GPUBindGroup;
     blurX: GPUBindGroup;
     blurY: GPUBindGroup;
     blurred: GPUBindGroup;
@@ -141,7 +174,8 @@ export function createPainter(
       ],
     });
   const writeLook = (look: Look) => {
-    lightData.set([canvas.w, canvas.h, look.pitch, look.lamp, look.glow], 0);
+    lightData.set([canvas.w, canvas.h, look.lamp, look.glow], 0);
+    lightData.set([look.blurred ? 1 : 0, BLOOM.spread], 7);
     device.queue.writeBuffer(lightU, 0, lightData);
   };
   const drop = () => {
@@ -173,7 +207,7 @@ export function createPainter(
   };
 
   return {
-    size(w, h, look, backed) {
+    size(w, h, look, backed, views) {
       drop();
       canvas = { w, h };
       half = { w: Math.max(1, Math.ceil(w / 2)), h: Math.max(1, Math.ceil(h / 2)) };
@@ -187,10 +221,17 @@ export function createPainter(
       targets = t;
       groups = {
         house: texGroup(copyLayout, t.house),
+        splat: texGroup(copyLayout, t.splat),
         blurX: texGroup(blurLayout, t.splat, blurU[0]),
         blurY: texGroup(blurLayout, t.across, blurU[1]),
         blurred: texGroup(copyLayout, t.blurred),
       };
+      this.repaint(look, backed, views);
+    },
+    repaint(look, backed, views) {
+      const t = targets;
+      if (!t) return;
+      device.queue.writeBuffer(viewsBuf, 0, views.subarray(0, Math.max(viewCount, 1) * VIEW));
       writeLook(look);
       const enc = device.createCommandEncoder();
       const [hr, hg, hb] = backed ? rgb(HOUSING) : [0, 0, 0];
@@ -204,14 +245,16 @@ export function createPainter(
       const g = groups;
       if (!t || !g) return;
       writeLook(look);
-      const sigma = look.pitch * BLOOM.spread * look.glow;
-      const glows = sigma > 0;
+      const sigma = look.blurred ? look.pitch * BLOOM.spread * look.glow : 0;
+      const glows = look.glow > 0;
       if (glows) {
-        weigh(blurU[0], sigma, canvas, true);
-        weigh(blurU[1], sigma / 2, half, false);
         const splat = into(enc, t.splat.view);
         instances(splat, glow);
         splat.end();
+      }
+      if (glows && sigma > 0) {
+        weigh(blurU[0], sigma, canvas, true);
+        weigh(blurU[1], sigma / 2, half, false);
         const across = into(enc, t.across.view);
         full(across, blur, g.blurX);
         across.end();
@@ -222,13 +265,13 @@ export function createPainter(
       const out = into(enc, view);
       full(out, copy, g.house);
       // As in 2D, glow and bodies both add onto the housing.
-      if (glows) full(out, copyAdd, g.blurred);
+      if (glows) full(out, copyAdd, sigma > 0 ? g.blurred : g.splat);
       instances(out, body);
       out.end();
     },
     destroy() {
       drop();
-      for (const b of [fixed, lightU, ...blurU]) b.destroy();
+      for (const b of [geomBuf, infoBuf, viewsBuf, pointsBuf, lightU, ...blurU]) b.destroy();
     },
   };
 }

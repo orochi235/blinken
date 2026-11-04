@@ -1,10 +1,10 @@
 import type { Board, Led } from '../../board.js';
-import type { Lamps, Sign } from '../../draw.js';
+import type { Lamps, Shape, Sign } from '../../draw.js';
 import type { Grid } from '../../grid.js';
-import { CHANNELS, type SignColumns } from '../../optics.js';
-import { fitCanvas } from '../fit.js';
+import { CHANNELS, type Fade, type Ghost, type SignColumns } from '../../optics.js';
 import type { Gpu } from '../gpu.js';
-import { LAMP_SIZE, lightTable } from '../lights.js';
+import { LAMP_SIZE } from '../lights.js';
+import { boardLights, type SignLights } from '../sign-lights.js';
 import { createGpuOptics } from './optics.js';
 import { createPainter, type Look } from './pipelines.js';
 import { type ChannelSource, createSources, type Follow, planOf } from './sources.js';
@@ -43,22 +43,40 @@ export function createWebGpuSign(
   handle: Gpu,
   source: ChannelSource | null,
 ): WebGpuSign {
+  return createWebGpuSignOf(canvas, boardLights(b, leds, grid), handle, source, backed);
+}
+
+/** `createWebGpuSign` for any lights. */
+export function createWebGpuSignOf(
+  canvas: HTMLCanvasElement,
+  lights: SignLights,
+  handle: Gpu,
+  source: ChannelSource | null,
+  backed: boolean,
+): WebGpuSign {
   const { device, format } = handle;
   const ctx = canvas.getContext('webgpu') as GPUCanvasContext | null;
   if (!ctx) throw new Error('bree: this canvas has no WebGPU context to give');
   ctx.configure({ device, format, alphaMode: 'premultiplied' });
-  const table = lightTable(b, leds, grid);
-  const sources = createSources(device, b);
-  const optics = createGpuOptics(device, b, leds, sources.pose);
-  const painter = createPainter(device, format, table, optics.shows);
+  const make = (shape: Shape) => {
+    const sources = createSources(device, shape.board);
+    const optics = createGpuOptics(device, shape.board, shape.leds, sources.pose);
+    const views = Math.max(...shape.prims.view, 0) + 1;
+    const painter = createPainter(device, format, shape.prims, optics.shows, views);
+    return { sources, optics, painter };
+  };
+  let parts = make(lights);
   let lamps: Lamps = {};
-  let pitch = 0;
+  let fade: Fade | undefined;
+  let ghost: Ghost | undefined;
+  const placement = lights.place(() => lamps.pitch);
   const lost = watchLost(handle);
   let off = false;
   let gone = false;
 
   const look = (): Look => ({
-    pitch,
+    pitch: placement.pitch,
+    blurred: placement.blur,
     lamp: lamps.size ?? LAMP_SIZE,
     glow: Math.max(lamps.glow ?? 1, 0),
   });
@@ -72,62 +90,72 @@ export function createWebGpuSign(
       console.error(e);
     }
   };
-  const fit = fitCanvas(
-    canvas,
-    table.frame.across,
-    table.frame.down,
-    () => lamps.pitch,
-    (next) => {
-      pitch = next;
-      guard(() => painter.size(canvas.width, canvas.height, look(), backed));
-    },
-  );
+  const sized = () =>
+    guard(() => parts.painter.size(canvas.width, canvas.height, look(), backed, placement.views));
+  const stop = placement.start(canvas, sized);
+  const free = () => {
+    parts.painter.destroy();
+    parts.optics.destroy();
+    parts.sources.destroy();
+  };
 
   return {
     backend: 'webgpu',
-    output: sources.pose,
+    get output() {
+      return parts.sources.pose;
+    },
     cpuChannels() {
       const plan = planOf(source);
       return new Set(CHANNELS.filter((_, c) => plan[c] === null));
     },
     render(cols, fallback, dt) {
       guard(() => {
+        if (placement.update()) parts.painter.repaint(look(), backed, placement.views);
         const enc = device.createCommandEncoder();
-        sources.gather(enc, cols, source);
-        optics.step(enc, fallback, dt, Math.max(lamps.brightness ?? 1, 0));
+        parts.sources.gather(enc, cols, source);
+        parts.optics.step(enc, fallback, dt, Math.max(lamps.brightness ?? 1, 0));
         if (canvas.width > 0 && canvas.height > 0)
-          painter.draw(enc, ctx.getCurrentTexture().createView(), look());
+          parts.painter.draw(enc, ctx.getCurrentTexture().createView(), look());
         device.queue.submit([enc.finish()]);
       });
     },
-    setDefects(defects) {
-      guard(() => optics.setDefects(defects));
+    setDefects(next) {
+      guard(() => parts.optics.setDefects(next));
     },
     setFade(next) {
-      optics.setFade(next);
+      fade = next;
+      parts.optics.setFade(next);
     },
     setGhost(next) {
-      optics.setGhost(next);
+      ghost = next;
+      parts.optics.setGhost(next);
     },
     setLamps(next) {
       lamps = next;
-      fit.refit();
+      placement.refit();
     },
     setHighlight(mask) {
-      guard(() => sources.setHighlight(mask));
+      guard(() => parts.sources.setHighlight(mask));
     },
     setFollow(from) {
-      guard(() => sources.setFollow(from));
+      guard(() => parts.sources.setFollow(from));
+    },
+    reshape(next) {
+      guard(() => {
+        free();
+        parts = make(next);
+        if (fade) parts.optics.setFade(fade);
+        if (ghost) parts.optics.setGhost(ghost);
+      });
+      sized();
     },
     destroy() {
       if (gone) return;
       gone = true;
       off = true;
-      fit.stop();
+      stop();
       try {
-        painter.destroy();
-        optics.destroy();
-        sources.destroy();
+        free();
         ctx.unconfigure();
       } catch {}
     },

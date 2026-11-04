@@ -1,4 +1,4 @@
-import type { LightTable } from '../lights.js';
+import { GEOM, type Prims } from '../prims.js';
 import {
   ATTR,
   BLUR_FS,
@@ -11,6 +11,7 @@ import {
   HOUSING_FS,
   HOUSING_VS,
 } from './glsl.js';
+import { ROW } from './glsl-sdf.js';
 
 /** A linked program and its uniforms by name. */
 export interface Program {
@@ -33,21 +34,71 @@ export interface Resources {
   readonly body: Program;
   readonly blur: Program;
   readonly copy: Program;
-  /** The lights, as instances. */
+  /** The primitives, as instances. */
   readonly lights: WebGLVertexArrayObject;
+  readonly instances: number;
   /** Nothing bound, for the full-target triangle. */
   readonly empty: WebGLVertexArrayObject;
-  /** Five floats per light: shine, r, g, b, bloom. */
-  readonly dynamic: WebGLBuffer;
+  /** Two texels per light: shine, r, g, b, then bloom. */
+  readonly shows: Data;
+  /** Two texels per view: its transform, then its clip. */
+  readonly views: Data;
+  /** A polyline's points, one texel each. */
+  readonly points: Data;
   readonly buffers: readonly WebGLBuffer[];
   /** Whether the glow targets hold half floats rather than bytes. */
   readonly half: boolean;
   targets: { house: Target; splat: Target; across: Target; blurred: Target } | null;
 }
 
+/** A float texture holding `texels` items of `channels` floats, `ROW` to a row. */
+export interface Data {
+  readonly tex: WebGLTexture;
+  readonly w: number;
+  readonly h: number;
+  readonly channels: 2 | 4;
+}
+
+function data(gl: WebGL2RenderingContext, texels: number, channels: 2 | 4): Data {
+  const w = Math.max(1, Math.min(ROW, texels));
+  const h = Math.max(1, Math.ceil(texels / ROW));
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  const format = channels === 4 ? gl.RGBA32F : gl.RG32F;
+  gl.texStorage2D(gl.TEXTURE_2D, 1, format, w, h);
+  return { tex, w, h, channels };
+}
+
+/** Uploads `values` into `d` from its first texel, padding the last row. */
+export function upload(gl: WebGL2RenderingContext, d: Data, values: Float32Array): void {
+  const full = d.w * d.h * d.channels;
+  const src = values.length === full ? values : new Float32Array(full);
+  if (src !== values) src.set(values.subarray(0, Math.min(values.length, full)));
+  gl.bindTexture(gl.TEXTURE_2D, d.tex);
+  gl.texSubImage2D(
+    gl.TEXTURE_2D,
+    0,
+    0,
+    0,
+    d.w,
+    d.h,
+    d.channels === 4 ? gl.RGBA : gl.RG,
+    gl.FLOAT,
+    src,
+  );
+}
+
 const UNIFORMS = [
   'u_canvas',
-  'u_pitch',
+  'u_views',
+  'u_shows',
+  'u_points',
+  'u_wire',
+  'u_sockets',
+  'u_blurred',
+  'u_spread',
   'u_lamp',
   'u_glow',
   'u_dot',
@@ -96,42 +147,54 @@ function attribute(
   gl.vertexAttribDivisor(at, divisor);
 }
 
-/** Compiles the programs and uploads the parts of `t` that never change. */
-export function build(gl: WebGL2RenderingContext, t: LightTable): Resources {
+/** Compiles the programs and uploads the parts of `p` that never change, for `lights` lights. */
+export function build(
+  gl: WebGL2RenderingContext,
+  p: Prims,
+  lights: number,
+  views: number,
+): Resources {
   const half = gl.getExtension('EXT_color_buffer_float') !== null;
-  const lights = gl.createVertexArray();
-  gl.bindVertexArray(lights);
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
   const corner = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, corner);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   attribute(gl, ATTR.corner, 2, 0, 0, 0);
-  const fixed = new Float32Array(t.n * 4);
-  for (let i = 0; i < t.n; i++) {
-    fixed.set([t.at[i * 2] ?? 0, t.at[i * 2 + 1] ?? 0, t.radius[i] ?? 0, t.shape[i] ?? 0], i * 4);
-  }
-  const statics = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, statics);
-  gl.bufferData(gl.ARRAY_BUFFER, fixed, gl.STATIC_DRAW);
-  attribute(gl, ATTR.at, 2, 16, 0, 1);
-  attribute(gl, ATTR.radius, 1, 16, 8, 1);
-  attribute(gl, ATTR.shape, 1, 16, 12, 1);
-  const dynamic = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, dynamic);
-  gl.bufferData(gl.ARRAY_BUFFER, Math.max(t.n, 1) * 20, gl.DYNAMIC_DRAW);
-  attribute(gl, ATTR.shine, 1, 20, 0, 1);
-  attribute(gl, ATTR.rgb, 3, 20, 4, 1);
-  attribute(gl, ATTR.bloom, 1, 20, 16, 1);
+  const geom = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, geom);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    p.geom.length > 0 ? p.geom : new Float32Array(GEOM),
+    gl.STATIC_DRAW,
+  );
+  attribute(gl, ATTR.g0, 4, GEOM * 4, 0, 1);
+  attribute(gl, ATTR.g1, 4, GEOM * 4, 16, 1);
+  const meta = new Uint32Array(Math.max(p.n, 1) * 4);
+  for (let k = 0; k < p.n; k++)
+    meta.set([p.kind[k] ?? 0, p.light[k] ?? 0, p.view[k] ?? 0, p.socket[k] ?? 0], k * 4);
+  const metaBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, metaBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, meta, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(ATTR.meta);
+  gl.vertexAttribIPointer(ATTR.meta, 4, gl.UNSIGNED_INT, 16, 0);
+  gl.vertexAttribDivisor(ATTR.meta, 1);
   gl.bindVertexArray(null);
+  const points = data(gl, Math.max(p.points.length / 2, 1), 2);
+  upload(gl, points, p.points);
   return {
     housing: program(gl, HOUSING_VS, HOUSING_FS),
     glow: program(gl, GLOW_VS, GLOW_FS),
     body: program(gl, BODY_VS, BODY_FS),
     blur: program(gl, FULL_VS, BLUR_FS),
     copy: program(gl, FULL_VS, COPY_FS),
-    lights,
+    lights: vao,
+    instances: p.n,
     empty: gl.createVertexArray(),
-    dynamic,
-    buffers: [corner, statics, dynamic],
+    shows: data(gl, Math.max(lights, 1) * 2, 4),
+    views: data(gl, Math.max(views, 1) * 2, 4),
+    points,
+    buffers: [corner, geom, metaBuf],
     half,
     targets: null,
   };
@@ -180,6 +243,7 @@ export function free(gl: WebGL2RenderingContext, r: Resources): void {
   dropTargets(gl, r);
   for (const p of [r.housing, r.glow, r.body, r.blur, r.copy]) gl.deleteProgram(p.program);
   for (const b of r.buffers) gl.deleteBuffer(b);
+  for (const d of [r.shows, r.views, r.points]) gl.deleteTexture(d.tex);
   gl.deleteVertexArray(r.lights);
   gl.deleteVertexArray(r.empty);
 }

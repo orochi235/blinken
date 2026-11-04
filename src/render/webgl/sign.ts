@@ -1,85 +1,27 @@
 import type { Board, Led } from '../../board.js';
 import { rgb } from '../../color.js';
-import type { Lamps, Sign } from '../../draw.js';
+import type { Lamps, Shape, Sign } from '../../draw.js';
 import type { Grid } from '../../grid.js';
+import type { Fade, Ghost } from '../../optics.js';
 import { webglSlot } from '../backend.js';
-import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from '../bloom-params.js';
+import { BLOOM, HOUSING } from '../bloom-params.js';
 import { gaussian } from '../blur.js';
-import { fitCanvas } from '../fit.js';
-import { LAMP_SIZE, LED, lightTable } from '../lights.js';
+import { LAMP_SIZE, LED } from '../lights.js';
 import { createOpticsFrame, lit } from '../optics-frame.js';
-import { bind, build, free, type Program, type Resources, sizeTargets, type Target } from './gl.js';
-
-/** A context a destroyed sign gave up, kept so a sign made later on its canvas can restore it. */
-interface Shed {
-  readonly lose: WEBGL_lose_context;
-  /** Whether its lost event has been dispatched; a restore before then is ignored. */
-  passed: boolean;
-  onPassed: (() => void) | null;
-}
-const shed = new WeakMap<HTMLCanvasElement, Shed>();
-
-/**
- * Asks for the context a destroyed sign lost on `canvas` back, once its lost event has gone by;
- * the new sign builds on the restored event. Gives what calls off the restore, while it is still
- * to come, or null where no sign of ours lost the context.
- */
-function reclaim(canvas: HTMLCanvasElement): (() => void) | null {
-  const state = shed.get(canvas);
-  if (!state) return null;
-  shed.delete(canvas);
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let done = false;
-  // Restoring from inside the lost event's dispatch is ignored as well.
-  const restore = () => {
-    timer = setTimeout(() => {
-      done = true;
-      state.lose.restoreContext();
-    }, 0);
-  };
-  if (state.passed) restore();
-  else state.onPassed = restore;
-  return () => {
-    if (done) return;
-    clearTimeout(timer);
-    state.onPassed = null;
-    shed.set(canvas, state);
-  };
-}
-
-/**
- * Loses `gl` and keeps it for the next sign made on `canvas` to restore. Its lost event's default
- * is prevented, since a context whose loss went unprevented can't be restored.
- */
-function shedContext(canvas: HTMLCanvasElement, gl: WebGL2RenderingContext): void {
-  const lose = gl.isContextLost() ? null : gl.getExtension('WEBGL_lose_context');
-  if (!lose) return;
-  const state: Shed = { lose, passed: false, onPassed: null };
-  shed.set(canvas, state);
-  canvas.addEventListener(
-    'webglcontextlost',
-    (e) => {
-      e.preventDefault();
-      state.passed = true;
-      state.onPassed?.();
-    },
-    { once: true },
-  );
-  lose.loseContext();
-}
-
-/** A WebGL sign that draws nothing: its canvas is WebGL's, so it can't fall back to 2D. */
-function dark(): Sign & { readonly backend: 'webgl' } {
-  return {
-    backend: 'webgl',
-    render() {},
-    setDefects() {},
-    setFade() {},
-    setGhost() {},
-    setLamps() {},
-    destroy() {},
-  };
-}
+import { boardLights, type SignLights } from '../sign-lights.js';
+import { SOCKET_COLORS, WIRE_SHARE } from '../sign2d.js';
+import { dark, reclaim, shed, shedContext } from './context.js';
+import {
+  bind,
+  build,
+  type Data,
+  free,
+  type Program,
+  type Resources,
+  sizeTargets,
+  type Target,
+  upload as uploadTo,
+} from './gl.js';
 
 /**
  * A sign like `createSign`'s, drawn with WebGL 2: every light one instance, its glow blurred on
@@ -94,6 +36,15 @@ export function createWebGlSign(
   leds: readonly Led[],
   backed: boolean,
   grid: Grid,
+): (Sign & { readonly backend: 'webgl' }) | null {
+  return createWebGlSignOf(canvas, boardLights(b, leds, grid), backed);
+}
+
+/** `createWebGlSign` for any lights. */
+export function createWebGlSignOf(
+  canvas: HTMLCanvasElement,
+  lights: SignLights,
+  backed: boolean,
 ): (Sign & { readonly backend: 'webgl' }) | null {
   const release = webglSlot();
   if (!release) return shed.has(canvas) ? dark() : null;
@@ -114,15 +65,20 @@ export function createWebGlSign(
     release();
     return dark();
   }
-  const table = lightTable(b, leds, grid);
-  const frame = createOpticsFrame(b, leds);
-  const out = lit(leds.length);
-  const upload = new Float32Array(leds.length * 5);
+  gl.getExtension('EXT_float_blend');
+  let shape: Shape = lights;
+  let frame = createOpticsFrame(shape.board, shape.leds);
+  let out = lit(shape.leds.length);
+  let upload = new Float32Array(shape.leds.length * 8);
   let lamps: Lamps = {};
-  let pitch = 0;
+  let fade: Fade | undefined;
+  let ghost: Ghost | undefined;
+  const placement = lights.place(() => lamps.pitch);
+  const viewCount = () => Math.max(...shape.prims.view, 0) + 1;
+  const make = () => build(gl, shape.prims, shape.leds.length, viewCount());
   let res: Resources | null = null;
   try {
-    res = gl.isContextLost() ? null : build(gl, table);
+    res = gl.isContextLost() ? null : make();
   } catch (e) {
     console.error(e);
     shedContext(canvas, gl);
@@ -131,11 +87,20 @@ export function createWebGlSign(
   }
   let gone = false;
 
-  const run = (p: Program) => {
+  const run = (p: Program, r: Resources) => {
     bind(gl, p);
     gl.uniform2f(p.u.u_canvas ?? null, canvas.width, canvas.height);
-    gl.uniform1f(p.u.u_pitch ?? null, pitch);
     gl.uniform1f(p.u.u_lamp ?? null, lamps.size ?? LAMP_SIZE);
+    const units: [string, WebGLTexture][] = [
+      ['u_views', r.views.tex],
+      ['u_shows', r.shows.tex],
+      ['u_points', r.points.tex],
+    ];
+    for (const [i, [name, tex]] of units.entries()) {
+      gl.activeTexture(gl.TEXTURE1 + i);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.uniform1i(p.u[name] ?? null, 1 + i);
+    }
   };
   const into = (t: Target | null) => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, t?.fb ?? null);
@@ -143,7 +108,7 @@ export function createWebGlSign(
   };
   const instances = (r: Resources) => {
     gl.bindVertexArray(r.lights);
-    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, leds.length);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, r.instances);
   };
   const full = (r: Resources, p: Program, src: Target, gain = 1) => {
     bind(gl, p);
@@ -155,18 +120,19 @@ export function createWebGlSign(
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 
-  /** Paints the housing and every light's socket into its texture. */
+  /** Paints the housing, every socket and every faceplate into its texture. */
   function paintHousing(r: Resources): void {
     if (!r.targets) return;
+    uploadViews(gl, r.views, placement.views);
     into(r.targets.house);
     const [hr, hg, hb] = backed ? rgb(HOUSING) : [0, 0, 0];
     gl.clearColor(hr, hg, hb, backed ? 1 : 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    run(r.housing);
-    gl.uniform3f(r.housing.u.u_dot ?? null, ...rgb(DOT_COLOR));
-    gl.uniform3f(r.housing.u.u_bulb ?? null, ...rgb(BULB_COLOR));
+    run(r.housing, r);
+    gl.uniform1f(r.housing.u.u_wire ?? null, WIRE_SHARE);
+    gl.uniform3fv(r.housing.u.u_sockets ?? null, SOCKET_RGB);
     instances(r);
   }
 
@@ -183,23 +149,26 @@ export function createWebGlSign(
   function draw(r: Resources, spread: number): void {
     const t = r.targets;
     if (!t) return;
-    gl.bindBuffer(gl.ARRAY_BUFFER, r.dynamic);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, upload);
-    const sigma = pitch * BLOOM.spread * spread;
-    const glows = sigma > 0;
+    uploadTo(gl, r.shows, upload);
+    const sigma = placement.blur ? placement.pitch * BLOOM.spread * spread : 0;
+    const glows = spread > 0;
     if (glows) {
       into(t.splat);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
-      run(r.glow);
+      run(r.glow, r);
       gl.uniform1f(r.glow.u.u_glow ?? null, spread);
       gl.uniform1f(r.glow.u.u_scale ?? null, r.half ? 1 : 0.5);
+      gl.uniform1f(r.glow.u.u_blurred ?? null, placement.blur ? 1 : 0);
+      gl.uniform1f(r.glow.u.u_spread ?? null, BLOOM.spread);
       instances(r);
       gl.disable(gl.BLEND);
-      blur(r, t.splat, t.across, sigma, true);
-      blur(r, t.across, t.blurred, sigma / 2, false);
+      if (sigma > 0) {
+        blur(r, t.splat, t.across, sigma, true);
+        blur(r, t.across, t.blurred, sigma / 2, false);
+      }
     }
     into(null);
     gl.disable(gl.BLEND);
@@ -207,21 +176,20 @@ export function createWebGlSign(
     gl.enable(gl.BLEND);
     // As in 2D, glow and bodies both add onto the housing.
     gl.blendFunc(gl.ONE, gl.ONE);
-    if (glows) full(r, r.copy, t.blurred, r.half ? 1 : 2);
-    run(r.body);
+    if (glows) full(r, r.copy, sigma > 0 ? t.blurred : t.splat, r.half ? 1 : 2);
+    run(r.body, r);
     gl.uniform1f(r.body.u.u_core ?? null, LED.core);
     gl.uniform3f(r.body.u.u_coreTint ?? null, ...rgb(LED.coreTint));
     gl.uniform1f(r.body.u.u_coreAlpha ?? null, LED.coreAlpha);
     instances(r);
   }
 
-  function sized(next: number): void {
-    pitch = next;
+  function sized(): void {
     if (!res) return;
     sizeTargets(gl, res, canvas.width, canvas.height);
     paintHousing(res);
   }
-  const fit = fitCanvas(canvas, table.frame.across, table.frame.down, () => lamps.pitch, sized);
+  const stop = placement.start(canvas, sized);
 
   const onLost = (e: Event) => {
     e.preventDefault();
@@ -229,7 +197,7 @@ export function createWebGlSign(
   };
   const onRestored = () => {
     try {
-      res = build(gl, table);
+      res = make();
     } catch (e) {
       // Stays dark for good, its slot given back to the page.
       console.error(e);
@@ -239,7 +207,7 @@ export function createWebGlSign(
       release();
       return;
     }
-    sized(pitch);
+    sized();
   };
   canvas.addEventListener('webglcontextlost', onLost);
   canvas.addEventListener('webglcontextrestored', onRestored);
@@ -250,10 +218,12 @@ export function createWebGlSign(
       const bright = Math.max(lamps.brightness ?? 1, 0);
       frame.step(cols, fallback, dt, bright, out);
       if (!res || canvas.width === 0 || canvas.height === 0) return;
-      for (let i = 0; i < leds.length; i++) {
-        upload[i * 5] = out.shine[i] as number;
-        upload.set(out.rgb.subarray(i * 3, i * 3 + 3), i * 5 + 1);
-        upload[i * 5 + 4] = out.bloom[i] as number;
+      if (placement.update()) paintHousing(res);
+      const n = shape.leds.length;
+      for (let i = 0; i < n; i++) {
+        upload[i * 8] = out.shine[i] as number;
+        upload.set(out.rgb.subarray(i * 3, i * 3 + 3), i * 8 + 1);
+        upload[i * 8 + 4] = out.bloom[i] as number;
       }
       draw(res, Math.max(lamps.glow ?? 1, 0));
     },
@@ -261,19 +231,39 @@ export function createWebGlSign(
       frame.setDefects(defects);
     },
     setFade(next) {
+      fade = next;
       frame.setFade(next);
     },
     setGhost(next) {
+      ghost = next;
       frame.setGhost(next);
     },
     setLamps(next) {
       lamps = next;
-      fit.refit();
+      placement.refit();
+    },
+    reshape(next) {
+      shape = next;
+      frame = createOpticsFrame(next.board, next.leds);
+      if (fade) frame.setFade(fade);
+      if (ghost) frame.setGhost(ghost);
+      out = lit(next.leds.length);
+      upload = new Float32Array(next.leds.length * 8);
+      if (!res) return;
+      free(gl, res);
+      res = null;
+      try {
+        res = make();
+      } catch (e) {
+        console.error(e);
+        return;
+      }
+      sized();
     },
     destroy() {
       if (gone) return;
       gone = true;
-      fit.stop();
+      stop();
       canvas.removeEventListener('webglcontextlost', onLost);
       canvas.removeEventListener('webglcontextrestored', onRestored);
       if (res) free(gl, res);
@@ -283,4 +273,14 @@ export function createWebGlSign(
       release();
     },
   };
+}
+
+/** Each socket's color as GLSL reads `u_sockets`, by `SOCKET` value. */
+const SOCKET_RGB = new Float32Array(
+  Array.from({ length: 6 }, (_, s) => rgb(SOCKET_COLORS[s] ?? 0)).flat(),
+);
+
+/** Uploads the views, each its transform then its clip, as two texels. */
+function uploadViews(gl: WebGL2RenderingContext, d: Data, views: Float32Array): void {
+  uploadTo(gl, d, views.subarray(0, Math.min(views.length, d.w * d.h * 4)));
 }

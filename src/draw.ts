@@ -1,19 +1,11 @@
 import type { Board, Led } from './board.js';
-import { cssOf } from './color.js';
 import type { Defect } from './defects.js';
 import { frameOf, GRIDS, type Grid } from './grid.js';
 import { axesOf, CHANNELS, type Fade, type Ghost, type SignColumns, shownLit } from './optics.js';
-import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from './render/bloom-params.js';
-import { fitCanvas } from './render/fit.js';
-import { LAMP_SIZE, LED, radiusOf } from './render/lights.js';
-import { createOpticsFrame, lit } from './render/optics-frame.js';
+import { boardLights, type SignLights } from './render/sign-lights.js';
+import { createSign2d, haloRadius } from './render/sign2d.js';
 
-export { frameOf, type SignColumns, shownLit };
-
-/** How far a dot's light blooms: its radius times `glow`, nothing at 0. */
-export function haloRadius(r: number, glow: number): number {
-  return r * Math.max(glow, 0);
-}
+export { createSign2d, frameOf, haloRadius, type SignColumns, shownLit };
 
 /** Fresh columns for `n` lights, every channel at rest. */
 export function signColumns(n: number): SignColumns {
@@ -60,9 +52,14 @@ export interface Sign {
   setGhost(ghost: Ghost): void;
   /** Sets how its lights are sized, spaced, lit and bloom. */
   setLamps(lamps: Lamps): void;
+  /** Draws other lights from now on, keeping its fade, ghost and lamps; defects are cleared. */
+  reshape(next: Shape): void;
   /** Stops following its parent's size. */
   destroy(): void;
 }
+
+/** What a sign draws, without its placement: what `reshape` swaps. */
+export type Shape = Pick<SignLights, 'board' | 'leds' | 'prims'>;
 
 /** How a sign's lights look, all of them alike. Each is optional; left out, the default holds. */
 export interface Lamps {
@@ -87,116 +84,5 @@ export function createSign(
   backed = true,
   grid: Grid = GRIDS.square,
 ): Sign {
-  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-  const glow = document.createElement('canvas');
-  const gctx = glow.getContext('2d') as CanvasRenderingContext2D;
-  const body = document.createElement('canvas');
-  const bctx = body.getContext('2d') as CanvasRenderingContext2D;
-  const housing = document.createElement('canvas');
-  const frame = createOpticsFrame(b, leds);
-  const out = lit(leds.length);
-  let lamps: Lamps = {};
-  let pitch = 0;
-
-  const at = leds.map((led) => grid(led.x, led.y));
-  const { left, top, across, down } = frameOf(b, grid);
-
-  /** Sizes the offscreen canvases to match and repaints the housing. */
-  function sized(next: number): void {
-    pitch = next;
-    for (const c of [glow, body, housing]) {
-      c.width = canvas.width;
-      c.height = canvas.height;
-    }
-    const hctx = housing.getContext('2d') as CanvasRenderingContext2D;
-    if (backed) {
-      hctx.fillStyle = cssOf(HOUSING);
-      hctx.fillRect(0, 0, housing.width, housing.height);
-    }
-    for (const [i, led] of leds.entries()) {
-      const [x, y] = place(i);
-      hctx.fillStyle = cssOf(led.kind === 'bulb' ? BULB_COLOR : DOT_COLOR);
-      hctx.beginPath();
-      hctx.arc(x, y, radius(led), 0, Math.PI * 2);
-      hctx.fill();
-    }
-  }
-
-  const place = (i: number): [number, number] => {
-    const [x, y] = at[i] as readonly [number, number];
-    return [(x - left) * pitch, (y - top) * pitch];
-  };
-  const radius = (led: Led) => pitch * (lamps.size ?? LAMP_SIZE) * radiusOf(led.kind);
-  const fit = fitCanvas(canvas, across, down, () => lamps.pitch, sized);
-
-  return {
-    render(cols, fallback, dt) {
-      const bright = Math.max(lamps.brightness ?? 1, 0);
-      const spread = Math.max(lamps.glow ?? 1, 0);
-      frame.step(cols, fallback, dt, bright, out);
-      // A canvas with no size, its box unlaid or hidden, can't be drawn from.
-      if (canvas.width === 0 || canvas.height === 0) return;
-      gctx.clearRect(0, 0, glow.width, glow.height);
-      bctx.clearRect(0, 0, body.width, body.height);
-      for (let i = 0; i < leds.length; i++) {
-        const shine = out.shine[i] as number;
-        if (shine === 0) continue;
-        const led = leds[i] as Led;
-        const hex =
-          (Math.round((out.rgb[i * 3] as number) * 255) << 16) |
-          (Math.round((out.rgb[i * 3 + 1] as number) * 255) << 8) |
-          Math.round((out.rgb[i * 3 + 2] as number) * 255);
-        const [x, y] = place(i);
-        const r = radius(led);
-        bctx.globalAlpha = shine;
-        bctx.fillStyle = cssOf(hex);
-        bctx.beginPath();
-        bctx.arc(x, y, r, 0, Math.PI * 2);
-        bctx.fill();
-        bctx.globalAlpha = shine * LED.coreAlpha;
-        bctx.fillStyle = cssOf(LED.coreTint);
-        bctx.beginPath();
-        bctx.arc(x, y, r * LED.core, 0, Math.PI * 2);
-        bctx.fill();
-        const bloom = haloRadius(r, (out.bloom[i] as number) * spread);
-        if (bloom > 0) {
-          gctx.globalAlpha = shine;
-          gctx.fillStyle = cssOf(hex);
-          gctx.beginPath();
-          gctx.arc(x, y, bloom, 0, Math.PI * 2);
-          gctx.fill();
-        }
-      }
-      bctx.globalAlpha = 1;
-      gctx.globalAlpha = 1;
-
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.filter = 'none';
-      // An unbacked housing covers nothing, so the last frame's glow is cleared first.
-      if (!backed) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(housing, 0, 0);
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.filter = `blur(${(pitch * BLOOM.spread * spread).toFixed(1)}px)`;
-      ctx.drawImage(glow, 0, 0);
-      ctx.filter = 'none';
-      ctx.drawImage(body, 0, 0);
-      ctx.globalCompositeOperation = 'source-over';
-    },
-    setDefects(defects) {
-      frame.setDefects(defects);
-    },
-    setFade(next) {
-      frame.setFade(next);
-    },
-    setGhost(next) {
-      frame.setGhost(next);
-    },
-    setLamps(next) {
-      lamps = next;
-      fit.refit();
-    },
-    destroy() {
-      fit.stop();
-    },
-  };
+  return createSign2d(canvas, boardLights(b, leds, grid), backed);
 }
