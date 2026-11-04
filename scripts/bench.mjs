@@ -2,6 +2,8 @@
 // before any repeat, printing a line per run and keeping each run's raw record in bench/runs/.
 //   node scripts/bench.mjs [--backends 2d,webgl,webgpu] [--lights 1000,4000,20000,80000]
 //     [--seconds 5] [--repeat 1] [--label <round>] [--no-build]
+//   node scripts/bench.mjs --page digits [--ways separate,shared] [--digits 500] ...
+// The digits page draws many digit-sized signs on WebGPU, each on its own canvas or all on one.
 // Frames are uncapped (no vsync), so fps measures throughput rather than the display.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -27,7 +29,10 @@ const counts = list('lights', '1000,4000,20000,80000').map(Number);
 const seconds = Number(arg('seconds', '5'));
 const repeat = Number(arg('repeat', '1'));
 const label = arg('label', null);
-const stack = arg('stack', 'sparkle,rainbow,chase');
+const pageName = arg('page', 'bench');
+const stack = arg('stack', pageName === 'digits' ? 'sparkle,rainbow' : 'sparkle,rainbow,chase');
+const ways = list('ways', 'separate,shared');
+const digitCounts = list('digits', '500').map(Number);
 
 mkdirSync(runs, { recursive: true });
 const old = readdirSync(runs)
@@ -35,8 +40,10 @@ const old = readdirSync(runs)
   .sort()
   .reverse();
 // Room is left for this sweep's records, so the directory ends it at the newest 200 or fewer.
-for (const f of old.slice(Math.max(0, KEEP - backends.length * counts.length * repeat)))
-  rmSync(join(runs, f));
+const runCount =
+  (pageName === 'digits' ? ways.length * digitCounts.length : backends.length * counts.length) *
+  repeat;
+for (const f of old.slice(Math.max(0, KEEP - runCount))) rmSync(join(runs, f));
 
 if (!process.argv.includes('--no-build'))
   execFileSync('npx', ['vite', 'build', 'lab', '--logLevel', 'error'], {
@@ -76,7 +83,7 @@ const browser = await chromium.launch({ headless: true, channel: 'chromium', arg
 const chrome = browser.version();
 
 /** One run: the page's report, or an error. */
-async function once(backend, lights) {
+async function once(asked) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   try {
     const got = new Promise((resolve) => {
@@ -87,8 +94,8 @@ async function once(backend, lights) {
       });
       page.on('pageerror', (e) => resolve({ error: e.message }));
     });
-    const q = new URLSearchParams({ backend, lights, seconds, stack });
-    await page.goto(`${origin}bench?${q}`);
+    const q = new URLSearchParams({ ...asked, seconds, stack });
+    await page.goto(`${origin}${pageName}?${q}`);
     const timeout = new Promise((r) =>
       setTimeout(() => r({ error: `no report in ${RUN_LIMIT_MS / 1000} s` }), RUN_LIMIT_MS),
     );
@@ -100,20 +107,25 @@ async function once(backend, lights) {
 
 const plan = [];
 for (let k = 0; k < repeat; k++)
-  for (const lights of counts) for (const backend of backends) plan.push({ backend, lights });
+  if (pageName === 'digits')
+    for (const digits of digitCounts) for (const way of ways) plan.push({ way, digits });
+  else for (const lights of counts) for (const backend of backends) plan.push({ backend, lights });
 const n = (x, w, d) => x.toFixed(d).padStart(w);
 let failed = 0;
-for (const [i, { backend, lights }] of plan.entries()) {
+for (const [i, asked] of plan.entries()) {
   const load = loadavg();
-  const r = await once(backend, lights);
+  const r = await once(asked);
   const at = new Date().toISOString();
-  const head = `${String(i + 1).padStart(String(plan.length).length)}/${plan.length} ${backend.padEnd(6)} ${String(lights).padStart(6)}:`;
+  const [what, size] = asked.way ? [asked.way, asked.digits] : [asked.backend, asked.lights];
+  const head = `${String(i + 1).padStart(String(plan.length).length)}/${plan.length} ${what.padEnd(8)} ${String(size).padStart(6)}:`;
   if (r.error) {
     failed++;
     console.log(`${head} ${r.error}`);
   } else {
     const d = digest(r);
-    const wrong = r.got === backend ? '' : `  (drew with ${r.got})`;
+    const drew = [r.got].flat();
+    const want = asked.backend ?? 'webgpu';
+    const wrong = drew.every((g) => g === want) ? '' : `  (drew with ${drew.join(', ')})`;
     console.log(
       `${head} ${n(d.fps, 7, 1)} fps  p50/p95 ${n(d.p50, 7, 2)}/${n(d.p95, 7, 2)} ms  mix ${n(d.mixMs, 7, 2)} ms  draw ${n(d.drawMs, 7, 2)} ms${wrong}`,
     );
@@ -128,11 +140,11 @@ for (const [i, { backend, lights }] of plan.entries()) {
     chrome,
     flags,
     load: { before: load, after: loadavg() },
-    asked: { backend, lights, seconds, stack },
+    asked: { ...asked, page: pageName, seconds, stack },
     ...r,
   };
   writeFileSync(
-    join(runs, `${at.replace(/:/g, '-')}-${backend}-${lights}.json`),
+    join(runs, `${at.replace(/:/g, '-')}-${what}-${size}.json`),
     JSON.stringify(record),
   );
 }

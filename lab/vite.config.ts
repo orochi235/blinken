@@ -22,6 +22,7 @@ export default defineConfig({
         effects: page('effects.html'),
         paint: page('paint.html'),
         bench: page('bench.html'),
+        digits: page('digits.html'),
       },
     },
   },
