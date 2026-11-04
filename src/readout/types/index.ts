@@ -6,6 +6,7 @@ import { nixie } from './nixie.js';
 import { cistercian, kaktovik, maya, rods } from './numerals.js';
 import { braille, morse, ogham, semaphore } from './scripts.js';
 import { eight, half, nine, seven } from './segments.js';
+import { triangles, trianglesFine } from './triangles.js';
 
 /** Every display type, by name. */
 export const TYPES: Readonly<Record<TypeName, DisplayType>> = {
@@ -30,4 +31,6 @@ export const TYPES: Readonly<Record<TypeName, DisplayType>> = {
   tally,
   bcd,
   bargraph,
+  triangles,
+  'triangles-fine': trianglesFine,
 };

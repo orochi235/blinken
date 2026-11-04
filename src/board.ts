@@ -1,5 +1,6 @@
 import { angle, color, kit, max, mul } from '@msb235/blits';
 import { type Bitmap, ROWS } from './font.js';
+import type { GridName } from './grid.js';
 
 /**
  * What a dot shows. `lit` is how much it is on, 0 to 1, the brightest voice winning; `gain` scales
@@ -56,6 +57,8 @@ export interface Board {
   readonly cells: readonly Cell[];
   /** Per bulb, the index of its cell in `cells`. */
   readonly cellOf: Uint8Array;
+  /** Where the dots stand, where a grid is named: `triangles` lays text out two places to a dot. */
+  readonly grid?: GridName;
 }
 
 /** The 80 × 7 of a shopfront sign. */
@@ -68,7 +71,7 @@ export const marginOf = (border: boolean) => (border ? 3 : 1);
  * A sign of any size, with a border of bulbs unless `border` is false; where its text stands is up
  * to each placement (`place`).
  */
-export function board(cols: number, rows: number, border = true): Board {
+export function board(cols: number, rows: number, border = true, grid?: GridName): Board {
   const dots: Led[] = Array.from({ length: cols * rows }, (_, k) => ({
     kind: 'dot',
     x: k % cols,
@@ -78,7 +81,16 @@ export function board(cols: number, rows: number, border = true): Board {
   const bulbs: Led[] = at.map(([x, y], i) => ({ kind: 'bulb', i, x, y }));
   const cells: Cell[] = [0, 1, 2].map((i) => ({ kind: 'cell', i }));
   const cellOf = Uint8Array.from(bulbs, (_, i) => i % 3);
-  return { cols, rows, margin: marginOf(border), dots, bulbs, cells, cellOf };
+  return {
+    cols,
+    rows,
+    margin: marginOf(border),
+    dots,
+    bulbs,
+    cells,
+    cellOf,
+    ...(grid && { grid }),
+  };
 }
 
 /**

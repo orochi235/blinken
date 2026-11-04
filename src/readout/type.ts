@@ -10,6 +10,7 @@ export type SegShape =
       /** Full width. */
       readonly w: number;
     }
+  | { readonly kind: 'tri'; readonly points: readonly (readonly [number, number])[] }
   | {
       readonly kind: 'poly';
       readonly points: readonly (readonly [number, number])[];
@@ -47,7 +48,9 @@ export type TypeName =
   | 'dice'
   | 'tally'
   | 'bcd'
-  | 'bargraph';
+  | 'bargraph'
+  | 'triangles'
+  | 'triangles-fine';
 
 /** A kind of segment display: one cell's lights, and how a value lights a row of cells. */
 export interface DisplayType {

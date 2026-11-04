@@ -1,6 +1,7 @@
 import { IMPORTED } from './glyphs/fonts/index.js';
 import { SLIM } from './glyphs/slim.js';
 import { STANDARD } from './glyphs/standard.js';
+import { STROKES } from './glyphs/strokes.js';
 import { tableFace } from './glyphs/table.js';
 
 /**
@@ -65,9 +66,35 @@ const faces = {
       ),
   ),
   ...IMPORTED,
+  strokes: STROKES,
 };
 
 export type FaceName = keyof typeof faces;
+
+const doubled = new WeakMap<Face, Face>();
+
+/** `face` with every column doubled, ghost rows kept: a triangle sign's text, two places to a dot. */
+export function widened(face: Face): Face {
+  let wide = doubled.get(face);
+  if (!wide) {
+    const cache = new Map<string, readonly string[] | undefined>();
+    wide = {
+      ...face,
+      name: `${face.name} doubled`,
+      width: face.width * 2,
+      glyph(ch) {
+        if (!cache.has(ch))
+          cache.set(
+            ch,
+            face.glyph(ch)?.map((r) => [...r].map((c) => c + c).join('')),
+          );
+        return cache.get(ch);
+      },
+    };
+    doubled.set(face, wide);
+  }
+  return wide;
+}
 /** The built-in faces, by name. */
 export const FACES: Readonly<Record<FaceName, Face>> = faces;
 /** Every character the built-in faces draw something for. */

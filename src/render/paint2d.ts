@@ -60,6 +60,18 @@ export function tracePrim(ctx: CanvasRenderingContext2D, p: Prims, k: number, r:
       if (count === 1) ctx.lineTo(...pt(0));
       return { stroke: true, width: Math.max(r, 0) * 2 };
     }
+    case PRIM.tri: {
+      const own = radiusOfPrim(p, k, Number.POSITIVE_INFINITY);
+      const f = own > 0 ? Math.max(r, 0) / own : 1;
+      const mx = (g(0) + g(2) + g(4)) / 3;
+      const my = (g(1) + g(3) + g(5)) / 3;
+      const at = (i: number) => [mx + (g(i) - mx) * f, my + (g(i + 1) - my) * f] as const;
+      ctx.moveTo(...at(0));
+      ctx.lineTo(...at(2));
+      ctx.lineTo(...at(4));
+      ctx.closePath();
+      return FILL;
+    }
     default:
       ctx.roundRect(g(0), g(1), g(2) - g(0), g(3) - g(1), g(4));
       return FILL;

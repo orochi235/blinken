@@ -60,7 +60,7 @@ const GROUPS = {
       choices: Object.keys(GRIDS),
       value: 'square',
       about:
-        'How the dots are set out: square rows and columns, or a hex grid where each row sits half a dot left of the one above, which leans the text like italics.',
+        'How the dots are set out: square rows and columns; a hex grid where each row sits half a dot left of the one above, which leans the text like italics; or triangles, hexagons each cut into six, two to a dot of the text. The strokes face draws a triangle to a dot instead, on 14 or more rows.',
     } satisfies ChoiceParam,
   },
   border: {

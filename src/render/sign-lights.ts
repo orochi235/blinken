@@ -1,5 +1,5 @@
 import type { Board, Led } from '../board.js';
-import type { Grid } from '../grid.js';
+import { GRIDS, type Grid } from '../grid.js';
 import { boardPrims, lightTable } from './lights.js';
 import { boardPlacement, type Placement } from './placement.js';
 import type { Prims } from './prims.js';
@@ -22,7 +22,7 @@ export function boardLights(b: Board, leds: readonly Led[], grid: Grid): SignLig
   return {
     board: b,
     leds,
-    prims: boardPrims(t),
+    prims: boardPrims(t, grid === GRIDS.triangles ? leds : undefined),
     place: (want) => boardPlacement(t.frame.across, t.frame.down, want),
   };
 }

@@ -485,7 +485,7 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 12, digest: '276db7808402' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 13, digest: '796b62375dbb' });
   });
 });
 

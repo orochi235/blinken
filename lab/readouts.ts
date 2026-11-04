@@ -48,6 +48,8 @@ const SHOWN: readonly { type: TypeName; cells: number; feed: Feed; half?: boolea
   { type: 'tally', cells: 4, feed: ({ n }) => n % 20 },
   { type: 'bcd', cells: 6, feed: hhmmss },
   { type: 'bargraph', cells: 12, feed: ({ n }) => 0.5 + 0.5 * Math.sin(n / 10) },
+  { type: 'triangles', cells: 6, feed: ({ text }) => text },
+  { type: 'triangles-fine', cells: 5, feed: ({ text }) => text },
 ];
 
 const CARD_TYPES: readonly TypeName[] = ['seven', 'nixie', 'fourteen', 'cistercian', 'dice'];

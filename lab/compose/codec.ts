@@ -56,7 +56,7 @@ import { BLEND, HOLD } from './state.js';
  * only ever grows at its end; adding to one bumps VERSION too, and records in LENGTHS how long
  * each was before, so an older link reads against the registries it was written with.
  */
-export const VERSION = 12;
+export const VERSION = 13;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -210,7 +210,7 @@ function readScene(
     ? (mine[r.index(mine.length)] as string)
     : (reg.effects[r.index(reg.effects.length)] as string);
   const hold = r.flag() ? readNumber(r, HOLD) : undefined;
-  const face = r.flag() ? (FACE_NAMES[r.index(FACE_NAMES.length)] as FaceName) : undefined;
+  const face = r.flag() ? (reg.faces[r.index(reg.faces.length)] as FaceName) : undefined;
   // Reverse text was dropped in version 8; an older link's plays the invert layer instead.
   const reverse = version < 8 && r.flag();
   // Before version 4 the bit was `proportional`, and a scene without it was monospace.

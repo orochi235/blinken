@@ -29,6 +29,10 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 
 ## Known gaps
 
+- On `grid: 'triangles'`, the `reel-in` move spins letters rasterized without doubling, so they show half width; it reads glyphs through `rasterize` rather than `placeText`'s `lookOn` (2026-11-04).
+- The `strokes` face samples each glyph as if it starts on an up-pointing triangle; text placed at an odd column or row draws each triangle flipped, which roughens its strokes, and a scroll by one place shows it every other step (2026-11-04).
+- The triangle grid draws no seams between its hexagons: they only describe the tiling. Other tilings (squares cut into four, say) would each be a `triangleAt` of their own (2026-11-04).
+
 - On the effects page in a window 1200px wide or less, the diagram and the card designer still share one scrolling column, so picking a node scrolls its card into view and carries the diagram off screen; wider, the designer has a column of its own (2026-11-01).
 - Duplicate copies ship in `WEASEL=npm` runs and the deployed lab: `@msb235/blits-panel@0.4.1` pins weasel `1.12.0` exactly, so npm nests weasel 1.12 under it beside bree's 1.15, and each weasel pins its own blits (1.15 → `0.12.0`, 1.12 → `0.11.0`) beside bree's `0.16.1`. Needs a blits-panel release on current weasel, and weasel taking blits as a range (2026-11-01).
 - `wave` on a 7-row sign clips a letter's top or bottom row at each step, since the font leaves no spare rows; it reads cleanly from 9 rows up.

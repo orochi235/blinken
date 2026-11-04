@@ -65,6 +65,14 @@ export function layOutReadouts(readouts: readonly Laid[]): Layout {
         const i = (base + slot) * cols + col;
         for (const s of light.shapes) {
           if (s.kind === 'disc') out.disc(i, v, socket, x + s.x, pad + s.y, s.r, { glow });
+          else if (s.kind === 'tri')
+            out.tri(
+              i,
+              v,
+              socket,
+              s.points.map(([px, py]) => [x + px, pad + py] as const),
+              { glow },
+            );
           else if (s.kind === 'bar')
             out.bar(i, v, socket, x + s.x1, pad + s.y1, x + s.x2, pad + s.y2, s.w / 2, ends, glow);
           else

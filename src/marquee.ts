@@ -25,7 +25,10 @@ const READ_FRAMES = 60;
  * canvas to the largest that fits its parent element, and draws every animation frame.
  */
 export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = {}): Marquee {
-  const b = board(opts.cols ?? SIZE.cols, opts.rows ?? SIZE.rows, opts.border !== false);
+  const named = typeof opts.grid === 'string' ? opts.grid : undefined;
+  // A triangle tiling lays a font dot across two places, so its sign is twice as many across.
+  const across = named === 'triangles' ? SIZE.cols * 2 : SIZE.cols;
+  const b = board(opts.cols ?? across, opts.rows ?? SIZE.rows, opts.border !== false, named);
   const leds: readonly Led[] = [...b.dots, ...b.bulbs];
   const cols = signColumns(leds.length);
   const cells = signColumns(b.cells.length);

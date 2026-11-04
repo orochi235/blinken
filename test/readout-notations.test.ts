@@ -36,7 +36,7 @@ function bounds(s: SegShape): [number, number, number, number] {
           [s.x2, s.y2],
         ]
       : s.points;
-  const h = s.w / 2;
+  const h = s.kind === 'tri' ? 0 : s.w / 2;
   const xs = pts.map((p) => p[0] as number);
   const ys = pts.map((p) => p[1] as number);
   return [Math.min(...xs) - h, Math.min(...ys) - h, Math.max(...xs) + h, Math.max(...ys) + h];

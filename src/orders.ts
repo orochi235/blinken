@@ -1,4 +1,5 @@
 import { type Board, board as boardOf, type Led, leftOf, type Subject } from './board.js';
+import { faceOf, widened } from './faces.js';
 import { type Bitmap, type Look, rasterize } from './font.js';
 import { hash } from './hash.js';
 import { duration } from './params.js';
@@ -94,9 +95,23 @@ export function rowsToShow(board: Board, text: Bitmap): number {
 
 /** A message as typed, rasterized in `look` and standing centered on the board, labeled for warnings. */
 export const placeText = (board: Board, text: string, look?: Look): Placed => ({
-  ...place(board, rasterize(text, look)),
+  ...place(board, rasterize(text, lookOn(board, look))),
   label: text,
 });
+
+/**
+ * `look` as `board` shows it: on the triangle tiling a face's columns are doubled, two places to a
+ * dot, its letters spaced a dot apart; the `strokes` face is drawn there as it is.
+ */
+export function lookOn(board: Board, look: Look = {}): Look {
+  const face = faceOf(look.face);
+  if (board.grid !== 'triangles' || face.name === 'strokes') return look;
+  const tracking = look.style?.tracking ?? 0;
+  return {
+    face: widened(face),
+    style: { ...look.style, tracking: Math.min(6, tracking * 2 + 1) },
+  };
+}
 
 const shuffle = (cols: number, seed: number): readonly number[] => {
   const order = Array.from({ length: cols }, (_, x) => x).sort(

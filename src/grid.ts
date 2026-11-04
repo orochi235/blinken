@@ -7,14 +7,51 @@ import type { Board } from './board.js';
  */
 export type Grid = (x: number, y: number) => readonly [number, number];
 
+/** A triangle's height in the triangle tiling, its sides one pitch long. */
+export const TRI_H = Math.sqrt(3) / 2;
+
+/** Whether triangle `k` of row `r` of the triangle tiling points up. */
+export const pointsUp = (k: number, r: number) => (((k + r) % 2) + 2) % 2 === 0;
+
+/**
+ * Triangle `k` of row `r` of the triangle tiling: regular hexagons each cut into six, which is
+ * rows of triangles pointing up and down in turn. Its corners, and its middle, in pitches.
+ */
+export function triangleAt(
+  k: number,
+  r: number,
+): { corners: [number, number][]; middle: [number, number] } {
+  const x = k / 2;
+  const top = r * TRI_H;
+  const bottom = top + TRI_H;
+  const up = pointsUp(k, r);
+  const corners: [number, number][] = up
+    ? [
+        [x, bottom],
+        [x + 1, bottom],
+        [x + 0.5, top],
+      ]
+    : [
+        [x, top],
+        [x + 1, top],
+        [x + 0.5, bottom],
+      ];
+  return { corners, middle: [x + 0.5, up ? top + (2 * TRI_H) / 3 : top + TRI_H / 3] };
+}
+
 /**
  * The grids a sign can be given by name. `square` sets each row under the last; `hex` sets each
  * half a dot left of the one above, rows √3/2 apart, so every dot has six neighbors a pitch away
- * and columns run on a slant, leaning the text like italics.
+ * and columns run on a slant, leaning the text like italics. `triangles` makes each place a
+ * triangle of the triangle tiling, two to a dot of the text.
  */
 export const GRIDS = {
   square: (x, y) => [x, y],
   hex: (x, y) => [x - y / 2, (y * Math.sqrt(3)) / 2],
+  triangles: (x, y) =>
+    Number.isInteger(x) && Number.isInteger(y)
+      ? triangleAt(x, y).middle
+      : [x / 2 + 0.5, (y + 0.5) * TRI_H],
 } as const satisfies Record<string, Grid>;
 
 export type GridName = keyof typeof GRIDS;

@@ -1,6 +1,16 @@
 import './app.css';
 import { mount } from '@msb235/blits-panel';
-import { createMarquee, EFFECTS, LAYERS, type LayerName, type Scene } from '@/index.js';
+import {
+  createMarquee,
+  EFFECTS,
+  FACES,
+  type FaceName,
+  GRIDS,
+  type GridName,
+  LAYERS,
+  type LayerName,
+  type Scene,
+} from '@/index.js';
 import { decode } from './compose/share.js';
 import { demo } from './demo.js';
 import { labGpu } from './gpu.js';
@@ -36,14 +46,23 @@ const composition = shared?.read ? shared.state : null;
 addEventListener('hashchange', () => location.reload());
 for (const input of [message, hue]) input.disabled = composition !== null;
 
+/** `?grid=triangles` sets the dots out on another grid, and `?face=strokes` draws the demo in another face. */
+const grid = params.get('grid');
+const gridName = grid !== null && Object.hasOwn(GRIDS, grid) ? (grid as GridName) : undefined;
+const face = params.get('face');
+const faced = (scenes: Scene[]): Scene[] =>
+  face !== null && Object.hasOwn(FACES, face)
+    ? scenes.map((s) => ({ ...s, face: face as FaceName }))
+    : scenes;
+
 /** `?show=flip` loops that one effect on the message, for looking at it alone. */
 const only = params.get('show');
 const program = (): Scene[] =>
   composition
     ? composition.program
     : only !== null && Object.hasOwn(EFFECTS, only)
-      ? [{ effect: only, text: message.value || ' ', hex: userHex() }]
-      : demo(message.value || ' ', userHex());
+      ? faced([{ effect: only, text: message.value || ' ', hex: userHex() }])
+      : faced(demo(message.value || ' ', userHex()));
 
 // Each layer's checkbox shares its name.
 const boxes = (Object.keys(LAYERS) as LayerName[]).map((name) => ({
@@ -58,7 +77,8 @@ let shownAt = performance.now();
 const handle = await labGpu;
 const sign = createMarquee(canvas, {
   gpu: handle,
-  cols: whole('cols', 80, 4000),
+  cols: whole('cols', gridName === 'triangles' ? 160 : 80, 4000),
+  grid: gridName,
   rows: whole('rows', 7, 2000),
   program,
   effects: composition?.effects,

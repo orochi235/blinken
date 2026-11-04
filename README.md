@@ -83,6 +83,13 @@ columns run on a slant and the text leans like italics; the border follows the d
 function `(x, y) => [x, y]` places dots a grid of your own way, in pitches, and the sign is
 fitted to wherever they land. Default `square`.
 
+`grid: 'triangles'` makes each place a triangle: regular hexagons each cut into six, which is rows
+of triangles pointing up and down in turn. Each triangle is its own light, so effects play on them
+one by one. Text keeps its face, each dot of a letter lighting the two triangles at its place, so
+the sign is 160 places across by default where a square one is 80. The `strokes` face draws a
+triangle to a dot instead, its letters sampled from 16-segment strokes, on 14 rows or more.
+`lamps.size` shrinks each triangle toward its middle, leaving dark seams.
+
 ## GPU
 
 A sign draws with WebGPU, WebGL 2 or 2D. Ask the browser for a WebGPU device once per page and give it
@@ -144,7 +151,7 @@ costs only the ones on screen. `createTicker({ fps })` makes a ticker of your ow
 
 Segment displays that show a value: 7-, 8-, 9-, 14-, 16- and 22-segment, Nixie tubes, the 5 × 7
 matrix, and notations like Cistercian and Maya numerals, Braille, Morse and semaphore. `TYPES`
-lists all 21. Many readouts share one canvas and one sign, on a panel or over the page:
+lists all 23, `triangles` and `triangles-fine` drawing letters on the triangle grid. Many readouts share one canvas and one sign, on a panel or over the page:
 
 ```ts
 import { createOverlay, createPanel } from 'bree';

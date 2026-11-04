@@ -1,6 +1,7 @@
 import {
   EFFECTS,
   type EffectSpec,
+  FACE_NAMES,
   LAYERS,
   type LayerName,
   MODULATORS,
@@ -40,7 +41,26 @@ const LENGTHS: readonly {
   mods: number;
   effects: number;
   layers: number;
-}[] = [{ until: 10, moves: { enter: 6, active: 4, exit: 6 }, mods: 12, effects: 7, layers: 3 }];
+  faces: number;
+}[] = [
+  {
+    until: 10,
+    moves: { enter: 6, active: 4, exit: 6 },
+    mods: 12,
+    effects: 7,
+    layers: 3,
+    faces: 42,
+  },
+  // Version 13 added the strokes face (2026-11-04).
+  {
+    until: 12,
+    moves: { enter: 10, active: 5, exit: 10 },
+    mods: 19,
+    effects: 13,
+    layers: 10,
+    faces: 42,
+  },
+];
 
 /** The registries a link of `version` names its moves, modulators, effects and layers from. */
 export interface Registries {
@@ -48,11 +68,19 @@ export interface Registries {
   mods: readonly string[];
   effects: readonly string[];
   layers: readonly string[];
+  faces: readonly string[];
 }
 
 export function registriesAt(version: number): Registries {
   const at = LENGTHS.find((l) => version <= l.until);
-  if (!at) return { movesIn, mods: MOD_NAMES, effects: EFFECT_NAMES, layers: LAYER_NAMES };
+  if (!at)
+    return {
+      movesIn,
+      mods: MOD_NAMES,
+      effects: EFFECT_NAMES,
+      layers: LAYER_NAMES,
+      faces: FACE_NAMES,
+    };
   return {
     movesIn: Object.fromEntries(SLOTS.map((s) => [s, movesIn[s].slice(0, at.moves[s])])) as Record<
       Slot,
@@ -61,6 +89,7 @@ export function registriesAt(version: number): Registries {
     mods: MOD_NAMES.slice(0, at.mods),
     effects: EFFECT_NAMES.slice(0, at.effects),
     layers: LAYER_NAMES.slice(0, at.layers),
+    faces: FACE_NAMES.slice(0, at.faces),
   };
 }
 

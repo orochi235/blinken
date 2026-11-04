@@ -12,7 +12,7 @@ lights so the effects stack can reach them, but nothing exposes effects on a rea
 
 ## Display types
 
-`TYPES` (`src/readout/types/`) holds 21. A type is data: one cell's lights, each a list of shapes
+`TYPES` (`src/readout/types/`) holds 23. A type is data: one cell's lights, each a list of shapes
 (disc, bar, or polyline) in the cell's units, and an encoder from a value to the lights each cell
 lights.
 
@@ -29,6 +29,7 @@ lights.
 | `braille`, `ogham`, `morse`, `semaphore` | text           | Grade 1, the 20 letters, International, the flag alphabet  |
 | `dice`, `tally`, `bcd`                   | numbers        | nine pips; a gate of five a cell; four lamps a digit       |
 | `bargraph`                               | 0 to 1         | one bar a cell                                             |
+| `triangles`, `triangles-fine`            | text           | letters on the triangle grid: 5 × 7 doubled, or `strokes`  |
 
 Numbers align right and keep their last cells when too long; text aligns left and keeps its first.
 A character a type lacks shows blank. Every cell carries every light it can ever show, which is why
@@ -43,7 +44,7 @@ optics, defects, ghosts, the GPU gather and the mix need no change, and an effec
 readout's dots ranks its cells as columns. Board places a readout doesn't fill have no shapes and
 draw nothing (2026-11-04).
 
-**Every backend draws primitives** (`src/render/prims.ts`): discs, bars, polylines and faceplates,
+**Every backend draws primitives** (`src/render/prims.ts`): discs, bars, polylines, triangles and faceplates,
 each owned by a light and placed through a **view**, a per-readout transform of offset, scale,
 slant and clip (`src/render/placement.ts`). The fragment shaders draw each from its signed
 distance: a bar's ends are `point` (the 7-segment's hexagonal taper), `round` or `square`, and a

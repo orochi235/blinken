@@ -1,5 +1,7 @@
 /** What a primitive is: drawn by every backend from its distance. */
-export const PRIM = { disc: 0, bar: 1, poly: 2, plate: 3 } as const;
+export const PRIM = { disc: 0, bar: 1, poly: 2, plate: 3, tri: 4 } as const;
+/** How much of its place a lamp-scaled triangle fills per unit of `lamps.size`, at most all. */
+export const TRI_FILL = 1.25;
 /** How a bar ends: tapered to a point at 45°, a half disc, or cut square. */
 export const ENDS = { point: 0, round: 1, square: 2 } as const;
 /** What an unlit primitive shows of itself in the housing. */
@@ -13,7 +15,8 @@ export const NO_LIGHT = 0xffffffff;
  * Shapes in local units, each owned by a light and placed through a view. `geom` per kind:
  * disc `[cx, cy, r, lampScaled, glow]`, bar `[x1, y1, x2, y2, halfWidth, ends, glow]`, poly
  * `[first, count, halfWidth, glow, minX, minY, maxX, maxY]` over `points`' pairs, plate
- * `[x0, y0, x1, y1, corner]`. A lamp-scaled disc's radius is multiplied by `lamps.size`.
+ * `[x0, y0, x1, y1, corner]`, triangle `[x1, y1, x2, y2, x3, y3, lampScaled, glow]`. A lamp-scaled
+ * triangle shrinks toward its middle to `lamps.size * TRI_FILL` of itself. A lamp-scaled disc's radius is multiplied by `lamps.size`.
  */
 export interface Prims {
   readonly n: number;
@@ -60,6 +63,13 @@ export interface PrimBuilder {
     glow?: number,
   ): void;
   plate(view: number, x0: number, y0: number, x1: number, y1: number, corner: number): void;
+  tri(
+    light: number,
+    view: number,
+    socket: Socket,
+    corners: readonly (readonly [number, number])[],
+    o?: { lampScaled?: boolean; glow?: number },
+  ): void;
   build(): Prims;
 }
 
@@ -95,6 +105,14 @@ export function primBuilder(): PrimBuilder {
         y1 = Math.max(y1, y);
       }
       add(l, v, PRIM.poly, s, [first, pts.length, hw, glow, x0, y0, x1, y1]);
+    },
+    tri(l, v, s, corners, o = {}) {
+      const [a, b, c] = corners as [
+        readonly [number, number],
+        readonly [number, number],
+        readonly [number, number],
+      ];
+      add(l, v, PRIM.tri, s, [...a, ...b, ...c, o.lampScaled ? 1 : 0, o.glow ?? 1]);
     },
     plate(v, x0, y0, x1, y1, corner) {
       add(NO_LIGHT, v, PRIM.plate, SOCKET.plate, [x0, y0, x1, y1, corner]);
@@ -150,8 +168,49 @@ function bar(
 }
 
 /** Distance from local (`x`, `y`) to primitive `k`'s edge: below 0 inside. */
+/** How far a triangle is shrunk toward its middle. */
+const triScale = (p: Prims, k: number, lamp: number) =>
+  g(p, k, 6) > 0 ? Math.min(1, Math.max(lamp * TRI_FILL, 0)) : 1;
+
+/** A triangle's corners, its middle, and its inradius at full size. */
+function triOf(p: Prims, k: number) {
+  const c = [0, 2, 4].map((i) => [g(p, k, i), g(p, k, i + 1)] as const);
+  const [a, b, d] = c as [
+    readonly [number, number],
+    readonly [number, number],
+    readonly [number, number],
+  ];
+  const mx = (a[0] + b[0] + d[0]) / 3;
+  const my = (a[1] + b[1] + d[1]) / 3;
+  const area = Math.abs((b[0] - a[0]) * (d[1] - a[1]) - (d[0] - a[0]) * (b[1] - a[1])) / 2;
+  const perimeter =
+    Math.hypot(b[0] - a[0], b[1] - a[1]) +
+    Math.hypot(d[0] - b[0], d[1] - b[1]) +
+    Math.hypot(a[0] - d[0], a[1] - d[1]);
+  return { c, mx, my, inradius: perimeter > 0 ? (2 * area) / perimeter : 0 };
+}
+
+/** Distance from (`x`, `y`) to the triangle `c`'s edge, below 0 inside. */
+function triangle(x: number, y: number, c: readonly (readonly [number, number])[]): number {
+  let d = Infinity;
+  let sign = 0;
+  for (let i = 0; i < 3; i++) {
+    const [ax, ay] = c[i] as readonly [number, number];
+    const [bx, by] = c[(i + 1) % 3] as readonly [number, number];
+    d = Math.min(d, segment(x, y, ax, ay, bx, by));
+    const cross = (bx - ax) * (y - ay) - (by - ay) * (x - ax);
+    sign += cross > 0 ? 1 : cross < 0 ? -1 : 0;
+  }
+  return Math.abs(sign) === 3 ? -d : d;
+}
+
 export function sdf(p: Prims, k: number, x: number, y: number, lamp = 1): number {
   switch (p.kind[k]) {
+    case PRIM.tri: {
+      const t = triOf(p, k);
+      const f = triScale(p, k, lamp);
+      return triangle(t.mx + (x - t.mx) / f, t.my + (y - t.my) / f, t.c) * f;
+    }
     case PRIM.disc:
       return Math.hypot(x - g(p, k, 0), y - g(p, k, 1)) - radiusOfPrim(p, k, lamp);
     case PRIM.bar:
@@ -181,6 +240,8 @@ export function sdf(p: Prims, k: number, x: number, y: number, lamp = 1): number
 /** A primitive's thickness from its middle to its edge: a disc's radius, a stroke's half width. */
 export function radiusOfPrim(p: Prims, k: number, lamp = 1): number {
   switch (p.kind[k]) {
+    case PRIM.tri:
+      return triOf(p, k).inradius * triScale(p, k, lamp);
     case PRIM.disc:
       return g(p, k, 2) * (g(p, k, 3) > 0 ? lamp : 1);
     case PRIM.bar:
@@ -195,6 +256,8 @@ export function radiusOfPrim(p: Prims, k: number, lamp = 1): number {
 /** How far a primitive's light blooms, as a multiple of an LED's. */
 export function glowOfPrim(p: Prims, k: number): number {
   switch (p.kind[k]) {
+    case PRIM.tri:
+      return g(p, k, 7);
     case PRIM.disc:
       return g(p, k, 4);
     case PRIM.bar:
@@ -225,6 +288,11 @@ export function boxOf(
       };
     case PRIM.poly:
       return { x0: g(p, k, 4) - r, y0: g(p, k, 5) - r, x1: g(p, k, 6) + r, y1: g(p, k, 7) + r };
+    case PRIM.tri: {
+      const xs = [g(p, k, 0), g(p, k, 2), g(p, k, 4)];
+      const ys = [g(p, k, 1), g(p, k, 3), g(p, k, 5)];
+      return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+    }
     default:
       return { x0: g(p, k, 0), y0: g(p, k, 1), x1: g(p, k, 2), y1: g(p, k, 3) };
   }
