@@ -1,7 +1,7 @@
 import { type Mix, mix } from '@msb235/blits';
 import { gpu, gpuOf } from '@msb235/blits/gpu';
 import { board, KIT, type Pose, type Subject } from '@/board.js';
-import type { LayerSpec } from '@/builtins.js';
+import { LAYERS, type LayerSpec } from '@/builtins.js';
 import { fieldsOf } from '@/modulators/shader.js';
 import { cueLayer } from '@/program.js';
 import { close, note, readBack, test } from './harness.js';
@@ -66,3 +66,22 @@ const dev = (d: unknown) => d as Parameters<typeof gpu>[0]['device'];
 
 test('sparkle folds on the GPU as the CPU does', (d) =>
   agree(dev(d), { mod: 'sparkle', params: { share: 0.05 } }, ['lit'], [12, 437, 913]));
+
+test('hue-cycle spread by column (rainbow) folds on the GPU as the CPU does', (d) =>
+  agree(dev(d), LAYERS.rainbow, ['hue'], [130, 1170, 2290], 1e-3));
+
+test('pulse spread by center, square, folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'pulse', spread: { by: 'center' }, params: { shape: 'square', phase: 0.013 } },
+    ['gain'],
+    [70, 410, 777],
+  ));
+
+test('bloom spread by row folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'bloom', spread: { by: 'row' }, params: { phase: 0.07 } },
+    ['glow'],
+    [90, 520, 951],
+  ));

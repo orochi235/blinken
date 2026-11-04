@@ -11,6 +11,7 @@ import {
   RATE,
   unitAt,
 } from './modulator.js';
+import { f32, RANK, rankAt, SHAPES, shader, unitOf } from './shader.js';
 
 const shapeParam = (choices: readonly string[], value: string): ChoiceParam => ({
   label: 'shape',
@@ -26,6 +27,10 @@ interface Spec {
   channel: Channel;
   /** The channel's value for the wave's `u`, 0..1, at the given amount. */
   of(u: number, amount: number): number;
+  /** `of` in WGSL, reading `u` and `a`. */
+  wgsl: string;
+  /** The channel's rest, which a cell is given. */
+  rest: number;
   /** The shapes a setting may choose between, or one fixed shape. */
   shape: readonly string[] | WaveShape;
   /** How far the wave swings its channel, and the param key it is set by. */
@@ -37,6 +42,23 @@ interface Spec {
 
 const swing = (s: Spec): Modulator => {
   const choices = typeof s.shape === 'string' ? undefined : s.shape;
+  const shapeOf = (p: { shape?: string }) =>
+    (typeof s.shape === 'string' ? s.shape : p.shape) as WaveShape;
+  const cycle = shader({
+    params: ['shape', 'amount', 'phase', 'start', 'by', 'cols'],
+    wgsl: `let u = bree_unit(params.shape, ph + ${RANK} * params.phase + params.start);
+let a = params.amount;
+out.${s.channel} = select(${s.wgsl}, ${f32(s.rest)}, subject.cell > 0.5);`,
+    at: (ph, subject, p) => {
+      if (subject.kind === 'cell') return { [s.channel]: s.rest };
+      const u = unitOf(
+        p.shape as number,
+        ph + rankAt(p, subject) * (p.phase as number) + (p.start as number),
+      );
+      return { [s.channel]: s.of(u, p.amount as number) };
+    },
+    writes: [s.channel],
+  });
   const params = {
     ...(choices ? { shape: shapeParam(choices, choices[0] as string) } : {}),
     rate: RATE,
@@ -51,7 +73,7 @@ const swing = (s: Spec): Modulator => {
     on: 'dots',
     patch: (_at, v, rank) => {
       const p = v as { rate: number; phase: number; shape?: string } & Record<string, number>;
-      const shape = (typeof s.shape === 'string' ? s.shape : p.shape) as WaveShape;
+      const shape = shapeOf(p);
       const start = s.start ?? 0;
       return patch<Subject, Pose>(
         cycleMs(p.rate),
@@ -62,6 +84,17 @@ const swing = (s: Spec): Modulator => {
         { writes: [s.channel] },
       );
     },
+    shader: (_at, v, rank) => {
+      if (!rank) return null;
+      const p = v as { rate: number; phase: number; shape?: string } & Record<string, number>;
+      return cycle(cycleMs(p.rate), {
+        shape: SHAPES.indexOf(shapeOf(p)),
+        amount: p[s.amount.key] as number,
+        phase: p.phase,
+        start: s.start ?? 0,
+        ...rank,
+      });
+    },
   });
 };
 
@@ -71,6 +104,8 @@ export const pulse = swing({
   about: 'Dots swell and fade.',
   channel: 'gain',
   of: (u, d) => 1 - d * (1 - u),
+  wgsl: '1.0 - a * (1.0 - u)',
+  rest: 1,
   shape: ['sine', 'triangle', 'square'],
   amount: {
     key: 'depth',
@@ -88,6 +123,8 @@ export const hueCycle = swing({
   about: 'Colors turn round the wheel.',
   channel: 'hue',
   of: (u, arc) => arc * u,
+  wgsl: 'a * u',
+  rest: 0,
   shape: 'saw',
   amount: {
     key: 'arc',
@@ -112,6 +149,8 @@ export const bloom = swing({
   about: 'The halos breathe in and out.',
   channel: 'glow',
   of: (u, d) => 1 + d * u,
+  wgsl: '1.0 + a * u',
+  rest: 1,
   shape: 'sine',
   amount: {
     key: 'depth',

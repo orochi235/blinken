@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { board, KIT, type Pose, type Subject } from '@/board.js';
 import { rasterize } from '@/font.js';
 import { MODULATORS, type ModulatorName } from '@/modulators/index.js';
+import { ranked } from '@/modulators/shader.js';
 import { place, rankOf } from '@/orders.js';
 import { values } from '@/params.js';
 
@@ -296,4 +297,27 @@ describe('modulators', () => {
       }
     });
   }
+});
+
+describe('modulator shaders', () => {
+  const orders = ['together', 'column', 'column-reverse', 'center', 'row'] as const;
+  for (const name of names.filter((n) => MODULATORS[n].shader))
+    it(`${name}: the shader's at gives what patch does for a dot, and rests for a cell`, () => {
+      const m = MODULATORS[name];
+      const p = values(m) as never;
+      const rest = Object.fromEntries(m.writes.map((c) => [c, KIT[c].rest]));
+      let checked = 0;
+      for (const by of orders) {
+        const sp = m.shader?.(at, p, ranked({ by }, b));
+        if (!sp) continue;
+        checked++;
+        const plain = m.patch(at, p, rankOf({ by }, at));
+        expect(sp.duration).toBe(plain.duration);
+        for (const phase of [0, 0.137, 0.5, 0.861])
+          for (const s of b.dots.filter((_, k) => k % 7 === 0))
+            expect(sp.at(phase, s, setting)).toEqual(plain.at(phase, s, setting));
+        for (const cell of b.cells) expect(sp.at(0.3, cell, setting)).toEqual(rest);
+      }
+      expect(checked).toBeGreaterThan(0);
+    });
 });
