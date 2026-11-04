@@ -6,6 +6,8 @@ import { liveliest } from './liveliest.js';
 import { createMarquee } from './marquee.js';
 import type { Follow, Marquee } from './marquee-api.js';
 import { rowsToShow } from './orders.js';
+import type { Backend } from './render/backend.js';
+import type { Gpu } from './render/gpu.js';
 import { createTicker, type Ticker } from './ticker.js';
 
 export interface ThumbnailOptions extends Look {
@@ -27,6 +29,10 @@ export interface ThumbnailOptions extends Look {
    * repainting the moment it holds, without running its mix, so it follows a moving sign.
    */
   readonly follow?: Follow;
+  /** A WebGPU device from `gpu()`, as `createMarquee` takes it. Default none. */
+  readonly gpu?: Gpu | null;
+  /** What it draws with, as `createMarquee` takes it. */
+  readonly backend?: Backend;
   /** The clock it animates on. Default one every thumbnail shares, at 30 fps. */
   readonly ticker?: Ticker;
   /**
@@ -158,6 +164,8 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
     ...sign,
     housing: opts.housing,
     follow: opts.follow,
+    gpu: opts.gpu,
+    backend: opts.backend,
     ticker: gated,
     name: `thumbnail ${name}`,
   });

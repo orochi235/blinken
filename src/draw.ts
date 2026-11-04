@@ -32,13 +32,19 @@ const CHANNELS = Object.keys(signColumns(0)) as (keyof SignColumns)[];
 
 /**
  * Copies each border bulb's cell's pose from `cells`, the mix's columns for `b.cells`, into `cols`,
- * where the bulbs follow the dots as `createSign` was given them.
+ * where the bulbs follow the dots as `createSign` was given them: every channel, or `channels`.
  */
-export function paintBulbs(b: Board, cells: SignColumns, cols: SignColumns): void {
+export function paintBulbs(
+  b: Board,
+  cells: SignColumns,
+  cols: SignColumns,
+  channels: Iterable<keyof SignColumns> = CHANNELS,
+): void {
   const after = b.dots.length;
+  const which = [...channels];
   for (let j = 0; j < b.bulbs.length; j++) {
     const c = b.cellOf[j] as number;
-    for (const ch of CHANNELS) {
+    for (const ch of which) {
       const n = ch === 'tint' ? 4 : 1;
       cols[ch].set(cells[ch].subarray(c * n, c * n + n), (after + j) * n);
     }

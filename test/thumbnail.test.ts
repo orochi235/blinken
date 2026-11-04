@@ -128,6 +128,15 @@ describe('createThumbnail', () => {
       .entries()
       .filter((e) => e.name === name).length;
 
+  it('passes the backend through to its sign, and needs a handle for webgpu', () => {
+    const thumb = createThumbnail(fakeCanvas(), { effect: 'scroll', backend: '2d' });
+    expect(thumb.marquee.backend).toBe('2d');
+    thumb.destroy();
+    expect(() => createThumbnail(fakeCanvas(), { effect: 'scroll', backend: 'webgpu' })).toThrow(
+      /needs a gpu handle/,
+    );
+  });
+
   it('loops its effect, drawing as it goes, and unlists its mix when destroyed', async () => {
     const ticker = createTicker();
     const thumb = createThumbnail(fakeCanvas(), { effect: 'scroll', ticker });

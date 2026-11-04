@@ -527,6 +527,7 @@ describe('follow', () => {
     };
     const main = createMarquee({} as HTMLCanvasElement, {
       draw: false,
+      backend: '2d',
       ticker,
       cols: 20,
       rows: 7,
@@ -534,6 +535,7 @@ describe('follow', () => {
     });
     const mine = createMarquee({} as HTMLCanvasElement, {
       draw: false,
+      backend: '2d',
       ticker,
       cols: 10,
       rows: 7,
@@ -543,6 +545,7 @@ describe('follow', () => {
     for (let now = 0; now <= 1000; now += 100) step(now);
     const own = createMarquee({} as HTMLCanvasElement, {
       draw: false,
+      backend: '2d',
       ticker,
       cols: 10,
       rows: 7,
@@ -569,6 +572,7 @@ describe('setHighlight', () => {
     };
     const m = createMarquee({} as HTMLCanvasElement, {
       draw: false,
+      backend: '2d',
       ticker,
       cols: 10,
       rows: 7,
@@ -583,6 +587,67 @@ describe('setHighlight', () => {
     });
     m.setHighlight(null);
     expect([...m.columns.invert]).toEqual(before);
+    m.destroy();
+  });
+});
+
+describe('backend', () => {
+  /** A canvas whose 2D context draws nothing, in a box 160 × 56. */
+  const canvas = () => {
+    const ctx = new Proxy({}, { get: () => () => {}, set: () => true });
+    return {
+      getContext: (kind: string) => (kind === '2d' ? ctx : null),
+      style: {},
+      width: 0,
+      height: 0,
+      parentElement: { clientWidth: 160, clientHeight: 56 },
+    } as unknown as HTMLCanvasElement;
+  };
+  const ticker = { add: () => () => {}, size: 0 };
+
+  it('draws with what it is asked for, and says so', () => {
+    vi.stubGlobal('document', { createElement: canvas });
+    vi.stubGlobal('devicePixelRatio', 1);
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    try {
+      const m = createMarquee(canvas(), { backend: '2d', ticker });
+      expect(m.backend).toBe('2d');
+      m.destroy();
+      // Node has no WebGL, so a sign left to choose draws with 2D.
+      const auto = createMarquee(canvas(), { ticker });
+      expect(auto.backend).toBe('2d');
+      auto.destroy();
+      const asked = createMarquee(canvas(), { backend: 'webgl', ticker });
+      expect(asked.backend).toBe('2d');
+      asked.destroy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('reports the backend with each frame’s cost, and 2d without drawing', () => {
+    const fns: ((now: number) => void)[] = [];
+    const costs: string[] = [];
+    const m = createMarquee({} as HTMLCanvasElement, {
+      draw: false,
+      ticker: {
+        add(fn) {
+          fns.push(fn);
+          return () => {};
+        },
+        size: 0,
+      },
+      onFrame: (cost) => costs.push(cost.backend),
+    });
+    for (const fn of fns) fn(0);
+    expect(m.backend).toBe('2d');
+    expect(costs).toEqual(['2d']);
     m.destroy();
   });
 });

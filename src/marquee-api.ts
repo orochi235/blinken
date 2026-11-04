@@ -11,14 +11,18 @@ import type { ParamValue } from './params.js';
 import type { Pass } from './pass.js';
 import type { Plane } from './planes.js';
 import type { Scene } from './program.js';
+import type { Backend } from './render/backend.js';
+import type { Gpu } from './render/gpu.js';
 import type { Ticker } from './ticker.js';
 
 /** What one frame cost, smoothed over about twenty frames. */
 export interface FrameCost {
-  /** `sync` plus one `pull` of every light, ms. */
+  /** `sync` plus the `pull` of every channel the CPU folds, and on WebGPU the GPU's fold, ms. */
   readonly mixMs: number;
   /** The canvas work, ms; 0 with `draw: false`. */
   readonly drawMs: number;
+  /** What drew the frame. */
+  readonly backend: Backend;
 }
 
 export interface MarqueeOptions {
@@ -51,7 +55,10 @@ export interface MarqueeOptions {
   /**
    * Another sign whose planes this one takes over, each dot from the dot at the same place on it:
    * `color` makes a preview wear what the main sign is wearing while keeping its own shape.
-   * `source` is read every frame, so it can follow a sign that is replaced. Default none.
+   * `source` is read every frame, so it can follow a sign that is replaced, and a destroyed one is
+   * not followed. Between two WebGPU signs on one device it happens on the GPU; from a WebGPU sign
+   * on another device, or to a sign drawn otherwise, it is read back a frame or so late. Default
+   * none.
    */
   readonly follow?: Follow;
   /** False leaves the housing round the dots see-through rather than dark. Default true. */
@@ -68,8 +75,19 @@ export interface MarqueeOptions {
   readonly ghost?: Ghost;
   /** How its lights are sized, spaced, lit and bloom. Default: fitted to the parent, as built. */
   readonly lamps?: Lamps;
-  /** False runs the mix without drawing, for timing it alone. Default true. */
+  /** False runs the mix without drawing, for timing it alone, on the CPU. Default true. */
   readonly draw?: boolean;
+  /**
+   * A WebGPU device from `gpu()`, which one page shares among its signs. Given one, the sign draws
+   * with WebGPU and folds what it can of its mix on the GPU. Default none.
+   */
+  readonly gpu?: Gpu | null;
+  /**
+   * Forces what it draws with: `webgpu` needs `gpu`, and `webgl` falls back to `2d` where the page
+   * has no WebGL context to give. Default WebGPU with `gpu`, else WebGL where the browser has it,
+   * else 2D.
+   */
+  readonly backend?: Backend;
   /**
    * The clock its frames run on; signs sharing one draw from one animation frame callback, and a
    * throttled one draws them less often. Default a ticker of its own, every display frame.
@@ -92,7 +110,13 @@ export interface Follow {
 
 export interface Marquee {
   readonly board: Board;
-  /** Its dots and border bulbs as the last frame drew them, every channel. */
+  /** What it draws with: what was asked for, or what it fell back to. `2d` with `draw: false`. */
+  readonly backend: Backend;
+  /**
+   * Its dots and border bulbs as the last frame drew them. On 2D and WebGL that is every channel.
+   * On WebGPU it is only the channels the CPU folded that frame; the rest hold whatever was last
+   * pulled into them.
+   */
   readonly columns: SignColumns;
   /**
    * Draws the last frame again without running the mix, taking what it follows afresh: for a
@@ -140,6 +164,10 @@ export interface Marquee {
   setLamps(lamps: Lamps): void;
   /** Sets how the border's bulbs light; a sign made with no border has none to light. */
   setBorder(border: Border): void;
-  /** Stops the frame loop, lets go of the canvas, and takes its mix off the debuggers' list. */
+  /**
+   * Stops the frame loop, lets go of the canvas, and takes its mix off the debuggers' list. A sign
+   * made on the canvas afterward draws once a WebGL context lost here is restored; a canvas once
+   * drawn with WebGL or WebGPU can't take a 2D sign.
+   */
   destroy(): void;
 }

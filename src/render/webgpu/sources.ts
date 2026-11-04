@@ -75,13 +75,12 @@ export function createSources(device: GPUDevice, b: Board): Sources {
       head[0] = n;
       head[1] = dots;
       head[2] = follow ? followMask(follow.planes) : 0;
-      for (const [c, name] of CHANNELS.entries()) {
+      for (const [c, on] of planOf(source).entries()) {
+        const name = CHANNELS[c] as (typeof CHANNELS)[number];
         const axes = axesOf(name);
         const base = n * SLOT[name];
-        const on = source?.channel(name) ?? null;
-        const buf = on?.buffer as GPUBuffer | undefined;
-        if (on && buf && (src === null || src === buf) && on.offset % 4 === 0) {
-          src = buf;
+        if (on) {
+          src = on.buffer as GPUBuffer;
           head.set([1, on.offset / 4, on.stride / 4, 0], 4 + c * 4);
           continue;
         }
@@ -111,6 +110,20 @@ export function createSources(device: GPUDevice, b: Board): Sources {
       for (const b of [pose, cpu, infoBuf, uniform, empty]) b.destroy();
     },
   };
+}
+
+/**
+ * Where a gather reads each channel this frame, in `CHANNELS` order: `source`'s buffer, or null
+ * for the columns. The channels read from the GPU must all share one buffer.
+ */
+export function planOf(source: ChannelSource | null): (GpuChannel | null)[] {
+  let src: unknown = null;
+  return CHANNELS.map((name) => {
+    const on = source?.channel(name) ?? null;
+    if (!on?.buffer || on.offset % 4 !== 0 || (src !== null && src !== on.buffer)) return null;
+    src = on.buffer;
+    return on;
+  });
 }
 
 /** One bit per pose number the followed planes carry. */

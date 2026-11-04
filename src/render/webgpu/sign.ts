@@ -1,12 +1,14 @@
 import type { Board, Led } from '../../board.js';
 import type { Lamps, Sign } from '../../draw.js';
 import type { Grid } from '../../grid.js';
+import type { SignColumns } from '../../optics.js';
 import { fitCanvas } from '../fit.js';
 import type { Gpu } from '../gpu.js';
 import { LAMP_SIZE, lightTable } from '../lights.js';
 import { createGpuOptics } from './optics.js';
 import { createPainter, type Look } from './pipelines.js';
-import { type ChannelSource, createSources, type Follow } from './sources.js';
+import { type ChannelSource, createSources, type Follow, planOf } from './sources.js';
+import { CHANNELS } from './wgsl-optics.js';
 
 export type { ChannelSource, Follow } from './sources.js';
 
@@ -19,6 +21,11 @@ export interface WebGpuSign extends Sign {
   setFollow(from: Follow | null): void;
   /** Ten numbers per light, each channel at its `SLOT`: the poses the optics read, for a follower. */
   readonly output: GPUBuffer;
+  /**
+   * The channels the next render reads from the columns rather than the source's buffer, dots and
+   * bulbs alike. It holds until the source's mix syncs again.
+   */
+  cpuChannels(): ReadonlySet<keyof SignColumns>;
 }
 
 /**
@@ -79,6 +86,10 @@ export function createWebGpuSign(
   return {
     backend: 'webgpu',
     output: sources.pose,
+    cpuChannels() {
+      const plan = planOf(source);
+      return new Set(CHANNELS.filter((_, c) => plan[c] === null));
+    },
     render(cols, fallback, dt) {
       guard(() => {
         const enc = device.createCommandEncoder();

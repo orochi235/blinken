@@ -173,3 +173,27 @@ test('webgl: a lost context draws nothing, and a restored one draws again', asyn
   s.destroy();
   if ((px[0] as number) < 250) throw new Error(`the first light reads ${[...px]} after restore`);
 });
+
+test('webgl: a sign made on a destroyed sign’s canvas draws once its context is back', async () => {
+  const { b, leds, cols } = scene();
+  const canvas = canvasIn(400, 200);
+  const first = createWebGlSign(canvas, b, leds, true, (x, y) => [x, y]);
+  if (!first) throw new Error('no WebGL sign');
+  first.destroy();
+  // As React's strict mode does: made, destroyed and made again within one task.
+  const s = createWebGlSign(canvas, b, leds, true, (x, y) => [x, y]);
+  if (!s) throw new Error('no second WebGL sign on the same canvas');
+  s.setLamps({ pitch: PITCH });
+  await new Promise((r) => canvas.addEventListener('webglcontextrestored', r, { once: true }));
+  s.render(cols, 0xff9a2e, 1000);
+  const g = canvas.getContext('webgl2') as WebGL2RenderingContext;
+  const t = lightTable(b, leds, (x, y) => [x, y]);
+  const scale = canvas.width / t.frame.across;
+  const px = new Uint8Array(4);
+  const x = Math.floor((t.at[0] as number) * scale);
+  const y = Math.floor((t.at[1] as number) * scale);
+  g.readPixels(x, canvas.height - 1 - y, 1, 1, g.RGBA, g.UNSIGNED_BYTE, px);
+  s.destroy();
+  if ((px[0] as number) < 250)
+    throw new Error(`the first light reads ${[...px]} on the reused canvas`);
+});
