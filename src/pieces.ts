@@ -2,6 +2,7 @@ import type { ArcVoice } from '@msb235/blits';
 import { everyOf, type Pose, type Subject } from './board.js';
 import { MODULATORS, type ModulatorName } from './modulators/index.js';
 import { type Joins, LOOSE, MOVES, type MoveName, type Rests, type Slot } from './moves/index.js';
+import type { MoveShader } from './moves/shader.js';
 import { delayOf, type Order, type Placed, rankOf, spanOf } from './orders.js';
 import { type Params, type ParamValue, values } from './params.js';
 import type { Channel } from './planes.js';
@@ -112,16 +113,13 @@ export function stagePiece(
     gpu && span === 0 && subjects.length === at.board.dots.length
       ? move.shader?.(at, p, joins)
       : null;
-  const pass = shaded ?? (move.patch(at, p, joins) as ArcVoice<Subject, Pose>['patch']);
-  const voice: ArcVoice<Subject, Pose> = shaded
-    ? { patch: shaded, subjects: everyOf(at.board), ...(loop && { loop: true }) }
-    : {
-        patch: pass,
-        subjects,
-        stagger: delay,
-        duration: pass.duration + span,
-        ...(loop && { loop: true }),
-      };
+  const pass = shaded ? null : (move.patch(at, p, joins) as ArcVoice<Subject, Pose>['patch']);
+  const voice: ArcVoice<Subject, Pose> = {
+    ...(pass
+      ? { patch: pass, subjects, stagger: delay, duration: pass.duration + span }
+      : { patch: shaded as MoveShader, subjects: everyOf(at.board) }),
+    ...(loop && { loop: true }),
+  };
   const clips = at.text.cols > at.board.cols && !move.wide;
   const warnings = clips
     ? [{ slot, text: `${piece.move} clips ${at.label ?? 'the message'}` }]
