@@ -1,7 +1,8 @@
 import { oklab, patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import { hash } from '../hash.js';
-import { modulator, outweigh } from './modulator.js';
+import { modulator, OUTWEIGH, outweigh } from './modulator.js';
+import { type Bound, f32, shader } from './shader.js';
 
 /** Bottom to top: embers, flame, tips. */
 const STOPS = [0x9e0f06, 0xe8330c, 0xff7a12, 0xffd23f].map(oklab);
@@ -30,6 +31,43 @@ function ramp(u: number): number[] {
   const b = STOPS[i + 1] as number[];
   return a.map((v, k) => v + ((b[k] as number) - v) * (x - i));
 }
+
+const PERIOD = RISE / CELL;
+
+/** A dot's flicker at `phase`: its gain, and its heat's color, outweighing the scene's. */
+function poseAt(phase: number, x: number, sy: number, p: Bound): Partial<Pose> {
+  const intensity = p.intensity as number;
+  const y = (sy + phase * RISE) / CELL;
+  const n = 0.65 * noise(x / 2.5, y, PERIOD) + 0.35 * noise(x / 1.2 + 31, y * 2, PERIOD * 2);
+  const up = 1 - sy / (p.rows as number);
+  const ragged = 0.55 + 0.45 * up;
+  return {
+    gain: 1 - intensity * ragged * (1 - n) ** 1.6,
+    tint: outweigh(ramp(up + (n - 0.5) * 0.6 * intensity)),
+  };
+}
+
+const vec = (c: number[]) => `vec4f(${c.map(f32).join(', ')})`;
+
+const FIRE = shader({
+  params: ['rows', 'intensity'],
+  wgsl: `out.gain = 1.0;
+out.tint = array<f32, 4>(0.0, 0.0, 0.0, 0.0);
+if (subject.cell < 0.5) {
+  let y = (subject.y + ph * ${f32(RISE)}) / ${f32(CELL)};
+  let n = 0.65 * bree_noise(subject.x / 2.5, y, ${PERIOD}) + 0.35 * bree_noise(subject.x / 1.2 + 31.0, y * 2.0, ${PERIOD * 2});
+  let up = 1.0 - subject.y / params.rows;
+  let ragged = 0.55 + 0.45 * up;
+  out.gain = 1.0 - params.intensity * ragged * pow(1.0 - n, 1.6);
+  let x = clamp(up + (n - 0.5) * 0.6 * params.intensity, 0.0, 1.0) * ${f32(STOPS.length - 1)};
+  let i = min(${STOPS.length - 2}, i32(floor(x)));
+  var stops = array<vec4f, ${STOPS.length}>(${STOPS.map(vec).join(', ')});
+  let c = (stops[i] + (stops[i + 1] - stops[i]) * (x - f32(i))) * ${f32(OUTWEIGH)};
+  out.tint = array<f32, 4>(c.x, c.y, c.z, c.w);
+}`,
+  at: (ph, s, p) => (s.kind === 'cell' ? { gain: 1, tint: [0, 0, 0, 0] } : poseAt(ph, s.x, s.y, p)),
+  writes: ['gain', 'tint'],
+});
 
 /**
  * Lit dots colored by height, deep red at the bottom row to yellow at the top, flickering in gain
@@ -61,24 +99,13 @@ export const fire = modulator({
   writes: ['gain', 'tint'],
   on: 'dots',
   patch: (at, p) => {
-    const rows = Math.max(1, at.board.rows - 1);
-    const period = RISE / CELL;
+    const bound = { rows: Math.max(1, at.board.rows - 1), intensity: p.intensity };
     return patch<Subject, Pose>(
       (RISE / p.heat) * 1000,
-      (phase, s) => {
-        if (s.kind === 'cell') return {};
-        const y = (s.y + phase * RISE) / CELL;
-        const n =
-          0.65 * noise(s.x / 2.5, y, period) + 0.35 * noise(s.x / 1.2 + 31, y * 2, period * 2);
-        const up = 1 - s.y / rows;
-        const ragged = 0.55 + 0.45 * up;
-        const gain = 1 - p.intensity * ragged * (1 - n) ** 1.6;
-        return {
-          gain,
-          tint: outweigh(ramp(up + (n - 0.5) * 0.6 * p.intensity)),
-        };
-      },
+      (phase, s) => (s.kind === 'cell' ? {} : poseAt(phase, s.x, s.y, bound)),
       { writes: ['gain', 'tint'] },
     );
   },
+  shader: (at, p) =>
+    FIRE((RISE / p.heat) * 1000, { rows: Math.max(1, at.board.rows - 1), intensity: p.intensity }),
 });

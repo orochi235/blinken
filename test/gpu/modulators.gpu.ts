@@ -170,5 +170,14 @@ test('glitch folds on the GPU as the CPU does', (d) => {
   return agree(dev(d), layer, ['hue', 'gain', 'invert'], [10, ...times], 1e-3);
 });
 
+test('fire folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'fire', params: { intensity: 0.9 } },
+    ['gain', 'tint'],
+    [170, 1490, 3333],
+    COLOR,
+  ));
+
 test('aurora folds on the GPU as the CPU does', (d) =>
   agree(dev(d), { mod: 'aurora', params: { speed: 0.5 } }, ['hue'], [150, 900, 1650], 1e-3));

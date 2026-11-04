@@ -25,7 +25,7 @@ export const unitOf = (shape: number, x: number) => (waveAt(SHAPES[shape] ?? 'si
 
 /**
  * What every modulator's shader may call, one string so the kernel includes it once: `hash`,
- * `closedRank`, `unitOf` and `bump`.
+ * `closedRank`, `unitOf`, `bump` and fire's `noise`.
  */
 const HELPERS = `${HASH_WGSL}
 fn bree_rank(by: f32, cols: f32, x: f32, y: f32, cell: f32, i: f32) -> f32 {
@@ -45,6 +45,19 @@ fn bree_unit(shape: f32, x: f32) -> f32 {
   else if (shape < 2.5) { w = select(2.0 * u - 2.0, 2.0 * u, u < 0.5); }
   else { w = select(-1.0, 1.0, u < 0.5); }
   return (w + 1.0) * 0.5;
+}
+fn bree_smooth(t: f32) -> f32 { return t * t * (3.0 - 2.0 * t); }
+fn bree_noise_at(i: i32, j: i32, period: i32) -> f32 {
+  return bree_hash(i, ((j % period) + period) % period, period);
+}
+fn bree_noise(x: f32, y: f32, period: i32) -> f32 {
+  let ix = i32(floor(x));
+  let iy = i32(floor(y));
+  let fx = bree_smooth(x - floor(x));
+  let fy = bree_smooth(y - floor(y));
+  let top = bree_noise_at(ix, iy, period) + (bree_noise_at(ix + 1, iy, period) - bree_noise_at(ix, iy, period)) * fx;
+  let low = bree_noise_at(ix, iy + 1, period) + (bree_noise_at(ix + 1, iy + 1, period) - bree_noise_at(ix, iy + 1, period)) * fx;
+  return top + (low - top) * fy;
 }
 fn bree_bump(d: f32) -> f32 {
   return select(0.5 + 0.5 * cos(3.141592653589793 * d), 0.0, abs(d) >= 1.0);

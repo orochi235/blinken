@@ -73,8 +73,11 @@ export const unitAt = (shape: WaveShape, x: number) => (waveAt(shape, x) + 1) / 
 /** A smooth hump: 1 at `d` 0, falling along a half cosine to 0 at `d` ±1 and beyond. */
 export const bump = (d: number) => (Math.abs(d) >= 1 ? 0 : 0.5 + 0.5 * Math.cos(Math.PI * d));
 
+/** How many times over `outweigh` counts a tint by default. */
+export const OUTWEIGH = 3;
+
 /**
  * A tint counted `by` times over in the color average, so a modulator's color outweighs the
  * scene's rather than meeting it halfway.
  */
-export const outweigh = (tint: readonly number[], by = 3) => tint.map((v) => v * by);
+export const outweigh = (tint: readonly number[], by = OUTWEIGH) => tint.map((v) => v * by);
