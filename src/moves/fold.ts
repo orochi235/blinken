@@ -3,6 +3,7 @@ import type { Led, Pose } from '../board.js';
 import { rasterize } from '../font.js';
 import type { Placed } from '../orders.js';
 import { move } from './move.js';
+import { moveShader } from './shader.js';
 
 const QUARTER = Math.PI / 2;
 const FOLD_PARAM = {
@@ -14,6 +15,51 @@ const FOLD_PARAM = {
   unit: 'ms',
   about: 'How long the letters take to turn between flat and edge on. Higher turns more slowly.',
 };
+
+/** The angle unfold (`mode` 0), fold (1) or tumble (2) turns the letters through at `phase`. */
+function angleOf(mode: number, turns: number, phase: number) {
+  if (mode === 0) return QUARTER * (1 - phase);
+  if (mode === 1) return QUARTER * phase;
+  const u = 3 * phase - 1;
+  return u > 0 && u < 1 ? 2 * Math.PI * turns * u : 0;
+}
+
+/**
+ * `turned`, reading the top row of the line each text row is on from `tops` (-1 for none), and
+ * whether a column of the line starting at a row has any lit dot from `any`.
+ */
+const TURNED = moveShader({
+  params: ['left', 'tall', 'mode', 'turns'],
+  wgsl: `let u = 3.0 * phase - 1.0;
+var angle = select(${QUARTER} * phase, ${QUARTER} * (1.0 - phase), params.mode < 0.5);
+if (params.mode > 1.5) { angle = select(0.0, 6.283185307179586 * params.turns * u, u > 0.0 && u < 1.0); }
+let top = select(-1.0, table_tops(0.0, row), row >= 0.0);
+let x = subject.x - params.left;
+if (top >= 0.0 && !(params.mode > 0.5 && params.mode < 1.5 && phase >= 1.0)) {
+  let mid = top + (params.tall - 1.0) * 0.5;
+  let s = cos(angle);
+  if (abs(s) < 0.18) {
+    lit = select(0.0, 1.0, row == mid && table_any(x, top) > 0.0);
+  } else {
+    let src = floor(mid + (row - mid) / s + 0.5);
+    lit = select(0.0, table_bitmap(x, src), src >= top && src < top + params.tall);
+  }
+}`,
+  at(phase, d, p, tables) {
+    const t = tables as Record<string, (x: number, y: number) => number>;
+    const [mode, tall] = [p.mode as number, p.tall as number];
+    if (mode === 1 && phase >= 1) return 0;
+    const row = t.rows(0, d.y) - 1;
+    const top = row < 0 ? -1 : t.tops(0, row);
+    if (top < 0) return 0;
+    const x = d.x - (p.left as number);
+    const mid = top + (tall - 1) / 2;
+    const s = Math.cos(angleOf(mode, p.turns as number, phase));
+    if (Math.abs(s) < 0.18) return row === mid && t.any(x, top) > 0 ? 1 : 0;
+    const from = Math.round(mid + (row - mid) / s);
+    return from >= top && from < top + tall ? t.bitmap(x, from) : 0;
+  },
+});
 
 /**
  * Draws a letter turned `angle` radians about the horizontal middle of its line; edge on it is a
@@ -34,7 +80,28 @@ function turned(at: Placed) {
       Array.from({ length: tall }, (_, y) => text.lit(x, t + y)).some(Boolean),
     ),
   );
-  return (led: Led, angle: number) => {
+  /** The letters turning as unfold (`mode` 0), fold (1) or tumble (2) turns them, as a shader. */
+  const shader = (ms: number, mode: number, turns = 0) => {
+    const width = Math.max(1, text.cols);
+    const height = Math.max(1, text.rows);
+    const topRows = Array.from({ length: height }, (_, row) => topOf(row) ?? -1);
+    const anyAt = new Float32Array(width * height);
+    tops.forEach((top, k) => {
+      any[k]?.forEach((v, x) => {
+        if (v && top < height) anyAt[top * width + x] = 1;
+      });
+    });
+    return TURNED(
+      at,
+      ms,
+      { left: at.left, tall, mode, turns },
+      {
+        tops: { width: 1, height, data: topRows },
+        any: { width, height, data: anyAt },
+      },
+    );
+  };
+  const draw = (led: Led, angle: number) => {
     const row = at.rowOf(led);
     const x = led.x - at.left;
     const top = row < 0 ? undefined : topOf(row);
@@ -45,6 +112,7 @@ function turned(at: Placed) {
     const from = Math.round(mid + (row - mid) / s);
     return { lit: from >= top && from < top + tall ? text.level(x, from) : 0 };
   };
+  return { draw, shader };
 }
 
 /** Letters open from edge on to flat. */
@@ -54,11 +122,12 @@ export const unfold = move({
   slot: 'enter',
   params: { ms: FOLD_PARAM },
   patch(at, p) {
-    const draw = turned(at);
+    const { draw } = turned(at);
     return patch<Led, Pose>(p.ms, (phase, led) => draw(led, QUARTER * (1 - phase)), {
       writes: ['lit'],
     });
   },
+  shader: (at, p) => turned(at).shader(p.ms, 0),
 });
 
 /** Letters close from flat to edge on and vanish. */
@@ -68,7 +137,7 @@ export const fold = move({
   slot: 'exit',
   params: { ms: FOLD_PARAM },
   patch(at, p) {
-    const draw = turned(at);
+    const { draw } = turned(at);
     return patch<Led, Pose>(
       p.ms,
       (phase, led) => (phase >= 1 ? { lit: 0 } : draw(led, QUARTER * phase)),
@@ -77,6 +146,7 @@ export const fold = move({
       },
     );
   },
+  shader: (at, p) => turned(at).shader(p.ms, 1),
 });
 
 /** Letters turn end over end in the middle third of the pass, standing upright either side. */
@@ -105,7 +175,7 @@ export const tumble = move({
     },
   },
   patch(at, p) {
-    const draw = turned(at);
+    const { draw } = turned(at);
     // Tumbling in the middle third only, upright either side.
     const turn = (phase: number) => {
       const u = 3 * phase - 1;
@@ -113,4 +183,5 @@ export const tumble = move({
     };
     return patch<Led, Pose>(p.ms, (phase, led) => draw(led, turn(phase)), { writes: ['lit'] });
   },
+  shader: (at, p) => turned(at).shader(p.ms, 2, p.turns),
 });

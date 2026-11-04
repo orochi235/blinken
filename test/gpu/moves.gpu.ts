@@ -119,6 +119,11 @@ test('bounce-in, with and without bounces, folds on the GPU as the CPU does', as
   for (const bounces of [0, 3, 5]) await agree(dev(d), 'bounce-in', { bounces });
 });
 
+test('unfold, fold and tumble fold on the GPU as the CPU does', async (d) => {
+  for (const name of ['unfold', 'fold'] as const) await agree(dev(d), name);
+  for (const turns of [1, 2, 6]) await agree(dev(d), 'tumble', { turns });
+});
+
 test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
   for (const from of [false, true])
     for (const to of [false, true])
