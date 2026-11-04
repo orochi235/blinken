@@ -1,6 +1,7 @@
 import type { ArcVoice } from '@msb235/blits';
 import { everyOf, type Pose, type Subject } from './board.js';
 import { MODULATORS, type ModulatorName } from './modulators/index.js';
+import { ranked } from './modulators/shader.js';
 import { type Joins, LOOSE, MOVES, type MoveName, type Rests, type Slot } from './moves/index.js';
 import type { MoveShader } from './moves/shader.js';
 import { delayOf, type Order, type Placed, rankOf, spanOf } from './orders.js';
@@ -79,8 +80,8 @@ function settingsOf(
 /**
  * A piece as the arc voice that plays it in `slot`; modulators and `active` moves loop. `hold` is
  * the effect's, where one is given, and `joins` says an active move's neighbors hold the message.
- * Staged for the gpu engine (`gpu`), a move playing on every dot at once is a shader patch on
- * every subject where it has one.
+ * Staged for the gpu engine (`gpu`), a modulator, and a move playing on all its dots at once, is a
+ * shader patch where it has one.
  */
 export function stagePiece(
   piece: Piece,
@@ -96,8 +97,10 @@ export function stagePiece(
     const mod = MODULATORS[piece.mod];
     const p = settingsOf(mod, piece, slot, hold);
     const own = mod.on === 'cells' ? at.board.cells : subjects;
+    const spread = piece.spread ?? TOGETHER;
+    const shaded = gpu ? mod.shader?.(at, p, ranked(spread, at.board)) : null;
     const voice: ArcVoice<Subject, Pose> = {
-      patch: mod.patch(at, p, rankOf(piece.spread ?? TOGETHER, at)),
+      patch: shaded ?? mod.patch(at, p, rankOf(spread, at)),
       subjects: own,
       ...(loop && { loop: true }),
     };
@@ -109,15 +112,13 @@ export function stagePiece(
   const order = piece.order ?? TOGETHER;
   const delay = delayOf(order, at);
   const span = spanOf(order, at);
-  const shaded =
-    gpu && span === 0 && subjects.length === at.board.dots.length
-      ? move.shader?.(at, p, joins)
-      : null;
+  const shaded = gpu && span === 0 ? move.shader?.(at, p, joins) : null;
   const pass = shaded ? null : (move.patch(at, p, joins) as ArcVoice<Subject, Pose>['patch']);
+  const whole = subjects.length === at.board.dots.length;
   const voice: ArcVoice<Subject, Pose> = {
     ...(pass
       ? { patch: pass, subjects, stagger: delay, duration: pass.duration + span }
-      : { patch: shaded as MoveShader, subjects: everyOf(at.board) }),
+      : { patch: shaded as MoveShader, subjects: whole ? everyOf(at.board) : subjects }),
     ...(loop && { loop: true }),
   };
   const clips = at.text.cols > at.board.cols && !move.wide;

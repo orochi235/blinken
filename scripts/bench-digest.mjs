@@ -40,13 +40,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const key = `${r.asked.lights ?? r.asked.digits} ${r.asked.way ?? r.backend}`;
     cells.set(key, [...(cells.get(key) ?? []), { r, d: digest(r) }]);
   }
-  console.log('|   size | way     | runs |    fps | p50 ms | p95 ms | mix ms | draw ms |');
-  console.log('| -----: | :------ | ---: | -----: | -----: | -----: | -----: | ------: |');
+  console.log('|   size | way      | runs |    fps | p50 ms | p95 ms | mix ms | draw ms |');
+  console.log('| -----: | :------- | ---: | -----: | -----: | -----: | -----: | ------: |');
   for (const [, runs] of [...cells].sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10))) {
     const { r } = runs[0];
     const avg = (k) => mean(runs.map((x) => x.d[k]));
     console.log(
-      `| ${n(r.asked.lights ?? r.asked.digits, 6, 0)} | ${(r.asked.way ?? r.backend).padEnd(7)} | ${n(runs.length, 4, 0)} | ${n(avg('fps'), 6, 1)} | ${n(avg('p50'), 6, 2)} | ${n(avg('p95'), 6, 2)} | ${n(avg('mixMs'), 6, 2)} | ${n(avg('drawMs'), 7, 2)} |`,
+      `| ${n(r.asked.lights ?? r.asked.digits, 6, 0)} | ${(r.asked.way ?? r.backend).padEnd(8)} | ${n(runs.length, 4, 0)} | ${n(avg('fps'), 6, 1)} | ${n(avg('p50'), 6, 2)} | ${n(avg('p95'), 6, 2)} | ${n(avg('mixMs'), 6, 2)} | ${n(avg('drawMs'), 7, 2)} |`,
     );
   }
 }

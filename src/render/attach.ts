@@ -181,6 +181,39 @@ export function pullChannels(
   paintBulbs(b, cells, cols, channels);
 }
 
+/**
+ * Starts reading back each channel the GPU folds, and when one lands, lays it over the dots in
+ * `cols` and the cells in `cells`, painting the bulbs from their cells. A read lands a frame behind;
+ * one landing after its channel moved to the CPU, or after `gone()`, is dropped. Nothing on a blits
+ * without `read`.
+ */
+export function readChannels(
+  m: Mix<Subject, Pose>,
+  b: Board,
+  cols: SignColumns,
+  cells: SignColumns,
+  drawing: Pick<Drawing, 'cpuChannels' | 'gone'>,
+): void {
+  const side = gpuOf(m) as { read?: (name: string) => Promise<Landed | null> };
+  if (!side.read) return;
+  const dots = b.dots.length;
+  const onCpu = drawing.cpuChannels();
+  for (const c of CHANNELS) {
+    if (onCpu.has(c)) continue;
+    void side.read(c).then((r) => {
+      if (!r || drawing.gone || drawing.cpuChannels().has(c)) return;
+      if (r.subjects.length !== dots + b.cells.length) return;
+      const n = r.axes;
+      cols[c].set(r.values.subarray(0, dots * n));
+      cells[c].set(r.values.subarray(dots * n));
+      paintBulbs(b, cells, cols, [c]);
+    });
+  }
+}
+
+/** What a read of a channel gives: its values, `axes` numbers a subject, in `subjects`' order. */
+type Landed = { values: Float32Array; axes: number; subjects: readonly unknown[] };
+
 /** Registered drawings, by the marquee that owns each, for a follower to find its source's. */
 const drawings = new WeakMap<object, Drawing>();
 

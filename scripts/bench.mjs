@@ -1,7 +1,7 @@
 // Sweeps backends × light counts in headless Chromium on the real GPU, once through every pair
 // before any repeat, printing a line per run and keeping each run's raw record in bench/runs/.
 //   node scripts/bench.mjs [--backends 2d,webgl,webgpu] [--lights 1000,4000,20000,80000]
-//     [--seconds 5] [--repeat 1] [--label <round>] [--no-build]
+//     [--seconds 5] [--repeat 1] [--label <round>] [--no-build] [--read]
 //   node scripts/bench.mjs --page digits [--ways separate,shared] [--digits 500] ...
 // The digits page draws many digit-sized signs on WebGPU, each on its own canvas or all on one.
 // Frames are uncapped (no vsync), so fps measures throughput rather than the display.
@@ -29,6 +29,8 @@ const counts = list('lights', '1000,4000,20000,80000').map(Number);
 const seconds = Number(arg('seconds', '5'));
 const repeat = Number(arg('repeat', '1'));
 const label = arg('label', null);
+// The bench page reads its sign's columns every frame, as a host watching them would.
+const reads = process.argv.includes('--read');
 const pageName = arg('page', 'bench');
 const stack = arg('stack', pageName === 'digits' ? 'sparkle,rainbow' : 'sparkle,rainbow,chase');
 const ways = list('ways', 'separate,shared');
@@ -94,7 +96,7 @@ async function once(asked) {
       });
       page.on('pageerror', (e) => resolve({ error: e.message }));
     });
-    const q = new URLSearchParams({ ...asked, seconds, stack });
+    const q = new URLSearchParams({ ...asked, seconds, stack, ...(reads && { read: '1' }) });
     await page.goto(`${origin}${pageName}?${q}`);
     const timeout = new Promise((r) =>
       setTimeout(() => r({ error: `no report in ${RUN_LIMIT_MS / 1000} s` }), RUN_LIMIT_MS),
@@ -126,8 +128,9 @@ for (const [i, asked] of plan.entries()) {
     const drew = [r.got].flat();
     const want = asked.backend ?? 'webgpu';
     const wrong = drew.every((g) => g === want) ? '' : `  (drew with ${drew.join(', ')})`;
+    const cpu = r.reasons?.length ? `  (${r.reasons.length} voice(s) on the CPU)` : '';
     console.log(
-      `${head} ${n(d.fps, 7, 1)} fps  p50/p95 ${n(d.p50, 7, 2)}/${n(d.p95, 7, 2)} ms  mix ${n(d.mixMs, 7, 2)} ms  draw ${n(d.drawMs, 7, 2)} ms${wrong}`,
+      `${head} ${n(d.fps, 7, 1)} fps  p50/p95 ${n(d.p50, 7, 2)}/${n(d.p95, 7, 2)} ms  mix ${n(d.mixMs, 7, 2)} ms  draw ${n(d.drawMs, 7, 2)} ms${wrong}${cpu}`,
     );
   }
   const record = {
@@ -140,7 +143,7 @@ for (const [i, asked] of plan.entries()) {
     chrome,
     flags,
     load: { before: load, after: loadavg() },
-    asked: { ...asked, page: pageName, seconds, stack },
+    asked: { ...asked, page: pageName, seconds, stack, reads },
     ...r,
   };
   writeFileSync(

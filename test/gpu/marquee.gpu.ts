@@ -5,50 +5,16 @@ import { gridOf } from '@/grid.js';
 import { createMarquee } from '@/marquee.js';
 import type { Marquee, MarqueeOptions } from '@/marquee-api.js';
 import { drawingOf } from '@/render/attach.js';
-import type { Gpu } from '@/render/gpu.js';
 import { lightTable } from '@/render/lights.js';
 import type { WebGpuSign } from '@/render/webgpu/sign.js';
-import type { Ticker } from '@/ticker.js';
 import { note, test } from './harness.js';
+import { canvasIn, handleOf, manual } from './page.js';
 
 const PITCH = 12;
 const TOLERANCE = 8;
 const FRAME_MS = 16;
 /** The last frame of the 500 ms played, ms. */
 const LAST = 31 * FRAME_MS;
-
-const handleOf = (device: GPUDevice): Gpu => ({
-  device,
-  format: navigator.gpu.getPreferredCanvasFormat(),
-  lost: device.lost.then(() => {}),
-});
-
-function canvasIn(width: number, height: number): HTMLCanvasElement {
-  const box = document.createElement('div');
-  box.style.width = `${width}px`;
-  box.style.height = `${height}px`;
-  const canvas = document.createElement('canvas');
-  box.append(canvas);
-  document.body.append(box);
-  return canvas;
-}
-
-/** A ticker the test steps by hand. */
-function manual(): Ticker & { step(now: number): void } {
-  const fns = new Set<(now: number) => void>();
-  return {
-    add(fn) {
-      fns.add(fn);
-      return () => fns.delete(fn);
-    },
-    get size() {
-      return fns.size;
-    },
-    step(now) {
-      for (const fn of fns) fn(now);
-    },
-  };
-}
 
 const SIGN: MarqueeOptions = {
   cols: 24,
@@ -98,11 +64,11 @@ function centers(m: Marquee, canvas: HTMLCanvasElement): number[][] {
 const worst = (a: readonly number[], b: readonly number[]) =>
   Math.max(...[0, 1, 2].map((k) => Math.abs((a[k] as number) - (b[k] as number))));
 
-/** Steps `ticker` from `from` to `to` ms, waiting for the GPU side's kernel after the first frame. */
+/** Steps `ticker` from `from` to `to` ms, waiting after each frame for any kernel it asked for. */
 async function play(m: Marquee, ticker: ReturnType<typeof manual>, from: number, to: number) {
   for (let now = from; now <= to; now += FRAME_MS) {
     ticker.step(now);
-    if (now === from) await gpuOf(m.mix).ready;
+    await gpuOf(m.mix).ready;
   }
 }
 
@@ -114,7 +80,7 @@ async function againstTwin(
   device: GPUDevice,
   opts: MarqueeOptions,
   cue: (m: Marquee) => void = () => {},
-): Promise<{ folded: string[]; cpu: string[] }> {
+): Promise<Folding> {
   const ticker = manual();
   const cg = canvasIn(400, 140);
   const g = createMarquee(cg, { ...opts, gpu: handleOf(device), ticker });
@@ -127,6 +93,9 @@ async function againstTwin(
   note(
     `folded on the GPU: ${folded.join(', ') || 'none'}; pulled on the CPU: ${cpu.join(', ') || 'none'}`,
   );
+  const reasons = (side as { reasons?: () => readonly Reason[] }).reasons?.() ?? null;
+  for (const r of reasons ?? [])
+    note(`on the CPU: ${r.voice ?? 'unnamed'} (${r.channels.join(', ')}): ${r.why}`);
   for (const c of folded)
     if (cpu.includes(c as never)) throw new Error(`${c} folds on the GPU and is pulled too`);
   if (folded.length + cpu.length !== 7) throw new Error('a channel is neither folded nor pulled');
@@ -159,11 +128,33 @@ async function againstTwin(
   flat.destroy();
   if (lights === 0) throw new Error('the 2D twin shows nothing lit');
   if (diff > TOLERANCE) throw new Error(`a light's center is ${diff}/255 from 2D's`);
-  return { folded, cpu };
+  return { folded, cpu, reasons };
+}
+
+/** Why a voice stayed on the CPU, as blits's `gpuOf(m).reasons()` gives it from phase 4 on. */
+type Reason = { voice: string | undefined; channels: readonly string[]; why: string };
+type Folding = { folded: string[]; cpu: string[]; reasons: readonly Reason[] | null };
+
+/**
+ * Throws unless everything `what` played folded on the GPU; skips where the blits in use cannot
+ * say why a voice stays on the CPU, which also means it predates folding owned voices.
+ */
+function allOnGpu({ cpu, reasons }: Folding, what: string): void {
+  if (reasons === null) {
+    note('this blits has no reasons(), so what folds is not checked');
+    return;
+  }
+  if (reasons.length > 0) throw new Error(`${what} keeps ${reasons.length} voice(s) on the CPU`);
+  if (cpu.length > 0) throw new Error(`${what} pulls ${cpu.join(', ')} on the CPU`);
 }
 
 test('marquee: plays scroll on WebGPU, drawing what a held 2D twin does', async (d) => {
-  await againstTwin(d as unknown as GPUDevice, SIGN);
+  allOnGpu(await againstTwin(d as unknown as GPUDevice, SIGN), 'scroll');
+});
+
+test('marquee: plays hold, wiped on by column and flashing, on WebGPU as a 2D twin does', async (d) => {
+  const sign = { ...SIGN, program: [{ effect: 'hold', text: 'HI', hex: 0xff9a2e }] };
+  allOnGpu(await againstTwin(d as unknown as GPUDevice, sign), 'hold');
 });
 
 /** Whether the blits in use folds an `angle()` channel on the GPU: npm 0.20 has no WGSL for one. */

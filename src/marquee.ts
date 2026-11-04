@@ -11,12 +11,14 @@ import type { Marquee, MarqueeOptions } from './marquee-api.js';
 import { onGpu } from './modulators/shader.js';
 import { layOut, PassClock, type PassScene } from './pass.js';
 import { cueProgram, effectOf, type StagedScene, stageProgram } from './program.js';
-import { attach, pullChannels, register } from './render/attach.js';
+import { attach, pullChannels, readChannels, register } from './render/attach.js';
 import { createOverlay } from './render/overlay.js';
 import { createTicker } from './ticker.js';
 
 /** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
 const AWAY_MS = 250;
+/** Frames a WebGPU sign keeps reading its channels back after `columns` was last read. */
+const READ_FRAMES = 60;
 
 /**
  * A sign on `canvas`, playing its program in a loop under whichever layers are on. It sizes the
@@ -133,6 +135,9 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   let last = performance.now();
   let mixMs = 0;
   let drawMs = 0;
+  let frames = 0;
+  /** The frame `columns` was last read in; reading back runs while it is recent. */
+  let readAt = Number.NEGATIVE_INFINITY;
   const frame = (now: number) => {
     let gap = now - last;
     last = now;
@@ -166,6 +171,9 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     overlay.highlight();
     const t1 = performance.now();
     sign?.render(cols, color, gap);
+    if (backend === 'webgpu' && frames - readAt <= READ_FRAMES)
+      readChannels(m, b, cols, cells, drawing);
+    frames++;
     const t2 = performance.now();
     const raw = { mixMs: t1 - t0, drawMs: t2 - t1 };
     mixMs += (raw.mixMs - mixMs) * 0.05;
@@ -184,7 +192,10 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const self: Marquee = {
     board: b,
     backend,
-    columns: cols,
+    get columns() {
+      readAt = frames;
+      return cols;
+    },
     repaint() {
       prepare();
       overlay.follow();

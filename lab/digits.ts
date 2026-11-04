@@ -4,6 +4,7 @@
 // once; scripts/bench.mjs drives it with `--page digits`.
 import './bench.css';
 import { createMarquee, createTicker, gpu, type Marquee } from '@/index.js';
+import { reasonsOf } from './reasons.js';
 
 const params = new URLSearchParams(location.search);
 const way = params.get('way') ?? 'separate';
@@ -100,6 +101,8 @@ async function run() {
   const got = [...new Set(signs.map((s) => s.backend))];
   const canvas = canvases[0];
   const px = canvases.reduce((n, c) => n + c.width * c.height, 0);
+  // Every sign's own, since each separate sign folds on its own side.
+  const reasons = signs.flatMap((s) => reasonsOf(s) ?? []);
   for (const s of signs) s.destroy();
   report({
     way,
@@ -111,6 +114,7 @@ async function run() {
     seconds,
     warmupMs: WARMUP_MS,
     canvas: { width: canvas?.width, height: canvas?.height, pixels: px, dpr: devicePixelRatio },
+    reasons,
     frames,
   });
 }

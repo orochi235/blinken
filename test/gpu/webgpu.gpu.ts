@@ -4,32 +4,16 @@ import { board } from '@/board.js';
 import { createSign, signColumns } from '@/draw.js';
 import type { SignColumns } from '@/optics.js';
 import { DOT_COLOR } from '@/render/bloom-params.js';
-import type { Gpu } from '@/render/gpu.js';
 import { lightTable } from '@/render/lights.js';
 import { type ChannelSource, createWebGpuSign } from '@/render/webgpu/sign.js';
 import { BUFFER } from '@/render/webgpu/usage.js';
 import { note, readBack, test } from './harness.js';
+import { canvasIn, handleOf } from './page.js';
 
 const PITCH = 24;
 const TOLERANCE = 8;
 /** How far the total light emitted may stray from 2D's, as a share of it. */
 const LIGHT_TOLERANCE = 0.05;
-
-const handleOf = (device: GPUDevice): Gpu => ({
-  device,
-  format: navigator.gpu.getPreferredCanvasFormat(),
-  lost: device.lost.then(() => {}),
-});
-
-function canvasIn(width: number, height: number): HTMLCanvasElement {
-  const box = document.createElement('div');
-  box.style.width = `${width}px`;
-  box.style.height = `${height}px`;
-  const canvas = document.createElement('canvas');
-  box.append(canvas);
-  document.body.append(box);
-  return canvas;
-}
 
 /** `cols` as blits lays its output, subject after subject per channel; null for `cpu`'s channels. */
 function sourceOf(device: GPUDevice, cols: SignColumns, n: number, cpu: string[]): ChannelSource {

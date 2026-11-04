@@ -3,6 +3,7 @@
 // scripts/bench.mjs drives it.
 import './bench.css';
 import { type Backend, createMarquee, gpu } from '@/index.js';
+import { reasonsOf } from './reasons.js';
 
 const params = new URLSearchParams(location.search);
 const backend = (params.get('backend') ?? '2d') as Backend;
@@ -13,6 +14,8 @@ const WARMUP_MS = 1000;
 const FEWEST = 3;
 /** `chase` is the border's bulbs; every other name is a built-in layer. */
 const stack = (params.get('stack') ?? 'sparkle,rainbow,chase').split(',').filter(Boolean);
+/** With `?read=1`, the page reads the sign's columns every frame, as a host watching them would. */
+const reads = params.get('read') === '1';
 
 /** Seven rows, a line of text, up to 1,000 lights; past that, square. */
 const shape = (n: number) => {
@@ -70,6 +73,7 @@ async function run() {
     layers,
     program: [{ effect: 'scroll', text: 'BENCHMARKING THE MARQUEE AT SPEED', hex: 0xff9a2e }],
     onFrame({ raw }) {
+      if (reads) void sign.columns;
       const now = performance.now();
       if (Number.isNaN(start)) start = now;
       frames.push({ t: now - start, ...raw });
@@ -81,6 +85,7 @@ async function run() {
   await done;
   const b = sign.board;
   const got = sign.backend;
+  const reasons = reasonsOf(sign);
   sign.destroy();
   report({
     backend,
@@ -89,10 +94,12 @@ async function run() {
     cols: b.cols,
     rows: b.rows,
     stack,
+    reads,
     seconds,
     warmupMs: WARMUP_MS,
     canvas: { width: canvas.width, height: canvas.height, dpr: devicePixelRatio },
     adapter,
+    reasons,
     frames,
   });
 }

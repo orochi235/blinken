@@ -42,13 +42,12 @@ What a scene shows, meaning colors, brightness, timing and layout, is the same o
   and a test comparing the two on sampled inputs. Worst measured gaps: hash 0 bit mismatches over
   65,536 triples; optics 1.2e-7 in shine, 1/255 in color; modulators under 1e-4 (degrees for hue),
   moves 3.4e-8, run with `npm run test:gpu`.
-- **Which voices fold on the GPU** is blits's rule (`src/gpu/eligible.ts` in blits): a
-  `shaderPatch` with a numeric weight that reaches every subject, no stagger, no owner. blits is
-  adding the rest in phases: phase 2 folds staggered voices, phase 3 folds owner-held voices and
-  weight signals. It is decided
-  per channel: if one playing voice writing a channel cannot run there, the channel folds on the
-  CPU that frame and WebGPU uploads it. Code degrades the same way on blits 0.20, where
-  channels stay on the CPU.
+- **Which voices fold on the GPU** is blits's rule (`src/gpu/eligible.ts` in blits): on blits main
+  (`dd2d008`), a `shaderPatch` over any of its subjects, staggered by name or looping, under
+  owners at any depth, weighted by a number or a signal; its own list says what stays on the CPU.
+  It is decided per channel: if one playing voice writing a channel cannot run there, the channel
+  folds on the CPU that frame and WebGPU uploads it. Code degrades the same way on blits 0.20,
+  where channels stay on the CPU.
 - **Moves read tables.** A move writes `lit` from the message bitmap at a shifted place, so its
   shader reads two blits shader tables, the bitmap and the row map (`src/moves/shader.ts`).
 - **`columns` on WebGPU** holds only what the CPU folded: keeping it whole would pull every channel
@@ -91,45 +90,69 @@ onto do --kind bench --solo --node teitou --task bree-gpu-bench --expect 6m \
 ## Results
 
 teitou (Apple M5 Max, 18 cores), Chrome 156.0.8078.4, 1280 × 800 viewport at device pixel ratio
-1, after round 1 (2026-11-04). The 1,000-light rows average two runs.
+1, after round 2 on blits main `dd2d008` (2026-11-04), label `round-2b`. One run per row.
 
-| lights | backend |    fps | p50 ms | p95 ms | mix ms | draw ms | fps before round 1 |
-| -----: | :------ | -----: | -----: | -----: | -----: | ------: | -----------------: |
-|  1,000 | 2D      | 1396.6 |   0.70 |   0.90 |   0.26 |    0.36 |              908.9 |
-|  1,000 | WebGL   |  726.8 |   0.40 |   2.75 |   0.25 |    0.88 |              894.5 |
-|  1,000 | WebGPU  | 2213.3 |   0.45 |   0.55 |   0.38 |    0.02 |             1202.4 |
-|  4,000 | 2D      |  372.6 |   2.70 |   3.10 |   1.05 |    1.56 |              219.3 |
-|  4,000 | WebGL   |  750.4 |   1.30 |   1.50 |   0.97 |    0.32 |              348.1 |
-|  4,000 | WebGPU  |  623.8 |   1.60 |   1.90 |   1.51 |    0.05 |              276.3 |
-| 20,000 | 2D      |   53.8 |  17.90 |  22.60 |  12.15 |    6.30 |               23.8 |
-| 20,000 | WebGL   |  113.9 |   8.50 |  11.20 |   7.45 |    1.24 |               27.8 |
-| 20,000 | WebGPU  |   61.1 |  16.30 |  18.50 |  16.06 |    0.21 |               23.7 |
-| 80,000 | 2D      |   15.6 |  61.50 |  92.90 |  40.77 |   22.94 |                5.3 |
-| 80,000 | WebGL   |   20.4 |  48.90 |  55.90 |  44.92 |    4.06 |                5.9 |
-| 80,000 | WebGPU  |   13.8 |  71.50 |  77.20 |  71.77 |    0.63 |                5.4 |
+| lights | backend |    fps | p50 ms | p95 ms | mix ms | draw ms | fps after round 1 |
+| -----: | :------ | -----: | -----: | -----: | -----: | ------: | ----------------: |
+|  1,000 | 2D      | 1413.2 |   0.70 |   0.90 |   0.28 |    0.38 |            1396.6 |
+|  1,000 | WebGL   | 1027.4 |   0.40 |   2.30 |   0.26 |    0.67 |             726.8 |
+|  1,000 | WebGPU  | 7608.0 |   0.10 |   0.20 |   0.01 |    0.01 |            2213.3 |
+|  4,000 | 2D      |  366.4 |   2.80 |   3.10 |   1.06 |    1.59 |             372.6 |
+|  4,000 | WebGL   |  730.0 |   1.40 |   1.60 |   0.97 |    0.35 |             750.4 |
+|  4,000 | WebGPU  | 8284.4 |   0.10 |   0.20 |   0.01 |    0.04 |             623.8 |
+| 20,000 | 2D      |   56.5 |  17.50 |  21.90 |  10.95 |    6.62 |              53.8 |
+| 20,000 | WebGL   |  109.2 |   9.00 |  11.20 |   7.68 |    1.39 |             113.9 |
+| 20,000 | WebGPU  | 6212.4 |   0.10 |   0.30 |   0.02 |    0.08 |              61.1 |
+| 80,000 | 2D      |   14.8 |  65.40 | 100.20 |  42.50 |   24.94 |              15.6 |
+| 80,000 | WebGL   |   19.8 |  50.70 |  57.90 |  46.07 |    4.47 |              20.4 |
+| 80,000 | WebGPU  | 3749.1 |   0.20 |   0.40 |   0.04 |    0.13 |              13.8 |
 
 What the table says:
 
-- **The mix is most of the frame** from 20,000 lights up: all of it on WebGPU, nine tenths on
-  WebGL, and two thirds on 2D at 80,000 lights. What a frame takes beyond its mix (p50 gap less
-  mean mix) at 80,000 lights is 20.7 ms on 2D, 4.0 ms on WebGL and none measurable on WebGPU.
-- **2D's draw at 80,000 lights** read 22.94 ms here against 16.00 ms in the baseline, though round 1
-  changed nothing it draws. The row was not repeated.
-- **WebGPU's mix costs more than the CPU mixer's** today. blits's gpu engine folds a channel on
-  the GPU only when every voice writing it can run there. A scene's move is held by its scene's
-  owner, which blits does not yet fold on the GPU, so `lit` stays on the CPU. The shader patches
-  bree stages for WebGPU then run their CPU versions, which cost more than the plain patches the
-  other backends use.
-- **WebGL at 1,000 lights** stalls about 2 ms in its draw every second to fourth frame, in both
-  `round1` runs of the row (the sweep and the repeat it was given for disagreeing with its
-  neighbors). The likely cause, inferred and not measured, is the GPU pushing back on frames
-  queued ahead of it at over 700 fps, which a display-capped frame rate would not reach.
+- **WebGPU's frame is all on the GPU.** Its mix and draw together cost the CPU under 0.2 ms a frame
+  at 80,000 lights, against about 47 ms on 2D and 50 ms on WebGL. Frames are uncapped, so its fps
+  is how fast the GPU finishes them; a display shows at most its refresh rate. A count of animation
+  frames in the page itself agreed: 2,656 a second at 20,000 lights on a local machine.
+- **2D and WebGL are unchanged** within run-to-run noise: they fold on the CPU, which round 2 did
+  not touch, and most of their frame is blits's CPU fold from 20,000 lights up.
+- **WebGL at 1,000 lights** stalls about 2 ms in its draw every few frames, in round 1 and round 2.
+  The likely cause, inferred and not measured, is the GPU pushing back on frames queued ahead of it
+  at over 700 fps, which a display-capped frame rate would not reach.
+
+### Reading columns back (2026-11-04)
+
+On WebGPU, reading `Marquee.columns` has the sign read its channels back from the GPU for the next
+60 frames (`readChannels` in `src/render/attach.ts`, on blits's `gpuOf(m).read`). With the bench
+page reading them every frame (`--read`, labels `columns-off` and `columns-read`, teitou), a frame
+took 0.16 → 0.24 ms at 20,000 lights and 0.27 → 0.63 ms at 80,000, from 6,239.5 → 4,158.7 fps and
+3,666.1 → 1,576.7 fps. A sign nothing reads pays none of it.
+
+### Many small displays (2026-11-04)
+
+The digits page (`lab/digits.ts`, `node scripts/bench.mjs --page digits`) draws digit-sized 5 × 7
+signs with the sparkle and rainbow layers on WebGPU, either each on its own canvas (one ticker, one
+device) or as one sign holding every digit's dots on one canvas. The shared sign holds about 40%
+more lights, since it keeps a dot between digits. Label `digits-3`, teitou, after round 2.
+
+| digits | way      |    fps | p50 ms | p95 ms | mix ms | draw ms |
+| -----: | :------- | -----: | -----: | -----: | -----: | ------: |
+|    100 | separate |   80.9 |  12.20 |  19.00 |   5.47 |    3.17 |
+|    100 | shared   | 5520.7 |   0.20 |   0.30 |   0.11 |    0.02 |
+|    500 | separate |   16.3 |  59.30 |  73.80 |  20.59 |   22.06 |
+|    500 | shared   | 3451.7 |   0.20 |   0.50 |   0.21 |    0.03 |
+|  1,000 | separate |    7.7 | 120.70 | 175.80 |  39.89 |   45.89 |
+|  1,000 | shared   | 1805.6 |   0.30 |   2.20 |   0.48 |    0.03 |
+
+Separate signs pay per sign on the CPU (each runs its own mix, encodes and submits its own GPU
+work, and presents its own canvas), so their cost grows with the count of signs rather than of
+lights. Many displays on one page should share one sign and one surface.
 
 ## Rounds
 
-| round          | change                                            | cost                                          | gain                                                                                                                        |
-| :------------- | :------------------------------------------------ | :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
-| 1 (2026-11-04) | Cue a layer only while it is on (`src/layers.ts`) | 51 lines changed in `src/layers.ts`, one test | at 20,000 lights: 2D 23.8 → 53.8 fps, WebGL 27.8 → 113.9, WebGPU 23.7 → 61.1; at 80,000: 5.3 → 15.6, 5.9 → 20.4, 5.4 → 13.8 |
+| round          | change                                                                                                           | cost                                                                       | gain                                                                                                                        |
+| :------------- | :--------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| 1 (2026-11-04) | Cue a layer only while it is on (`src/layers.ts`)                                                                | 51 lines changed in `src/layers.ts`, one test                              | at 20,000 lights: 2D 23.8 → 53.8 fps, WebGL 27.8 → 113.9, WebGPU 23.7 → 61.1; at 80,000: 5.3 → 15.6, 5.9 → 20.4, 5.4 → 13.8 |
+| 2 (2026-11-04) | On blits's phase 3, a scene's color, its modulators and its moves over part of the board take their shader forms | about 30 lines in `src/modulators/color.ts` and `src/pieces.ts`, two tests | WebGPU at 20,000 lights 72.2 → 6212.4 fps, at 80,000 14.4 → 3749.1; 500 shared digits 44.4 → 3451.7                         |
 
 **Round 1.** A Chrome CPU profile of the 20,000-light mix (not kept) put most of the time in blits
 visiting each voice's subjects, and a count of voices found every built-in layer cued, off ones at
@@ -141,25 +164,24 @@ would have been, so it shows exactly what it did before (`test/marquee.test.ts`,
 late"). Layers also take a plain number for a weight instead of a `level` signal, which blits's gpu
 engine refuses to fold.
 
-### Where tuning paused (2026-11-04)
+**Round 2.** blits's phase 3 folds owner-held voices on the GPU, but a sweep on it alone (label
+`round-2`) moved WebGPU nowhere: 72.2 fps at 20,000 lights. A CPU profile (not kept) put 95% of
+the frame in pulling the one channel still on the CPU, `tint`, because each scene's color was a
+plain function patch. A blits gpu engine folds a channel only when every voice writing it can run
+there, and one plain patch keeps the whole channel on the CPU. The scene color now has a shader form
+(`solid` in `src/modulators/color.ts`). The digits page then showed the same for effects with an
+order, such as `hold`: a modulator inside an effect never took its shader form, and a move did only
+when it covered every dot, a rule from before blits folded voices over part of its subjects
+(`stagePiece` in `src/pieces.ts`). `test/gpu/marquee.gpu.ts` checks that scroll and hold pull
+nothing on the CPU where blits folds owned voices over part of the board.
 
-Tuning paused for scope, not because returns had fallen off. Round 1 bought 2.3× to 4.1× at
-20,000 lights, and the next candidate measured would cut WebGPU's mix by about 40%.
+### Where tuning stops (2026-11-04)
 
-- **Plain patches on WebGPU while `lit` stays on the CPU.** Staging plain patches instead of shader
-  patches on WebGPU took it from 70 to 115 fps at 20,000 lights, its mix from 13.9 to 8.3 ms, level
-  with WebGL's. That was a local comparison on a busy machine (records labeled `probe-r2-before`
-  and `probe-r2-plainall`, in that machine's gitignored `bench/runs/` until pruned), so the ratio
-  is the finding, not the times. The comparison changed two lines. Shipping it means either staging
-  plain patches on WebGPU everywhere, which undoes the move and modulator shaders until blits folds owners, or choosing
-  per channel in bree, which copies blits's eligibility rules. It was not taken because blits's
-  phase 3, folding owner-held voices on the GPU, is landing and is expected to make the shader
-  patches the faster path.
-- **The CPU fold itself.** In Chrome CPU profiles of the bench page (not kept), most of the 2D and
-  WebGL mix sat in blits's fill engine, which bree calls but does not own.
-- **2D drawing.** In the same profiles, the drawing code's own time was 6.5% of a 2D frame at 80,000
-  lights; the rest of the draw was the canvas filling and blurring, which a round could change
-  only by changing 2D's output, and this project holds that fixed.
+WebGPU's frame no longer has CPU work worth a round: under 0.2 ms at 80,000 lights. What is left:
 
-A round 2 sweep follows once blits's owner support lands, to see where WebGPU's mix then stands
-against WebGL's.
+- **Effects that still fold on the CPU on WebGPU**: spreads by letter or at random, and the moves
+  and modulators with no shader form (`TODO.md`, "GPU renderers").
+- **2D and WebGL's mix** is blits's CPU fold, which bree calls but does not own.
+- **2D drawing.** In Chrome CPU profiles (not kept), the drawing code's own time was 6.5% of a 2D
+  frame at 80,000 lights; the rest of the draw was the canvas filling and blurring, which a round
+  could change only by changing 2D's output, and this project holds that fixed.

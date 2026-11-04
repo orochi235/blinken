@@ -116,8 +116,10 @@ measurements and what a frame costs on each.
 - When the WebGPU device is lost, every sign on it goes dark for good while `backend` still reads
   `'webgpu'`. A host watches `gpu.lost`, then asks for a new device and builds its signs again.
 - A page has about 12 WebGL contexts. Signs past that draw in 2D, and `backend` says so.
-- On WebGPU `Marquee.columns` holds only the channels the CPU folded that frame; on 2D and WebGL it
-  holds all of them.
+- On WebGPU, reading `Marquee.columns` starts reading the sign's channels back from the GPU, which
+  costs a little each frame and stops 60 frames after the last read. Their values land a frame
+  behind what was drawn, and the first read finds what was last there, zeros on a new sign. On 2D
+  and WebGL every channel is current.
 - The effects that aren't folded on the GPU yet run on the CPU and look the same; `TODO.md` lists them.
 
 ## Thumbnails

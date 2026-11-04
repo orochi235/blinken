@@ -119,8 +119,9 @@ export interface Marquee {
   readonly backend: Backend;
   /**
    * Its dots and border bulbs as the last frame drew them. On 2D and WebGL that is every channel.
-   * On WebGPU it is only the channels the CPU folded that frame; the rest hold whatever was last
-   * pulled into them.
+   * On WebGPU the channels folded on the GPU are read back only while something reads `columns`:
+   * reading it starts that, and it stops 60 frames after the last read. They land a frame behind
+   * what was drawn, and the first read finds what was last laid there, zeros on a new sign.
    */
   readonly columns: SignColumns;
   /**

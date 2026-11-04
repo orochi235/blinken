@@ -1,8 +1,8 @@
-import { oklab, patch } from '@msb235/blits';
+import { oklab, type Patch, patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { ColorsParam } from '../params.js';
 import { cycleMs, depth, modulator, phasePerStep, RATE, unitAt } from './modulator.js';
-import { f32, RANK, rankAt, SHAPES, shader, unitOf } from './shader.js';
+import { f32, type ModShader, RANK, rankAt, SHAPES, shader, unitOf } from './shader.js';
 
 /** The most colors a palette folds on the GPU with; one with more stays on the CPU. */
 const MOST = 8;
@@ -154,3 +154,20 @@ export const twoColor = modulator({
     });
   },
 });
+
+const SOLID = shader({
+  params: ['L', 'a', 'b'],
+  wgsl: 'out.tint = array<f32, 4>(params.L, params.a, params.b, 1.0);',
+  at: (_ph, _s, p) => ({ tint: [p.L as number, p.a as number, p.b as number, 1] }),
+  writes: ['tint'],
+});
+
+/**
+ * Tint holding `hex` on every subject for `ms`: a scene's message color. On the gpu engine (`gpu`)
+ * it is a shader patch, so the color folds on the GPU with the rest of the scene.
+ */
+export function solid(ms: number, hex: number, gpu: boolean): Patch<Subject, Pose> | ModShader {
+  const tint = oklab(hex);
+  if (gpu) return SOLID(ms, { L: tint[0] ?? 0, a: tint[1] ?? 0, b: tint[2] ?? 0 });
+  return patch<Subject, Pose>(ms, () => ({ tint }), { writes: ['tint'] });
+}

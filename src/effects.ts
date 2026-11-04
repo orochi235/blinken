@@ -1,5 +1,6 @@
-import { type ArcSpec, type ArcVoice, type Handle, type Mix, oklab, patch } from '@msb235/blits';
+import { type ArcSpec, type ArcVoice, type Handle, type Mix, patch } from '@msb235/blits';
 import type { Pose, Subject } from './board.js';
+import { solid } from './modulators/color.js';
 import { MODULATORS } from './modulators/index.js';
 import { SLOTS, type Slot } from './moves/index.js';
 import { groupsOf, type Order, type Placed, rowsToShow } from './orders.js';
@@ -144,8 +145,7 @@ export function stageEffect(
     };
   };
 
-  const tint = oklab(hex);
-  const color = patch<Subject, Pose>(Math.max(1, ms), () => ({ tint }), { writes: ['tint'] });
+  const color = solid(Math.max(1, ms), hex, gpu);
   const dots = (pieces: readonly StagedPiece[], s: number) =>
     pieces.filter((_, i) => !onCells(pieceAt(s, i)));
   // The scene color spans each group's arc as one voice layered into every part.

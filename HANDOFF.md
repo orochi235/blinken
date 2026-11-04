@@ -13,8 +13,8 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
   `~/src/bree-gpu`, unmerged (2026-11-04). It depends on unreleased blits commits (`TODO.md` lists
   them), so CI on npm blits 0.20 runs with some channels on the CPU; the code degrades there.
   What's left is in `TODO.md`, how it works and what it measured in `docs/gpu-renderers.md`, how
-  to use it in the README's GPU section. Tuning paused after round 1 until blits phase 3 lands;
-  see `docs/gpu-renderers.md`.
+  to use it in the README's GPU section. After round 2 on blits phase 3, WebGPU's frame is all on
+  the GPU for effects with a shader form; see `docs/gpu-renderers.md`.
 
 ## How the lab runs
 
