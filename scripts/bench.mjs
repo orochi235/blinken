@@ -53,8 +53,15 @@ const git = (...a) => {
 };
 const commit = git('rev-parse', '--short', 'HEAD');
 const dirty = Boolean(git('status', '--porcelain', '--untracked-files=no'));
-/** The blits checkout beside this one that the lab builds against, if any. */
-const blits = git('-C', join(root, '../blits'), 'rev-parse', '--short', 'HEAD');
+/**
+ * The blits checkout beside this one that the lab builds against, if any. A fleet node's files are
+ * synced over its checkout, so there the commit can name older code than was built.
+ */
+const besideBlits = join(root, '../blits');
+const blits = {
+  commit: git('-C', besideBlits, 'rev-parse', '--short', 'HEAD'),
+  dirty: Boolean(git('-C', besideBlits, 'status', '--porcelain', '--untracked-files=no')),
+};
 const machine = {
   host: hostname(),
   platform: `${platform()} ${release()}`,
