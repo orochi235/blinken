@@ -3,7 +3,7 @@ import type { Pose, Subject } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { ColorsParam } from '../params.js';
 import { modulator, outweigh } from './modulator.js';
-import { hasTables, recent, shader } from './shader.js';
+import { recent, shader } from './shader.js';
 
 /** A ramp's tints across `at`'s board, one a column or row, outweighing the scene's. */
 function rampOf(at: Placed, p: { colors: readonly number[]; direction: string }) {
@@ -79,7 +79,6 @@ export const gradient = modulator({
     );
   },
   shader: (at, p) => {
-    if (!hasTables()) return null;
     const { down, span, tints } = rampOf(at, p);
     return shaderOf(span)(1000, { down: down ? 1 : 0, span, tints: tints.flat() });
   },

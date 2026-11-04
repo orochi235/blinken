@@ -42,12 +42,10 @@ What a scene shows, meaning colors, brightness, timing and layout, is the same o
   and a test comparing the two on sampled inputs. Worst measured gaps: hash 0 bit mismatches over
   65,536 triples; optics 1.2e-7 in shine, 1/255 in color; modulators under 1e-4 (degrees for hue),
   moves 3.4e-8, run with `npm run test:gpu`.
-- **Which voices fold on the GPU** is blits's rule (`src/gpu/eligible.ts` in blits): on blits main
-  (`dd2d008`), a `shaderPatch` over any of its subjects, staggered by name or looping, under
-  owners at any depth, weighted by a number or a signal; its own list says what stays on the CPU.
+- **Which voices fold on the GPU** is blits's rule (`src/gpu/eligible.ts` in blits): on blits 1.0,
+  a `shaderPatch` over any of its subjects, staggered by name or looping, under owners at any depth, weighted by a number or a signal; its own list says what stays on the CPU.
   It is decided per channel: if one playing voice writing a channel cannot run there, the channel
-  folds on the CPU that frame and WebGPU uploads it. Code degrades the same way on blits 0.20,
-  where channels stay on the CPU.
+  folds on the CPU that frame and WebGPU uploads it.
 - **Moves read tables.** A move writes `lit` from the message bitmap at a shifted place, so its
   shader reads two blits shader tables, the bitmap and the row map (`src/moves/shader.ts`).
 - **`columns` on WebGPU** holds only what the CPU folded: keeping it whole would pull every channel

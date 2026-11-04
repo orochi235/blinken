@@ -1,5 +1,5 @@
-import { angle, kit, mix, patch } from '@msb235/blits';
-import { gpu as gpuEngine, gpuOf, shaderPatch } from '@msb235/blits/gpu';
+import { patch } from '@msb235/blits';
+import { gpuOf, shaderPatch } from '@msb235/blits/gpu';
 import type { Pose, Subject } from '@/board.js';
 import { gridOf } from '@/grid.js';
 import { createMarquee } from '@/marquee.js';
@@ -157,33 +157,9 @@ test('marquee: plays hold, wiped on by column and flashing, on WebGPU as a 2D tw
   allOnGpu(await againstTwin(d as unknown as GPUDevice, sign), 'hold');
 });
 
-/** Whether the blits in use folds an `angle()` channel on the GPU: npm 0.20 has no WGSL for one. */
-async function foldsAngle(device: GPUDevice): Promise<boolean> {
-  type S = { x: number };
-  const m = mix<S, { a: number }>(kit({ a: angle() }), {
-    engine: gpuEngine({ device: device as never }),
-  });
-  const subjects: S[] = [{ x: 0 }];
-  const side = gpuOf(m);
-  side.subjects(subjects, (s) => ({ x: s.x }));
-  const turn = shaderPatch<S, { a: number }, Record<string, never>>(1000, {
-    fields: { x: 'f32' },
-    wgsl: 'out.a = 0.5;',
-    at: () => ({ a: 0.5 }),
-    writes: ['a'],
-  });
-  m.cue({ name: 'turn', patch: turn, subjects, loop: true });
-  m.sync(0);
-  side.channel('a');
-  await side.ready;
-  m.sync(FRAME_MS);
-  return side.channel('a') !== null;
-}
-
 test('marquee: folds a shader patch on the GPU and pulls only what the CPU folds', async (d) => {
   const device = d as unknown as GPUDevice;
-  // Without angle WGSL, the built-in layers' hue stays on the CPU.
-  const want = (await foldsAngle(device)) ? 'gain' : 'gain,hue';
+  const want = 'gain';
   const { cpu } = await againstTwin(device, { ...SIGN, program: [] }, (m) => {
     // The built-in layers wait at weight 0 as fn patches, which would keep every channel on the CPU.
     for (const v of m.mix.voices()) v.fade({ over: 0 });

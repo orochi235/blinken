@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { board, KIT, type Pose } from '@/board.js';
 import { rasterize } from '@/font.js';
 import { MODULATORS, type ModulatorName } from '@/modulators/index.js';
-import { hasTables, ranked, recent } from '@/modulators/shader.js';
+import { ranked, recent } from '@/modulators/shader.js';
 import { place, rankOf } from '@/orders.js';
 import { values } from '@/params.js';
 
@@ -76,7 +76,6 @@ describe('modulator shaders', () => {
             for (const s of on) near(sp.at(phase, s, setting), plain.at(phase, s, setting));
           for (const s of off) expect(sp.at(0.3, s, setting)).toEqual(rest);
         }
-      // npm blits 0.20 has no shader tables, and a gradient's tints are one.
-      if (name !== 'gradient' || hasTables()) expect(checked).toBeGreaterThan(0);
+      expect(checked).toBeGreaterThan(0);
     });
 });

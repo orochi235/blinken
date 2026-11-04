@@ -1,6 +1,6 @@
 import type { ShaderPatch } from '@msb235/blits/gpu';
 import type { Pose, Subject } from '../board.js';
-import { type Bound, type Given, hasTables, kernels, type Tables } from '../modulators/shader.js';
+import { type Bound, type Given, kernels, type Tables } from '../modulators/shader.js';
 import type { Placed } from '../orders.js';
 
 /** A move's pass as a shader patch, writing `lit` on every dot and 0 on every cell. */
@@ -127,7 +127,6 @@ out.lit = lit;`,
     writes: ['lit'],
   });
   return (at, duration, values, extra = {}) => {
-    if (!hasTables()) return null;
     const bt = bitmapTables(at);
     const tables: Record<string, Table> = {
       bitmap: { width: bt.width, height: bt.height, data: bt.bitmap },

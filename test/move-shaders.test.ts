@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { board, everyOf } from '@/board.js';
 import { rasterize } from '@/font.js';
-import { hasTables } from '@/modulators/shader.js';
 import { type Joins, LOOSE, MOVES, type MoveName } from '@/moves/index.js';
 import { bitmapTables } from '@/moves/shader.js';
 import { place, placeText } from '@/orders.js';
@@ -77,19 +76,14 @@ describe('move shaders', () => {
               for (const c of b.cells) expect(sp.at(phase, c, setting)).toEqual({ lit: 0 });
             }
           }
-      expect(checked > 0).toBe(hasTables());
+      expect(checked).toBeGreaterThan(0);
     });
 });
 
 describe('stagePiece', () => {
   const stand = { move: 'stand' } as const;
-  it('stages a move on every dot at once as its shader on every subject for the gpu engine, where blits has tables', () => {
+  it('stages a move on every dot at once as its shader on every subject for the gpu engine', () => {
     const { voice } = stagePiece(stand, 'active', narrow, b.dots, undefined, LOOSE, true);
-    if (!hasTables()) {
-      expect(voice.subjects).toBe(b.dots);
-      expect(voice.stagger).toBeDefined();
-      return;
-    }
     expect(voice.subjects).toBe(everyOf(b));
     expect(voice.stagger).toBeUndefined();
     expect(voice.patch.at(0, b.cells[0] as never, setting)).toEqual({ lit: 0 });

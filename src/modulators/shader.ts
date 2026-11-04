@@ -94,35 +94,11 @@ export interface Spec {
   readonly wgsl: string;
   /** The names of the numbers it reads besides `cycles`, as `params.<name>` in WGSL. */
   readonly params: readonly string[];
-  /** Tables it reads as `table_<name>(x, y)` in WGSL, by name; only where `hasTables()`. */
+  /** Tables it reads as `table_<name>(x, y)` in WGSL, by name. */
   readonly tables?: Sizes;
   /** The same in JS, giving every channel in `writes` for every subject: a rest where it does nothing. */
   at(ph: number, s: Subject, p: Bound, t: Tables): Partial<Pose>;
   readonly writes: readonly Channel[];
-}
-
-let tablesHere: boolean | undefined;
-
-/**
- * Whether the blits bree runs on gives shader patches tables: its main does, npm 0.20 does not.
- * Where it does, `with` refuses a table it is not given contents for.
- */
-export function hasTables(): boolean {
-  if (tablesHere === undefined) {
-    const probe = shaderPatch(1, {
-      wgsl: '',
-      tables: { t: { width: 1, height: 1 } },
-      at: () => ({}),
-      writes: [],
-    } as ShaderSpec<Subject, Pose, Bound>);
-    try {
-      probe.with({});
-      tablesHere = false;
-    } catch {
-      tablesHere = true;
-    }
-  }
-  return tablesHere;
 }
 
 /**
@@ -181,7 +157,6 @@ export function kernels(k: Kernel): (duration: number, sizes: Sizes, given: Give
   return (duration, sizes, given) => {
     const named = Object.entries(sizes).map(([n, t]) => `${n} ${t.width}x${t.height}`);
     const base = held([duration, ...named].join(' '), () =>
-      // npm 0.20's spec has no tables, and a spec given them only where hasTables() holds.
       shaderPatch<Subject, Pose, Bound>(duration, {
         helpers: HELPERS,
         fields: FIELDS,

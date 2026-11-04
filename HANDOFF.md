@@ -5,13 +5,12 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 
 ## State
 
-- Dependencies are on weasel `1.15.0`, blits `^0.20.0`, blits-panel `0.8.0` and vitest 5 (2026-11-04).
+- Dependencies are on weasel `1.16.1`, blits `^1.0.0`, blits-panel `0.9.0` and vitest 5 (2026-11-04).
   CI and Pages install those from npm; the lab and tests use the sibling checkouts where present.
 - An audit on 2026-11-01 fixed what it found; what it left is in `TODO.md`. `main` is ahead of
   `origin` and unpushed.
 - The GPU renderers (WebGPU, WebGL 2, 2D) are built on branch `gpu-renderers` in the worktree
-  `~/src/bree-gpu`, unmerged (2026-11-04). It depends on unreleased blits commits (`TODO.md` lists
-  them), so CI on npm blits 0.20 runs with some channels on the CPU; the code degrades there.
+  `~/src/bree-gpu`, unmerged (2026-11-04). Everything it needs from blits shipped in 1.0.0.
   What's left is in `TODO.md`, how it works and what it measured in `docs/gpu-renderers.md`, how
   to use it in the README's GPU section. After round 2 on blits phase 3, WebGPU's frame is all on
   the GPU for effects with a shader form; see `docs/gpu-renderers.md`.
