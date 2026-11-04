@@ -7,3 +7,4 @@ shots/
 test-results/
 playwright-report/
 .claude/worktrees/
+bench/runs/

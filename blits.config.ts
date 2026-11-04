@@ -10,6 +10,7 @@ const at = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 export const blitsAlias: Record<string, string> =
   process.env.BLITS !== 'npm' && existsSync(at('../blits/src/index.ts'))
     ? {
+        '@msb235/blits/gpu': at('../blits/src/gpu.ts'),
         '@msb235/blits-panel': at('../blits/packages/panel/src/index.ts'),
         '@msb235/blits': at('../blits/src/index.ts'),
       }
