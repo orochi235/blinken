@@ -4,7 +4,7 @@ import { EFFECTS, LAYERS, type LayerSpec } from './builtins.js';
 import { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 import { type Look, rasterize } from './font.js';
 import { MODULATORS } from './modulators/index.js';
-import { ranked, stretch } from './modulators/shader.js';
+import { onGpu, ranked, stretch } from './modulators/shader.js';
 import { type Placed, place, placeText, rankOf } from './orders.js';
 import { type ParamValue, values } from './params.js';
 import { TOGETHER } from './pieces.js';
@@ -78,12 +78,14 @@ export interface StagedLayer {
 
 /**
  * Stages each scene of a program that plays for some time, in order; one taller than the board
- * shows what fits. Throws on a scene naming no effect or face, before anything is cued.
+ * shows what fits. Throws on a scene naming no effect or face, before anything is cued. Staged for
+ * a mix on the gpu engine (`gpu`), its layers are shader patches where they can be.
  */
 export function stageProgram(
   b: Board,
   scenes: readonly Scene[],
   effects?: Readonly<Record<string, EffectSpec>>,
+  gpu = false,
 ): StagedScene[] {
   return scenes.flatMap((scene, i) => {
     const effect = effectOf(scene, effects);
@@ -92,7 +94,7 @@ export function stageProgram(
     if (s.ms <= 0) return [];
     const layers = Object.entries(scene.layers ?? {}).flatMap(([name, layer]) => {
       const spec = layerOf(name, layer);
-      return spec ? [stageLayer(b, name, spec, s.ms, at)] : [];
+      return spec ? [stageLayer(b, name, spec, s.ms, at, gpu)] : [];
     });
     return [{ scene: i, staged: s, name: `${effect.name} ${scene.text}`, layers }];
   });
@@ -127,22 +129,25 @@ export function play(
   scenes: readonly Scene[],
   effects?: Readonly<Record<string, EffectSpec>>,
 ): Handle<Subject> {
-  return cueProgram(m, stageProgram(b, scenes, effects));
+  return cueProgram(m, stageProgram(b, scenes, effects, onGpu(m)));
 }
 
 /**
  * A layer's modulator on the board, one cycle a pass, and the subjects it plays on. A scene's layer
- * is placed against its message, so a spread by letter follows the letters; a sign's has none.
+ * is placed against its message, so a spread by letter follows the letters; a sign's has none. For
+ * the gpu engine (`gpu`) it is a shader patch on every subject where the modulator has one, which
+ * elsewhere would only add work.
  */
 function layerPatch(
   b: Board,
   layer: LayerSpec,
-  at: Placed = place(b, rasterize('')),
+  at: Placed,
+  gpu: boolean,
 ): { patch: Patch<Subject, Pose>; subjects: readonly Subject[] } {
   const mod = MODULATORS[layer.mod];
   const p = values(mod, layer.params as never);
   const order = layer.spread ?? TOGETHER;
-  const shaded = mod.shader?.(at, p, ranked(order, b));
+  const shaded = gpu ? mod.shader?.(at, p, ranked(order, b)) : null;
   if (shaded) return { patch: shaded, subjects: everyOf(b) };
   return {
     patch: mod.patch(at, p, rankOf(order, at)),
@@ -168,9 +173,10 @@ function stageLayer(
   name: string,
   layer: LayerSpec,
   ms: number,
-  at?: Placed,
+  at: Placed,
+  gpu: boolean,
 ): StagedLayer {
-  const { patch: cycle, subjects } = layerPatch(b, layer, at);
+  const { patch: cycle, subjects } = layerPatch(b, layer, at, gpu);
   const weight = layer.weight ?? 1;
   const shaded = stretch(cycle, ms);
   if (shaded) return { name, patch: shaded, subjects, weight };
@@ -191,6 +197,6 @@ export function cueLayer(
   layer: LayerSpec,
   weight: number | Signal<Subject>,
 ): Handle<Subject> {
-  const { patch: cycle, subjects } = layerPatch(b, layer);
+  const { patch: cycle, subjects } = layerPatch(b, layer, place(b, rasterize('')), onGpu(m));
   return m.cue({ name: layer.mod, patch: cycle, subjects, loop: true, weight });
 }

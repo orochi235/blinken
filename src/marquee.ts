@@ -8,6 +8,7 @@ import { faceOf } from './font.js';
 import { gridOf } from './grid.js';
 import { cueLayers } from './layers.js';
 import type { Marquee, MarqueeOptions } from './marquee-api.js';
+import { onGpu } from './modulators/shader.js';
 import { layOut, PassClock, type PassScene } from './pass.js';
 import { cueProgram, effectOf, type StagedScene, stageProgram } from './program.js';
 import { attach, pullChannels, register } from './render/attach.js';
@@ -78,7 +79,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     const all = typeof program === 'function' ? program() : program;
     const offset = from > 0 && from < all.length ? from : 0;
     const chosen = offset ? all.slice(offset) : all;
-    staged = stageProgram(b, chosen, effects);
+    staged = stageProgram(b, chosen, effects, onGpu(m));
     ({ scenes, length, stops } = layOut(staged, offset));
     held = null;
     passed = Number.NEGATIVE_INFINITY;

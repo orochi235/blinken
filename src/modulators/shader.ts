@@ -1,5 +1,5 @@
 import { type WaveShape, waveAt } from '@msb235/blits';
-import { type ShaderPatch, type ShaderSpec, shaderPatch } from '@msb235/blits/gpu';
+import { gpuOf, type ShaderPatch, type ShaderSpec, shaderPatch } from '@msb235/blits/gpu';
 import type { Board, Pose, Subject } from '../board.js';
 import { CLOSED, closedRank, type Order } from '../orders.js';
 import type { Channel } from '../planes.js';
@@ -128,6 +128,32 @@ export function hasTables(): boolean {
 /** One shader patch per duration a modulator is cued at, so a new duration compiles once. */
 const KEEP = 16;
 
+/**
+ * A cache of the `limit` values last asked for, as a function: `(key, make)` gives the one held for `key`, or
+ * makes it, dropping the one asked for longest ago.
+ */
+export function recent<K, V>(limit: number): (key: K, make: () => V) => V {
+  const held = new Map<K, V>();
+  return (key, make) => {
+    const had = held.get(key);
+    held.delete(key);
+    const v = had ?? make();
+    if (held.size >= limit) held.delete(held.keys().next().value as K);
+    held.set(key, v);
+    return v;
+  };
+}
+
+/** Whether `m` is a mix the gpu engine made, which folds shader patches on the GPU. */
+export function onGpu(m: object): boolean {
+  try {
+    gpuOf(m as never);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 interface Made {
   readonly make: (duration: number, values: Given) => ModShader;
   readonly values: Given;
@@ -139,26 +165,22 @@ const made = new WeakMap<object, Made>();
  * Bound with `cycles` (default 1), its phase runs that many times round the cycle per pass.
  */
 export function shader(spec: Spec): (duration: number, values: Given) => ModShader {
-  const byDuration = new Map<number, ModShader>();
+  const byDuration = recent<number, ModShader>(KEEP);
   const params = Object.fromEntries(['cycles', ...spec.params].map((n) => [n, 'f32' as const]));
-  const base = (duration: number) => {
-    const had = byDuration.get(duration);
-    if (had) return had;
-    // npm 0.20's spec has no tables, and a spec given them only where hasTables() holds.
-    const p = shaderPatch<Subject, Pose, Bound>(duration, {
-      helpers: HELPERS,
-      fields: FIELDS,
-      params,
-      ...(spec.tables && { tables: spec.tables }),
-      wgsl: `let ph = fract(phase * params.cycles); ${spec.wgsl}`,
-      at: (phase, s, _setting, v) =>
-        spec.at((phase * (v.cycles ?? 1)) % 1, s, v, v as unknown as Tables),
-      writes: spec.writes,
-    } as ShaderSpec<Subject, Pose, Bound>);
-    if (byDuration.size >= KEEP) byDuration.delete(byDuration.keys().next().value as number);
-    byDuration.set(duration, p);
-    return p;
-  };
+  const base = (duration: number) =>
+    byDuration(duration, () =>
+      // npm 0.20's spec has no tables, and a spec given them only where hasTables() holds.
+      shaderPatch<Subject, Pose, Bound>(duration, {
+        helpers: HELPERS,
+        fields: FIELDS,
+        params,
+        ...(spec.tables && { tables: spec.tables }),
+        wgsl: `let ph = fract(phase * params.cycles); ${spec.wgsl}`,
+        at: (phase, s, _setting, v) =>
+          spec.at((phase * (v.cycles ?? 1)) % 1, s, v, v as unknown as Tables),
+        writes: spec.writes,
+      } as ShaderSpec<Subject, Pose, Bound>),
+    );
   const make = (duration: number, given: Given): ModShader => {
     const values = { cycles: 1, ...given };
     const p = base(duration).with(values as Bound);

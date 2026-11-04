@@ -3,7 +3,7 @@ import type { Pose, Subject } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { ColorsParam } from '../params.js';
 import { modulator, outweigh } from './modulator.js';
-import { hasTables, shader } from './shader.js';
+import { hasTables, recent, shader } from './shader.js';
 
 /** A ramp's tints across `at`'s board, one a column or row, outweighing the scene's. */
 function rampOf(at: Placed, p: { colors: readonly number[]; direction: string }) {
@@ -24,12 +24,10 @@ const jOf = (s: { x: number; y: number }, down: boolean, span: number) =>
   Math.min(span, Math.max(0, Math.round(down ? s.y : s.x)));
 
 /** One shader per ramp length, since a table's size is the shader's; the newest few are kept. */
-const shaders = new Map<number, ReturnType<typeof shader>>();
-const KEEP = 8;
-function shaderOf(span: number) {
-  let made = shaders.get(span);
-  if (!made) {
-    made = shader({
+const shaders = recent<number, ReturnType<typeof shader>>(8);
+const shaderOf = (span: number) =>
+  shaders(span, () =>
+    shader({
       params: ['down', 'span'],
       tables: { tints: { width: 4, height: span + 1 } },
       wgsl: `let j = clamp(floor(select(subject.x, subject.y, params.down > 0.5) + 0.5), 0.0, params.span);
@@ -45,12 +43,8 @@ if (subject.cell < 0.5) {
         };
       },
       writes: ['tint'],
-    });
-    if (shaders.size >= KEEP) shaders.delete(shaders.keys().next().value as number);
-    shaders.set(span, made);
-  }
-  return made;
-}
+    }),
+  );
 
 /**
  * A still ramp of tint through its colors, left to right or top to bottom, each pair blended

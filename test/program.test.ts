@@ -7,7 +7,7 @@ import { rasterize } from '@/font.js';
 import { MODULATORS } from '@/modulators/index.js';
 import { place, placeText } from '@/orders.js';
 import { values } from '@/params.js';
-import { layerOf, play, type Scene, stageProgram } from '@/program.js';
+import { cueLayer, layerOf, play, type Scene, stageProgram } from '@/program.js';
 import { blitsAlias } from '../blits.config.ts';
 
 /** blits's `gpuDescriptor`, from the blits the tests run on: the checkout beside bree, or npm's. */
@@ -180,8 +180,8 @@ describe('play', () => {
 
 describe('stageProgram layers', () => {
   const scene: Scene = { text: 'HI', hex: 0xffffff, effect: LEFT };
-  const layersOf = (layers: Scene['layers']) =>
-    stageProgram(b, [{ ...scene, layers }])[0]?.layers ?? [];
+  const layersOf = (layers: Scene['layers'], gpu = true) =>
+    stageProgram(b, [{ ...scene, layers }], {}, gpu)[0]?.layers ?? [];
 
   it('keeps a shader modulator a shader patch, stretched to the scene', () => {
     const [layer] = layersOf({ sparkle: true });
@@ -211,5 +211,29 @@ describe('stageProgram layers', () => {
     if (!layer) throw new Error('no layer');
     expect(gpuDescriptor(layer.patch)).toBeUndefined();
     expect(layer.subjects).toBe(b.dots);
+  });
+
+  it('keeps a layer staged for the stock mixer a plain patch on its own subjects', () => {
+    const [layer] = layersOf({ gradient: true }, false);
+    if (!layer) throw new Error('no layer');
+    expect(gpuDescriptor(layer.patch)).toBeUndefined();
+    expect(layer.subjects).toBe(b.dots);
+  });
+});
+
+describe('cueLayer', () => {
+  it('cues a plain patch on its own subjects on the stock mixer: chase on the cells alone', () => {
+    const m = fresh();
+    const cue = m.cue.bind(m);
+    const specs: Parameters<typeof m.cue>[0][] = [];
+    m.cue = (spec) => {
+      specs.push(spec);
+      return cue(spec);
+    };
+    cueLayer(m, b, { mod: 'chase' }, 1);
+    const [spec] = specs;
+    if (!spec || !('patch' in spec)) throw new Error('nothing cued');
+    expect(spec.subjects).toBe(b.cells);
+    expect(gpuDescriptor(spec.patch as object)).toBeUndefined();
   });
 });
