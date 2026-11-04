@@ -5,10 +5,10 @@ import { readdir } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { build } from 'esbuild';
 import { chromium } from 'playwright';
+import { blitsAlias } from '../../blits.config.ts';
 
 const dir = new URL('.', import.meta.url).pathname;
 const src = new URL('../../src/', import.meta.url).pathname;
-const blits = (path) => new URL(`../../../blits/${path}`, import.meta.url).pathname;
 const only = process.argv[2];
 const files = (await readdir(dir)).filter(
   (f) => f.endsWith('.gpu.ts') && (!only || f.includes(only)),
@@ -21,10 +21,7 @@ const out = await build({
   bundle: true,
   format: 'esm',
   write: false,
-  alias: {
-    '@msb235/blits/gpu': blits('src/gpu.ts'),
-    '@msb235/blits': blits('src/index.ts'),
-  },
+  alias: blitsAlias,
   plugins: [
     {
       name: 'bree-src',

@@ -135,7 +135,11 @@ out.lit = lit;`,
       ...extra,
     };
     const given: Given = { ...values, lead: bt.lead };
-    for (const [n, t] of Object.entries(tables)) given[n] = t.data;
-    return bind(duration, tables, given);
+    const sizes: Record<string, { width: number; height: number }> = {};
+    for (const [n, t] of Object.entries(tables)) {
+      given[n] = t.data;
+      sizes[n] = { width: t.width, height: t.height };
+    }
+    return bind(duration, sizes, given);
   };
 }

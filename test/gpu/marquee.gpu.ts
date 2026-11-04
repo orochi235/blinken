@@ -1,5 +1,5 @@
-import { patch } from '@msb235/blits';
-import { gpuOf, shaderPatch } from '@msb235/blits/gpu';
+import { angle, kit, mix, patch } from '@msb235/blits';
+import { gpu as gpuEngine, gpuOf, shaderPatch } from '@msb235/blits/gpu';
 import type { Pose, Subject } from '@/board.js';
 import { gridOf } from '@/grid.js';
 import { createMarquee } from '@/marquee.js';
@@ -166,15 +166,41 @@ test('marquee: plays scroll on WebGPU, drawing what a held 2D twin does', async 
   await againstTwin(d as unknown as GPUDevice, SIGN);
 });
 
+/** Whether the blits in use folds an `angle()` channel on the GPU: npm 0.20 has no WGSL for one. */
+async function foldsAngle(device: GPUDevice): Promise<boolean> {
+  type S = { x: number };
+  const m = mix<S, { a: number }>(kit({ a: angle() }), {
+    engine: gpuEngine({ device: device as never }),
+  });
+  const subjects: S[] = [{ x: 0 }];
+  const side = gpuOf(m);
+  side.subjects(subjects, (s) => ({ x: s.x }));
+  const turn = shaderPatch<S, { a: number }, Record<string, never>>(1000, {
+    fields: { x: 'f32' },
+    wgsl: 'out.a = 0.5;',
+    at: () => ({ a: 0.5 }),
+    writes: ['a'],
+  });
+  m.cue({ name: 'turn', patch: turn, subjects, loop: true });
+  m.sync(0);
+  side.channel('a');
+  await side.ready;
+  m.sync(FRAME_MS);
+  return side.channel('a') !== null;
+}
+
 test('marquee: folds a shader patch on the GPU and pulls only what the CPU folds', async (d) => {
-  const { cpu } = await againstTwin(d as unknown as GPUDevice, { ...SIGN, program: [] }, (m) => {
+  const device = d as unknown as GPUDevice;
+  // Without angle WGSL, the built-in layers' hue stays on the CPU.
+  const want = (await foldsAngle(device)) ? 'gain' : 'gain,hue';
+  const { cpu } = await againstTwin(device, { ...SIGN, program: [] }, (m) => {
     // The built-in layers wait at weight 0 as fn patches, which would keep every channel on the CPU.
     for (const v of m.mix.voices()) v.fade({ over: 0 });
     const all = [...m.board.dots, ...m.board.cells];
     m.mix.cue({ name: 'light', patch: LIGHT, subjects: all, loop: true });
     m.mix.cue({ name: 'dim', patch: DIM, subjects: all, loop: true });
   });
-  if (cpu.join() !== 'gain') throw new Error(`pulled ${cpu.join(', ')}, not just gain`);
+  if ([...cpu].sort().join() !== want) throw new Error(`pulled ${cpu.join(', ')}, not ${want}`);
 });
 
 test('marquee: a WebGPU follower lays its leader on the GPU, and lets go once it is destroyed', async (d) => {
