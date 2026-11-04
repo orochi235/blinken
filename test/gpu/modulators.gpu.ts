@@ -119,3 +119,19 @@ test('shimmer folds on the GPU as the CPU does', (d) =>
     ['lit', 'glow', 'chroma'],
     [210, 530, 870],
   ));
+
+test('neon in runs of columns folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'neon', params: { often: 60, length: 1500 } },
+    ['gain', 'glow'],
+    [1210, 7533, 23_871, 41_002, 58_317],
+  ));
+
+test('neon spread by column folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'neon', spread: { by: 'column' }, params: { often: 60, length: 1500, seed: 4 } },
+    ['gain', 'glow'],
+    [2210, 17_533, 33_871],
+  ));
