@@ -23,7 +23,8 @@ export interface WebGpuSign extends Sign {
   readonly output: GPUBuffer;
   /**
    * The channels the next render reads from the columns rather than the source's buffer, dots and
-   * bulbs alike. It holds until the source's mix syncs again.
+   * bulbs alike. It holds until the source's mix syncs or changes again, or the source starts or
+   * stops keeping a channel on the CPU.
    */
   cpuChannels(): ReadonlySet<keyof SignColumns>;
 }

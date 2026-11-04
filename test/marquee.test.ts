@@ -631,6 +631,12 @@ describe('backend', () => {
     }
   });
 
+  it('refuses webgpu without a handle, even when not drawing', () => {
+    expect(() =>
+      createMarquee({} as HTMLCanvasElement, { draw: false, backend: 'webgpu', ticker }),
+    ).toThrow(/needs a gpu handle/);
+  });
+
   it('reports the backend with each frame’s cost, and 2d without drawing', () => {
     const fns: ((now: number) => void)[] = [];
     const costs: string[] = [];

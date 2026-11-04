@@ -70,7 +70,8 @@ export function attach(
   const source: ChannelSource = {
     channel: (name) => (side && !kept.has(name) ? side.channel(name) : null),
   };
-  const want = opts.draw ? pickBackend(opts.backend, opts.gpu, canWebgl) : '2d';
+  const picked = pickBackend(opts.backend, opts.gpu, canWebgl);
+  const want = opts.draw ? picked : '2d';
   let backend: Backend = '2d';
   let sign: Sign | null = null;
   let webgpu: WebGpuSign | null = null;

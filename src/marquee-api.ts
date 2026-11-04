@@ -17,11 +17,14 @@ import type { Ticker } from './ticker.js';
 
 /** What one frame cost, smoothed over about twenty frames. */
 export interface FrameCost {
-  /** `sync` plus the `pull` of every channel the CPU folds, and on WebGPU the GPU's fold, ms. */
+  /**
+   * `sync` plus the `pull` of every channel the CPU folds, ms. On WebGPU it also counts dispatching
+   * the GPU's fold, though not the GPU's work.
+   */
   readonly mixMs: number;
   /** The canvas work, ms; 0 with `draw: false`. */
   readonly drawMs: number;
-  /** What drew the frame. */
+  /** What drew the frame; `2d` with `draw: false`. */
   readonly backend: Backend;
 }
 

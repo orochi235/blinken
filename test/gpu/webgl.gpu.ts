@@ -1,6 +1,7 @@
 import { oklab } from '@msb235/blits';
 import { board } from '@/board.js';
 import { createSign, signColumns } from '@/draw.js';
+import { createMarquee } from '@/marquee.js';
 import { webglSlot } from '@/render/backend.js';
 import { DOT_COLOR } from '@/render/bloom-params.js';
 import { lightTable } from '@/render/lights.js';
@@ -174,17 +175,33 @@ test('webgl: a lost context draws nothing, and a restored one draws again', asyn
   if ((px[0] as number) < 250) throw new Error(`the first light reads ${[...px]} after restore`);
 });
 
-test('webgl: a sign made on a destroyed sign’s canvas draws once its context is back', async () => {
+/** Waits for `name` on `target`, failing after `ms`. */
+function eventOn(target: EventTarget, name: string, ms = 3000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`no ${name} within ${ms} ms`)), ms);
+    target.addEventListener(
+      name,
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
+  });
+}
+
+/** Destroys a sign on a canvas, waits `between`, makes another there, and reads its first light. */
+async function reused(between: () => Promise<void> | void): Promise<Uint8Array> {
   const { b, leds, cols } = scene();
   const canvas = canvasIn(400, 200);
   const first = createWebGlSign(canvas, b, leds, true, (x, y) => [x, y]);
   if (!first) throw new Error('no WebGL sign');
   first.destroy();
-  // As React's strict mode does: made, destroyed and made again within one task.
+  await between();
   const s = createWebGlSign(canvas, b, leds, true, (x, y) => [x, y]);
   if (!s) throw new Error('no second WebGL sign on the same canvas');
   s.setLamps({ pitch: PITCH });
-  await new Promise((r) => canvas.addEventListener('webglcontextrestored', r, { once: true }));
+  await eventOn(canvas, 'webglcontextrestored');
   s.render(cols, 0xff9a2e, 1000);
   const g = canvas.getContext('webgl2') as WebGL2RenderingContext;
   const t = lightTable(b, leds, (x, y) => [x, y]);
@@ -194,6 +211,43 @@ test('webgl: a sign made on a destroyed sign’s canvas draws once its context i
   const y = Math.floor((t.at[1] as number) * scale);
   g.readPixels(x, canvas.height - 1 - y, 1, 1, g.RGBA, g.UNSIGNED_BYTE, px);
   s.destroy();
-  if ((px[0] as number) < 250)
-    throw new Error(`the first light reads ${[...px]} on the reused canvas`);
+  return px;
+}
+
+test('webgl: a sign made on a destroyed sign’s canvas in the same task draws once restored', async () => {
+  // As React's strict mode does: made, destroyed and made again within one task.
+  const px = await reused(() => {});
+  if ((px[0] as number) < 250) throw new Error(`the first light reads ${[...px]}`);
+});
+
+test('webgl: a sign made on a destroyed sign’s canvas a task later draws once restored', async () => {
+  const px = await reused(() => new Promise((r) => setTimeout(r, 50)));
+  if ((px[0] as number) < 250) throw new Error(`the first light reads ${[...px]}`);
+});
+
+test('webgl: a canvas whose context is lost for good gets a sign that draws nothing', async () => {
+  const canvas = canvasIn(400, 200);
+  const g = canvas.getContext('webgl2') as WebGL2RenderingContext;
+  const lost = eventOn(canvas, 'webglcontextlost');
+  g.getExtension('WEBGL_lose_context')?.loseContext();
+  await lost;
+  const before = freeSlots();
+  const ticks: ((now: number) => void)[] = [];
+  const m = createMarquee(canvas, {
+    cols: 10,
+    rows: 3,
+    program: [{ effect: 'hold', text: 'I', hex: 0xff0000 }],
+    ticker: {
+      add(fn) {
+        ticks.push(fn);
+        return () => {};
+      },
+      size: 0,
+    },
+  });
+  if (m.backend !== 'webgl') throw new Error(`backend ${m.backend}`);
+  if (freeSlots() !== before) throw new Error('a sign that draws nothing holds a slot');
+  for (const fn of ticks) fn(0);
+  for (const fn of ticks) fn(16);
+  m.destroy();
 });

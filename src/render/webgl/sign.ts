@@ -47,9 +47,45 @@ function reclaim(canvas: HTMLCanvasElement): (() => void) | null {
 }
 
 /**
+ * Loses `gl` and keeps it for the next sign made on `canvas` to restore. Its lost event's default
+ * is prevented, since a context whose loss went unprevented can't be restored.
+ */
+function shedContext(canvas: HTMLCanvasElement, gl: WebGL2RenderingContext): void {
+  const lose = gl.isContextLost() ? null : gl.getExtension('WEBGL_lose_context');
+  if (!lose) return;
+  const state: Shed = { lose, passed: false, onPassed: null };
+  shed.set(canvas, state);
+  canvas.addEventListener(
+    'webglcontextlost',
+    (e) => {
+      e.preventDefault();
+      state.passed = true;
+      state.onPassed?.();
+    },
+    { once: true },
+  );
+  lose.loseContext();
+}
+
+/** A WebGL sign that draws nothing: its canvas is WebGL's, so it can't fall back to 2D. */
+function dark(): Sign & { readonly backend: 'webgl' } {
+  return {
+    backend: 'webgl',
+    render() {},
+    setDefects() {},
+    setFade() {},
+    setGhost() {},
+    setLamps() {},
+    destroy() {},
+  };
+}
+
+/**
  * A sign like `createSign`'s, drawn with WebGL 2: every light one instance, its glow blurred on
- * the GPU. Null where the page has no WebGL 2 or no WebGL context left to give. A sign destroyed
- * on `canvas` gives its context back to the next made there, which draws once it is restored.
+ * the GPU. Null where the page has no WebGL 2 or no WebGL context left to give, so the canvas is
+ * still free for 2D. Where the canvas is WebGL's but its context can't be used (lost for good, or
+ * a shader fails to build) the sign draws nothing. A sign destroyed on `canvas` gives its context
+ * back to the next made there, which draws once it is restored.
  */
 export function createWebGlSign(
   canvas: HTMLCanvasElement,
@@ -59,7 +95,7 @@ export function createWebGlSign(
   grid: Grid,
 ): (Sign & { readonly backend: 'webgl' }) | null {
   const release = webglSlot();
-  if (!release) return null;
+  if (!release) return shed.has(canvas) ? dark() : null;
   const made = canvas.getContext('webgl2', {
     alpha: true,
     premultipliedAlpha: true,
@@ -75,7 +111,7 @@ export function createWebGlSign(
   const pending = gl.isContextLost() ? reclaim(canvas) : null;
   if (gl.isContextLost() && !pending) {
     release();
-    return null;
+    return dark();
   }
   const table = lightTable(b, leds, grid);
   const frame = createOpticsFrame(b, leds);
@@ -88,9 +124,9 @@ export function createWebGlSign(
     res = gl.isContextLost() ? null : build(gl, table);
   } catch (e) {
     console.error(e);
-    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    shedContext(canvas, gl);
     release();
-    return null;
+    return dark();
   }
   let gone = false;
 
@@ -198,7 +234,7 @@ export function createWebGlSign(
       console.error(e);
       res = null;
       canvas.removeEventListener('webglcontextrestored', onRestored);
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      shedContext(canvas, gl);
       release();
       return;
     }
@@ -242,20 +278,7 @@ export function createWebGlSign(
       if (res) free(gl, res);
       res = null;
       pending?.();
-      const lose = gl.isContextLost() ? null : gl.getExtension('WEBGL_lose_context');
-      if (lose) {
-        const state: Shed = { lose, passed: false, onPassed: null };
-        shed.set(canvas, state);
-        canvas.addEventListener(
-          'webglcontextlost',
-          () => {
-            state.passed = true;
-            state.onPassed?.();
-          },
-          { once: true },
-        );
-        lose.loseContext();
-      }
+      shedContext(canvas, gl);
       release();
     },
   };
