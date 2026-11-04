@@ -148,7 +148,17 @@ export function createWebGlSign(
     res = null;
   };
   const onRestored = () => {
-    res = build(gl, table);
+    try {
+      res = build(gl, table);
+    } catch (e) {
+      // Stays dark for good, its slot given back to the page.
+      console.error(e);
+      res = null;
+      canvas.removeEventListener('webglcontextrestored', onRestored);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      release();
+      return;
+    }
     sized(pitch);
   };
   canvas.addEventListener('webglcontextlost', onLost);

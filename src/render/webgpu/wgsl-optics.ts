@@ -1,8 +1,16 @@
+import { FLICKER_SEED } from '../../defects.js';
+import type { SignColumns } from '../../optics.js';
+import { MIN_SHOWN } from '../optics-frame.js';
 import { HASH_WGSL } from '../wgsl-hash.js';
 
 /** Each channel's first number in a light's pose, ten numbers per light, as `output` holds them. */
 export const SLOT = { lit: 0, gain: 1, tint: 2, hue: 6, chroma: 7, glow: 8, invert: 9 } as const;
 export const POSE = 10;
+/** The channels in the order the gather shader takes them. */
+export const CHANNELS = ['lit', 'gain', 'tint', 'hue', 'chroma', 'glow', 'invert'] as const;
+export const axesOf = (c: keyof SignColumns) => (c === 'tint' ? 4 : 1);
+const list = (xs: readonly number[]) =>
+  `array<u32, ${xs.length}>(${xs.map((x) => `${x}u`).join(', ')})`;
 /** Numbers per light in the optics' result: shine, r, g, b, bloom. */
 export const SHOWS = 5;
 export const GROUP = 64;
@@ -20,8 +28,8 @@ struct Gather { n: u32, dots: u32, follow: u32, pad: u32, ch: array<vec4u, 7> }
 @group(0) @binding(3) var<storage, read> info: array<vec4u>;
 @group(0) @binding(4) var<storage, read> followed: array<f32>;
 @group(0) @binding(5) var<storage, read_write> pose: array<f32>;
-const SLOTS = array<u32, 7>(0u, 1u, 2u, 6u, 7u, 8u, 9u);
-const AXES = array<u32, 7>(1u, 1u, 4u, 1u, 1u, 1u, 1u);
+const SLOTS = ${list(CHANNELS.map((c) => SLOT[c]))};
+const AXES = ${list(CHANNELS.map(axesOf))};
 @compute @workgroup_size(${GROUP})
 fn main(@builtin(global_invocation_id) id: vec3u) {
   let i = id.x;
@@ -127,7 +135,7 @@ fn settle_main(@builtin(global_invocation_id) id: vec3u) {
   let rate = bitcast<f32>(f.z);
   if (rate > 0.0) {
     let k = i32(floor(o.t_hi * rate + o.t_lo * rate));
-    if (bree_hash_u32(i32(i), k, 7) >= f.w) { v = 0.0; }
+    if (bree_hash_u32(i32(i), k, ${FLICKER_SEED}) >= f.w) { v = 0.0; }
   }
   let goal = max(v, bitcast<f32>(f.y));
   let was = shown[i];
@@ -186,12 +194,13 @@ fn show_main(@builtin(global_invocation_id) id: vec3u) {
   let now = v + leak * bitcast<f32>(faults[i].x);
   let q = i * ${SHOWS}u;
   shows[q + 4u] = pose[p + ${SLOT.glow}u];
-  if (now < 0.02) {
+  if (now < ${MIN_SHOWN}) {
     shows[q] = 0.0;
     return;
   }
   shows[q] = min(now * min(pose[p + ${SLOT.gain}u], 1.0) * o.brightness, 1.0);
-  let tint = vec4f(pose[p + 2u], pose[p + 3u], pose[p + 4u], pose[p + 5u]);
+  let t = p + ${SLOT.tint}u;
+  let tint = vec4f(pose[t], pose[t + 1u], pose[t + 2u], pose[t + 3u]);
   let rgb = dot_color(tint, pose[p + ${SLOT.hue}u], pose[p + ${SLOT.chroma}u]) / 255.0;
   shows[q + 1u] = rgb.x;
   shows[q + 2u] = rgb.y;

@@ -23,6 +23,8 @@ export type Defect = Fault & { readonly at: Where };
 const FLICKER_RATE = 6;
 const FLICKER_DUTY = 0.6;
 const DIM_GAIN = 0.3;
+/** The hash's third input for a flicker, so it rolls apart from other effects' randomness. */
+export const FLICKER_SEED = 7;
 
 /** Each fault's effect per light, in the order the sign was given its lights. */
 export interface Afflictions {
@@ -71,7 +73,7 @@ export function afflictions(leds: readonly Led[], defects: readonly Defect[]): A
 export function afflict(a: Afflictions, i: number, want: number, ms: number): number {
   let v = want * (a.scale[i] ?? 1);
   const rate = a.rate[i] ?? 0;
-  if (rate > 0 && hash(i, Math.floor((ms / 1000) * rate), 7) >= (a.duty[i] ?? 1)) v = 0;
+  if (rate > 0 && hash(i, Math.floor((ms / 1000) * rate), FLICKER_SEED) >= (a.duty[i] ?? 1)) v = 0;
   return Math.max(v, a.floor[i] ?? 0);
 }
 

@@ -3,7 +3,7 @@ import type { Board } from '../../board.js';
 import type { SignColumns } from '../../optics.js';
 import { PLANES, type Plane } from '../../planes.js';
 import { BUFFER } from './usage.js';
-import { GATHER_WGSL, GROUP, POSE, SLOT } from './wgsl-optics.js';
+import { axesOf, CHANNELS, GATHER_WGSL, GROUP, POSE, SLOT } from './wgsl-optics.js';
 
 /** Where the GPU folds a mix's channels: `gpuOf(m)` is one. */
 export interface ChannelSource {
@@ -16,10 +16,6 @@ export interface Follow {
   readonly map: Uint32Array;
   readonly planes: readonly Plane[];
 }
-
-/** The channels in the order the gather shader takes them. */
-const CHANNELS = ['lit', 'gain', 'tint', 'hue', 'chroma', 'glow', 'invert'] as const;
-const axesOf = (c: keyof SignColumns) => (c === 'tint' ? 4 : 1);
 
 /** Every light's pose, gathered on the GPU each frame from the mix's buffers or its columns. */
 export interface Sources {

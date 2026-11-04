@@ -3,6 +3,7 @@ import type { GpuChannel } from '@msb235/blits/gpu';
 import { board } from '@/board.js';
 import { createSign, signColumns } from '@/draw.js';
 import type { SignColumns } from '@/optics.js';
+import { DOT_COLOR } from '@/render/bloom-params.js';
 import type { Gpu } from '@/render/gpu.js';
 import { lightTable } from '@/render/lights.js';
 import { type ChannelSource, createWebGpuSign } from '@/render/webgpu/sign.js';
@@ -170,7 +171,7 @@ test('webgpu: from the mix’s buffers, with the CPU filling hue, colors match 2
 
 test('webgpu: a dark dot shows its socket, with no glow', async (d) => {
   const { pairs } = drawBoth(d as unknown as GPUDevice, scene(0xff0000), 0);
-  const socket = rgbOf(0x21150f);
+  const socket = rgbOf(DOT_COLOR);
   const diff = Math.max(...pairs.filter((p) => !p.lit).map((p) => worst(p.gpu, socket)));
   note(`dark centers: worst ${diff}/255 from the socket`);
   if (diff > TOLERANCE) throw new Error(`a dark dot is ${diff}/255 from its socket`);
@@ -216,6 +217,27 @@ test('webgpu: a destroyed device draws nothing and does not throw', async () => 
   s.render(scene(0xff0000), 0xff9a2e, 16);
   s.setLamps({ pitch: PITCH + 1 });
   s.destroy();
+});
+
+test('webgpu: a destroyed sign is not kept alive by its device', async (d) => {
+  const gc = (globalThis as { gc?: () => void }).gc;
+  if (!gc) throw new Error('run with --js-flags=--expose-gc');
+  const handle = handleOf(d as unknown as GPUDevice);
+  const made = (): WeakRef<HTMLCanvasElement> => {
+    const canvas = canvasIn(400, 200);
+    const b = board(10, 3, false);
+    const s = createWebGpuSign(canvas, b, b.dots, true, (x, y) => [x, y], handle, null);
+    s.render(scene(0xff0000), 0xff9a2e, 16);
+    s.destroy();
+    canvas.parentElement?.remove();
+    return new WeakRef(canvas);
+  };
+  const ref = made();
+  for (let k = 0; k < 10 && ref.deref(); k++) {
+    await new Promise((r) => setTimeout(r, 50));
+    gc();
+  }
+  if (ref.deref()) throw new Error('the destroyed sign’s canvas is still reachable');
 });
 
 test('webgpu: a highlight swaps a dot’s invert, and a follower copies the planes it follows', async (d) => {

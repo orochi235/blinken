@@ -42,7 +42,8 @@ export function lit(n: number): Lit {
   };
 }
 
-const MIN_SHOWN = 0.02;
+/** The least a light must show to be drawn. */
+export const MIN_SHOWN = 0.02;
 
 /** A frame stepper for `leds` on `b`, in the order the sign was given its lights. */
 export function createOpticsFrame(b: Board, leds: readonly Led[]): OpticsFrame {

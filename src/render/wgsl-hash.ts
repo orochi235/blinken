@@ -12,7 +12,10 @@ fn bree_hash(x: i32, y: i32, z: i32) -> f32 {
   return f32(bree_hash_u32(x, y, z)) * 2.3283064365386963e-10;
 }`;
 
-/** The least `bree_hash_u32` at which `hash` reaches `p`, for `p` below 1; at 1 or more none does. */
+/**
+ * The least `bree_hash_u32` at which `hash` reaches `p`. Above 0xffffffff, as it is for any `p`
+ * within 2^-32 of 1 or past it, no hash reaches `p`; that value does not fit a u32.
+ */
 export function hashThreshold(p: number): number {
   return Math.max(0, Math.ceil(p * 0x1_0000_0000));
 }

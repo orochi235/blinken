@@ -46,11 +46,9 @@ export function createWebGpuSign(
   const painter = createPainter(device, format, table, optics.shows);
   let lamps: Lamps = {};
   let pitch = 0;
+  const lost = watchLost(handle);
   let off = false;
   let gone = false;
-  void handle.lost.then(() => {
-    off = true;
-  });
 
   const look = (): Look => ({
     pitch,
@@ -59,7 +57,7 @@ export function createWebGpuSign(
   });
   /** Runs `work`, and stops drawing for good where the device refuses it. */
   const guard = (work: () => void) => {
-    if (off) return;
+    if (off || lost.off) return;
     try {
       work();
     } catch (e) {
@@ -123,4 +121,16 @@ export function createWebGpuSign(
       } catch {}
     },
   };
+}
+
+/**
+ * A flag set once `handle`'s device is lost. It lives outside the sign's scope, since the handle
+ * outlives its signs and its `lost` promise would otherwise hold every sign ever made.
+ */
+function watchLost(handle: Gpu): { off: boolean } {
+  const state = { off: false };
+  void handle.lost.then(() => {
+    state.off = true;
+  });
+  return state;
 }

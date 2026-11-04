@@ -68,6 +68,8 @@ export function createGpuOptics(
     step(enc, fallback, dt, brightness) {
       clock += dt;
       const t = clock / 1000;
+      // The split keeps the clock's bits past f32's 24, but each product with the rate still rounds
+      // to f32, so a flicker step within a few ulps of a whole number can land either side of it.
       const hi = Math.fround(t);
       f32.set(
         [
@@ -105,12 +107,13 @@ export function createGpuOptics(
       const f = new Float32Array(data);
       const u = new Uint32Array(data);
       for (let i = 0; i < n; i++) {
-        const duty = a.duty[i] ?? 1;
+        const at = hashThreshold(a.duty[i] ?? 1);
+        // A duty no hash reaches never drops out, whatever its rate.
+        const never = at > 0xffff_ffff;
         f[i * 4] = a.scale[i] ?? 1;
         f[i * 4 + 1] = a.floor[i] ?? 0;
-        // A light lit all of the time never drops out, whatever its rate.
-        f[i * 4 + 2] = duty >= 1 ? 0 : (a.rate[i] ?? 0);
-        u[i * 4 + 3] = duty >= 1 ? 0 : hashThreshold(duty);
+        f[i * 4 + 2] = never ? 0 : (a.rate[i] ?? 0);
+        u[i * 4 + 3] = never ? 0 : at;
       }
       device.queue.writeBuffer(faults, 0, data);
     },

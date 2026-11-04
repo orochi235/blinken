@@ -51,7 +51,7 @@ await new Promise((r) => server.listen(0, 'localhost', r));
 const browser = await chromium.launch({
   headless: true,
   channel: 'chromium',
-  args: ['--enable-unsafe-webgpu'],
+  args: ['--enable-unsafe-webgpu', '--js-flags=--expose-gc'],
 });
 const page = await browser.newPage();
 let failed = 0;

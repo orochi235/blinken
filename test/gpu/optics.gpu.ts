@@ -98,6 +98,8 @@ async function agree(device: GPUDevice, source: 'cpu' | 'gpu', ghost: boolean) {
     ...scatter(b, { dead: 0.1, dim: 0.1, flicker: 0.3, stuck: 0.1 }, 5),
     { kind: 'flicker', at: { bulb: 0 }, rate: 9, duty: 0.3 },
     { kind: 'stuck', at: { bulb: 1 }, level: 0.4 },
+    // Within 2^-32 of 1: no hash reaches it, so this light never drops out.
+    { kind: 'flicker', at: { bulb: 2 }, rate: 50, duty: 1 - 2 ** -33 },
   ];
   const cpu = createOpticsFrame(b, leds);
   const sources = createSources(device, b);
