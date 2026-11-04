@@ -206,6 +206,11 @@ and a page may use either (2026-11-04):
   clips the readout to what its scrolling ancestors let show. A readout whose element is off
   screen or `display: none` draws nothing and skips the optics.
 
+Either kind of surface supports both backings, chosen per readout with `face` (2026-11-04):
+`'plate'` draws a dark faceplate fitted round the readout's cells, with unlit segments showing
+their sockets on it, like a real display window; `'none'` draws no plate, and an unlit segment
+draws nothing, so only lit segments and their glow sit over the page. Default `'plate'`.
+
 Placement is a transform per readout (offset, scale, slant) in a small buffer that every
 primitive indexes through its readout. Moving a readout rewrites its transform, not the light
 table. Adding or removing a readout rebuilds the tables, which is rare.
@@ -225,7 +230,7 @@ clock.destroy();
 surface.destroy();
 ```
 
-Readout options cover `type`, `cells`, `color`, `slant`, `ends`, `align`, a gap between cells,
+Readout options cover `type`, `cells`, `face`, `color`, `slant`, `ends`, `align`, a gap between cells,
 `ghost` and `defects`. Surface options carry what a marquee's do for drawing: `gpu`, `backend`,
 `lamps`, `fade` and `ticker`.
 
