@@ -103,7 +103,7 @@ export {
 } from './pieces.js';
 export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
 export { cueLayer, effectOf, layerOf, play, type Scene, type SceneLayer } from './program.js';
-export { type Backend, pickBackend } from './render/backend.js';
+export type { Backend } from './render/backend.js';
 export { type Gpu, gpu } from './render/gpu.js';
 export { createThumbnail, type Thumbnail, type ThumbnailOptions } from './thumbnail.js';
 export { createTicker, type Ticker } from './ticker.js';

@@ -8,6 +8,7 @@
     "includes": [
       "**",
       "!**/dist",
+      "!**/bench/runs",
       "!**/dist-lab",
       "!**/shots",
       "!**/node_modules",
