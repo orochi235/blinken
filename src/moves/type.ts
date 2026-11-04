@@ -3,6 +3,7 @@ import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { Values } from '../params.js';
 import { move, on } from './move.js';
+import { moveShader } from './shader.js';
 
 /** How long the cursor stays on, or off, as it blinks. */
 const BLINK = 220;
@@ -35,6 +36,48 @@ const TYPE_PARAMS = {
 type Typing = Values<typeof TYPE_PARAMS>;
 
 /**
+ * `typing`'s draw at `back` 0, and backward at `back` 1, reading which letter each dot of the text
+ * belongs to from `owner`, and where the cursor stands before each letter from `slots`.
+ */
+const TYPING = moveShader({
+  params: ['left', 'n', 'letter', 'total', 'cursor', 'top', 'bottom', 'back'],
+  wgsl: `if (row >= 0.0) {
+  let t = select(phase, 1.0 - phase, params.back > 0.5) * params.total;
+  let x = subject.x - params.left;
+  let typed = min(params.n, floor(t / params.letter));
+  let level = table_bitmap(x, row);
+  if (level > 0.0 && table_owner(x, row) < typed) {
+    lit = level;
+  } else if (params.cursor > 0.5 && row >= params.top && row <= params.bottom && t >= params.letter * 0.5) {
+    let after = t - params.n * params.letter;
+    let off = after >= 0.0 && (floor(after / ${BLINK}.0) % 2.0 == 1.0 || after >= ${4 * BLINK}.0);
+    let sx = table_slots(0.0, typed);
+    lit = select(0.0, 1.0, !off && x >= sx && x < sx + table_slots(1.0, typed));
+  }
+}`,
+  at(phase, d, p, tables) {
+    const { bitmap, rows, owner, slots } = tables as Record<
+      string,
+      (x: number, y: number) => number
+    >;
+    const [n, letter] = [p.n as number, p.letter as number];
+    const row = rows(0, d.y) - 1;
+    if (row < 0) return 0;
+    const t = (p.back ? 1 - phase : phase) * (p.total as number);
+    const x = d.x - (p.left as number);
+    const typed = Math.min(n, Math.floor(t / letter));
+    const level = bitmap(x, row);
+    if (level > 0 && owner(x, row) < typed) return level;
+    if (!p.cursor || row < (p.top as number) || row > (p.bottom as number) || t < letter / 2)
+      return 0;
+    const after = t - n * letter;
+    if (after >= 0 && (Math.floor(after / BLINK) % 2 === 1 || after >= 4 * BLINK)) return 0;
+    const sx = slots(0, typed);
+    return x >= sx && x < sx + slots(1, typed) ? 1 : 0;
+  },
+});
+
+/**
  * The message typed out a letter at a time, `t` ms in: a lit cursor standing where the next letter
  * lands and, once the last is down, blinking twice before it goes.
  */
@@ -60,8 +103,35 @@ function typing(at: Placed, p: Typing) {
     const k = text.letterAt(x, row);
     return k >= 0 ? k : x < (text.letters[0]?.x ?? 0) ? 0 : n - 1;
   };
+  /** The pass as a shader patch, played forward or, with `back`, backward. */
+  const shader = (back: boolean) => {
+    const width = Math.max(1, text.cols);
+    const owner = new Float32Array(width * Math.max(1, text.rows));
+    for (let row = 0; row < text.rows; row++)
+      for (let x = 0; x < text.cols; x++) owner[row * width + x] = ownerOf(x, row);
+    const places = Array.from({ length: n + 1 }, (_, k) => slot(k)).flatMap((s) => [s.x, s.width]);
+    return TYPING(
+      at,
+      ms,
+      {
+        left: at.left,
+        n,
+        letter: p.ms,
+        total: ms,
+        cursor: cursor ? 1 : 0,
+        top,
+        bottom,
+        back: back ? 1 : 0,
+      },
+      {
+        owner: { width, height: Math.max(1, text.rows), data: owner },
+        slots: { width: 2, height: n + 1, data: places },
+      },
+    );
+  };
   return {
     ms,
+    shader,
     /** Mid-letter with `k` letters down, for `k` from 0, and the last letter down. */
     rests: p.pace === 'input' ? Array.from({ length: n }, (_, k) => k * p.ms + p.ms / 2) : null,
     release: n * p.ms,
@@ -97,6 +167,7 @@ export const typeOn = move({
     const { ms, draw } = typing(at, p);
     return patch<Led, Pose>(ms, (phase, led) => draw(phase * ms, led), { writes: ['lit'] });
   },
+  shader: (at, p) => typing(at, p).shader(false),
 });
 
 /** Letters backspaced off right to left, the cursor blinking first. */
@@ -118,4 +189,5 @@ export const typeOff = move({
     const { ms, draw } = typing(at, p);
     return patch<Led, Pose>(ms, (phase, led) => draw((1 - phase) * ms, led), { writes: ['lit'] });
   },
+  shader: (at, p) => typing(at, p).shader(true),
 });
