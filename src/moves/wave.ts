@@ -1,10 +1,55 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
+import type { Placed } from '../orders.js';
 import { LOOSE, move, movedAt, on } from './move.js';
+import { MOVED, movedOf, moveShader, ROUND } from './shader.js';
 
 /** How long the wave takes to swell from still, or settle back to it, at most. */
 const SWELL = 600;
 const smooth = (u: number) => u * u * (3 - 2 * u);
+
+/**
+ * How many waves a pass holds, what share of it the wave swells over, and the column the wave is
+ * read at for column `x` of the text.
+ */
+function shape(at: Placed, p: { ms: number; period: number; by: string }) {
+  const { text } = at;
+  // A whole number of waves per pass, so a loose one loops without a seam.
+  const waves = Math.max(1, Math.round(p.ms / p.period));
+  const swell = Math.min(SWELL, p.ms / 4) / p.ms;
+  const middles = text.letters.map((s) => s.x + (s.width - 1) / 2);
+  const anchor =
+    p.by === 'letter'
+      ? (x: number) => {
+          const k = text.letterAt(x);
+          return k >= 0 ? (middles[k] as number) : x;
+        }
+      : (x: number) => x;
+  return { waves, swell, anchor };
+}
+
+/** The wave, reading the column it is read at for each column of the text from `anchor`. */
+const WAVE = moveShader({
+  params: ['left', 'cols', 'height', 'length', 'waves', 'swell', 'from', 'to'],
+  wgsl: `let env = select(1.0, bree_smooth(min(1.0, phase / params.swell)), params.from > 0.5)
+  * select(1.0, bree_smooth(min(1.0, (1.0 - phase) / params.swell)), params.to > 0.5);
+let x = subject.x - params.left;
+let a = select(x, table_anchor(x, 0.0), x >= 0.0 && x < params.cols);
+let turns = a / params.length - params.waves * phase;
+let dy = ${ROUND('params.height * env * sin(6.283185307179586 * (turns - floor(turns)))')};
+lit = ${MOVED('params.left', 'dy')};`,
+  at(phase, d, p, t) {
+    const envelope =
+      (p.from ? smooth(Math.min(1, phase / (p.swell as number))) : 1) *
+      (p.to ? smooth(Math.min(1, (1 - phase) / (p.swell as number))) : 1);
+    const x = d.x - (p.left as number);
+    const a =
+      x >= 0 && x < (p.cols as number) ? (t.anchor as (x: number, y: number) => number)(x, 0) : x;
+    const angle = 2 * Math.PI * (a / (p.length as number) - (p.waves as number) * phase);
+    const dy = Math.round((p.height as number) * envelope * Math.sin(angle));
+    return movedOf(t, d, p.left as number, dy);
+  },
+});
 
 /**
  * The message bobbing in a sine wave traveling along it. Beside an enter or exit move it swells
@@ -59,19 +104,7 @@ export const wave = move({
     },
   },
   patch(at, p, joins = LOOSE) {
-    const { text } = at;
-    // A whole number of waves per pass, so a loose one loops without a seam.
-    const waves = Math.max(1, Math.round(p.ms / p.period));
-    const swell = Math.min(SWELL, p.ms / 4) / p.ms;
-    const middles = text.letters.map((s) => s.x + (s.width - 1) / 2);
-    /** The column the wave is read at for column `x` of the text. */
-    const anchor =
-      p.by === 'letter'
-        ? (x: number) => {
-            const k = text.letterAt(x);
-            return k >= 0 ? (middles[k] as number) : x;
-          }
-        : (x: number) => x;
+    const { waves, swell, anchor } = shape(at, p);
     return patch<Led, Pose>(
       p.ms,
       (phase, led) => {
@@ -84,6 +117,26 @@ export const wave = move({
         return on(movedAt(at, led, dy));
       },
       { writes: ['lit'] },
+    );
+  },
+  shader(at, p, joins = LOOSE) {
+    const { waves, swell, anchor } = shape(at, p);
+    const cols = at.text.cols;
+    const anchors = Array.from({ length: Math.max(1, cols) }, (_, x) => anchor(x));
+    return WAVE(
+      at,
+      p.ms,
+      {
+        left: at.left,
+        cols,
+        height: p.height,
+        length: p.length,
+        waves,
+        swell,
+        from: joins.from ? 1 : 0,
+        to: joins.to ? 1 : 0,
+      },
+      { anchor: { width: anchors.length, height: 1, data: anchors } },
     );
   },
 });

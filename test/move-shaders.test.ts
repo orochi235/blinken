@@ -26,20 +26,23 @@ const more: Partial<Record<MoveName, Record<string, unknown>[]>> = {
   'scroll-across': [{ direction: 'right' }],
   'type-on': [{ cursor: 'line' }, { cursor: 'off' }, { pace: 'input' }],
   'type-off': [{ cursor: 'line' }, { cursor: 'off' }],
+  wave: [
+    { by: 'column', height: 3 },
+    { ms: 500, length: 4 },
+  ],
 };
 const PHASES = [0, 0.03, 0.137, 0.25, 0.4999, 0.5, 0.61, 0.861, 0.97, 1];
 
 describe('bitmapTables', () => {
-  it('holds the text by row and each dot row’s text row plus 1', () => {
+  it('holds the text by row, and each dot row’s text row plus 1 wherever it shows one', () => {
     const at = place(b, rasterize('HI'));
     const t = bitmapTables(at);
     expect(t.width).toBe(at.text.cols);
-    expect(t.rowsLen).toBe(b.rows + at.text.rows);
     for (let y = 0; y < at.text.rows; y++)
       for (let x = 0; x < at.text.cols; x++)
         expect(t.bitmap[y * t.width + x]).toBe(at.text.level(x, y));
-    for (let y = 0; y < t.rowsLen; y++)
-      expect(t.rows[y]).toBe(at.rowOf({ kind: 'dot', x: 0, y }) + 1);
+    for (let y = -3 * at.text.rows; y < b.rows + 3 * at.text.rows; y++)
+      expect(t.rows[y + t.lead] ?? 0).toBe(at.rowOf({ kind: 'dot', x: 0, y }) + 1);
   });
 });
 

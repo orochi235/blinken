@@ -106,6 +106,15 @@ test('split-in and split-out, both ways, fold on the GPU as the CPU does', async
     for (const direction of ['left', 'right']) await agree(dev(d), name, { direction });
 });
 
+test('wave, by letter and column, alone and joined, folds on the GPU as the CPU does', async (d) => {
+  for (const by of ['letter', 'column'])
+    for (const [from, to] of [
+      [false, false],
+      [true, true],
+    ])
+      await agree(dev(d), 'wave', { by, height: 3, ms: 1200 }, { from, to });
+});
+
 test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
   for (const from of [false, true])
     for (const to of [false, true])
