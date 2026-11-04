@@ -65,7 +65,10 @@ page.on('console', (m) => {
   if (t.startsWith('__gpu__ ')) {
     const e = JSON.parse(t.slice(8));
     if (e.kind === 'adapter') console.log(`adapter ${e.info}`);
-    if (e.kind === 'start') started = e.name;
+    if (e.kind === 'start') {
+      started = e.name;
+      arm();
+    }
     if (e.kind === 'note') console.log(`      ${e.text}`);
     if (e.kind === 'result') {
       if (!e.ok) failed++;
@@ -83,11 +86,17 @@ page.on('pageerror', (e) => {
   finished();
 });
 const WATCHDOG_MS = 120_000;
-const watchdog = setTimeout(() => {
-  console.log(`no result after ${WATCHDOG_MS / 1000} s; last test started: ${started}`);
-  failed++;
-  finished();
-}, WATCHDOG_MS);
+let watchdog;
+/** Restarts the limit, so each test gets its own. */
+function arm() {
+  clearTimeout(watchdog);
+  watchdog = setTimeout(() => {
+    console.log(`${started}: no result after ${WATCHDOG_MS / 1000} s`);
+    failed++;
+    finished();
+  }, WATCHDOG_MS);
+}
+arm();
 await page.goto(`http://localhost:${server.address().port}/`);
 await done;
 clearTimeout(watchdog);

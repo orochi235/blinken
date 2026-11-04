@@ -9,6 +9,8 @@ import { note, test } from './harness.js';
 
 const PITCH = 24;
 const TOLERANCE = 8;
+/** How far the total light emitted may stray from 2D's, as a share of it. */
+const LIGHT_TOLERANCE = 0.05;
 
 /** A canvas inside a box of its own on the page. */
 function canvasIn(width: number, height: number): HTMLCanvasElement {
@@ -112,6 +114,10 @@ test('webgl: each lit dot’s center matches 2D', async () => {
         `dark centers worst ${dark}/255; light emitted ${(emitted.gl / emitted.flat).toFixed(3)}× 2D's`,
     );
     if (diff > TOLERANCE) throw new Error(`${look.name}: a lit center is ${diff}/255 from 2D's`);
+    if (dark > TOLERANCE) throw new Error(`${look.name}: a dark center is ${dark}/255 from 2D's`);
+    const ratio = emitted.gl / emitted.flat;
+    if (Math.abs(ratio - 1) > LIGHT_TOLERANCE)
+      throw new Error(`${look.name}: emits ${ratio.toFixed(3)}× 2D's light`);
   }
 });
 

@@ -60,7 +60,15 @@ export function createWebGlSign(
   const upload = new Float32Array(leds.length * 5);
   let lamps: Lamps = {};
   let pitch = 0;
-  let res: Resources | null = gl.isContextLost() ? null : build(gl, table);
+  let res: Resources | null = null;
+  try {
+    res = gl.isContextLost() ? null : build(gl, table);
+  } catch (e) {
+    console.error(e);
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    release();
+    return null;
+  }
   let gone = false;
 
   const run = (p: Program) => {
