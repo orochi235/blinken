@@ -1,11 +1,13 @@
 import type { Board, Led } from './board.js';
 import { cssOf } from './color.js';
 import type { Defect } from './defects.js';
-import { GRIDS, type Grid } from './grid.js';
+import { frameOf, GRIDS, type Grid } from './grid.js';
 import { type Fade, type Ghost, type SignColumns, shownLit } from './optics.js';
+import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from './render/bloom-params.js';
+import { LED } from './render/lights.js';
 import { createOpticsFrame, lit } from './render/optics-frame.js';
 
-export { type SignColumns, shownLit };
+export { frameOf, type SignColumns, shownLit };
 
 /** How far a dot's light blooms: its radius times `glow`, nothing at 0. */
 export function haloRadius(r: number, glow: number): number {
@@ -70,29 +72,6 @@ export interface Lamps {
 }
 
 /**
- * The sign's extent on `grid`, in pitches: its top left corner, and how far it runs across and
- * down. A point `p` pitches in sits at `p - left` (or `- top`) of the canvas's pitch-sized units.
- */
-export function frameOf(
-  b: Board,
-  grid: Grid = GRIDS.square,
-): { left: number; top: number; across: number; down: number } {
-  // One pass rather than spreading every dot into Math.min, which a large sign overflows.
-  let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
-  for (const d of b.dots) {
-    const [x, y] = grid(d.x, d.y);
-    x0 = Math.min(x0, x);
-    y0 = Math.min(y0, y);
-    x1 = Math.max(x1, x);
-    y1 = Math.max(y1, y);
-  }
-  const pad = b.margin + 0.5;
-  const left = x0 - pad;
-  const top = y0 - pad;
-  return { left, top, across: x1 + pad - left, down: y1 + pad - top };
-}
-
-/**
  * A sign drawn on `canvas`, each of `leds` at its place on `grid`; the mix's columns arrive in that
  * order. Unless `backed` is false its housing is painted dark, rather than left showing the page.
  */
@@ -130,12 +109,12 @@ export function createSign(
     }
     const hctx = housing.getContext('2d') as CanvasRenderingContext2D;
     if (backed) {
-      hctx.fillStyle = '#0d0a08';
+      hctx.fillStyle = cssOf(HOUSING);
       hctx.fillRect(0, 0, housing.width, housing.height);
     }
     for (const [i, led] of leds.entries()) {
       const [x, y] = place(i);
-      hctx.fillStyle = led.kind === 'bulb' ? '#2b2118' : '#21150f';
+      hctx.fillStyle = cssOf(led.kind === 'bulb' ? BULB_COLOR : DOT_COLOR);
       hctx.beginPath();
       hctx.arc(x, y, radius(led), 0, Math.PI * 2);
       hctx.fill();
@@ -189,10 +168,10 @@ export function createSign(
         bctx.beginPath();
         bctx.arc(x, y, r, 0, Math.PI * 2);
         bctx.fill();
-        bctx.globalAlpha = shine * 0.55;
-        bctx.fillStyle = '#fff4e0';
+        bctx.globalAlpha = shine * LED.coreAlpha;
+        bctx.fillStyle = cssOf(LED.coreTint);
         bctx.beginPath();
-        bctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
+        bctx.arc(x, y, r * LED.core, 0, Math.PI * 2);
         bctx.fill();
         const bloom = haloRadius(r, (out.bloom[i] as number) * spread);
         if (bloom > 0) {
@@ -212,7 +191,7 @@ export function createSign(
       if (!backed) ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(housing, 0, 0);
       ctx.globalCompositeOperation = 'lighter';
-      ctx.filter = `blur(${(pitch * 0.9 * spread).toFixed(1)}px)`;
+      ctx.filter = `blur(${(pitch * BLOOM.spread * spread).toFixed(1)}px)`;
       ctx.drawImage(glow, 0, 0);
       ctx.filter = 'none';
       ctx.drawImage(body, 0, 0);
