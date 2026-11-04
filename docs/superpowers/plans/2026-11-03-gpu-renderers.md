@@ -35,25 +35,25 @@
 
 ## File Structure
 
-| File | Responsibility |
-|---|---|
-| `src/render/backend.ts` | `Backend` type, `pickBackend` |
-| `src/render/gpu.ts` | `Gpu` handle, `gpu()` |
-| `src/render/lights.ts` | Shape table, material, per-light instance data (place, shape, radius) |
-| `src/render/optics-frame.ts` | Per-light shine and RGB from columns: the loop body of today's `render`, extracted |
-| `src/render/bloom-params.ts` | Bloom radius, strength and composite constants shared by both GPU look implementations |
-| `src/render/webgl/sign.ts` | WebGL 2 `Sign` |
-| `src/render/webgl/glsl.ts` | GLSL sources |
-| `src/render/webgpu/sign.ts` | WebGPU `Sign` |
-| `src/render/webgpu/wgsl-optics.ts` | WGSL: hash, settle, afflict, ghosts, dotColor, highlight, follow |
-| `src/render/webgpu/wgsl-draw.ts` | WGSL: instanced shapes, bloom, composite |
-| `src/render/webgpu/sources.ts` | Per channel, the GPU buffer from `gpuOf(m).channel()` or an uploaded CPU column |
-| `src/draw.ts` | 2D `Sign` (`createSign`), now calling `optics-frame` |
-| `src/marquee.ts`, `src/marquee-api.ts`, `src/thumbnail.ts` | `gpu` and `backend` options, engine choice, partial pull |
-| `src/modulators/shader.ts` | `stretchable` helper: a shader modulator stretched by a `cycles` param |
-| `src/moves/shader.ts` | Bitmap and row tables for moves |
-| `test/gpu/*.gpu.ts`, `test/gpu/run.mjs`, `test/gpu/harness.ts` | Browser agreement tests (blits's pattern) |
-| `scripts/bench.mjs`, `lab/bench.html`, `lab/bench.ts` | Benchmark |
+| File                                                           | Responsibility                                                                         |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/render/backend.ts`                                        | `Backend` type, `pickBackend`                                                          |
+| `src/render/gpu.ts`                                            | `Gpu` handle, `gpu()`                                                                  |
+| `src/render/lights.ts`                                         | Shape table, material, per-light instance data (place, shape, radius)                  |
+| `src/render/optics-frame.ts`                                   | Per-light shine and RGB from columns: the loop body of today's `render`, extracted     |
+| `src/render/bloom-params.ts`                                   | Bloom radius, strength and composite constants shared by both GPU look implementations |
+| `src/render/webgl/sign.ts`                                     | WebGL 2 `Sign`                                                                         |
+| `src/render/webgl/glsl.ts`                                     | GLSL sources                                                                           |
+| `src/render/webgpu/sign.ts`                                    | WebGPU `Sign`                                                                          |
+| `src/render/webgpu/wgsl-optics.ts`                             | WGSL: hash, settle, afflict, ghosts, dotColor, highlight, follow                       |
+| `src/render/webgpu/wgsl-draw.ts`                               | WGSL: instanced shapes, bloom, composite                                               |
+| `src/render/webgpu/sources.ts`                                 | Per channel, the GPU buffer from `gpuOf(m).channel()` or an uploaded CPU column        |
+| `src/draw.ts`                                                  | 2D `Sign` (`createSign`), now calling `optics-frame`                                   |
+| `src/marquee.ts`, `src/marquee-api.ts`, `src/thumbnail.ts`     | `gpu` and `backend` options, engine choice, partial pull                               |
+| `src/modulators/shader.ts`                                     | `stretchable` helper: a shader modulator stretched by a `cycles` param                 |
+| `src/moves/shader.ts`                                          | Bitmap and row tables for moves                                                        |
+| `test/gpu/*.gpu.ts`, `test/gpu/run.mjs`, `test/gpu/harness.ts` | Browser agreement tests (blits's pattern)                                              |
+| `scripts/bench.mjs`, `lab/bench.html`, `lab/bench.ts`          | Benchmark                                                                              |
 
 ---
 
@@ -79,6 +79,7 @@
 
 **Interfaces:**
 - Produces:
+
   ```ts
   export interface Lit { shine: Float32Array; rgb: Float32Array /* 3 per light, 0..1 sRGB */ ; bloom: Float32Array /* halo scale per light */ }
   export interface OpticsFrame {
@@ -88,6 +89,7 @@
   export function createOpticsFrame(b: Board, leds: readonly Led[]): OpticsFrame;
   export function lit(n: number): Lit;
   ```
+
   `shine[i]` is today's `shine`, set to 0 where `now < 0.02`. `rgb` is `dotColor(...)` split into channels / 255. `bloom[i]` is `glow[i]`.
 
 - [ ] **Step 1:** Write a test that, for a 4 × 2 board with one dead, one stuck and one dim defect, ghost `{row: 0.2}` and `dt` 16, checks `step` gives the same per-light shine and hex as the current inline loop. Capture the expected values by running today's `draw.ts` math in the test via exported `shownLit`, `settle`, `afflict`, `ghosts`, `dotColor`.
@@ -103,6 +105,7 @@
 
 **Interfaces:**
 - Produces:
+
   ```ts
   export const SHAPES = { dot: 0, bulb: 1 } as const; export type ShapeName = keyof typeof SHAPES;
   export interface Material { readonly name: 'led'; readonly core: number /* 0.45, the white center's share of radius */; readonly coreTint: number /* 0xfff4e0 */; readonly coreAlpha: number /* 0.55 */ }
@@ -110,6 +113,7 @@
   export interface LightTable { readonly n: number; readonly at: Float32Array /* x,y per light, pitches from frame top-left */; readonly shape: Uint32Array; readonly radius: Float32Array /* pitches, before lamps.size */; readonly frame: { across: number; down: number } }
   export function lightTable(b: Board, leds: readonly Led[], grid: Grid): LightTable;
   ```
+
   `radius` matches `draw.ts` (`size * 6/12` dot, `7/12` bulb, with `size` applied by the renderer). `bloom-params.ts` exports `BLOOM = { spread: 0.9 /* pitches, × lamps.glow */ }` and the housing colors `0x0d0a08`, dot `0x21150f`, bulb `0x2b2118`, used by all three backends. `draw.ts` imports them in place of its literals.
 
 - [ ] **Step 1:** Test that `lightTable` on a 3 × 2 board with border on `GRIDS.hex` gives each led's `at` equal to `grid(x, y) − (left, top)` from `frameOf`, and gives bulbs shape 1.
@@ -124,6 +128,7 @@
 
 **Interfaces:**
 - Produces:
+
   ```ts
   export interface Gpu { readonly device: GPUDevice; readonly format: GPUTextureFormat; readonly lost: Promise<void> }
   export async function gpu(): Promise<Gpu | null>; // null without navigator.gpu, adapter or device
@@ -131,6 +136,7 @@
   export function pickBackend(want: Backend | undefined, handle: Gpu | null | undefined, canWebgl: () => boolean): Backend;
   export function webglSlot(): (() => void) | null; // claims one of 12 page-wide WebGL slots; the returned function releases it
   ```
+
   `pickBackend`: an explicit `want` wins, except that `webgpu` without a handle throws `bree: backend 'webgpu' needs a gpu handle`. Otherwise it's `webgpu` with a handle, then `webgl` if `canWebgl()`, then `2d`.
 
 - [ ] **Step 1:** Unit tests for each branch of `pickBackend`, and for `webglSlot` returning null on the 13th claim and a slot again after a release.
@@ -168,6 +174,7 @@ On `webglcontextlost`, call `preventDefault()` and make render a no-op. On `webg
 **Interfaces:**
 - Consumes: `Gpu`, `lightTable`, `LED`, `BLOOM`; blits `gpuOf(m)` and `GpuChannel`.
 - Produces:
+
   ```ts
   export interface ChannelSource { channel(name: keyof SignColumns): GpuChannel | null }  // gpuOf(m) satisfies it
   export function createWebGpuSign(canvas, b, leds, backed, grid, handle: Gpu, source: ChannelSource | null): Sign & {
@@ -177,6 +184,7 @@ On `webglcontextlost`, call `preventDefault()` and make render a no-op. On `webg
     readonly output: GPUBuffer;                              // this sign's per-light post-mix pose, for a follower
   }
   ```
+
   `render(cols, fallback, dt)` reads each channel from `source.channel(name)` where it's non-null, and from `cols` (uploaded) where it's null. Bulbs take their cell's values through `b.cellOf`, on the GPU.
 
   The compute pass (`wgsl-optics.ts`) mirrors `optics-frame` exactly: `hash` (u32, wrapping multiply, `>> 15`, `>> 13`), `shownLit`, `afflict`, `settle` (`1 - exp(-dt/ms)`, persistent `shown` buffer), `ghosts` (row and column means, a second dispatch), then highlight, then `dotColor`, using blits's `LINEAR_WGSL`-style OKLab → linear → sRGB with clipping and the `fallback` laid under partial coverage. The draw pass is the same five steps as Task 5, in WGSL, reading the compute output as a storage buffer.
