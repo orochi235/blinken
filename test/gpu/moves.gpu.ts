@@ -124,6 +124,13 @@ test('unfold, fold and tumble fold on the GPU as the CPU does', async (d) => {
   for (const turns of [1, 2, 6]) await agree(dev(d), 'tumble', { turns });
 });
 
+test('rain-in and rain-out fold on the GPU as the CPU does', async (d) => {
+  for (const name of ['rain-in', 'rain-out'] as const) {
+    await agree(dev(d), name);
+    await agree(dev(d), name, { drops: 8, tail: 20, spread: 0.9, churn: 60 });
+  }
+});
+
 test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
   for (const from of [false, true])
     for (const to of [false, true])

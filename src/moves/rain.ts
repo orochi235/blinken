@@ -3,7 +3,9 @@ import type { Led, Pose } from '../board.js';
 import { hash } from '../hash.js';
 import type { Placed } from '../orders.js';
 import type { Values } from '../params.js';
+import { hashThreshold } from '../render/wgsl-hash.js';
 import { litAt, move } from './move.js';
+import { LIT, litOf, moveShader } from './shader.js';
 
 const RAIN_PARAMS = {
   ms: {
@@ -53,6 +55,70 @@ const RAIN_PARAMS = {
 };
 type Rain = Values<typeof RAIN_PARAMS>;
 
+/** A tail dot churns dim where its hash falls below this. */
+const BRIGHT = 0.7;
+
+/**
+ * `rain`, reading each column's streams' delays from `delays`, a row a column, and showing the
+ * message where a stream has passed or, with `out`, where none has.
+ */
+const RAIN = moveShader({
+  params: ['left', 'drops', 'spread', 'tail', 'churn', 'out', 'span'],
+  wgsl: `var passed = false;
+var l = 0.0;
+for (var j = 0.0; j < params.drops; j += 1.0) {
+  let u = clamp((phase - table_delays(j, subject.x)) / (1.0 - params.spread), 0.0, 1.0);
+  let behind = floor(-1.0 + u * params.span) - subject.y;
+  if (behind > 0.0) { passed = true; }
+  if (behind == 0.0) {
+    l = 1.0;
+  } else if (behind > 0.0 && behind <= params.tail) {
+    let h = bree_hash_u32(i32(subject.x), i32(subject.y), i32(floor(phase * params.churn)));
+    l = max(l, (1.0 - behind / (params.tail + 1.0)) * select(0.3, 1.0, h < ${hashThreshold(BRIGHT)}u));
+  }
+}
+lit = max(l, select(0.0, ${LIT('params.left')}, passed != (params.out > 0.5)));`,
+  at(phase, d, p, t) {
+    const delays = t.delays as (x: number, y: number) => number;
+    const [spread, tail, span] = [p.spread as number, p.tail as number, p.span as number];
+    let passed = false;
+    let lit = 0;
+    for (let j = 0; j < (p.drops as number); j++) {
+      const u = Math.min(1, Math.max(0, (phase - delays(j, d.x)) / (1 - spread)));
+      const behind = Math.floor(-1 + u * span) - d.y;
+      if (behind > 0) passed = true;
+      if (behind === 0) lit = 1;
+      else if (behind > 0 && behind <= tail) {
+        const flick = hash(d.x, d.y, Math.floor(phase * (p.churn as number))) < BRIGHT ? 1 : 0.3;
+        lit = Math.max(lit, (1 - behind / (tail + 1)) * flick);
+      }
+    }
+    return Math.max(lit, passed !== (p.out as number) > 0.5 ? litOf(t, d, p.left as number) : 0);
+  },
+});
+
+/** `rain` as a shader patch, showing the message once passed or, with `out`, until passed. */
+function rainShader(at: Placed, p: Rain, out: boolean) {
+  const rows = at.board.rows;
+  const delays = Array.from({ length: at.board.cols }, (_, x) =>
+    Array.from({ length: p.drops }, (_, j) => p.spread * hash(x, j, rows)),
+  ).flat();
+  return RAIN(
+    at,
+    p.ms,
+    {
+      left: at.left,
+      drops: p.drops,
+      spread: p.spread,
+      tail: p.tail,
+      churn: p.churn,
+      out: out ? 1 : 0,
+      span: rows + p.tail + 1,
+    },
+    { delays: { width: p.drops, height: at.board.cols, data: delays } },
+  );
+}
+
 /**
  * `drops` streams per column, each starting at its own random delay and falling past the bottom
  * with its tail; `shown(led, passed)` is how brightly a dot shows the message once some drop has
@@ -73,7 +139,7 @@ function rain(at: Placed, p: Rain, shown: (led: Led, passed: boolean) => number 
       if (behind === 0) lit = 1;
       else if (behind > 0 && behind <= p.tail) {
         // The tail fades from the head and churns like a column of changing glyphs.
-        const flick = hash(led.x, led.y, Math.floor(phase * p.churn)) < 0.7 ? 1 : 0.3;
+        const flick = hash(led.x, led.y, Math.floor(phase * p.churn)) < BRIGHT ? 1 : 0.3;
         lit = Math.max(lit, (1 - behind / (p.tail + 1)) * flick);
       }
     }
@@ -91,6 +157,7 @@ export const rainIn = move({
     const draw = rain(at, p, (led, passed) => passed && litAt(at, led));
     return patch<Led, Pose>(p.ms, draw, { writes: ['lit'] });
   },
+  shader: (at, p) => rainShader(at, p, false),
 });
 
 /** Streams of falling dots down every column, each washing the message away as it passes. */
@@ -103,4 +170,5 @@ export const rainOut = move({
     const draw = rain(at, p, (led, passed) => !passed && litAt(at, led));
     return patch<Led, Pose>(p.ms, draw, { writes: ['lit'] });
   },
+  shader: (at, p) => rainShader(at, p, true),
 });

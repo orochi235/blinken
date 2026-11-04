@@ -28,6 +28,11 @@ const more: Partial<Record<MoveName, Record<string, unknown>[]>> = {
   'type-off': [{ cursor: 'line' }, { cursor: 'off' }],
   'bounce-in': [{ bounces: 0 }, { bounces: 5, ms: 4000 }],
   tumble: [{ turns: 0 }, { turns: 6 }],
+  'rain-in': [
+    { spread: 0, churn: 0 },
+    { drops: 8, tail: 20, spread: 0.9 },
+  ],
+  'rain-out': [{ drops: 1, churn: 60 }],
   wave: [
     { by: 'column', height: 3 },
     { ms: 500, length: 4 },
