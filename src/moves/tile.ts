@@ -1,6 +1,55 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
+import type { Placed } from '../orders.js';
 import { move } from './move.js';
+import { moveShader } from './shader.js';
+
+/** The tiled rows' geometry: one copy's length, the rows' pitch, the tilt, and the board's center. */
+function layout(at: Placed, p: { angle: number; gap: number; leading: number }) {
+  const { board: b, text } = at;
+  const a = (p.angle * Math.PI) / 180;
+  return {
+    period: text.cols + p.gap,
+    pitch: text.rows + p.leading,
+    c: Math.cos(a),
+    s: Math.sin(a),
+    cx: b.cols / 2,
+    cy: b.rows / 2,
+  };
+}
+
+/** The tiled message, as tile draws it, reading the text from `bitmap`. */
+const TILE = moveShader({
+  params: ['period', 'pitch', 'c', 's', 'cx', 'cy', 'brick', 'textRows'],
+  wgsl: `if (params.period > 0.0) {
+  let dx = subject.x - params.cx;
+  let dy = subject.y - params.cy;
+  let along = dx * params.c - dy * params.s;
+  let across = dx * params.s + dy * params.c;
+  let r = floor(across / params.pitch);
+  let y = floor(across - r * params.pitch);
+  if (y < params.textRows) {
+    let moved = phase * params.period;
+    let col = floor(along + select(moved, params.brick * params.period - moved, r % 2.0 != 0.0));
+    lit = table_bitmap(col - params.period * floor(col / params.period), y);
+  }
+}`,
+  at(phase, d, p, t) {
+    const n = (k: string) => p[k] as number;
+    const [period, pitch, c, s, brick] = [n('period'), n('pitch'), n('c'), n('s'), n('brick')];
+    if (period <= 0) return 0;
+    const [dx, dy] = [d.x - n('cx'), d.y - n('cy')];
+    const along = dx * c - dy * s;
+    const across = dx * s + dy * c;
+    const r = Math.floor(across / pitch);
+    const y = Math.floor(across - r * pitch);
+    if (y >= n('textRows')) return 0;
+    const moved = phase * period;
+    const col = Math.floor(along + (r % 2 !== 0 ? brick * period - moved : moved));
+    const x = ((col % period) + period) % period;
+    return (t.bitmap as (x: number, y: number) => number)(x, y);
+  },
+});
 
 /** The message repeated over the whole sign in tilted brick rows, neighbors scrolling opposite ways; one pass is one period, so it loops without a seam. */
 export const tile = move({
@@ -57,15 +106,9 @@ export const tile = move({
     },
   },
   patch(at, p) {
-    const { board: b, text } = at;
-    const period = text.cols + p.gap;
+    const { text } = at;
+    const { period, pitch, c, s, cx, cy } = layout(at, p);
     const ms = Math.max(1, period) * p.step;
-    const pitch = text.rows + p.leading;
-    const a = (p.angle * Math.PI) / 180;
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    const cx = b.cols / 2;
-    const cy = b.rows / 2;
     return patch<Led, Pose>(
       ms,
       (phase, led) => {
@@ -86,5 +129,13 @@ export const tile = move({
       },
       { writes: ['lit'] },
     );
+  },
+  shader(at, p) {
+    const l = layout(at, p);
+    return TILE(at, Math.max(1, l.period) * p.step, {
+      ...l,
+      brick: p.brick,
+      textRows: at.text.rows,
+    });
   },
 });

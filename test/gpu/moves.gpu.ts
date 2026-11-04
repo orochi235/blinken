@@ -131,6 +131,10 @@ test('rain-in and rain-out fold on the GPU as the CPU does', async (d) => {
   }
 });
 
+test('tile, tilted and level, folds on the GPU as the CPU does', async (d) => {
+  for (const angle of [30, 0, -60, 17]) await agree(dev(d), 'tile', { angle, brick: 0.35 });
+});
+
 test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
   for (const from of [false, true])
     for (const to of [false, true])

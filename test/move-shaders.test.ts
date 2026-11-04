@@ -33,6 +33,7 @@ const more: Partial<Record<MoveName, Record<string, unknown>[]>> = {
     { drops: 8, tail: 20, spread: 0.9 },
   ],
   'rain-out': [{ drops: 1, churn: 60 }],
+  tile: [{ angle: 0 }, { angle: -60, gap: 0, leading: 1, brick: 0 }, { angle: 17, brick: 0.35 }],
   wave: [
     { by: 'column', height: 3 },
     { ms: 500, length: 4 },
