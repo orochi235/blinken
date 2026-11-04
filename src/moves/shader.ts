@@ -1,14 +1,6 @@
-import { type ShaderPatch, type ShaderSpec, shaderPatch } from '@msb235/blits/gpu';
+import type { ShaderPatch } from '@msb235/blits/gpu';
 import type { Pose, Subject } from '../board.js';
-import {
-  type Bound,
-  FIELDS,
-  type Given,
-  HELPERS,
-  hasTables,
-  recent,
-  type Tables,
-} from '../modulators/shader.js';
+import { type Bound, type Given, hasTables, kernels, type Tables } from '../modulators/shader.js';
 import type { Placed } from '../orders.js';
 
 /** A move's pass as a shader patch, writing `lit` on every dot and 0 on every cell. */
@@ -105,12 +97,9 @@ export interface MoveSpec {
   at(phase: number, dot: { x: number; y: number }, p: Bound, t: Tables): number;
 }
 
-/** Kernels kept per move, one for each duration and set of table sizes it is cued at. */
-const KEEP = 16;
-
 /**
  * A move's shader on a placed message: cues of one duration and table sizes share a kernel, and
- * `with` gives each its numbers and tables. Null on a blits whose shader patches have no tables.
+ * each is bound with its numbers and tables. Null on a blits whose shader patches have no tables.
  */
 export function moveShader(
   spec: MoveSpec,
@@ -120,8 +109,23 @@ export function moveShader(
   values: Bound,
   extra?: Record<string, Table>,
 ) => MoveShader | null {
-  const kernels = recent<string, MoveShader>(KEEP);
-  const params = Object.fromEntries(['lead', ...spec.params].map((n) => [n, 'f32' as const]));
+  const bind = kernels({
+    params: ['lead', ...spec.params],
+    wgsl: `var lit = 0.0;
+if (subject.cell < 0.5) {
+  let row = ${ROWS('subject.y')} - 1.0;
+  ${spec.wgsl}
+}
+out.lit = lit;`,
+    at(phase, s, v) {
+      if (s.kind === 'cell') return { lit: 0 };
+      const t = v as unknown as Tables;
+      const lead = v.lead as number;
+      const rows = (x: number, y: number) => (t.rows as Lookup)(x, y + lead);
+      return { lit: spec.at(phase, s, v, { ...t, rows }) };
+    },
+    writes: ['lit'],
+  });
   return (at, duration, values, extra = {}) => {
     if (!hasTables()) return null;
     const bt = bitmapTables(at);
@@ -130,33 +134,8 @@ export function moveShader(
       rows: { width: 1, height: bt.rowsLen, data: bt.rows },
       ...extra,
     };
-    const sizes = Object.entries(tables).map(([n, t]) => `${n}${t.width}x${t.height}`);
-    const kernel = kernels(`${duration} ${sizes.join(' ')}`, () =>
-      shaderPatch<Subject, Pose, Bound>(duration, {
-        helpers: HELPERS,
-        fields: FIELDS,
-        params,
-        tables: Object.fromEntries(
-          Object.entries(tables).map(([n, t]) => [n, { width: t.width, height: t.height }]),
-        ),
-        wgsl: `var lit = 0.0;
-if (subject.cell < 0.5) {
-  let row = ${ROWS('subject.y')} - 1.0;
-  ${spec.wgsl}
-}
-out.lit = lit;`,
-        at: (phase, s, _setting, v) => {
-          if (s.kind === 'cell') return { lit: 0 };
-          const t = v as unknown as Tables;
-          const lead = v.lead as number;
-          const rows = (x: number, y: number) => (t.rows as Lookup)(x, y + lead);
-          return { lit: spec.at(phase, s, v, { ...t, rows }) };
-        },
-        writes: ['lit'],
-      } as ShaderSpec<Subject, Pose, Bound>),
-    );
     const given: Given = { ...values, lead: bt.lead };
     for (const [n, t] of Object.entries(tables)) given[n] = t.data;
-    return kernel.with(given as Bound);
+    return bind(duration, tables, given);
   };
 }

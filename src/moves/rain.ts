@@ -55,6 +55,12 @@ const RAIN_PARAMS = {
 };
 type Rain = Values<typeof RAIN_PARAMS>;
 
+/** When each stream starts, as a share of the pass: `drops` a column, a list a column. */
+const delaysOf = (at: Placed, p: Rain) =>
+  Array.from({ length: at.board.cols }, (_, x) =>
+    Array.from({ length: p.drops }, (_, j) => p.spread * hash(x, j, at.board.rows)),
+  );
+
 /** A tail dot churns dim where its hash falls below this. */
 const BRIGHT = 0.7;
 
@@ -100,9 +106,7 @@ lit = max(l, select(0.0, ${LIT('params.left')}, passed != (params.out > 0.5)));`
 /** `rain` as a shader patch, showing the message once passed or, with `out`, until passed. */
 function rainShader(at: Placed, p: Rain, out: boolean) {
   const rows = at.board.rows;
-  const delays = Array.from({ length: at.board.cols }, (_, x) =>
-    Array.from({ length: p.drops }, (_, j) => p.spread * hash(x, j, rows)),
-  ).flat();
+  const delays = delaysOf(at, p).flat();
   return RAIN(
     at,
     p.ms,
@@ -126,9 +130,7 @@ function rainShader(at: Placed, p: Rain, out: boolean) {
  */
 function rain(at: Placed, p: Rain, shown: (led: Led, passed: boolean) => number | false) {
   const rows = at.board.rows;
-  const delays = Array.from({ length: at.board.cols }, (_, x) =>
-    Array.from({ length: p.drops }, (_, j) => p.spread * hash(x, j, rows)),
-  );
+  const delays = delaysOf(at, p);
   return (phase: number, led: Led) => {
     let passed = false;
     let lit = 0;

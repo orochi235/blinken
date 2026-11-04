@@ -83,9 +83,13 @@ describe('move shaders', () => {
 
 describe('stagePiece', () => {
   const stand = { move: 'stand' } as const;
-  it('stages a move on every dot at once as its shader on every subject for the gpu engine', () => {
+  it('stages a move on every dot at once as its shader on every subject for the gpu engine, where blits has tables', () => {
     const { voice } = stagePiece(stand, 'active', narrow, b.dots, undefined, LOOSE, true);
-    if (!hasTables()) return;
+    if (!hasTables()) {
+      expect(voice.subjects).toBe(b.dots);
+      expect(voice.stagger).toBeDefined();
+      return;
+    }
     expect(voice.subjects).toBe(everyOf(b));
     expect(voice.stagger).toBeUndefined();
     expect(voice.patch.at(0, b.cells[0] as never, setting)).toEqual({ lit: 0 });

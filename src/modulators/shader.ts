@@ -95,7 +95,7 @@ export interface Spec {
   /** The names of the numbers it reads besides `cycles`, as `params.<name>` in WGSL. */
   readonly params: readonly string[];
   /** Tables it reads as `table_<name>(x, y)` in WGSL, by name; only where `hasTables()`. */
-  readonly tables?: Readonly<Record<string, { width: number; height: number }>>;
+  readonly tables?: Sizes;
   /** The same in JS, giving every channel in `writes` for every subject: a rest where it does nothing. */
   at(ph: number, s: Subject, p: Bound, t: Tables): Partial<Pose>;
   readonly writes: readonly Channel[];
@@ -124,9 +124,6 @@ export function hasTables(): boolean {
   }
   return tablesHere;
 }
-
-/** One shader patch per duration a modulator is cued at, so a new duration compiles once. */
-const KEEP = 16;
 
 /**
  * A cache of the `limit` values last asked for, as a function: `(key, make)` gives the one held for `key`, or
@@ -160,30 +157,59 @@ interface Made {
 }
 const made = new WeakMap<object, Made>();
 
+/** Kernels a shader keeps, one per duration and set of table sizes it is cued at. */
+const KEEP = 16;
+
+/** Each table's size, by name. */
+export type Sizes = Readonly<Record<string, { width: number; height: number }>>;
+
+/** What `kernels` takes: one shader's WGSL body and its JS twin, over named numbers. */
+export interface Kernel {
+  readonly params: readonly string[];
+  readonly wgsl: string;
+  at(phase: number, s: Subject, v: Bound): Partial<Pose>;
+  readonly writes: readonly Channel[];
+}
+
 /**
- * A modulator's shader: cues of one duration share a kernel, and `with` gives each its numbers.
- * Bound with `cycles` (default 1), its phase runs that many times round the cycle per pass.
+ * A shader's patches: cues of one duration and table sizes share a kernel, the newest `KEEP` kept,
+ * and each is bound with its numbers and its tables' contents, row by row.
  */
-export function shader(spec: Spec): (duration: number, values: Given) => ModShader {
-  const byDuration = recent<number, ModShader>(KEEP);
-  const params = Object.fromEntries(['cycles', ...spec.params].map((n) => [n, 'f32' as const]));
-  const base = (duration: number) =>
-    byDuration(duration, () =>
+export function kernels(k: Kernel): (duration: number, sizes: Sizes, given: Given) => ModShader {
+  const held = recent<string, ModShader>(KEEP);
+  const params = Object.fromEntries(k.params.map((n) => [n, 'f32' as const]));
+  return (duration, sizes, given) => {
+    const named = Object.entries(sizes).map(([n, t]) => `${n} ${t.width}x${t.height}`);
+    const base = held([duration, ...named].join(' '), () =>
       // npm 0.20's spec has no tables, and a spec given them only where hasTables() holds.
       shaderPatch<Subject, Pose, Bound>(duration, {
         helpers: HELPERS,
         fields: FIELDS,
         params,
-        ...(spec.tables && { tables: spec.tables }),
-        wgsl: `let ph = fract(phase * params.cycles); ${spec.wgsl}`,
-        at: (phase, s, _setting, v) =>
-          spec.at((phase * (v.cycles ?? 1)) % 1, s, v, v as unknown as Tables),
-        writes: spec.writes,
+        ...(named.length > 0 && { tables: sizes }),
+        wgsl: k.wgsl,
+        at: (phase, s, _setting, v) => k.at(phase, s, v),
+        writes: k.writes,
       } as ShaderSpec<Subject, Pose, Bound>),
     );
+    return base.with(given as Bound);
+  };
+}
+
+/**
+ * A modulator's shader: cues of one duration share a kernel, and `with` gives each its numbers.
+ * Bound with `cycles` (default 1), its phase runs that many times round the cycle per pass.
+ */
+export function shader(spec: Spec): (duration: number, values: Given) => ModShader {
+  const bind = kernels({
+    params: ['cycles', ...spec.params],
+    wgsl: `let ph = fract(phase * params.cycles); ${spec.wgsl}`,
+    at: (phase, s, v) => spec.at((phase * (v.cycles ?? 1)) % 1, s, v, v as unknown as Tables),
+    writes: spec.writes,
+  });
   const make = (duration: number, given: Given): ModShader => {
     const values = { cycles: 1, ...given };
-    const p = base(duration).with(values as Bound);
+    const p = bind(duration, spec.tables ?? {}, values);
     made.set(p, { make, values });
     return p;
   };

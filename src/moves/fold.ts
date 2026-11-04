@@ -16,7 +16,10 @@ const FOLD_PARAM = {
   about: 'How long the letters take to turn between flat and edge on. Higher turns more slowly.',
 };
 
-/** The angle unfold (`mode` 0), fold (1) or tumble (2) turns the letters through at `phase`. */
+/**
+ * The angle unfold (`mode` 0), fold (1) or tumble (2) turns the letters through at `phase`; tumble
+ * turns only in the middle third, upright either side.
+ */
 function angleOf(mode: number, turns: number, phase: number) {
   if (mode === 0) return QUARTER * (1 - phase);
   if (mode === 1) return QUARTER * phase;
@@ -123,7 +126,7 @@ export const unfold = move({
   params: { ms: FOLD_PARAM },
   patch(at, p) {
     const { draw } = turned(at);
-    return patch<Led, Pose>(p.ms, (phase, led) => draw(led, QUARTER * (1 - phase)), {
+    return patch<Led, Pose>(p.ms, (phase, led) => draw(led, angleOf(0, 0, phase)), {
       writes: ['lit'],
     });
   },
@@ -140,7 +143,7 @@ export const fold = move({
     const { draw } = turned(at);
     return patch<Led, Pose>(
       p.ms,
-      (phase, led) => (phase >= 1 ? { lit: 0 } : draw(led, QUARTER * phase)),
+      (phase, led) => (phase >= 1 ? { lit: 0 } : draw(led, angleOf(1, 0, phase))),
       {
         writes: ['lit'],
       },
@@ -176,12 +179,9 @@ export const tumble = move({
   },
   patch(at, p) {
     const { draw } = turned(at);
-    // Tumbling in the middle third only, upright either side.
-    const turn = (phase: number) => {
-      const u = 3 * phase - 1;
-      return u > 0 && u < 1 ? 2 * Math.PI * p.turns * u : 0;
-    };
-    return patch<Led, Pose>(p.ms, (phase, led) => draw(led, turn(phase)), { writes: ['lit'] });
+    return patch<Led, Pose>(p.ms, (phase, led) => draw(led, angleOf(2, p.turns, phase)), {
+      writes: ['lit'],
+    });
   },
   shader: (at, p) => turned(at).shader(p.ms, 2, p.turns),
 });
