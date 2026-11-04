@@ -4,7 +4,7 @@ import type { Defect } from './defects.js';
 import { frameOf, GRIDS, type Grid } from './grid.js';
 import { type Fade, type Ghost, type SignColumns, shownLit } from './optics.js';
 import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from './render/bloom-params.js';
-import { LED } from './render/lights.js';
+import { LED, radiusOf } from './render/lights.js';
 import { createOpticsFrame, lit } from './render/optics-frame.js';
 
 export { frameOf, type SignColumns, shownLit };
@@ -125,7 +125,7 @@ export function createSign(
     const [x, y] = at[i] as readonly [number, number];
     return [(x - left) * pitch, (y - top) * pitch];
   };
-  const radius = (led: Led) => (pitch * (lamps.size ?? 0.72) * (led.kind === 'bulb' ? 7 : 6)) / 12;
+  const radius = (led: Led) => pitch * (lamps.size ?? 0.72) * radiusOf(led.kind);
 
   const watch = new ResizeObserver(resize);
   watch.observe(box);

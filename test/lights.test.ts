@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { board } from '@/board.js';
-import { frameOf } from '@/draw.js';
-import { GRIDS } from '@/grid.js';
+import { frameOf, GRIDS } from '@/grid.js';
 import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from '@/render/bloom-params.js';
 import { LED, lightTable, SHAPES } from '@/render/lights.js';
 

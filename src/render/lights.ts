@@ -29,6 +29,11 @@ export interface LightTable {
   readonly frame: { across: number; down: number };
 }
 
+/** A light's radius in pitches, before `lamps.size` is applied. */
+export function radiusOf(kind: Led['kind']): number {
+  return (kind === 'bulb' ? 7 : 6) / 12;
+}
+
 /** The table for `leds` on `b`, placed by `grid`. */
 export function lightTable(b: Board, leds: readonly Led[], grid: Grid): LightTable {
   const { left, top, across, down } = frameOf(b, grid);
@@ -40,7 +45,7 @@ export function lightTable(b: Board, leds: readonly Led[], grid: Grid): LightTab
     at[i * 2] = x - left;
     at[i * 2 + 1] = y - top;
     shape[i] = SHAPES[led.kind];
-    radius[i] = (led.kind === 'bulb' ? 7 : 6) / 12;
+    radius[i] = radiusOf(led.kind);
   }
   return { n: leds.length, at, shape, radius, frame: { across, down } };
 }
