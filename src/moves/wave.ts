@@ -2,7 +2,7 @@ import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import { LOOSE, move, movedAt, on } from './move.js';
-import { MOVED, movedOf, moveShader, ROUND } from './shader.js';
+import { type Lookup, MOVED, movedOf, moveShader, ROUND } from './shader.js';
 
 /** How long the wave takes to swell from still, or settle back to it, at most. */
 const SWELL = 600;
@@ -43,8 +43,7 @@ lit = ${MOVED('params.left', 'dy')};`,
       (p.from ? smooth(Math.min(1, phase / (p.swell as number))) : 1) *
       (p.to ? smooth(Math.min(1, (1 - phase) / (p.swell as number))) : 1);
     const x = d.x - (p.left as number);
-    const a =
-      x >= 0 && x < (p.cols as number) ? (t.anchor as (x: number, y: number) => number)(x, 0) : x;
+    const a = x >= 0 && x < (p.cols as number) ? (t.anchor as Lookup)(x, 0) : x;
     const angle = 2 * Math.PI * (a / (p.length as number) - (p.waves as number) * phase);
     const dy = Math.round((p.height as number) * envelope * Math.sin(angle));
     return movedOf(t, d, p.left as number, dy);

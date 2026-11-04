@@ -111,7 +111,7 @@ test('wave, by letter and column, alone and joined, folds on the GPU as the CPU 
     for (const [from, to] of [
       [false, false],
       [true, true],
-    ])
+    ] as const)
       await agree(dev(d), 'wave', { by, height: 3, ms: 1200 }, { from, to });
 });
 

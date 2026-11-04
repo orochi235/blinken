@@ -2,7 +2,7 @@ import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import { move } from './move.js';
-import { moveShader } from './shader.js';
+import { type Lookup, moveShader } from './shader.js';
 
 /** The tiled rows' geometry: one copy's length, the rows' pitch, the tilt, and the board's center. */
 function layout(at: Placed, p: { angle: number; gap: number; leading: number }) {
@@ -47,7 +47,7 @@ const TILE = moveShader({
     const moved = phase * period;
     const col = Math.floor(along + (r % 2 !== 0 ? brick * period - moved : moved));
     const x = ((col % period) + period) % period;
-    return (t.bitmap as (x: number, y: number) => number)(x, y);
+    return (t.bitmap as Lookup)(x, y);
   },
 });
 

@@ -14,6 +14,9 @@ import type { Placed } from '../orders.js';
 /** A move's pass as a shader patch, writing `lit` on every dot and 0 on every cell. */
 export type MoveShader = ShaderPatch<Subject, Pose, Bound>;
 
+/** A table read in JS: `(x, y)` floored, 0 outside. */
+export type Lookup = (x: number, y: number) => number;
+
 /** A table's size and its contents row by row. */
 export interface Table {
   readonly width: number;
@@ -76,14 +79,14 @@ export const MOVED = (x0: string, dy: string) =>
 
 /** `MOVED` in JS, reading the same tables. */
 export function movedOf(t: Tables, d: { x: number; y: number }, x0: number, dy: number): number {
-  const row = (t.rows as Tables[string])(0, d.y - dy) - 1;
-  return row >= 0 ? (t.bitmap as Tables[string])(d.x - x0, row) : 0;
+  const row = (t.rows as Lookup)(0, d.y - dy) - 1;
+  return row >= 0 ? (t.bitmap as Lookup)(d.x - x0, row) : 0;
 }
 
 /** `LIT` in JS, reading the same tables. */
 export function litOf(t: Tables, d: { x: number; y: number }, x0: number, dy = 0): number {
-  const row = (t.rows as Tables[string])(0, d.y) - 1;
-  return row >= 0 ? (t.bitmap as Tables[string])(d.x - x0, row - dy) : 0;
+  const row = (t.rows as Lookup)(0, d.y) - 1;
+  return row >= 0 ? (t.bitmap as Lookup)(d.x - x0, row - dy) : 0;
 }
 
 /** WGSL for `Math.round`, which rounds halves up where WGSL's `round` rounds them to even. */
@@ -146,7 +149,7 @@ out.lit = lit;`,
           if (s.kind === 'cell') return { lit: 0 };
           const t = v as unknown as Tables;
           const lead = v.lead as number;
-          const rows = (x: number, y: number) => (t.rows as Tables[string])(x, y + lead);
+          const rows = (x: number, y: number) => (t.rows as Lookup)(x, y + lead);
           return { lit: spec.at(phase, s, v, { ...t, rows }) };
         },
         writes: ['lit'],

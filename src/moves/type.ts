@@ -3,7 +3,7 @@ import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { Values } from '../params.js';
 import { move, on } from './move.js';
-import { moveShader } from './shader.js';
+import { type Lookup, moveShader } from './shader.js';
 
 /** How long the cursor stays on, or off, as it blinks. */
 const BLINK = 220;
@@ -57,8 +57,8 @@ const TYPING = moveShader({
 }`,
   at(phase, d, p, tables) {
     const { bitmap, rows, owner, slots } = tables as Record<
-      string,
-      (x: number, y: number) => number
+      'bitmap' | 'rows' | 'owner' | 'slots',
+      Lookup
     >;
     const [n, letter] = [p.n as number, p.letter as number];
     const row = rows(0, d.y) - 1;

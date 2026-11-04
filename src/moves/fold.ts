@@ -3,7 +3,7 @@ import type { Led, Pose } from '../board.js';
 import { rasterize } from '../font.js';
 import type { Placed } from '../orders.js';
 import { move } from './move.js';
-import { moveShader } from './shader.js';
+import { type Lookup, moveShader } from './shader.js';
 
 const QUARTER = Math.PI / 2;
 const FOLD_PARAM = {
@@ -46,7 +46,7 @@ if (top >= 0.0 && !(params.mode > 0.5 && params.mode < 1.5 && phase >= 1.0)) {
   }
 }`,
   at(phase, d, p, tables) {
-    const t = tables as Record<string, (x: number, y: number) => number>;
+    const t = tables as Record<'bitmap' | 'rows' | 'tops' | 'any', Lookup>;
     const [mode, tall] = [p.mode as number, p.tall as number];
     if (mode === 1 && phase >= 1) return 0;
     const row = t.rows(0, d.y) - 1;

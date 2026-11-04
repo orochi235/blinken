@@ -5,7 +5,7 @@ import type { Placed } from '../orders.js';
 import type { Values } from '../params.js';
 import { hashThreshold } from '../render/wgsl-hash.js';
 import { litAt, move } from './move.js';
-import { LIT, litOf, moveShader } from './shader.js';
+import { LIT, type Lookup, litOf, moveShader } from './shader.js';
 
 const RAIN_PARAMS = {
   ms: {
@@ -79,7 +79,7 @@ for (var j = 0.0; j < params.drops; j += 1.0) {
 }
 lit = max(l, select(0.0, ${LIT('params.left')}, passed != (params.out > 0.5)));`,
   at(phase, d, p, t) {
-    const delays = t.delays as (x: number, y: number) => number;
+    const delays = t.delays as Lookup;
     const [spread, tail, span] = [p.spread as number, p.tail as number, p.span as number];
     let passed = false;
     let lit = 0;

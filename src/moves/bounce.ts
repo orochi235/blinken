@@ -1,7 +1,7 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import { clearAbove, move, movedAt, on } from './move.js';
-import { MOVED, movedOf, moveShader, ROUND } from './shader.js';
+import { type Lookup, MOVED, movedOf, moveShader, ROUND } from './shader.js';
 
 /** How high each bounce rises against the one before. */
 const REBOUND = 0.4;
@@ -38,7 +38,7 @@ for (var k = 0.0; k < params.hopCount; k += 1.0) {
 }
 lit = ${MOVED('params.left', `-${ROUND('above')}`)};`,
   at(phase, d, p, tables) {
-    const hops = tables.hops as (x: number, y: number) => number;
+    const hops = tables.hops as Lookup;
     let t = phase * (p.total as number);
     let above = 0;
     for (let k = 0; k < (p.hopCount as number); k++) {

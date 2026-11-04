@@ -3,7 +3,7 @@ import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { Values } from '../params.js';
 import { litAt, move, on } from './move.js';
-import { LIT, litOf, moveShader, ROUND } from './shader.js';
+import { LIT, type Lookup, litOf, moveShader, ROUND } from './shader.js';
 
 const SPLIT_PARAMS = {
   ms: {
@@ -37,7 +37,7 @@ let dx = select(${ROUND('params.fromRight * away')}, -${ROUND('params.fromLeft *
 lit = ${LIT('params.left + dx')};`,
   at(phase, d, p, t) {
     const away = 1 - easeOut(p.out ? 1 - phase : phase);
-    const row = (t.rows as (x: number, y: number) => number)(0, d.y) - 1;
+    const row = (t.rows as Lookup)(0, d.y) - 1;
     const goesLeft = row < (p.middle as number) === (p.topLeft as number) > 0.5;
     const dx = goesLeft
       ? -Math.round((p.fromLeft as number) * away)
