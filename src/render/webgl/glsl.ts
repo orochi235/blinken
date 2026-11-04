@@ -1,8 +1,7 @@
+import { TAPS } from '../blur.js';
+
 /** Where each light's quad attribute sits, shared by every instanced program. */
 export const ATTR = { corner: 0, at: 1, radius: 2, shape: 3, shine: 4, rgb: 5, bloom: 6 } as const;
-
-/** The blur's taps either side of center. */
-export const TAPS = 16;
 
 const instance = `#version 300 es
 layout(location = ${ATTR.corner}) in vec2 a_corner;

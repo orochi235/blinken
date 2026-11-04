@@ -3,31 +3,11 @@ import type { Lamps, Sign } from '../../draw.js';
 import type { Grid } from '../../grid.js';
 import { webglSlot } from '../backend.js';
 import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from '../bloom-params.js';
+import { gaussian, rgb } from '../blur.js';
 import { fitCanvas } from '../fit.js';
 import { LAMP_SIZE, LED, lightTable } from '../lights.js';
 import { createOpticsFrame, lit } from '../optics-frame.js';
 import { bind, build, free, type Program, type Resources, sizeTargets, type Target } from './gl.js';
-import { TAPS } from './glsl.js';
-
-const rgb = (hex: number): [number, number, number] => [
-  ((hex >> 16) & 0xff) / 255,
-  ((hex >> 8) & 0xff) / 255,
-  (hex & 0xff) / 255,
-];
-
-/** One axis's weights for a Gaussian of `sigma` texels, and the texels between taps. */
-function gaussian(sigma: number): { weights: Float32Array; spacing: number } {
-  const spacing = Math.max(1, (3 * sigma) / TAPS);
-  const weights = new Float32Array(TAPS + 1);
-  let sum = 0;
-  for (let i = 0; i <= TAPS; i++) {
-    const d = i * spacing;
-    weights[i] = Math.exp(-(d * d) / (2 * sigma * sigma));
-    sum += (i === 0 ? 1 : 2) * (weights[i] as number);
-  }
-  for (let i = 0; i <= TAPS; i++) weights[i] = (weights[i] as number) / sum;
-  return { weights, spacing };
-}
 
 /**
  * A sign like `createSign`'s, drawn with WebGL 2: every light one instance, its glow blurred on
