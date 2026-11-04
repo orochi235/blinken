@@ -178,7 +178,7 @@ function stageLayer(
   return { name, patch: stretched, subjects, weight };
 }
 
-/** Cues a layer's modulator looping on its subjects for good, weighted by `weight` (a `level`, say). */
+/** Cues a layer's modulator looping on its subjects for good, weighted by `weight`. */
 export function cueLayer(
   m: Mix<Subject, Pose>,
   b: Board,

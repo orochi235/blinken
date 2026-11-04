@@ -1,4 +1,4 @@
-import { type Handle, level, type Mix, oklab, patch } from '@msb235/blits';
+import { type Handle, type Mix, oklab, patch } from '@msb235/blits';
 import type { Board, Pose, Subject } from './board.js';
 import { chase } from './modulators/chase.js';
 import { cueLayer } from './program.js';
@@ -40,7 +40,7 @@ export function cueBorder(m: Mix<Subject, Pose>, b: Board, border: Border): Bord
       beat: next.beat ?? chase.params.beat.value,
       dim: next.dim ?? chase.params.dim.value,
     };
-    voice = cueLayer(m, b, { mod: 'chase', params }, level<Subject>(1));
+    voice = cueLayer(m, b, { mod: 'chase', params }, 1);
   };
   set(border);
   return { set };

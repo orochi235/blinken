@@ -206,6 +206,31 @@ describe('createMarquee', () => {
     });
   });
 
+  it('a layer turned on late shows what it would have, had it been on from the start', async () => {
+    const program = [{ effect: 'hold', text: 'HI', hex: 0xff9a2e }] as const;
+    const shown = (sign: ReturnType<typeof createMarquee>) =>
+      sign.board.dots.map((d) => {
+        const p = sign.mix.probe(d);
+        return [p.lit, ...p.tint];
+      });
+    let always: number[][] = [];
+    await withSign({ program, layers: { rainbow: true, sparkle: true } }, (sign, step) => {
+      step(1700);
+      always = shown(sign);
+    });
+    await withSign({ program }, (sign, step) => {
+      step(900);
+      sign.setLayer('rainbow', true);
+      sign.setLayer('sparkle', true);
+      step(1700);
+      expect(shown(sign)).toEqual(always);
+      sign.setLayer('rainbow', false);
+      sign.setLayer('sparkle', 0);
+      step(1800);
+      expect(shown(sign)).not.toEqual(always);
+    });
+  });
+
   it('a bare weight for a layer that does not exist throws', async () => {
     expect(() =>
       createMarquee({} as HTMLCanvasElement, { draw: false, layers: { nope: true } }),
