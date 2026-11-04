@@ -7,10 +7,11 @@ round of tuning bought, and where tuning stopped and why. How to use them is in 
 
 ## Design
 
-Decided by Mike 2026-11-03: three backends behind one `Sign` (`src/render/`), and the GPU ones may
-look better than 2D (real bloom, a softer filament).
+Decided by the maintainer 2026-11-03: three backends behind one `Sign` (`src/render/`), the GPU
+ones may look better than 2D (real bloom, a softer filament), and one shared device passed in to
+every sign (`gpu()` called once per page, so creating a sign stays synchronous).
 
-Chosen while building, not by Mike (2026-11-03): the bound on "better" and what "matches 2D" means
+Chosen while building, not by the maintainer (2026-11-03): the bound on "better" and what "matches 2D" means
 (below), WebGPU and WebGL sharing one look, the shape-plus-place light table and `Material` seam,
 `columns` not kept whole on WebGPU, and shader copies checked by agreement tests.
 
@@ -20,14 +21,15 @@ What a scene shows, meaning colors, brightness, timing and layout, is the same o
 | :------ | :-------------------------------------------------- | :----------------------------------------------------- |
 | WebGPU  | on blits's `gpu` engine, where every voice allows   | from the GPU buffers the fold wrote; the rest uploaded |
 | WebGL 2 | on the CPU (stock mixer); columns upload each frame | instanced lights, separable blur                       |
-| 2D      | on the CPU                                          | `src/draw.ts`, unchanged                               |
+| 2D      | on the CPU                                          | `src/draw.ts`, refactored; output unchanged            |
 
 - **A light is a shape plus a place.** Every light is an instance that points into a table of
   shapes (`SHAPES` in `src/render/lights.ts`: the round dot and the border bulb). New displays add
   shapes and layouts there rather than renderers. How a light glows is its `Material`; `LED` is the
   only one, behind a seam a VFD or LCD material can plug into.
-- **Post-mix optics run on the GPU** on both GPU backends: fades (`settle`), ghosting (`ghosts`),
-  defects (`afflict`), `follow`, and the highlight.
+- **Post-mix optics run on the GPU on WebGPU only**: fades (`settle`), ghosting (`ghosts`),
+  defects (`afflict`), `follow`, and the highlight. WebGL runs them on the CPU
+  (`src/render/optics-frame.ts`) and uploads the result.
 - **Matches 2D** means, per light, the center color and the total light (body plus bloom) each agree
   with 2D; bloom's spread may differ. Measured on a 10 × 3 board at pitch 24 px, dpr 1, Apple
   Metal 3, on both GPU backends: lit centers within 1/255, dark centers within 1/255, total light

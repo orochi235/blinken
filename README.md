@@ -98,7 +98,9 @@ a.backend; // 'webgpu' | 'webgl' | '2d': what is drawing; FrameCost.backend says
 ```
 
 `createThumbnail` takes the same two options. With no `gpu` a sign draws with WebGL where the
-browser gives it a context, and with 2D otherwise; `backend: 'webgpu'` without a handle throws.
+browser gives it a context, and with 2D otherwise. `backend: 'webgpu'` without a handle throws. A
+WebGPU sign on a canvas that already holds another context throws too; a WebGL sign there falls
+back to 2D.
 
 - **WebGPU** folds effects on the GPU (computes each light's brightness and color for the frame there) wherever blits's `gpu` engine can, and draws from the buffers
   it folded into. A channel with a voice the engine can't run is folded on the CPU and uploaded.
@@ -106,11 +108,13 @@ browser gives it a context, and with 2D otherwise; `backend: 'webgpu'` without a
 - **2D** is the canvas drawing, as before.
 
 The GPU backends share one look: a softer filament and a real bloom, with each light's center color
-and total light within a few 1/255 of 2D's. [docs/gpu-renderers.md](docs/gpu-renderers.md) has the
+within 1/255 of 2D's and its total light within 0.2%. [docs/gpu-renderers.md](docs/gpu-renderers.md) has the
 measurements and what a frame costs on each.
 
 - A canvas keeps the context type it first drew with. A canvas that has drawn with WebGL can't
   switch to 2D or WebGPU, and the reverse; give a sign that must switch a fresh canvas.
+- When the WebGPU device is lost, every sign on it goes dark for good while `backend` still reads
+  `'webgpu'`. A host watches `gpu.lost`, then asks for a new device and builds its signs again.
 - A page has about 12 WebGL contexts. Signs past that draw in 2D, and `backend` says so.
 - On WebGPU `Marquee.columns` holds only the channels the CPU folded that frame; on 2D and WebGL it
   holds all of them.

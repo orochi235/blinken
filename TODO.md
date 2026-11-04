@@ -17,6 +17,13 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - GPU paths missing tests: device loss drawing nothing, highlight clamping, live resize, the RGBA8 fallback (where `EXT_color_buffer_float` is missing), a layer cued on a gpu mix, and partial weight, params-while-off and seek-past-loop for a layer cued only while on (2026-11-04).
 - The shaders compare f32 values at thresholds in `tile`, `neon` and `glitch`, so a dot within one f32 step of a boundary can disagree with the CPU for a frame; sampled times showed none. The WebGPU flicker step loses whole steps after hours of clock (2026-11-04).
 - The WebGL blur's taps are `max(1, 3σ/16)` texels apart, so at a large pitch times pixel ratio (around 120 device pixels) it may band; not measured (2026-11-04).
+- The gather shader hardcodes 7 channels and the `USES` table repeats the WGSL bindings, so a new channel or binding has to be added in two places that nothing checks agree (2026-11-04).
+- WebGPU allocates every frame (the `cpuChannels` Set, the `planOf` array, `only()`, `paintBulbs`'s spread), which is garbage the 2D and WebGL paths don't make (2026-11-04).
+- Every marquee statically imports the GPU modules, so a page that never draws with WebGPU still downloads them (2026-11-04).
+- A WebGL sign made on a shed canvas while no context slot is free is `dark()` (`src/render/webgl/sign.ts`) and never retries, so it stays blank after another sign frees a slot (2026-11-04).
+- No test covers `repaint` or `setHighlight` going through `prepare`, so a change there that drops a frame would pass (2026-11-04).
+- Where WebGPU is absent the lab shows a disabled "webgpu" option as selected, and its WebGL and 2D choices wait on `gpu()` at startup (2026-11-04).
+- blits doesn't destroy its GPU side's buffers on `m.close()`, so each closed WebGPU marquee leaks them until the device goes; a blits issue (2026-11-04).
 - Not released: the branch needs blits main commits `bddfb8d` (the `hue` channel's angle runs in WGSL, so hue folds on the GPU), `b269ec9` (shader tables, which the moves' bitmaps need) and `1919a94` (a layer at weight 0 no longer keeps its channels on the CPU), unreleased as of 2026-11-04. On npm blits 0.20 the code runs and falls back to the CPU for those channels.
 
 ## Known gaps
