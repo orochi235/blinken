@@ -9,6 +9,7 @@ import { cpus, hostname, loadavg, platform, release, totalmem } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { digest } from './bench-digest.mjs';
 import { serve } from './serve.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -88,27 +89,6 @@ async function once(backend, lights) {
   } finally {
     await page.close();
   }
-}
-
-const pct = (xs, p) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : Number.NaN;
-};
-const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
-
-/** The run's headline numbers, from its frames past the warmup. */
-function digest(r) {
-  const kept = r.frames.filter((f) => f.t >= r.warmupMs);
-  const gaps = kept.slice(1).map((f, i) => f.t - (kept[i]?.t ?? 0));
-  const span = kept.length > 1 ? (kept.at(-1).t - kept[0].t) / 1000 : Number.NaN;
-  return {
-    frames: kept.length,
-    fps: (kept.length - 1) / span,
-    p50: pct(gaps, 0.5),
-    p95: pct(gaps, 0.95),
-    mixMs: mean(kept.map((f) => f.mixMs)),
-    drawMs: mean(kept.map((f) => f.drawMs)),
-  };
 }
 
 const plan = [];
