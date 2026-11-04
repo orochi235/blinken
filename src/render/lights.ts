@@ -1,5 +1,6 @@
 import type { Board, Led } from '../board.js';
 import { frameOf, type Grid } from '../grid.js';
+import { type Prims, primBuilder, SOCKET } from './prims.js';
 
 export const SHAPES = { dot: 0, bulb: 1 } as const;
 export type ShapeName = keyof typeof SHAPES;
@@ -51,4 +52,24 @@ export function lightTable(b: Board, leds: readonly Led[], grid: Grid): LightTab
     radius[i] = radiusOf(led.kind);
   }
   return { n: leds.length, at, shape, radius, frame: { across, down } };
+}
+
+/** `lightTable`'s lights as primitives: a lamp-scaled disc per light, all in view 0. */
+export function boardPrims(t: LightTable): Prims {
+  const out = primBuilder();
+  for (let i = 0; i < t.n; i++) {
+    const bulb = t.shape[i] === SHAPES.bulb;
+    out.disc(
+      i,
+      0,
+      bulb ? SOCKET.bulb : SOCKET.dot,
+      t.at[i * 2] ?? 0,
+      t.at[i * 2 + 1] ?? 0,
+      t.radius[i] ?? 0,
+      {
+        lampScaled: true,
+      },
+    );
+  }
+  return out.build();
 }
