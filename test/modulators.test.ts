@@ -301,24 +301,39 @@ describe('modulators', () => {
 
 describe('modulator shaders', () => {
   const orders = ['together', 'column', 'column-reverse', 'center', 'row'] as const;
+  /** Settings past the defaults that take another branch of a shader. */
+  const more: Partial<Record<ModulatorName, Record<string, unknown>[]>> = {
+    sparkle: [{ share: 0.05 }, { share: 0 }],
+    pulse: [{ shape: 'square' }, { shape: 'triangle' }],
+    flash: [
+      { flashes: 3, from: 0.2, to: 0.8, depth: 0.7 },
+      { from: 0.5, to: 0.5 },
+    ],
+    invert: [{ shape: 'triangle' }, { shape: 'sine', phase: 0.05 }],
+    neon: [{ often: 60, length: 1500 }],
+    shimmer: [{ every: 900, angle: -40 }],
+    chase: [{ dim: 0 }],
+  };
   for (const name of names.filter((n) => MODULATORS[n].shader))
     it(`${name}: the shader's at gives what patch does where it plays, and rests elsewhere`, () => {
       const m = MODULATORS[name];
-      const p = values(m) as never;
       const rest = Object.fromEntries(m.writes.map((c) => [c, KIT[c].rest]));
       let checked = 0;
-      for (const by of orders) {
-        const sp = m.shader?.(at, p, ranked({ by }, b));
-        if (!sp) continue;
-        checked++;
-        const plain = m.patch(at, p, rankOf({ by }, at));
-        expect(sp.duration).toBe(plain.duration);
-        const dots = b.dots.filter((_, k) => k % 7 === 0);
-        const [on, off] = m.on === 'cells' ? [b.cells, dots] : [dots, b.cells];
-        for (const phase of [0, 0.137, 0.5, 0.861])
-          for (const s of on) expect(sp.at(phase, s, setting)).toEqual(plain.at(phase, s, setting));
-        for (const s of off) expect(sp.at(0.3, s, setting)).toEqual(rest);
-      }
+      for (const given of [{}, ...(more[name] ?? [])])
+        for (const by of orders) {
+          const p = values(m, given as never) as never;
+          const sp = m.shader?.(at, p, ranked({ by }, b));
+          if (!sp) continue;
+          checked++;
+          const plain = m.patch(at, p, rankOf({ by }, at));
+          expect(sp.duration).toBe(plain.duration);
+          const dots = b.dots.filter((_, k) => k % 7 === 0);
+          const [on, off] = m.on === 'cells' ? [b.cells, dots] : [dots, b.cells];
+          for (const phase of [0, 0.137, 0.5, 0.861, 0.0412, 0.733])
+            for (const s of on)
+              expect(sp.at(phase, s, setting)).toEqual(plain.at(phase, s, setting));
+          for (const s of off) expect(sp.at(0.3, s, setting)).toEqual(rest);
+        }
       expect(checked).toBeGreaterThan(0);
     });
 });

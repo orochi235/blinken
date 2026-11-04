@@ -1,6 +1,26 @@
 import { patch, type WaveShape } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import { cycleMs, depth, modulator, phasePerStep, RATE, unitAt } from './modulator.js';
+import { RANK, rankAt, SHAPES, shader, unitOf } from './shader.js';
+
+/** Steady holds; the rest swing along the wave `SHAPES` names, from the code past it. */
+const STEADY = -1;
+
+const INVERT = shader({
+  params: ['shape', 'depth', 'phase', 'by', 'cols'],
+  wgsl: `let swing = select(1.0, bree_unit(params.shape, ph + ${RANK} * params.phase), params.shape >= 0.0);
+out.invert = select(params.depth * swing, 0.0, subject.cell > 0.5);`,
+  at: (ph, s, p) => {
+    if (s.kind === 'cell') return { invert: 0 };
+    const shape = p.shape as number;
+    const depth = p.depth as number;
+    return {
+      invert:
+        shape === STEADY ? depth : depth * unitOf(shape, ph + rankAt(p, s) * (p.phase as number)),
+    };
+  },
+  writes: ['invert'],
+});
 
 /**
  * `invert` swinging between 0 and `depth`, or held at `depth` when steady: lit dots go dark and
@@ -37,4 +57,16 @@ export const invert = modulator({
       }),
       { writes: ['invert'] },
     ),
+  shader: (_at, p, rank) => {
+    const steady = p.shape === 'steady';
+    // Held steady, it reads no rank, so any spread will do.
+    const order = rank ?? (steady ? { by: 0, cols: 1 } : null);
+    if (!order) return null;
+    return INVERT(cycleMs(p.rate), {
+      shape: steady ? STEADY : SHAPES.indexOf(p.shape as WaveShape),
+      depth: p.depth,
+      phase: p.phase,
+      ...order,
+    });
+  },
 });

@@ -135,3 +135,14 @@ test('neon spread by column folds on the GPU as the CPU does', (d) =>
     ['gain', 'glow'],
     [2210, 17_533, 33_871],
   ));
+
+test('invert held steady folds on the GPU as the CPU does', (d) =>
+  agree(dev(d), { mod: 'invert', params: { depth: 0.8 } }, ['invert'], [100, 900, 1700]));
+
+test('invert on a triangle spread by column folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'invert', spread: { by: 'column' }, params: { shape: 'triangle', phase: 0.02 } },
+    ['invert'],
+    [100, 900, 1700],
+  ));
