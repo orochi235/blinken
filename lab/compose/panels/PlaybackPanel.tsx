@@ -61,7 +61,7 @@ function BackendSelect() {
         })}
       </select>
       <span className="compose-playback-drawing" title="The backend the sign is drawing with now.">
-        {drawing ? `drawing: ${NAMES[drawing]}` : ''}
+        drawing: {drawing ? NAMES[drawing] : ''}
       </span>
     </div>
   );

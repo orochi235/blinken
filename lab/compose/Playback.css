@@ -36,7 +36,9 @@
   gap: 8px;
 }
 
+/* Sized for "drawing: WebGPU", so the row holds still while a sign is rebuilt. */
 .compose-playback-drawing {
+  min-width: 15ch;
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm, 12px);
 }
