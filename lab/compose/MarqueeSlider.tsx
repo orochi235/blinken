@@ -10,6 +10,7 @@ import {
   rasterize,
   type Thumbnail,
 } from '@/index.js';
+import { SMALL_SIGNS } from '../backend.js';
 import './MarqueeSlider.css';
 import { times } from './schema.js';
 import { STILL } from './Thumbnail.js';
@@ -51,6 +52,7 @@ function Readout({
       cols,
       rows: ROWS,
       still: 100,
+      backend: SMALL_SIGNS,
     });
     sign.current = t;
     return () => {

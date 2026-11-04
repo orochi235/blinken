@@ -19,7 +19,7 @@ import { ShareBar } from './panels/ShareBar.js';
 import { UndoBar } from './panels/UndoBar.js';
 import { type SceneLook, Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
-import { compose, playing, useCompose } from './store.js';
+import { compose, playing, useChoice, useCompose } from './store.js';
 
 /** The side columns' widths, px, until they are dragged. */
 const PANES = { left: 300, right: 320 };
@@ -53,6 +53,7 @@ function Compose() {
   const [hardware, setHardware] = useHardware();
   const [widths, setWidths] = usePersistedState('panes', PANES, { scope: 'lab' });
   const narrow = useNarrow();
+  const choice = useChoice();
   const left = (
     <>
       <PlaybackPanel />
@@ -78,6 +79,7 @@ function Compose() {
         program={playing}
         effects={() => compose.get().effects}
         onSign={compose.attach}
+        choice={choice}
       />
       <ProgramScrubber />
       <div className="compose-columns" data-stacked={narrow || undefined}>

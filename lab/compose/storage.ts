@@ -1,3 +1,4 @@
+import { CHOICES, type Choice } from '../backend.js';
 import { decode, defaultState, encode } from './share.js';
 import type { ComposeState } from './state.js';
 
@@ -86,4 +87,20 @@ export function restorePrevious(): ComposeState | null {
   keep(draft && draft !== newest ? [...rest.filter((p) => p !== draft), draft] : rest);
   save(d.state);
   return d.state;
+}
+
+/** The browser-storage key the sign's chosen backend is kept under. */
+export const BACKEND = 'bree-compose-backend';
+
+/** The backend the sign was last asked to draw with, auto when none was kept. */
+export function loadChoice(): Choice {
+  const choice = kept(BACKEND);
+  return CHOICES.find((c) => c === choice) ?? 'auto';
+}
+
+/** Keeps the chosen backend; without storage it is simply not kept. */
+export function saveChoice(choice: Choice): void {
+  try {
+    localStorage.setItem(BACKEND, choice);
+  } catch {}
 }

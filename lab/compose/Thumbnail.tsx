@@ -8,6 +8,7 @@ import {
   type TextStyle,
   type ThumbnailOptions,
 } from '@/index.js';
+import { SMALL_SIGNS } from '../backend.js';
 import './Thumbnail.css';
 
 /** The message standing still, so a preview shows the letters rather than an effect. */
@@ -80,6 +81,7 @@ export function Thumbnail({
       housing,
       follow,
       hex,
+      backend: SMALL_SIGNS,
     });
     thumb.current = t;
     if (wanted.current) t.play(true);

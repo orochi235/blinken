@@ -1,9 +1,18 @@
 import { useMemo, useSyncExternalStore } from 'react';
-import { type Board, board, type Marquee, type Pass, type PassScene, SIZE } from '@/index.js';
+import {
+  type Backend,
+  type Board,
+  board,
+  type Marquee,
+  type Pass,
+  type PassScene,
+  SIZE,
+} from '@/index.js';
+import type { Choice } from '../backend.js';
 import { gestureKey } from './gesture.js';
 import { type Library, library, shelved } from './library.js';
 import type { ComposeState } from './state.js';
-import { open, save } from './storage.js';
+import { loadChoice, open, save, saveChoice } from './storage.js';
 import { createUndo, type Undo } from './undo.js';
 
 /** What the sign does after an edit: play again from a scene, or nothing. */
@@ -15,6 +24,8 @@ interface Live {
   solo: boolean;
   /** The rate the sign plays at. */
   rate: number;
+  /** The backend the sign is asked to draw with. */
+  backend: Choice;
   sign: Marquee | null;
   /** Whether the scrubber holds the sign still, which a sign built to replace it keeps. */
   held: boolean;
@@ -49,6 +60,7 @@ function begin(): Live {
     state: opened.state,
     solo: false,
     rate: 1,
+    backend: loadChoice(),
     sign: null,
     held: false,
     resume: undefined,
@@ -147,6 +159,13 @@ export const compose = {
     live.sign?.ramp(rate, 150);
     notify();
   },
+  /** The backend the sign is asked to draw with, which builds it again on a fresh canvas. */
+  backend: (): Choice => live.backend ?? 'auto',
+  setBackend(choice: Choice) {
+    live.backend = choice;
+    saveChoice(choice);
+    notify();
+  },
   /** The sign the page drew, or null while there is none. */
   sign: () => live.sign,
   /**
@@ -215,6 +234,15 @@ const boardNow = () => live.sign?.board ?? DEFAULT_BOARD;
 
 /** The board of the sign the page drew, which a new size replaces. */
 export const useBoard = (): Board => useSyncExternalStore(compose.subscribe, boardNow, boardNow);
+
+/** The backend the sign is asked to draw with. */
+export const useChoice = (): Choice =>
+  useSyncExternalStore(compose.subscribe, compose.backend, compose.backend);
+
+const drawingNow = () => live.sign?.backend ?? null;
+/** The backend the sign actually draws with, null while there is no sign. */
+export const useDrawing = (): Backend | null =>
+  useSyncExternalStore(compose.subscribe, drawingNow, drawingNow);
 
 export const useCompose = (): ComposeState =>
   useSyncExternalStore(compose.subscribe, compose.get, compose.get);

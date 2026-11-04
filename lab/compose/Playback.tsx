@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import type { Pass, Stretch } from '@/index.js';
 import { watchPass } from './clock.js';
 import { IconButton } from './IconButton.js';
@@ -22,6 +22,7 @@ const seconds = (ms: number) => `${(Math.max(0, ms) / 1000).toFixed(2)}s`;
 /**
  * Playback for looking closely: play and pause, a frame at a time either way, the sign's rate,
  * and a focus that loops one stretch of the pass, which `spanOf` finds (null for the whole pass).
+ * `children` go under the focus.
  */
 export function Playback({
   player,
@@ -29,6 +30,7 @@ export function Playback({
   spanOf,
   onFocus,
   rewindLabel,
+  children,
 }: {
   player: Player;
   foci: readonly Focus[];
@@ -36,6 +38,7 @@ export function Playback({
   /** Told of each focus picked, before the sign is kept inside it. */
   onFocus?: (focus: string) => void;
   rewindLabel: string;
+  children?: ReactNode;
 }) {
   const [paused, setPaused] = useState(false);
   /** The sign waits at a rest for input, which holds it as a pause does. */
@@ -176,6 +179,7 @@ export function Playback({
           </label>
         ))}
       </div>
+      {children}
     </Panel>
   );
 }

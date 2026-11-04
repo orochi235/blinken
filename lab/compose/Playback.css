@@ -29,3 +29,14 @@
   flex-wrap: wrap;
   gap: 4px 10px;
 }
+
+.compose-playback-backend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compose-playback-drawing {
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm, 12px);
+}

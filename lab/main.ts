@@ -3,6 +3,7 @@ import { mount } from '@msb235/blits-panel';
 import { createMarquee, EFFECTS, LAYERS, type LayerName, type Scene } from '@/index.js';
 import { decode } from './compose/share.js';
 import { demo } from './demo.js';
+import { labGpu } from './gpu.js';
 
 function el<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -54,7 +55,9 @@ if (composition) for (const { box } of boxes) box.checked = false;
 
 let frames = 0;
 let shownAt = performance.now();
+const handle = await labGpu;
 const sign = createMarquee(canvas, {
+  gpu: handle,
   cols: whole('cols', 80, 4000),
   rows: whole('rows', 7, 2000),
   program,

@@ -8,6 +8,8 @@ import {
   type Scene,
   scatter,
 } from '@/index.js';
+import { type Choice, drawWith } from '../backend.js';
+import { useGpu } from '../gpu.js';
 import type { Hardware } from './hardware.js';
 import './Sign.css';
 
@@ -28,13 +30,15 @@ function equip(m: Marquee, hardware: Hardware): void {
 
 /**
  * A sign built from `hardware` playing `program`, handed to `onSign` as it is made and as null as
- * it goes. A new size or border builds a new sign; carrying the pass over to it is `onSign`'s job.
+ * it goes. A new size, border or backend builds a new sign; carrying the pass over to it is
+ * `onSign`'s job. None is built until the page's WebGPU request settles.
  */
 export function Sign({
   hardware,
   program,
   effects,
   onSign,
+  choice = 'auto',
 }: {
   hardware: Hardware;
   /** Read by the sign each pass. */
@@ -42,7 +46,9 @@ export function Sign({
   /** Read as each sign is built; later changes are the owner's to give the sign. */
   effects: () => Readonly<Record<string, EffectSpec>>;
   onSign: (m: Marquee | null) => void;
+  choice?: Choice;
 }) {
+  const handle = useGpu();
   const canvas = useRef<HTMLCanvasElement>(null);
   const sign = useRef<Marquee | null>(null);
   const latest = useRef({ hardware, program, effects, onSign });
@@ -52,7 +58,7 @@ export function Sign({
   const bordered = hardware.border.bulbs !== 'none';
 
   useEffect(() => {
-    if (!canvas.current) return;
+    if (!canvas.current || handle === undefined) return;
     const { hardware: h, program: p, effects: e, onSign: handTo } = latest.current;
     const m = createMarquee(canvas.current, {
       cols,
@@ -61,6 +67,7 @@ export function Sign({
       border: bordered && borderOf(h),
       program: p,
       effects: e(),
+      ...drawWith(choice, handle),
     });
     equip(m, h);
     sign.current = m;
@@ -70,7 +77,7 @@ export function Sign({
       sign.current = null;
       m.destroy();
     };
-  }, [cols, rows, grid, bordered]);
+  }, [cols, rows, grid, bordered, choice, handle]);
 
   useEffect(() => {
     if (sign.current) equip(sign.current, hardware);
@@ -80,7 +87,8 @@ export function Sign({
     <div className="compose-sign">
       {/* The canvas sizes itself to its parent's client box, padding included, so the padding sits outside it. */}
       <div className="compose-sign-box">
-        <canvas id="sign" ref={canvas} />
+        {/* A canvas that drew with one backend can't give another its context, so each gets its own. */}
+        <canvas key={choice} id="sign" ref={canvas} />
       </div>
     </div>
   );
