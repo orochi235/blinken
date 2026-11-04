@@ -51,3 +51,20 @@ export function ghosts(b: Board, shown: Float64Array, ghost: Ghost, out: Float64
     out[i] = Math.max(0, Math.min(1, row * across + col * down) - v);
   }
 }
+
+/** The mix's columns for each light, in the order the sign was given them; `tint` holds four per light. */
+export interface SignColumns {
+  lit: Float64Array;
+  gain: Float64Array;
+  tint: Float64Array;
+  hue: Float64Array;
+  chroma: Float64Array;
+  glow: Float64Array;
+  invert: Float64Array;
+}
+
+/** How lit a dot shows: `lit`, clamped to 0..1, swapped `invert` of the way toward dark or lit. */
+export function shownLit(lit: number, invert: number): number {
+  const on = Math.min(Math.max(lit, 0), 1);
+  return on + Math.min(Math.max(invert, 0), 1) * (1 - 2 * on);
+}

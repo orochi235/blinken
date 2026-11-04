@@ -23,7 +23,7 @@ function columns() {
   cols.gain[0] = 0.4;
   cols.hue[6] = 40;
   cols.chroma[7] = 0.5;
-  cols.tint.set([0.6, 0.1, 0.1, 1], 4 * 4);
+  cols.tint.set([0.6, 0.1, 0.1, 1], 5 * 4);
   return cols;
 }
 

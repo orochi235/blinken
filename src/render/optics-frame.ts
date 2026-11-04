@@ -1,8 +1,15 @@
 import type { Board, Led } from '../board.js';
 import { dotColor } from '../color.js';
 import { type Afflictions, afflict, afflictions, type Defect } from '../defects.js';
-import { type SignColumns, shownLit } from '../draw.js';
-import { FADE, type Fade, type Ghost, ghosts, settle } from '../optics.js';
+import {
+  FADE,
+  type Fade,
+  type Ghost,
+  ghosts,
+  type SignColumns,
+  settle,
+  shownLit,
+} from '../optics.js';
 
 /** What each light shows this frame, for a renderer to draw. */
 export interface Lit {

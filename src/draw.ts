@@ -2,29 +2,14 @@ import type { Board, Led } from './board.js';
 import { cssOf } from './color.js';
 import type { Defect } from './defects.js';
 import { GRIDS, type Grid } from './grid.js';
-import type { Fade, Ghost } from './optics.js';
+import { type Fade, type Ghost, type SignColumns, shownLit } from './optics.js';
 import { createOpticsFrame, lit } from './render/optics-frame.js';
 
-/** The mix's columns for each light, in the order the sign was given them; `tint` holds four per light. */
-export interface SignColumns {
-  lit: Float64Array;
-  gain: Float64Array;
-  tint: Float64Array;
-  hue: Float64Array;
-  chroma: Float64Array;
-  glow: Float64Array;
-  invert: Float64Array;
-}
+export { type SignColumns, shownLit };
 
 /** How far a dot's light blooms: its radius times `glow`, nothing at 0. */
 export function haloRadius(r: number, glow: number): number {
   return r * Math.max(glow, 0);
-}
-
-/** How lit a dot shows: `lit`, clamped to 0..1, swapped `invert` of the way toward dark or lit. */
-export function shownLit(lit: number, invert: number): number {
-  const on = Math.min(Math.max(lit, 0), 1);
-  return on + Math.min(Math.max(invert, 0), 1) * (1 - 2 * on);
 }
 
 /** Fresh columns for `n` lights, every channel at rest. */
@@ -182,13 +167,13 @@ export function createSign(
 
   return {
     render(cols, fallback, dt) {
-      // A canvas with no size, its box unlaid or hidden, can't be drawn from.
-      if (canvas.width === 0 || canvas.height === 0) return;
       const bright = Math.max(lamps.brightness ?? 1, 0);
       const spread = Math.max(lamps.glow ?? 1, 0);
+      frame.step(cols, fallback, dt, bright, out);
+      // A canvas with no size, its box unlaid or hidden, can't be drawn from.
+      if (canvas.width === 0 || canvas.height === 0) return;
       gctx.clearRect(0, 0, glow.width, glow.height);
       bctx.clearRect(0, 0, body.width, body.height);
-      frame.step(cols, fallback, dt, bright, out);
       for (let i = 0; i < leds.length; i++) {
         const shine = out.shine[i] as number;
         if (shine === 0) continue;
