@@ -1,8 +1,9 @@
 import type { Board, Led } from './board.js';
-import { cssOf, dotColor } from './color.js';
-import { type Afflictions, afflict, afflictions, type Defect } from './defects.js';
+import { cssOf } from './color.js';
+import type { Defect } from './defects.js';
 import { GRIDS, type Grid } from './grid.js';
-import { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
+import type { Fade, Ghost } from './optics.js';
+import { createOpticsFrame, lit } from './render/optics-frame.js';
 
 /** The mix's columns for each light, in the order the sign was given them; `tint` holds four per light. */
 export interface SignColumns {
@@ -123,13 +124,9 @@ export function createSign(
   const body = document.createElement('canvas');
   const bctx = body.getContext('2d') as CanvasRenderingContext2D;
   const housing = document.createElement('canvas');
-  const shown = new Float64Array(leds.length);
-  const ghost = new Float64Array(leds.length);
-  let broken: Afflictions = afflictions(leds, []);
-  let fade: Fade = FADE;
-  let leak: Ghost = {};
+  const frame = createOpticsFrame(b, leds);
+  const out = lit(leds.length);
   let lamps: Lamps = {};
-  let clock = 0;
   let pitch = 0;
 
   const box = canvas.parentElement as HTMLElement;
@@ -184,25 +181,22 @@ export function createSign(
   resize();
 
   return {
-    render({ lit, gain, tint, hue, chroma, glow: halo, invert }, fallback, dt) {
-      clock += dt;
+    render(cols, fallback, dt) {
       // A canvas with no size, its box unlaid or hidden, can't be drawn from.
       if (canvas.width === 0 || canvas.height === 0) return;
       const bright = Math.max(lamps.brightness ?? 1, 0);
       const spread = Math.max(lamps.glow ?? 1, 0);
       gctx.clearRect(0, 0, glow.width, glow.height);
       bctx.clearRect(0, 0, body.width, body.height);
+      frame.step(cols, fallback, dt, bright, out);
       for (let i = 0; i < leds.length; i++) {
-        const target = afflict(broken, i, shownLit(lit[i] ?? 0, invert[i] ?? 0), clock);
-        shown[i] = settle(shown[i] ?? 0, target, dt, fade);
-      }
-      ghosts(b, shown, leak, ghost);
-      for (let i = 0; i < leds.length; i++) {
-        const now = (shown[i] ?? 0) + (ghost[i] ?? 0) * (broken.scale[i] ?? 1);
-        if (now < 0.02) continue;
+        const shine = out.shine[i] as number;
+        if (shine === 0) continue;
         const led = leds[i] as Led;
-        const shine = Math.min(now * Math.min(gain[i] ?? 1, 1) * bright, 1);
-        const hex = dotColor(tint, i * 4, hue[i] ?? 0, chroma[i] ?? 1, fallback);
+        const hex =
+          (Math.round((out.rgb[i * 3] as number) * 255) << 16) |
+          (Math.round((out.rgb[i * 3 + 1] as number) * 255) << 8) |
+          Math.round((out.rgb[i * 3 + 2] as number) * 255);
         const [x, y] = place(i);
         const r = radius(led);
         bctx.globalAlpha = shine;
@@ -215,7 +209,7 @@ export function createSign(
         bctx.beginPath();
         bctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
         bctx.fill();
-        const bloom = haloRadius(r, (halo[i] ?? 1) * spread);
+        const bloom = haloRadius(r, (out.bloom[i] as number) * spread);
         if (bloom > 0) {
           gctx.globalAlpha = shine;
           gctx.fillStyle = cssOf(hex);
@@ -240,13 +234,13 @@ export function createSign(
       ctx.globalCompositeOperation = 'source-over';
     },
     setDefects(defects) {
-      broken = afflictions(leds, defects);
+      frame.setDefects(defects);
     },
     setFade(next) {
-      fade = next;
+      frame.setFade(next);
     },
     setGhost(next) {
-      leak = next;
+      frame.setGhost(next);
     },
     setLamps(next) {
       lamps = next;
