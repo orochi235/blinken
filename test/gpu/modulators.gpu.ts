@@ -170,6 +170,15 @@ test('glitch folds on the GPU as the CPU does', (d) => {
   return agree(dev(d), layer, ['hue', 'gain', 'invert'], [10, ...times], 1e-3);
 });
 
+test('palette spread by column folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'palette', spread: { by: 'column' }, params: { step: 300 } },
+    ['tint'],
+    [130, 520, 1010],
+    COLOR,
+  ));
+
 test('fire folds on the GPU as the CPU does', (d) =>
   agree(
     dev(d),

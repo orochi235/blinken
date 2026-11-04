@@ -2,7 +2,36 @@ import { oklab, patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { ColorsParam } from '../params.js';
 import { cycleMs, depth, modulator, phasePerStep, RATE, unitAt } from './modulator.js';
-import { RANK, rankAt, shader, unitOf } from './shader.js';
+import { f32, RANK, rankAt, SHAPES, shader, unitOf } from './shader.js';
+
+/** The most colors a palette folds on the GPU with; one with more stays on the CPU. */
+const MOST = 8;
+const SAW = SHAPES.indexOf('saw');
+const swatch = (k: number) => [`c${k}L`, `c${k}a`, `c${k}b`];
+
+/** The step a palette of `n` colors is on at `u` cycles in. */
+const stepAt = (u: number, n: number) => Math.min(n - 1, Math.floor(unitOf(SAW, u - 0.5) * n));
+
+const PALETTE = shader({
+  params: ['n', 'phase', 'by', 'cols', ...Array.from({ length: MOST }, (_, k) => swatch(k)).flat()],
+  wgsl: `var swatches = array<vec3f, ${MOST}>(${Array.from(
+    { length: MOST },
+    (_, k) =>
+      `vec3f(${swatch(k)
+        .map((n) => `params.${n}`)
+        .join(', ')})`,
+  ).join(', ')});
+let k = min(params.n - 1.0, floor(bree_unit(${f32(SAW)}, ph + ${RANK} * params.phase - 0.5) * params.n));
+let c = swatches[i32(k)];
+out.tint = array<f32, 4>(0.0, 0.0, 0.0, 0.0);
+if (subject.cell < 0.5) { out.tint = array<f32, 4>(c.x, c.y, c.z, 1.0); }`,
+  at: (ph, s, p) => {
+    if (s.kind === 'cell') return { tint: [0, 0, 0, 0] };
+    const k = stepAt(ph + rankAt(p, s) * (p.phase as number), p.n as number);
+    return { tint: [...swatch(k).map((n) => p[n] as number), 1] };
+  },
+  writes: ['tint'],
+});
 
 /** Tint stepping through its colors in order, each held for one step. */
 export const palette = modulator({
@@ -34,14 +63,23 @@ export const palette = modulator({
     return patch<Subject, Pose>(
       p.step * n,
       (phase, subject) => {
-        const tint =
-          tints[
-            Math.min(n - 1, Math.floor(unitAt('saw', phase + rank(subject) * p.phase - 0.5) * n))
-          ];
+        const tint = tints[stepAt(phase + rank(subject) * p.phase, n)];
         return tint ? { tint } : {};
       },
       { writes: ['tint'] },
     );
+  },
+  shader: (_at, p, rank) => {
+    const n = p.colors.length;
+    if (!rank || n === 0 || n > MOST) return null;
+    const swatches: Record<string, number> = {};
+    for (let k = 0; k < MOST; k++) {
+      const lab = oklab(p.colors[k] ?? 0);
+      swatch(k).forEach((name, a) => {
+        swatches[name] = lab[a] as number;
+      });
+    }
+    return PALETTE(p.step * n, { n, phase: p.phase, ...rank, ...swatches });
   },
 });
 
