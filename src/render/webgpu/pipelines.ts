@@ -1,5 +1,6 @@
+import { rgb } from '../../color.js';
 import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from '../bloom-params.js';
-import { gaussian, rgb, TAPS } from '../blur.js';
+import { gaussian, TAPS } from '../blur.js';
 import { LED, type LightTable } from '../lights.js';
 import { BUFFER, STAGE, TEXTURE } from './usage.js';
 import { BLUR_WGSL, BODY_WGSL, COPY_WGSL, GLOW_WGSL, HOUSING_WGSL } from './wgsl-draw.js';

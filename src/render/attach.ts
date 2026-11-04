@@ -4,12 +4,13 @@ import type { Board, Led, Pose, Subject } from '../board.js';
 import { createSign, paintBulbs, type Sign, type SignColumns } from '../draw.js';
 import type { Grid } from '../grid.js';
 import { fieldsOf } from '../modulators/shader.js';
+import { CHANNELS } from '../optics.js';
 import { type Backend, pickBackend } from './backend.js';
 import type { Gpu } from './gpu.js';
 import { createWebGlSign } from './webgl/sign.js';
 import { type ChannelSource, createWebGpuSign, type WebGpuSign } from './webgpu/sign.js';
 import { BUFFER } from './webgpu/usage.js';
-import { CHANNELS, POSE } from './webgpu/wgsl-optics.js';
+import { POSE } from './webgpu/wgsl-optics.js';
 
 type Channel = keyof SignColumns;
 const EVERY: ReadonlySet<Channel> = new Set(CHANNELS);

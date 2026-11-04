@@ -1,5 +1,6 @@
 import { oklab } from '@msb235/blits';
 import type { Board, Led } from '../../board.js';
+import { rgb } from '../../color.js';
 import { afflictions, type Defect } from '../../defects.js';
 import { FADE, type Fade, type Ghost } from '../../optics.js';
 import { hashThreshold } from '../wgsl-hash.js';
@@ -88,7 +89,7 @@ export function createGpuOptics(
         fallbackHex = fallback;
         const lab = oklab(fallback);
         f32.set([lab[0] ?? 0, lab[1] ?? 0, lab[2] ?? 0, 1], 12);
-        f32.set([(fallback >> 16) & 0xff, (fallback >> 8) & 0xff, fallback & 0xff, 255], 16);
+        f32.set([...rgb(fallback).map((v) => v * 255), 255], 16);
       }
       device.queue.writeBuffer(uniform, 0, head);
       if (n === 0) return;

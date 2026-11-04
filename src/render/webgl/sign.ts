@@ -1,9 +1,10 @@
 import type { Board, Led } from '../../board.js';
+import { rgb } from '../../color.js';
 import type { Lamps, Sign } from '../../draw.js';
 import type { Grid } from '../../grid.js';
 import { webglSlot } from '../backend.js';
 import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from '../bloom-params.js';
-import { gaussian, rgb } from '../blur.js';
+import { gaussian } from '../blur.js';
 import { fitCanvas } from '../fit.js';
 import { LAMP_SIZE, LED, lightTable } from '../lights.js';
 import { createOpticsFrame, lit } from '../optics-frame.js';

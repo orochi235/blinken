@@ -3,6 +3,13 @@ import { oklab, toHex } from '@msb235/blits';
 /** The color of a lit dot nothing has tinted, unless a sign is given another. */
 export const AMBER = 0xff9a2e;
 
+/** 0xRRGGBB as r, g and b, 0..1. */
+export const rgb = (hex: number): [number, number, number] => [
+  ((hex >> 16) & 0xff) / 255,
+  ((hex >> 8) & 0xff) / 255,
+  (hex & 0xff) / 255,
+];
+
 const hexCss = new Map<number, string>();
 /** A 0xRRGGBB number as CSS `#rrggbb`, cached, since a frame asks for the same few each time. */
 export function cssOf(hex: number): string {

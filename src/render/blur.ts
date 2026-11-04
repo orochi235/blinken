@@ -14,10 +14,3 @@ export function gaussian(sigma: number): { weights: Float32Array; spacing: numbe
   for (let i = 0; i <= TAPS; i++) weights[i] = (weights[i] as number) / sum;
   return { weights, spacing };
 }
-
-/** 0xRRGGBB as r, g and b, 0..1. */
-export const rgb = (hex: number): [number, number, number] => [
-  ((hex >> 16) & 0xff) / 255,
-  ((hex >> 8) & 0xff) / 255,
-  (hex & 0xff) / 255,
-];

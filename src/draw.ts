@@ -2,7 +2,7 @@ import type { Board, Led } from './board.js';
 import { cssOf } from './color.js';
 import type { Defect } from './defects.js';
 import { frameOf, GRIDS, type Grid } from './grid.js';
-import { type Fade, type Ghost, type SignColumns, shownLit } from './optics.js';
+import { axesOf, CHANNELS, type Fade, type Ghost, type SignColumns, shownLit } from './optics.js';
 import { BLOOM, BULB_COLOR, DOT_COLOR, HOUSING } from './render/bloom-params.js';
 import { fitCanvas } from './render/fit.js';
 import { LAMP_SIZE, LED, radiusOf } from './render/lights.js';
@@ -28,8 +28,6 @@ export function signColumns(n: number): SignColumns {
   };
 }
 
-const CHANNELS = Object.keys(signColumns(0)) as (keyof SignColumns)[];
-
 /**
  * Copies each border bulb's cell's pose from `cells`, the mix's columns for `b.cells`, into `cols`,
  * where the bulbs follow the dots as `createSign` was given them: every channel, or `channels`.
@@ -45,7 +43,7 @@ export function paintBulbs(
   for (let j = 0; j < b.bulbs.length; j++) {
     const c = b.cellOf[j] as number;
     for (const ch of which) {
-      const n = ch === 'tint' ? 4 : 1;
+      const n = axesOf(ch);
       cols[ch].set(cells[ch].subarray(c * n, c * n + n), (after + j) * n);
     }
   }

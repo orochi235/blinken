@@ -63,6 +63,12 @@ export interface SignColumns {
   invert: Float64Array;
 }
 
+/** The sign's channels, in the order the GPU side gathers them. */
+export const CHANNELS = ['lit', 'gain', 'tint', 'hue', 'chroma', 'glow', 'invert'] as const;
+
+/** Numbers per light a channel holds: four for `tint`, one for the rest. */
+export const axesOf = (c: keyof SignColumns): number => (c === 'tint' ? 4 : 1);
+
 /** How lit a dot shows: `lit`, clamped to 0..1, swapped `invert` of the way toward dark or lit. */
 export function shownLit(lit: number, invert: number): number {
   const on = Math.min(Math.max(lit, 0), 1);

@@ -1,9 +1,9 @@
 import type { GpuChannel } from '@msb235/blits/gpu';
 import type { Board } from '../../board.js';
-import type { SignColumns } from '../../optics.js';
+import { axesOf, CHANNELS, type SignColumns } from '../../optics.js';
 import { PLANES, type Plane } from '../../planes.js';
 import { BUFFER } from './usage.js';
-import { axesOf, CHANNELS, GATHER_WGSL, GROUP, POSE, SLOT } from './wgsl-optics.js';
+import { GATHER_WGSL, GROUP, POSE, SLOT } from './wgsl-optics.js';
 
 /** Where the GPU folds a mix's channels: `gpuOf(m)` is one. */
 export interface ChannelSource {

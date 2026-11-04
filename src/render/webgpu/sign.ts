@@ -1,14 +1,13 @@
 import type { Board, Led } from '../../board.js';
 import type { Lamps, Sign } from '../../draw.js';
 import type { Grid } from '../../grid.js';
-import type { SignColumns } from '../../optics.js';
+import { CHANNELS, type SignColumns } from '../../optics.js';
 import { fitCanvas } from '../fit.js';
 import type { Gpu } from '../gpu.js';
 import { LAMP_SIZE, lightTable } from '../lights.js';
 import { createGpuOptics } from './optics.js';
 import { createPainter, type Look } from './pipelines.js';
 import { type ChannelSource, createSources, type Follow, planOf } from './sources.js';
-import { CHANNELS } from './wgsl-optics.js';
 
 export type { ChannelSource, Follow } from './sources.js';
 

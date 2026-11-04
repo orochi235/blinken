@@ -1,6 +1,6 @@
 import { patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
-import { hash } from '../hash.js';
+import { hash, seedOf } from '../hash.js';
 import { modulator } from './modulator.js';
 import { type Bound, f32, shader } from './shader.js';
 
@@ -18,7 +18,7 @@ const FRAMES = LOOP / FRAME;
 const boundOf = (cols: number, p: { often: number; strength: number; seed: number }) => ({
   cols,
   strength: p.strength,
-  seed: Math.round(p.seed) * 7919,
+  seed: seedOf(p.seed),
   chance: p.often / SLOTS,
 });
 

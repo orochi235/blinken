@@ -1,14 +1,11 @@
 import { FLICKER_SEED } from '../../defects.js';
-import type { SignColumns } from '../../optics.js';
+import { axesOf, CHANNELS } from '../../optics.js';
 import { MIN_SHOWN } from '../optics-frame.js';
 import { HASH_WGSL } from '../wgsl-hash.js';
 
 /** Each channel's first number in a light's pose, ten numbers per light, as `output` holds them. */
 export const SLOT = { lit: 0, gain: 1, tint: 2, hue: 6, chroma: 7, glow: 8, invert: 9 } as const;
 export const POSE = 10;
-/** The channels in the order the gather shader takes them. */
-export const CHANNELS = ['lit', 'gain', 'tint', 'hue', 'chroma', 'glow', 'invert'] as const;
-export const axesOf = (c: keyof SignColumns) => (c === 'tint' ? 4 : 1);
 const list = (xs: readonly number[]) =>
   `array<u32, ${xs.length}>(${xs.map((x) => `${x}u`).join(', ')})`;
 /** Numbers per light in the optics' result: shine, r, g, b, bloom. */

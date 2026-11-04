@@ -1,5 +1,5 @@
 import type { Board, Led } from '../board.js';
-import { dotColor } from '../color.js';
+import { dotColor, rgb } from '../color.js';
 import { type Afflictions, afflict, afflictions, type Defect } from '../defects.js';
 import {
   FADE,
@@ -69,10 +69,7 @@ export function createOpticsFrame(b: Board, leds: readonly Led[]): OpticsFrame {
           continue;
         }
         out.shine[i] = Math.min(now * Math.min(gain[i] ?? 1, 1) * brightness, 1);
-        const hex = dotColor(tint, i * 4, hue[i] ?? 0, chroma[i] ?? 1, fallback);
-        out.rgb[i * 3] = ((hex >> 16) & 0xff) / 255;
-        out.rgb[i * 3 + 1] = ((hex >> 8) & 0xff) / 255;
-        out.rgb[i * 3 + 2] = (hex & 0xff) / 255;
+        out.rgb.set(rgb(dotColor(tint, i * 4, hue[i] ?? 0, chroma[i] ?? 1, fallback)), i * 3);
       }
     },
     setDefects(defects) {

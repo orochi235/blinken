@@ -1,9 +1,10 @@
 import type { Board, Led } from '../board.js';
 import type { SignColumns } from '../draw.js';
 import type { Follow, Marquee } from '../marquee-api.js';
+import { axesOf } from '../optics.js';
 import { PLANES } from '../planes.js';
 import { type Drawing, drawingOf } from './attach.js';
-import { axesOf, POSE, SLOT } from './webgpu/wgsl-optics.js';
+import { POSE, SLOT } from './webgpu/wgsl-optics.js';
 
 /** What a marquee lays over its pulled columns: a followed sign's planes, and a highlight. */
 export interface Overlay {

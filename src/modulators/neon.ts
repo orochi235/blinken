@@ -1,6 +1,6 @@
 import { patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
-import { hash } from '../hash.js';
+import { hash, seedOf } from '../hash.js';
 import { closedRank } from '../orders.js';
 import { hashThreshold } from '../render/wgsl-hash.js';
 import { modulator } from './modulator.js';
@@ -119,7 +119,7 @@ export const neon = modulator({
   on: 'dots',
   patch: (at, p, rank) => {
     const spread = at.board.dots.some((d) => rank(d) !== 0);
-    const bound = { often: p.often, length: p.length, seed: Math.round(p.seed) * 7919 };
+    const bound = { often: p.often, length: p.length, seed: seedOf(p.seed) };
     return patch<Subject, Pose>(
       LOOP,
       (phase, s) =>
@@ -135,7 +135,7 @@ export const neon = modulator({
     return NEON(LOOP, {
       often: p.often,
       length: p.length,
-      seed: Math.round(p.seed) * 7919,
+      seed: seedOf(p.seed),
       spread: spread ? 1 : 0,
       ...rank,
     });
