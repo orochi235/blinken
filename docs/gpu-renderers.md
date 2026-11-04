@@ -145,6 +145,23 @@ Separate signs pay per sign on the CPU (each runs its own mix, encodes and submi
 work, and presents its own canvas), so their cost grows with the count of signs rather than of
 lights. Many displays on one page should share one sign and one surface.
 
+Segment readouts do (`docs/superpowers/specs/2026-11-04-segment-readouts-design.md`). The
+`readouts` way lays the digits out as one-cell 7-segment readouts on one panel, 9 lights a digit,
+and is measured here against the shared sign with no layers, since readouts take none yet
+(`npm run bench:readouts`, label `readouts-1`, teitou, one run per row):
+
+| digits | way      |    fps | p50 ms | p95 ms | mix ms | draw ms |
+| -----: | :------- | -----: | -----: | -----: | -----: | ------: |
+|    100 | shared   | 5956.2 |   0.20 |   0.30 |   0.10 |    0.02 |
+|    100 | readouts | 6993.2 |   0.10 |   0.20 |   0.01 |    0.04 |
+|    500 | shared   | 3359.1 |   0.20 |   0.50 |   0.21 |    0.03 |
+|    500 | readouts | 3567.4 |   0.20 |   0.40 |   0.03 |    0.19 |
+|  1,000 | shared   | 1791.1 |   0.30 |   2.40 |   0.49 |    0.02 |
+|  1,000 | readouts | 2064.7 |   0.50 |   0.70 |   0.13 |    0.30 |
+
+A readout's draw costs more than a dot's (each segment's quad covers its glow and its fragment
+works out a distance), and its mix less (one value voice and no layers).
+
 ## Rounds
 
 | round          | change                                                                                                           | cost                                                                       | gain                                                                                                                        |

@@ -134,7 +134,7 @@ export function createSurface(
   const frame = (now: number) => {
     let gap = now - last;
     last = now;
-    if (gap > AWAY_MS) {
+    if (gap > AWAY_MS || gap < 0) {
       m.rebase();
       gap = 0;
     }
@@ -147,10 +147,19 @@ export function createSurface(
       valued = false;
       play();
     }
+    const t0 = performance.now();
     m.sync(now);
     pullChannels(m, layout.board, cols, cells, drawing.cpuChannels());
+    const t1 = performance.now();
     sign?.render(cols, AMBER, gap);
+    if (!opts.onFrame) return;
+    const raw = { mixMs: t1 - t0, drawMs: performance.now() - t1 };
+    mixMs += (raw.mixMs - mixMs) * 0.05;
+    drawMs += (raw.drawMs - drawMs) * 0.05;
+    opts.onFrame({ mixMs, drawMs, backend: drawing.backend, raw });
   };
+  let mixMs = 0;
+  let drawMs = 0;
   const stop = (opts.ticker ?? createTicker()).add(frame);
 
   const self: Surface = {

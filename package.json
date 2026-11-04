@@ -35,7 +35,8 @@
     "smoke": "npm run lab:build && node scripts/smoke.mjs",
     "shots": "npm run lab:build && node scripts/shots.mjs",
     "test:gpu": "node test/gpu/run.mjs",
-    "bench": "node scripts/bench.mjs"
+    "bench": "node scripts/bench.mjs",
+    "bench:readouts": "node scripts/bench.mjs --page digits --ways shared,readouts --digits 100,500,1000 --stack ''"
   },
   "dependencies": {
     "@msb235/blits": "^1.0.0"

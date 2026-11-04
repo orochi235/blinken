@@ -11,6 +11,13 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
   `origin` and unpushed.
 - The GPU renderers (WebGPU, WebGL 2, 2D) are built on branch `gpu-renderers` in the worktree
   `~/src/bree-gpu`, unmerged (2026-11-04). Everything it needs from blits shipped in 1.0.0.
+- Segment readouts are built on the same branch (2026-11-04): 21 display types on a shared panel
+  or a page overlay, every backend drawing primitives through placed views. How in
+  `docs/readouts.md`, what's left in `TODO.md`. The lab's `readouts` page shows them all;
+  `node scripts/readouts.mjs` screenshots it on each backend.
+- A fleet node's stale `../blits` sibling can fail move-shader tests that pass on npm blits 1.0
+  (seen 2026-11-04 on a node other than msb-uai, which passed); pin `--node` when a GPU run
+  must match.
   What's left is in `TODO.md`, how it works and what it measured in `docs/gpu-renderers.md`, how
   to use it in the README's GPU section. After round 2 on blits phase 3, WebGPU's frame is all on
   the GPU for effects with a shader form; see `docs/gpu-renderers.md`.

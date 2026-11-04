@@ -1,5 +1,6 @@
 import type { Fault } from '../defects.js';
 import type { Lamps } from '../draw.js';
+import type { FrameCost } from '../marquee-api.js';
 import type { Fade, Ghost } from '../optics.js';
 import type { Backend } from '../render/backend.js';
 import type { Gpu } from '../render/gpu.js';
@@ -60,6 +61,8 @@ export interface SurfaceOptions {
   readonly ticker?: Ticker;
   /** Whether it draws; false runs its mix with nothing drawn. Default true. */
   readonly draw?: boolean;
+  /** Called after each frame with what it cost, as a marquee's `onFrame` is. */
+  readonly onFrame?: (cost: FrameCost) => void;
 }
 
 /** One canvas, one sign and one mix, drawing every readout made on it. */

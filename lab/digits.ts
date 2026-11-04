@@ -1,9 +1,18 @@
 // One run of the many-displays benchmark on WebGPU: `?digits=` digit-sized signs drawn `?way=`
 // separate (a canvas and a sign each, on one ticker and one device) or shared (one sign on one
-// canvas holding every digit's dots), for `?seconds=` after a warmup. Prints `__bench__ {json}`
+// canvas holding every digit's dots), or as 7-segment readouts on one panel (`readouts`, which
+// draws no layers), for `?seconds=` after a warmup. Prints `__bench__ {json}`
 // once; scripts/bench.mjs drives it with `--page digits`.
 import './bench.css';
-import { createMarquee, createTicker, gpu, type Marquee } from '@/index.js';
+import {
+  createMarquee,
+  createPanel,
+  createTicker,
+  gpu,
+  type Marquee,
+  type Surface,
+  TYPES,
+} from '@/index.js';
 import { reasonsOf } from './reasons.js';
 
 const params = new URLSearchParams(location.search);
@@ -53,6 +62,7 @@ async function run() {
   };
 
   const signs: Marquee[] = [];
+  const panels: Surface[] = [];
   const canvases: HTMLCanvasElement[] = [];
   if (way === 'separate') {
     page.className = 'digits-grid';
@@ -76,6 +86,29 @@ async function run() {
         }),
       );
     }
+  } else if (way === 'readouts') {
+    page.className = 'digits-one';
+    const canvas = document.createElement('canvas');
+    canvas.className = 'bench-sign';
+    page.append(canvas);
+    canvases.push(canvas);
+    const panel = createPanel(canvas, {
+      gpu: handle,
+      backend: 'webgpu',
+      ticker,
+      onFrame: onFrame(true),
+    });
+    panels.push(panel);
+    const w = page.clientWidth / across;
+    const h = page.clientHeight / down;
+    for (let i = 0; i < digits; i++)
+      panel.readout({
+        type: 'seven',
+        cells: 1,
+        value: i % 10,
+        at: { x: (i % across) * w, y: Math.floor(i / across) * h },
+        height: h * 0.9,
+      });
   } else {
     page.className = 'digits-one';
     const canvas = document.createElement('canvas');
@@ -97,19 +130,21 @@ async function run() {
     );
   }
   await done;
-  const lights = signs.reduce((n, s) => n + s.board.dots.length, 0);
-  const got = [...new Set(signs.map((s) => s.backend))];
+  const lights =
+    signs.reduce((n, s) => n + s.board.dots.length, 0) +
+    (panels.length ? digits * TYPES.seven.cell.lights.length : 0);
+  const got = [...new Set([...signs, ...panels].map((s) => s.backend))];
   const canvas = canvases[0];
   const px = canvases.reduce((n, c) => n + c.width * c.height, 0);
   // Every sign's own, since each separate sign folds on its own side.
   const reasons = signs.flatMap((s) => reasonsOf(s) ?? []);
-  for (const s of signs) s.destroy();
+  for (const s of [...signs, ...panels]) s.destroy();
   report({
     way,
     digits,
     got,
     lights,
-    signs: signs.length,
+    signs: signs.length + panels.length,
     stack,
     seconds,
     warmupMs: WARMUP_MS,

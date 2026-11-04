@@ -143,13 +143,15 @@ export function createSign2d(canvas: HTMLCanvasElement, lights: SignLights, back
         paintTraced(g, tracePrim(g, prims, k, bloom), css);
         return;
       }
-      // Each primitive blooms by its own size: the shadow of a copy drawn off the canvas.
-      const away = canvas.width + canvas.height + bloom * scale * 4;
+      // Each view blooms by its own pitch, as the marquee's canvas blur does by its one: the halo's
+      // shadow, blurred that far, cast from a copy drawn off the canvas. A shadow's blur is 2σ.
+      const sigma = scale * BLOOM.spread * spread * glowOfPrim(prims, k);
+      const away = canvas.width + canvas.height + sigma * 8;
       g.setTransform(m.a, m.b, m.c, m.d, m.e - away, m.f);
       g.shadowColor = css;
-      g.shadowBlur = bloom * scale;
+      g.shadowBlur = sigma * 2;
       g.shadowOffsetX = away;
-      paintTraced(g, tracePrim(g, prims, k, r), css);
+      paintTraced(g, tracePrim(g, prims, k, bloom), css);
       g.shadowBlur = 0;
       g.shadowOffsetX = 0;
     });

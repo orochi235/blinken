@@ -140,6 +140,32 @@ ticker at 30 fps, and one scrolled out of view comes off it until it is back, so
 costs only the ones on screen. `createTicker({ fps })` makes a ticker of your own, and
 `createMarquee`'s `ticker` option runs any sign on one.
 
+## Readouts
+
+Segment displays that show a value: 7-, 8-, 9-, 14-, 16- and 22-segment, Nixie tubes, the 5 × 7
+matrix, and notations like Cistercian and Maya numerals, Braille, Morse and semaphore. `TYPES`
+lists all 21. Many readouts share one canvas and one sign, on a panel or over the page:
+
+```ts
+import { createOverlay, createPanel } from 'bree';
+
+const panel = createPanel(canvas, { gpu: handle });
+const clock = panel.readout({ type: 'seven', cells: 4, at: { x: 20, y: 20 }, height: 64 });
+clock.set('12:34'); // a `:` or `.` after a digit lights that cell's colon or point
+
+const overlay = createOverlay({ gpu: handle });
+const score = overlay.readout({ type: 'nixie', cells: 4, follow: card.querySelector('.score') });
+score.set(1984);
+```
+
+A panel's readouts sit at `at` and `height` in its canvas's CSS pixels. An overlay is one canvas
+fixed over the viewport; each of its readouts is fitted inside the element it follows and clipped
+where that element's scrolling ancestors clip it. `face: 'none'` drops the dark faceplate, leaving
+only lit segments over the page. A readout takes `color`, `slant`, `ends`, `align`, a leading ½
+digit (`half`) and `defects` by `{ cell, slot }`; a surface takes `gpu`, `backend`, `lamps`,
+`fade`, `ghost` and `ticker`. How they're drawn is in `docs/readouts.md`; the lab's `readouts`
+page shows every type.
+
 ## Pieces, effects and programs
 
 A piece is one thing happening to the dots. A move places the text: `stand` holds it, `scroll-across`
