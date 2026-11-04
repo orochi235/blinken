@@ -1,7 +1,7 @@
 # Handoff
 
 What a session picking up bree needs that the code and `TODO.md` don't already say. Written
-2026-10-24.
+2026-10-24, updated 2026-11-04.
 
 ## State
 
@@ -10,10 +10,11 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 - An audit on 2026-11-01 fixed what it found; what it left is in `TODO.md`. `main` is ahead of
   `origin` and unpushed.
 - The GPU renderers (WebGPU, WebGL 2, 2D) are built on branch `gpu-renderers` in the worktree
-  `~/src/bree-gpu`, unmerged (2026-11-04). It needs blits main commits `bddfb8d`, `b269ec9` and
-  `1919a94`, unreleased, so CI on npm blits 0.20 runs without angle in WGSL, shader tables or
-  weight-0 folding; the code degrades to the CPU there. What's left is in `TODO.md`, how it works
-  and what it measured in `docs/gpu-renderers.md`, how to use it in the README's GPU section.
+  `~/src/bree-gpu`, unmerged (2026-11-04). It depends on unreleased blits commits (`TODO.md` lists
+  them), so CI on npm blits 0.20 runs with some channels on the CPU; the code degrades there.
+  What's left is in `TODO.md`, how it works and what it measured in `docs/gpu-renderers.md`, how
+  to use it in the README's GPU section. Tuning paused after round 1 until blits phase 3 lands;
+  see `docs/gpu-renderers.md`.
 
 ## How the lab runs
 
@@ -36,12 +37,11 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 - Reverse text is dropped for the `invert` layer; old links and files that reversed a scene
   open with that layer on (2026-10-24).
 - Tracking is wanted alongside kerning: whole blank columns, −1 to 6 (2026-10-24).
-- Three backends, WebGPU, WebGL 2 and 2D; the GPU ones may look better than 2D within the bound
-  in `docs/gpu-renderers.md` (2026-11-03).
+- Three backends, WebGPU, WebGL 2 and 2D; the GPU ones may look better than 2D (2026-11-03).
 - The WebGPU device is created once and passed to each sign, not found by each sign
   (2026-11-03).
 - GPU work is done by the `excelsior` rule: as fast and functional as it reasonably can be, then
-  stop (2026-11-03). Tuning paused after round 1 until blits phase 3 lands (2026-11-04).
+  stop (2026-11-03).
 
 - Every prefs setting carries a tooltip explanation, no ⓘ icons (all projects).
 - Consumers of the user's own libraries build against the sibling checkout by default.

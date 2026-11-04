@@ -100,7 +100,7 @@ a.backend; // 'webgpu' | 'webgl' | '2d': what is drawing; FrameCost.backend says
 `createThumbnail` takes the same two options. With no `gpu` a sign draws with WebGL where the
 browser gives it a context, and with 2D otherwise; `backend: 'webgpu'` without a handle throws.
 
-- **WebGPU** folds effects on the GPU wherever blits's `gpu` engine can, and draws from the buffers
+- **WebGPU** folds effects on the GPU (computes each light's brightness and color for the frame there) wherever blits's `gpu` engine can, and draws from the buffers
   it folded into. A channel with a voice the engine can't run is folded on the CPU and uploaded.
 - **WebGL** folds on the CPU, uploads the result and draws with shaders.
 - **2D** is the canvas drawing, as before.

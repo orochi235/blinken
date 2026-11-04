@@ -7,10 +7,14 @@ round of tuning bought, and where tuning stopped and why. How to use them is in 
 
 ## Design
 
-Decided 2026-11-03: three backends behind one `Sign` (`src/render/`), and the GPU ones may look
-better than 2D (real bloom, a softer filament) within the bound below. What a scene shows, meaning
-colors, brightness, timing and layout, is the same on all three. WebGPU and WebGL share one
-look.
+Decided by Mike 2026-11-03: three backends behind one `Sign` (`src/render/`), and the GPU ones may
+look better than 2D (real bloom, a softer filament).
+
+Chosen while building, not by Mike (2026-11-03): the bound on "better" and what "matches 2D" means
+(below), WebGPU and WebGL sharing one look, the shape-plus-place light table and `Material` seam,
+`columns` not kept whole on WebGPU, and shader copies checked by agreement tests.
+
+What a scene shows, meaning colors, brightness, timing and layout, is the same on all three.
 
 | backend | folds the mix                                       | draws                                                  |
 | :------ | :-------------------------------------------------- | :----------------------------------------------------- |
@@ -28,7 +32,8 @@ look.
   with 2D; bloom's spread may differ. Measured on a 10 × 3 board at pitch 24 px, dpr 1, Apple
   Metal 3, on both GPU backends: lit centers within 1/255, dark centers within 1/255, total light
   0.998× 2D's. The tests assert 8/255 per center and ±5% total light
-  (`test/gpu/webgl.gpu.ts`, `test/gpu/webgpu.gpu.ts`). Bodies are added to the glow, as 2D's
+  (`test/gpu/webgl.gpu.ts`, `test/gpu/webgpu.gpu.ts`); those bounds are the contract, and the
+  measured figures are what this machine showed. Bodies are added to the glow, as 2D's
   `lighter` composite does; laying them over read 21/255 off.
 - **A shader that copies TS has an agreement test.** `dotColor`, `settle`, `ghosts`, `afflict`, the
   hash and every ported modulator and move have a WGSL (and for the draw, GLSL) copy beside the TS
@@ -36,7 +41,9 @@ look.
   65,536 triples; optics 1.2e-7 in shine, 1/255 in color; modulators under 1e-4 (degrees for hue),
   moves 3.4e-8, run with `npm run test:gpu`.
 - **Which voices fold on the GPU** is blits's rule (`src/gpu/eligible.ts` in blits): a
-  `shaderPatch` with a numeric weight that reaches every subject, no stagger, no owner. It is decided
+  `shaderPatch` with a numeric weight that reaches every subject, no stagger, no owner. blits is
+  adding the rest in phases: phase 2 folds staggered voices, phase 3 folds owner-held voices and
+  weight signals. It is decided
   per channel: if one playing voice writing a channel cannot run there, the channel folds on the
   CPU that frame and WebGPU uploads it. Code degrades the same way on blits 0.20, where
   channels stay on the CPU.
