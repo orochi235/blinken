@@ -1,9 +1,53 @@
 # GPU renderers: benchmark and rounds
 
-For whoever works on how fast bree draws. It answers: what a frame costs on each backend (2D,
-WebGL, WebGPU) as the light count grows, what each round of tuning bought, and where tuning
-stopped and why. The design lives in
-[the spec](superpowers/specs/2026-11-03-gpu-renderers-design.md).
+For whoever works on how bree draws. It answers: how the three backends (2D, WebGL, WebGPU) are
+built and what "matches 2D" means, what a frame costs on each as the light count grows, what each
+round of tuning bought, and where tuning stopped and why. How to use them is in the
+[README](../README.md#gpu).
+
+## Design
+
+Decided 2026-11-03: three backends behind one `Sign` (`src/render/`), and the GPU ones may look
+better than 2D (real bloom, a softer filament) within the bound below. What a scene shows, meaning
+colors, brightness, timing and layout, is the same on all three. WebGPU and WebGL share one
+look.
+
+| backend | folds the mix                                       | draws                                                  |
+| :------ | :-------------------------------------------------- | :----------------------------------------------------- |
+| WebGPU  | on blits's `gpu` engine, where every voice allows   | from the GPU buffers the fold wrote; the rest uploaded |
+| WebGL 2 | on the CPU (stock mixer); columns upload each frame | instanced lights, separable blur                       |
+| 2D      | on the CPU                                          | `src/draw.ts`, unchanged                               |
+
+- **A light is a shape plus a place.** Every light is an instance that points into a table of
+  shapes (`SHAPES` in `src/render/lights.ts`: the round dot and the border bulb). New displays add
+  shapes and layouts there rather than renderers. How a light glows is its `Material`; `LED` is the
+  only one, behind a seam a VFD or LCD material can plug into.
+- **Post-mix optics run on the GPU** on both GPU backends: fades (`settle`), ghosting (`ghosts`),
+  defects (`afflict`), `follow`, and the highlight.
+- **Matches 2D** means, per light, the center color and the total light (body plus bloom) each agree
+  with 2D; bloom's spread may differ. Measured on a 10 × 3 board at pitch 24 px, dpr 1, Apple
+  Metal 3, on both GPU backends: lit centers within 1/255, dark centers within 1/255, total light
+  0.998× 2D's. The tests assert 8/255 per center and ±5% total light
+  (`test/gpu/webgl.gpu.ts`, `test/gpu/webgpu.gpu.ts`). Bodies are added to the glow, as 2D's
+  `lighter` composite does; laying them over read 21/255 off.
+- **A shader that copies TS has an agreement test.** `dotColor`, `settle`, `ghosts`, `afflict`, the
+  hash and every ported modulator and move have a WGSL (and for the draw, GLSL) copy beside the TS
+  and a test comparing the two on sampled inputs. Worst measured gaps: hash 0 bit mismatches over
+  65,536 triples; optics 1.2e-7 in shine, 1/255 in color; modulators under 1e-4 (degrees for hue),
+  moves 3.4e-8, run with `npm run test:gpu`.
+- **Which voices fold on the GPU** is blits's rule (`src/gpu/eligible.ts` in blits): a
+  `shaderPatch` with a numeric weight that reaches every subject, no stagger, no owner. It is decided
+  per channel: if one playing voice writing a channel cannot run there, the channel folds on the
+  CPU that frame and WebGPU uploads it. Code degrades the same way on blits 0.20, where
+  channels stay on the CPU.
+- **Moves read tables.** A move writes `lit` from the message bitmap at a shifted place, so its
+  shader reads two blits shader tables, the bitmap and the row map (`src/moves/shader.ts`).
+- **`columns` on WebGPU** holds only what the CPU folded: keeping it whole would pull every channel
+  every frame and cancel the GPU fold. `follow` and `setHighlight` run on the GPU there, and a
+  followed sign must share its follower's device, or the follow reads back a frame late.
+- **Done** is defined by the `excelsior` rule (2026-11-03): as fast and functional as it can
+  reasonably be, with a benchmark first, rounds of profile and fix with cost and gain side by side,
+  and a stop when a round's gain is small next to its cost and earlier rounds.
 
 ## The benchmark
 
@@ -67,8 +111,9 @@ What the table says:
   owner, which blits does not yet fold on the GPU, so `lit` stays on the CPU. The shader patches
   bree stages for WebGPU then run their CPU versions, which cost more than the plain patches the
   other backends use.
-- **WebGL at 1,000 lights** stalls about 2 ms in its draw every second to fourth frame, in two runs
-  of the records. The likely cause, inferred and not measured, is the GPU pushing back on frames
+- **WebGL at 1,000 lights** stalls about 2 ms in its draw every second to fourth frame, in both
+  `round1` runs of the row (the sweep and the repeat it was given for disagreeing with its
+  neighbors). The likely cause, inferred and not measured, is the GPU pushing back on frames
   queued ahead of it at over 700 fps, which a display-capped frame rate would not reach.
 
 ## Rounds
@@ -96,15 +141,16 @@ Tuning paused for scope, not because returns had fallen off. Round 1 bought 2.3�
   patches on WebGPU took it from 70 to 115 fps at 20,000 lights, its mix from 13.9 to 8.3 ms, level
   with WebGL's. That was a local comparison on a busy machine (records labeled `probe-r2-before`
   and `probe-r2-plainall`, in that machine's gitignored `bench/runs/` until pruned), so the ratio
-  is the finding, not the times. The comparison changed two lines; shipping it means either staging plain patches on WebGPU
-  everywhere, which undoes the move and modulator shaders until blits folds owners, or choosing
+  is the finding, not the times. The comparison changed two lines. Shipping it means either staging
+  plain patches on WebGPU everywhere, which undoes the move and modulator shaders until blits folds owners, or choosing
   per channel in bree, which copies blits's eligibility rules. It was not taken because blits's
   phase 3, folding owner-held voices on the GPU, is landing and is expected to make the shader
   patches the faster path.
 - **The CPU fold itself.** In Chrome CPU profiles of the bench page (not kept), most of the 2D and
   WebGL mix sat in blits's fill engine, which bree calls but does not own.
 - **2D drawing.** In the same profiles, the drawing code's own time was 6.5% of a 2D frame at 80,000
-  lights; the rest of the draw was the canvas filling and blurring, which a round may not change.
+  lights; the rest of the draw was the canvas filling and blurring, which a round could change
+  only by changing 2D's output, and this project holds that fixed.
 
 A round 2 sweep follows once blits's owner support lands, to see where WebGPU's mix then stands
 against WebGL's.

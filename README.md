@@ -83,6 +83,39 @@ columns run on a slant and the text leans like italics; the border follows the d
 function `(x, y) => [x, y]` places dots a grid of your own way, in pitches, and the sign is
 fitted to wherever they land. Default `square`.
 
+## GPU
+
+A sign draws with WebGPU, WebGL 2 or 2D. Ask the browser for a WebGPU device once per page and give it
+to every sign; `gpu()` resolves to null where there is none:
+
+```ts
+import { createMarquee, gpu } from 'bree';
+
+const g = await gpu(); // once per page
+const a = createMarquee(canvasA, { gpu: g }); // WebGPU, or WebGL where g is null
+const b = createMarquee(canvasB, { backend: '2d' }); // forced
+a.backend; // 'webgpu' | 'webgl' | '2d': what is drawing; FrameCost.backend says the same
+```
+
+`createThumbnail` takes the same two options. With no `gpu` a sign draws with WebGL where the
+browser gives it a context, and with 2D otherwise; `backend: 'webgpu'` without a handle throws.
+
+- **WebGPU** folds effects on the GPU wherever blits's `gpu` engine can, and draws from the buffers
+  it folded into. A channel with a voice the engine can't run is folded on the CPU and uploaded.
+- **WebGL** folds on the CPU, uploads the result and draws with shaders.
+- **2D** is the canvas drawing, as before.
+
+The GPU backends share one look: a softer filament and a real bloom, with each light's center color
+and total light within a few 1/255 of 2D's. [docs/gpu-renderers.md](docs/gpu-renderers.md) has the
+measurements and what a frame costs on each.
+
+- A canvas keeps the context type it first drew with. A canvas that has drawn with WebGL can't
+  switch to 2D or WebGPU, and the reverse; give a sign that must switch a fresh canvas.
+- A page has about 12 WebGL contexts. Signs past that draw in 2D, and `backend` says so.
+- On WebGPU `Marquee.columns` holds only the channels the CPU folded that frame; on 2D and WebGL it
+  holds all of them.
+- The effects that aren't folded on the GPU yet run on the CPU and look the same; `TODO.md` lists them.
+
 ## Thumbnails
 
 `createThumbnail` loops one effect on a small sign, for a preview beside its name:
