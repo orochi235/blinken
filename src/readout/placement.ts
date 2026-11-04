@@ -35,6 +35,8 @@ export interface Canvas {
 export function surfacePlacement(readouts: () => readonly Placed[], sizing: Canvas): Placement {
   let views = new Float32Array(VIEW);
   let target: HTMLCanvasElement | null = null;
+  /** Whether the views were filled since the sign last drew them. */
+  let stale = false;
   const fill = (): boolean => {
     const list = readouts();
     const next = new Float32Array(Math.max(1, list.length) * VIEW);
@@ -84,8 +86,13 @@ export function surfacePlacement(readouts: () => readonly Placed[], sizing: Canv
         target = null;
       };
     },
-    update: fill,
+    update() {
+      const moved = fill() || stale;
+      stale = false;
+      return moved;
+    },
     refit() {
+      stale = true;
       if (target) fill();
     },
   };

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>bree readouts</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div id="root">
+      <header class="bar">
+        <span class="title">readouts</span>
+        <label>backend <select id="backend"></select></label>
+        <label>face <select id="face"><option>plate</option><option>none</option></select></label>
+        <label>text <input id="text" value="Bree lab 1.0" maxlength="24" /></label>
+        <span id="got" class="got"></span>
+      </header>
+      <main class="split">
+        <section class="pane">
+          <div class="panel"><canvas id="panel"></canvas><div id="labels"></div></div>
+        </section>
+        <section class="pane cards" id="cards"></section>
+      </main>
+    </div>
+    <script type="module" src="./readouts.ts"></script>
+  </body>
+</html>

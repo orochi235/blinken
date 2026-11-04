@@ -1,0 +1,100 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: #14100f;
+  color: #e9dfdc;
+  font:
+    14px / 1.4 system-ui,
+    sans-serif;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #2a201b;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.got {
+  margin-inline-start: auto;
+  color: #9c8f89;
+  font-variant-numeric: tabular-nums;
+}
+
+.split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+
+.pane {
+  min-height: 0;
+  overflow: auto;
+}
+
+.panel {
+  position: relative;
+  --row: 64px;
+}
+
+.panel canvas {
+  display: block;
+  width: 100%;
+  height: calc(var(--rows) * var(--row));
+}
+
+#labels {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: var(--row);
+  pointer-events: none;
+}
+
+.label {
+  padding: 1px 12px;
+  color: #9c8f89;
+  font-size: 11px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
+  gap: 12px;
+  padding: 12px;
+  border-inline-start: 1px solid #2a201b;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f4efe9;
+  color: #2a201b;
+}
+
+.slot {
+  height: 44px;
+}

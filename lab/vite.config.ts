@@ -23,6 +23,7 @@ export default defineConfig({
         paint: page('paint.html'),
         bench: page('bench.html'),
         digits: page('digits.html'),
+        readouts: page('readouts.html'),
       },
     },
   },
