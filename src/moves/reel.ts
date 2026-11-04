@@ -3,6 +3,7 @@ import type { Led, Pose } from '../board.js';
 import { type Bitmap, CHARS, rasterize, type Span } from '../font.js';
 import { hash } from '../hash.js';
 import { litAt, move, on } from './move.js';
+import { LIT, litOf, moveShader } from './shader.js';
 
 const glyphs = new Map<string, Bitmap>();
 /** One letter alone in the look of `text`, which draws it where `text` draws its letters. */
@@ -16,6 +17,14 @@ const glyph = (text: Bitmap, ch: string) => {
   return g;
 };
 const easeOut = (u: number) => 1 - (1 - u) ** 3;
+
+/** The message rolled up `rise` rows times the square of the phase. */
+const ROLL = moveShader({
+  params: ['left', 'rise'],
+  wgsl: `lit = ${LIT('params.left', '-floor(params.rise * phase * phase)')};`,
+  at: (phase, d, p, t) =>
+    litOf(t, d, p.left as number, -Math.floor((p.rise as number) * phase ** 2)),
+});
 
 /** Each letter a reel spinning through random glyphs and slowing onto its own. */
 export const reelIn = move({
@@ -101,4 +110,5 @@ export const rollAway = move({
       (phase, led) => on(litAt(at, led, 0, -Math.floor((at.text.rows + 1) * 2 * phase ** 2))),
       { writes: ['lit'] },
     ),
+  shader: (at, p) => ROLL(at, p.ms, { left: at.left, rise: (at.text.rows + 1) * 2 }),
 });

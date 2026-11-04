@@ -99,6 +99,8 @@ test('type-on and type-off, each cursor, fold on the GPU as the CPU does', async
     for (const cursor of ['block', 'line', 'off']) await agree(dev(d), name, { cursor });
 });
 
+test('roll-away folds on the GPU as the CPU does', (d) => agree(dev(d), 'roll-away'));
+
 test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
   for (const from of [false, true])
     for (const to of [false, true])
