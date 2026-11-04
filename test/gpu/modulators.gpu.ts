@@ -111,3 +111,11 @@ test('flash spread by column folds on the GPU as the CPU does', (d) =>
 
 test('scanline folds on the GPU as the CPU does', (d) =>
   agree(dev(d), { mod: 'scanline', params: { band: 3 } }, ['gain', 'glow'], [60, 333, 801]));
+
+test('shimmer folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'shimmer', params: { every: 2000, angle: -20 } },
+    ['lit', 'glow', 'chroma'],
+    [210, 530, 870],
+  ));

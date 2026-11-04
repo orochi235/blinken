@@ -1,6 +1,8 @@
 import { patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
+import type { Placed } from '../orders.js';
 import { bump, modulator } from './modulator.js';
+import { type Bound, f32, shader } from './shader.js';
 
 /** The longest a glint takes to cross the sign, ms. */
 const SWEEP = 1100;
@@ -11,6 +13,46 @@ const SWEEP = 1100;
 const GLOW = 2.5;
 const PALE = 0.65;
 const SHEEN = 0.3;
+
+/** The glint's strength at a dot at `ph`: a bump across its width while it sweeps, else 0. */
+const glintAt = (ph: number, x: number, y: number, p: Bound) => {
+  const sweep = p.sweep as number;
+  if (!(ph < sweep)) return 0;
+  const from = p.from as number;
+  const lean = ((p.rows as number) - 1 - y) * (p.slope as number);
+  return bump((x + lean - (from + ((p.to as number) - from) * (ph / sweep))) / (p.width as number));
+};
+
+const SHIMMER = shader({
+  params: ['rows', 'slope', 'from', 'to', 'sweep', 'width'],
+  wgsl: `var k = 0.0;
+if (subject.cell < 0.5 && ph < params.sweep) {
+  let lean = (params.rows - 1.0 - subject.y) * params.slope;
+  k = bree_bump((subject.x + lean - (params.from + (params.to - params.from) * (ph / params.sweep))) / params.width);
+}
+out.lit = ${f32(SHEEN)} * k;
+out.glow = 1.0 + ${f32(GLOW)} * k;
+out.chroma = 1.0 - ${f32(PALE)} * k;`,
+  at: (ph, s, p) => {
+    const k = s.kind === 'cell' ? 0 : glintAt(ph, s.x, s.y, p);
+    return { lit: SHEEN * k, glow: 1 + GLOW * k, chroma: 1 - PALE * k };
+  },
+  writes: ['lit', 'glow', 'chroma'],
+});
+
+/** What a glint across `at`'s board reads. */
+const boundOf = (at: Placed, p: { every: number; width: number; angle: number }) => {
+  const { cols, rows } = at.board;
+  const slope = Math.tan((p.angle * Math.PI) / 180);
+  return {
+    rows,
+    slope,
+    from: -p.width - Math.max(0, (rows - 1) * slope),
+    to: cols - 1 + p.width - Math.min(0, (rows - 1) * slope),
+    sweep: Math.min(p.every, SWEEP) / p.every,
+    width: p.width,
+  };
+};
 
 /** A leaning glint sweeping across the sign at the start of each cycle. Loops; ignores the order. */
 export const shimmer = modulator({
@@ -49,24 +91,16 @@ export const shimmer = modulator({
   writes: ['lit', 'glow', 'chroma'],
   on: 'dots',
   patch: (at, p) => {
-    const { cols, rows } = at.board;
-    const slope = Math.tan((p.angle * Math.PI) / 180);
-    const from = -p.width - Math.max(0, (rows - 1) * slope);
-    const to = cols - 1 + p.width - Math.min(0, (rows - 1) * slope);
-    const sweep = Math.min(p.every, SWEEP) / p.every;
+    const bound = boundOf(at, p);
     return patch<Subject, Pose>(
       p.every,
       (phase, s) => {
         if (s.kind === 'cell') return {};
-        const k =
-          phase < sweep
-            ? bump(
-                (s.x + (rows - 1 - s.y) * slope - (from + (to - from) * (phase / sweep))) / p.width,
-              )
-            : 0;
+        const k = glintAt(phase, s.x, s.y, bound);
         return { lit: SHEEN * k, glow: 1 + GLOW * k, chroma: 1 - PALE * k };
       },
       { writes: ['lit', 'glow', 'chroma'] },
     );
   },
+  shader: (at, p) => SHIMMER(p.every, boundOf(at, p)),
 });
