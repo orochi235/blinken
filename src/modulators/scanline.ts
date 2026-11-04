@@ -1,9 +1,32 @@
 import { patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import { bump, modulator } from './modulator.js';
+import { type Bound, f32, shader } from './shader.js';
 
 /** How much the band's halo grows at its middle. */
 const GLOW = 0.6;
+
+/** How near the band's middle row `y` is at `ph`, as a bump: 1 at its middle, 0 outside it. */
+const nearAt = (ph: number, y: number, p: Bound) => {
+  const travel = p.travel as number;
+  const band = p.band as number;
+  const off = Math.abs(y - (ph * travel - band / 2));
+  return bump(Math.min(off, travel - off) / (band / 2 + 0.5));
+};
+
+const SCANLINE = shader({
+  params: ['travel', 'band', 'dim'],
+  wgsl: `let off = abs(subject.y - (ph * params.travel - params.band / 2.0));
+let k = select(bree_bump(min(off, params.travel - off) / (params.band / 2.0 + 0.5)), 0.0, subject.cell > 0.5);
+out.gain = select(1.0 - params.dim * (1.0 - k), 1.0, subject.cell > 0.5);
+out.glow = 1.0 + ${f32(GLOW)} * k;`,
+  at: (ph, s, p) => {
+    if (s.kind === 'cell') return { gain: 1, glow: 1 };
+    const k = nearAt(ph, s.y, p);
+    return { gain: 1 - (p.dim as number) * (1 - k), glow: 1 + GLOW * k };
+  },
+  writes: ['gain', 'glow'],
+});
 
 /**
  * A bright band rolling down the rows and round to the top again, the rows outside it dimmed:
@@ -44,17 +67,19 @@ export const scanline = modulator({
   writes: ['gain', 'glow'],
   on: 'dots',
   patch: (at, p) => {
-    const travel = at.board.rows + p.band;
-    const half = p.band / 2 + 0.5;
+    const bound = { travel: at.board.rows + p.band, band: p.band };
     return patch<Subject, Pose>(
-      (travel / p.speed) * 1000,
+      (bound.travel / p.speed) * 1000,
       (phase, s) => {
         if (s.kind === 'cell') return {};
-        const off = Math.abs(s.y - (phase * travel - p.band / 2));
-        const k = bump(Math.min(off, travel - off) / half);
+        const k = nearAt(phase, s.y, bound);
         return { gain: 1 - p.dim * (1 - k), glow: 1 + GLOW * k };
       },
       { writes: ['gain', 'glow'] },
     );
+  },
+  shader: (at, p) => {
+    const travel = at.board.rows + p.band;
+    return SCANLINE((travel / p.speed) * 1000, { travel, band: p.band, dim: p.dim });
   },
 });
