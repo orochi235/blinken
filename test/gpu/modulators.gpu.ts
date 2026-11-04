@@ -37,6 +37,7 @@ async function agree(
   for (const w of writes) side.channel(w);
   await side.ready;
   let worst = 0;
+  const seen = new Map<string, Set<number>>(writes.map((w) => [w, new Set()]));
   for (const t of times) {
     g.sync(t);
     c.sync(t);
@@ -52,6 +53,7 @@ async function agree(
           const cv = (wants[a] ?? 0) as number;
           const off = w === 'hue' ? turn(gv, cv) : Math.abs(gv - cv);
           worst = Math.max(worst, off);
+          seen.get(w)?.add(cv);
           const what = `${w} t ${t} ${s.kind} ${'x' in s ? `${s.x},${s.y}` : s.i} axis ${a}`;
           if (w === 'hue') close(off, 0, what, tolerance);
           else close(gv, cv, what, tolerance);
@@ -59,6 +61,9 @@ async function agree(
       });
     }
   }
+  for (const [w, values] of seen)
+    if (values.size < 2)
+      throw new Error(`the CPU gives ${w} one value throughout, which tests nothing`);
   note(`${layer.mod}: worst ${worst.toExponential(2)}`);
 }
 
@@ -91,3 +96,15 @@ const COLOR = 1e-3;
 
 test('chase folds on the GPU as the CPU does', (d) =>
   agree(dev(d), { mod: 'chase', params: { dim: 0.2 } }, ['lit', 'tint'], [40, 250, 470], COLOR));
+
+test('flash spread by column folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    {
+      mod: 'flash',
+      spread: { by: 'column-reverse' },
+      params: { flashes: 3, from: 0.2, to: 0.8, depth: 0.7 },
+    },
+    ['gain'],
+    [130, 455, 701],
+  ));
