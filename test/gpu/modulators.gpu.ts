@@ -146,3 +146,9 @@ test('invert on a triangle spread by column folds on the GPU as the CPU does', (
     ['invert'],
     [100, 900, 1700],
   ));
+
+test('two-color spread by column folds on the GPU as the CPU does', (d) =>
+  agree(dev(d), { mod: 'two-color', spread: { by: 'column' } }, ['tint'], [110, 480, 830], COLOR));
+
+test('aurora folds on the GPU as the CPU does', (d) =>
+  agree(dev(d), { mod: 'aurora', params: { speed: 0.5 } }, ['hue'], [150, 900, 1650], 1e-3));
