@@ -1,5 +1,5 @@
 import { type WaveShape, waveAt } from '@msb235/blits';
-import { type ShaderPatch, shaderPatch } from '@msb235/blits/gpu';
+import { type ShaderPatch, type ShaderSpec, shaderPatch } from '@msb235/blits/gpu';
 import type { Board, Pose, Subject } from '../board.js';
 import { CLOSED, closedRank, type Order } from '../orders.js';
 import type { Channel } from '../planes.js';
@@ -82,23 +82,55 @@ export function ranked(order: Order, b: Board): Ranked | null {
 /** A number as a WGSL f32 literal. */
 export const f32 = (x: number) => (Number.isInteger(x) ? `${x}.0` : `${x}`);
 
+/** A shader's tables in JS, by name: `(x, y)` floored, 0 outside. */
+export type Tables = Readonly<Record<string, (x: number, y: number) => number>>;
+
+/** What a shader is bound with: its numbers, and each table's contents row by row. */
+export type Given = Record<string, number | ArrayLike<number>>;
+
 /** What `shader` takes: a modulator's cycle written twice, reading its phase in the cycle as `ph`. */
 export interface Spec {
   /** WGSL statements setting `out.<channel>` for every channel in `writes`, every subject. */
   readonly wgsl: string;
   /** The names of the numbers it reads besides `cycles`, as `params.<name>` in WGSL. */
   readonly params: readonly string[];
+  /** Tables it reads as `table_<name>(x, y)` in WGSL, by name; only where `hasTables()`. */
+  readonly tables?: Readonly<Record<string, { width: number; height: number }>>;
   /** The same in JS, giving every channel in `writes` for every subject: a rest where it does nothing. */
-  at(ph: number, s: Subject, p: Bound): Partial<Pose>;
+  at(ph: number, s: Subject, p: Bound, t: Tables): Partial<Pose>;
   readonly writes: readonly Channel[];
+}
+
+let tablesHere: boolean | undefined;
+
+/**
+ * Whether the blits bree runs on gives shader patches tables: its main does, npm 0.20 does not.
+ * Where it does, `with` refuses a table it is not given contents for.
+ */
+export function hasTables(): boolean {
+  if (tablesHere === undefined) {
+    const probe = shaderPatch(1, {
+      wgsl: '',
+      tables: { t: { width: 1, height: 1 } },
+      at: () => ({}),
+      writes: [],
+    } as ShaderSpec<Subject, Pose, Bound>);
+    try {
+      probe.with({});
+      tablesHere = false;
+    } catch {
+      tablesHere = true;
+    }
+  }
+  return tablesHere;
 }
 
 /** One shader patch per duration a modulator is cued at, so a new duration compiles once. */
 const KEEP = 16;
 
 interface Made {
-  readonly make: (duration: number, values: Bound) => ModShader;
-  readonly values: Bound;
+  readonly make: (duration: number, values: Given) => ModShader;
+  readonly values: Given;
 }
 const made = new WeakMap<object, Made>();
 
@@ -106,27 +138,30 @@ const made = new WeakMap<object, Made>();
  * A modulator's shader: cues of one duration share a kernel, and `with` gives each its numbers.
  * Bound with `cycles` (default 1), its phase runs that many times round the cycle per pass.
  */
-export function shader(spec: Spec): (duration: number, values: Bound) => ModShader {
+export function shader(spec: Spec): (duration: number, values: Given) => ModShader {
   const byDuration = new Map<number, ModShader>();
   const params = Object.fromEntries(['cycles', ...spec.params].map((n) => [n, 'f32' as const]));
   const base = (duration: number) => {
     const had = byDuration.get(duration);
     if (had) return had;
+    // npm 0.20's spec has no tables, and a spec given them only where hasTables() holds.
     const p = shaderPatch<Subject, Pose, Bound>(duration, {
       helpers: HELPERS,
       fields: FIELDS,
       params,
+      ...(spec.tables && { tables: spec.tables }),
       wgsl: `let ph = fract(phase * params.cycles); ${spec.wgsl}`,
-      at: (phase, s, _setting, v) => spec.at((phase * (v.cycles ?? 1)) % 1, s, v),
+      at: (phase, s, _setting, v) =>
+        spec.at((phase * (v.cycles ?? 1)) % 1, s, v, v as unknown as Tables),
       writes: spec.writes,
-    });
+    } as ShaderSpec<Subject, Pose, Bound>);
     if (byDuration.size >= KEEP) byDuration.delete(byDuration.keys().next().value as number);
     byDuration.set(duration, p);
     return p;
   };
-  const make = (duration: number, given: Bound): ModShader => {
+  const make = (duration: number, given: Given): ModShader => {
     const values = { cycles: 1, ...given };
-    const p = base(duration).with(values);
+    const p = base(duration).with(values as Bound);
     made.set(p, { make, values });
     return p;
   };
@@ -140,6 +175,6 @@ export function shader(spec: Spec): (duration: number, values: Bound) => ModShad
 export function stretch(cycle: object & { duration: number }, ms: number): ModShader | undefined {
   const m = made.get(cycle);
   if (!m) return undefined;
-  const cycles = (m.values.cycles ?? 1) * (ms / Math.max(1, cycle.duration));
+  const cycles = ((m.values.cycles as number) ?? 1) * (ms / Math.max(1, cycle.duration));
   return m.make(ms, { ...m.values, cycles });
 }

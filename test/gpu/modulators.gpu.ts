@@ -179,6 +179,18 @@ test('palette spread by column folds on the GPU as the CPU does', (d) =>
     COLOR,
   ));
 
+test('gradient across folds on the GPU as the CPU does', (d) =>
+  agree(dev(d), { mod: 'gradient' }, ['tint'], [0, 500], COLOR));
+
+test('gradient down through three colors folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'gradient', params: { direction: 'down', colors: [0x2040ff, 0xff2d6f, 0xffb31a] } },
+    ['tint'],
+    [0, 500],
+    COLOR,
+  ));
+
 test('fire folds on the GPU as the CPU does', (d) =>
   agree(
     dev(d),

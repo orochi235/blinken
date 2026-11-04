@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { board, KIT, type Pose, type Subject } from '@/board.js';
 import { rasterize } from '@/font.js';
 import { MODULATORS, type ModulatorName } from '@/modulators/index.js';
-import { ranked } from '@/modulators/shader.js';
+import { hasTables, ranked } from '@/modulators/shader.js';
 import { place, rankOf } from '@/orders.js';
 import { values } from '@/params.js';
 
@@ -299,6 +299,17 @@ describe('modulators', () => {
   }
 });
 
+/** Two poses alike to f32, which a shader's tables hold their contents in. */
+function near(got: Partial<Pose>, want: Partial<Pose>) {
+  expect(Object.keys(got).sort()).toEqual(Object.keys(want).sort());
+  for (const [k, v] of Object.entries(want)) {
+    const g = [got[k as keyof Pose]].flat() as number[];
+    [v].flat().forEach((x, i) => {
+      expect(g[i]).toBeCloseTo(x as number, 6);
+    });
+  }
+}
+
 describe('modulator shaders', () => {
   const orders = ['together', 'column', 'column-reverse', 'center', 'row'] as const;
   /** Settings past the defaults that take another branch of a shader. */
@@ -315,6 +326,7 @@ describe('modulator shaders', () => {
     chase: [{ dim: 0 }],
     glitch: [{ often: 120, strength: 1 }],
     palette: [{ colors: [0x112233, 0xff8800, 0x00ffcc] }],
+    gradient: [{ direction: 'down', colors: [0x112233, 0xff8800, 0x00ffcc] }],
   };
   for (const name of names.filter((n) => MODULATORS[n].shader))
     it(`${name}: the shader's at gives what patch does where it plays, and rests elsewhere`, () => {
@@ -332,10 +344,10 @@ describe('modulator shaders', () => {
           const dots = b.dots.filter((_, k) => k % 7 === 0);
           const [on, off] = m.on === 'cells' ? [b.cells, dots] : [dots, b.cells];
           for (const phase of [0, 0.137, 0.5, 0.861, 0.0412, 0.733])
-            for (const s of on)
-              expect(sp.at(phase, s, setting)).toEqual(plain.at(phase, s, setting));
+            for (const s of on) near(sp.at(phase, s, setting), plain.at(phase, s, setting));
           for (const s of off) expect(sp.at(0.3, s, setting)).toEqual(rest);
         }
-      expect(checked).toBeGreaterThan(0);
+      // npm blits 0.20 has no shader tables, and a gradient's tints are one.
+      if (name !== 'gradient' || hasTables()) expect(checked).toBeGreaterThan(0);
     });
 });
