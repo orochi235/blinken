@@ -26,6 +26,8 @@ export interface FrameCost {
   readonly drawMs: number;
   /** What drew the frame; `2d` with `draw: false`. */
   readonly backend: Backend;
+  /** This frame's own `mixMs` and `drawMs`, unsmoothed, for a benchmark keeping every frame. */
+  readonly raw: { readonly mixMs: number; readonly drawMs: number };
 }
 
 export interface MarqueeOptions {

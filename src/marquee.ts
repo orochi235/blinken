@@ -167,9 +167,10 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     const t1 = performance.now();
     sign?.render(cols, color, gap);
     const t2 = performance.now();
-    mixMs += (t1 - t0 - mixMs) * 0.05;
-    drawMs += (t2 - t1 - drawMs) * 0.05;
-    opts.onFrame?.({ mixMs, drawMs, backend });
+    const raw = { mixMs: t1 - t0, drawMs: t2 - t1 };
+    mixMs += (raw.mixMs - mixMs) * 0.05;
+    drawMs += (raw.drawMs - drawMs) * 0.05;
+    opts.onFrame?.({ mixMs, drawMs, backend, raw });
   };
   const overlay = createOverlay(b, cols, drawing, () => self, opts.follow);
   /** Settles the follow outside a frame, pulling any channel it moved onto the CPU. */

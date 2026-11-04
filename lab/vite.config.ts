@@ -21,6 +21,7 @@ export default defineConfig({
         compose: page('compose.html'),
         effects: page('effects.html'),
         paint: page('paint.html'),
+        bench: page('bench.html'),
       },
     },
   },
