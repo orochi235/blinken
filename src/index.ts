@@ -103,6 +103,17 @@ export {
 } from './pieces.js';
 export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
 export { cueLayer, effectOf, layerOf, play, type Scene, type SceneLayer } from './program.js';
+export type {
+  Readout,
+  ReadoutDefect,
+  ReadoutOptions,
+  Surface,
+  SurfaceOptions,
+} from './readout/api.js';
+export { createOverlay } from './readout/overlay.js';
+export { createPanel } from './readout/panel.js';
+export type { Align, DisplayType, Ends, SegLight, SegShape, TypeName } from './readout/type.js';
+export { TYPES } from './readout/types/index.js';
 export type { Backend } from './render/backend.js';
 export { type Gpu, gpu } from './render/gpu.js';
 export { createThumbnail, type Thumbnail, type ThumbnailOptions } from './thumbnail.js';

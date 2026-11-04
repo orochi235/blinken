@@ -116,9 +116,13 @@ export interface Placement {
   /** Re-fits now (lamps.pitch changed). */
   refit(): void;
 }
-export function boardPlacement(frame: { left: number; top: number; across: number; down: number }, want: () => number | undefined): Placement; // wraps fitCanvas; view 0 = (-left*pitch, -top*pitch, pitch, 0, 0,0,w,h)
+export function boardPlacement(
+  frame: { left: number; top: number; across: number; down: number },
+  want: () => number | undefined,
+): Placement; // wraps fitCanvas; view 0 = (-left*pitch, -top*pitch, pitch, 0, 0,0,w,h)
 export function toDevice(views: Float32Array, v: number, x: number, y: number): [number, number];
 ```
+
 - [ ] Step 1: Write `test/placement.test.ts`:
   - `toDevice` applies offset, scale and slant as above.
   - `boardPlacement` on a stubbed `fitCanvas` pitch of 10 sets view 0 to `[-left*10, -top*10, 10, 0, 0, 0, w, h]`. Mock the canvas and parent as `test/draw.test.ts` does.
@@ -251,19 +255,49 @@ Consumes Task 6's `DisplayType`, `SegShape` and `textEncoder`. Geometry starts f
 **Interfaces — Produces:**
 ```ts
 export interface ReadoutOptions {
-  type: TypeName; cells: number; face?: 'plate' | 'none'; color?: number; slant?: number;
-  ends?: 'point' | 'round' | 'square'; align?: 'left' | 'right'; gap?: number; half?: boolean;
+  type: TypeName;
+  cells: number;
+  face?: 'plate' | 'none';
+  color?: number;
+  slant?: number;
+  ends?: 'point' | 'round' | 'square';
+  align?: 'left' | 'right';
+  gap?: number;
+  half?: boolean;
   defects?: readonly (Fault & { at: { cell: number; slot: number } })[];
-  at?: { x: number; y: number }; height?: number;   // panel, CSS px
-  follow?: Element;                                  // overlay
+  at?: { x: number; y: number };
+  height?: number; // panel, CSS px
+  follow?: Element; // overlay
 }
-export interface Readout { set(value: string | number): void; color(hex: number): void; destroy(): void; readonly value: string | number }
-export interface SurfaceOptions { gpu?: Gpu | null; backend?: Backend; lamps?: Lamps; fade?: Fade; ghost?: Ghost; ticker?: Ticker }
-export interface Surface { readout(o: ReadoutOptions): Readout; readonly backend: Backend; destroy(): void }
+export interface Readout {
+  set(value: string | number): void;
+  color(hex: number): void;
+  destroy(): void;
+  readonly value: string | number;
+}
+export interface SurfaceOptions {
+  gpu?: Gpu | null;
+  backend?: Backend;
+  lamps?: Lamps;
+  fade?: Fade;
+  ghost?: Ghost;
+  ticker?: Ticker;
+}
+export interface Surface {
+  readout(o: ReadoutOptions): Readout;
+  readonly backend: Backend;
+  destroy(): void;
+}
 export function createPanel(canvas: HTMLCanvasElement, opts?: SurfaceOptions): Surface;
 // layout.ts
-export function layOutReadouts(rs: readonly Placed[]): { board: Board; leds: readonly Led[]; prims: Prims; bases: number[] };
+export function layOutReadouts(rs: readonly Placed[]): {
+  board: Board;
+  leds: readonly Led[];
+  prims: Prims;
+  bases: number[];
+};
 ```
+
 - **Layout:** each readout is one view. Its cells are placed at `cell * (width + gap)`; `half` adds a leading half cell. With `face: 'plate'` it gets a plate primitive (`NO_LIGHT`, socket `plate`) padded by `0.6` cell units, and segment sockets of `SOCKET.segment` (or `wire`). With `'none'` it gets no plate and socket `none`.
 - **Panel views:** the canvas fills its CSS box (`ResizeObserver`, device px = CSS × `devicePixelRatio`). A readout's view is `ox = at.x*dpr`, `oy = at.y*dpr`, `scale = height*dpr / cell.height`, `slant` (default 0), clip = the canvas.
 - **Voice:** a single surface-wide `shaderPatch` via `kernels` (`src/modulators/shader.ts`) with tables `on`, `tr`, `tg` and `tb`, each `cols × rows`. WGSL: `out.lit = table_on(subject.x, subject.y)`, and tint from `tr/tg/tb` as the gradient modulator writes it (`src/modulators/gradient.ts`). `set` and `color` rewrite the tables and re-cue the voice (fade the old over 0) on the next frame, coalescing several calls into one.

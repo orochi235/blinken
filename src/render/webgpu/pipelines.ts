@@ -109,13 +109,13 @@ export function createPainter(
   const copy = pipe(COPY_WGSL, copyLayout, format, undefined, false);
   const copyAdd = pipe(COPY_WGSL, copyLayout, format, ADD, false);
 
-  const storage = (data: Float32Array<ArrayBuffer> | Uint32Array<ArrayBuffer>, label: string) => {
+  const storage = (data: Float32Array | Uint32Array, label: string) => {
     const buf = device.createBuffer({
       size: Math.max(16, data.byteLength),
       usage: BUFFER.STORAGE | BUFFER.COPY_DST,
       label: `bree ${label}`,
     });
-    if (data.byteLength > 0) device.queue.writeBuffer(buf, 0, data);
+    if (data.byteLength > 0) device.queue.writeBuffer(buf, 0, data as Float32Array<ArrayBuffer>);
     return buf;
   };
   const info = new Uint32Array(Math.max(n, 1) * 4);

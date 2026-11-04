@@ -1,14 +1,15 @@
 import type { Engine, Mix } from '@msb235/blits';
 import { type GpuDevice, gpu as gpuEngine, gpuOf } from '@msb235/blits/gpu';
 import type { Board, Led, Pose, Subject } from '../board.js';
-import { createSign, paintBulbs, type Sign, type SignColumns } from '../draw.js';
+import { createSign2d, paintBulbs, type Shape, type Sign, type SignColumns } from '../draw.js';
 import type { Grid } from '../grid.js';
 import { fieldsOf } from '../modulators/shader.js';
 import { CHANNELS } from '../optics.js';
 import { type Backend, pickBackend } from './backend.js';
 import type { Gpu } from './gpu.js';
-import { createWebGlSign } from './webgl/sign.js';
-import { type ChannelSource, createWebGpuSign, type WebGpuSign } from './webgpu/sign.js';
+import { boardLights, type SignLights } from './sign-lights.js';
+import { createWebGlSignOf } from './webgl/sign.js';
+import { type ChannelSource, createWebGpuSignOf, type WebGpuSign } from './webgpu/sign.js';
 import { BUFFER } from './webgpu/usage.js';
 import { POSE } from './webgpu/wgsl-optics.js';
 
@@ -30,6 +31,8 @@ export interface Drawing {
   readonly gone: boolean;
   /** Hands the GPU side `m`, once made, with the dots then the cells as its subjects. */
   bind(m: Mix<Subject, Pose>): void;
+  /** Draws other lights from now on, the GPU side folding their board's dots and cells. */
+  reshape(next: Shape): void;
   /** The channels the next render reads from the columns, which the frame must pull. */
   cpuChannels(): ReadonlySet<Channel>;
   /** Keeps `channels` on the CPU whatever the mix folds on the GPU, for a follow laid there. */
@@ -48,6 +51,8 @@ export interface DrawingOptions {
   readonly gpu: Gpu | null | undefined;
   readonly backed: boolean;
   readonly grid: Grid;
+  /** What to draw, where it isn't the board's dots and bulbs on `grid`. */
+  readonly lights?: SignLights;
 }
 
 const canWebgl = () => typeof WebGL2RenderingContext !== 'undefined';
@@ -73,15 +78,18 @@ export function attach(
   let backend: Backend = '2d';
   let sign: Sign | null = null;
   let webgpu: WebGpuSign | null = null;
+  const lights = opts.lights ?? boardLights(b, leds, opts.grid);
   if (want === 'webgpu' && opts.gpu) {
-    webgpu = createWebGpuSign(canvas, b, leds, opts.backed, opts.grid, opts.gpu, source);
+    webgpu = createWebGpuSignOf(canvas, lights, opts.gpu, source, opts.backed);
     sign = webgpu;
     backend = 'webgpu';
   } else if (want === 'webgl') {
-    sign = createWebGlSign(canvas, b, leds, opts.backed, opts.grid);
+    sign = createWebGlSignOf(canvas, lights, opts.backed);
     if (sign) backend = 'webgl';
   }
-  if (opts.draw && !sign) sign = createSign(canvas, b, leds, opts.backed, opts.grid);
+  if (opts.draw && !sign) sign = createSign2d(canvas, lights, opts.backed);
+  let subjects: readonly Subject[] = [...b.dots, ...b.cells];
+  let mix: Mix<Subject, Pose> | null = null;
   const device = webgpu && opts.gpu ? opts.gpu.device : null;
   const read = device && webgpu ? readback(device, webgpu.output, leds.length) : null;
   let gone = false;
@@ -96,10 +104,16 @@ export function attach(
       return gone;
     },
     bind(m) {
+      mix = m;
       if (!device) return;
       const gpuSide = gpuOf(m);
-      gpuSide.subjects([...b.dots, ...b.cells], fieldsOf);
+      gpuSide.subjects(subjects, fieldsOf);
       side = gpuSide;
+    },
+    reshape(next) {
+      subjects = [...next.board.dots, ...next.board.cells];
+      sign?.reshape(next);
+      if (device && mix) gpuOf(mix).subjects(subjects, fieldsOf);
     },
     cpuChannels: () => webgpu?.cpuChannels() ?? EVERY,
     keep(channels) {

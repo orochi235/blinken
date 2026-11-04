@@ -59,29 +59,29 @@ yet.
 All of these ship (2026-11-04). The first six are built and checked first, and the rest follow in
 the same build.
 
-| type          | shows                        | cells                                   |
-| :------------ | :--------------------------- | :-------------------------------------- |
-| `seven`       | digits, A–F, rough letters   | 7 bars, a decimal point; `:` cell       |
-| `fourteen`    | full alphabet, digits        | 14 bars, decimal point and comma (the pinball plasma display) |
-| `sixteen`     | alphabet, punctuation        | 16 bars (top and bottom split), DP      |
-| `nixie`       | digits                       | 10 stacked numeral cathodes             |
-| `cistercian`  | 0–9999 per cell              | stem and 4 quadrants of 5 strokes       |
-| `matrix`      | bree's 5×7 font              | 35 dots                                 |
-| `eight`       | digits                       | 7 bars and a diagonal for 4 (F. W. Wood's 1908 patent) |
-| `nine`        | digits, Z, slashed 7         | 7 bars and 2 diagonals, DP              |
-| `half`        | a leading 1 and a minus      | the ½ digit of a 3½-digit meter          |
-| `twentytwo`   | upper and lower case         | 22 bars, room for descenders            |
-| `maya`        | base 20                      | 4 dots, 3 bars, a shell for zero        |
-| `kaktovik`    | base 20                      | 3 five-bars, 4 one-strokes              |
-| `rods`        | counting rods                | 5 rods, crossbar; alternating by place  |
-| `braille`     | letters, digits              | 6 dots                                  |
-| `ogham`       | letters                      | stemline, 5 each of right, left, cross strokes and notches |
-| `morse`       | letters, digits              | 5 places of a dot or a dash             |
-| `semaphore`   | letters                      | hub and 8 arms                          |
-| `dice`        | 0–9                          | 9 pips                                  |
-| `tally`       | counts                       | gates of 4 strokes and a slash          |
-| `bcd`         | digits                       | 4 lamps per digit                       |
-| `bargraph`    | a level from 0 to 1          | N bars                                  |
+| type         | shows                      | cells                                                         |
+| :----------- | :------------------------- | :------------------------------------------------------------ |
+| `seven`      | digits, A–F, rough letters | 7 bars, a decimal point; `:` cell                             |
+| `fourteen`   | full alphabet, digits      | 14 bars, decimal point and comma (the pinball plasma display) |
+| `sixteen`    | alphabet, punctuation      | 16 bars (top and bottom split), DP                            |
+| `nixie`      | digits                     | 10 stacked numeral cathodes                                   |
+| `cistercian` | 0–9999 per cell            | stem and 4 quadrants of 5 strokes                             |
+| `matrix`     | bree's 5×7 font            | 35 dots                                                       |
+| `eight`      | digits                     | 7 bars and a diagonal for 4 (F. W. Wood's 1908 patent)        |
+| `nine`       | digits, Z, slashed 7       | 7 bars and 2 diagonals, DP                                    |
+| `half`       | a leading 1 and a minus    | the ½ digit of a 3½-digit meter                               |
+| `twentytwo`  | upper and lower case       | 22 bars, room for descenders                                  |
+| `maya`       | base 20                    | 4 dots, 3 bars, a shell for zero                              |
+| `kaktovik`   | base 20                    | 3 five-bars, 4 one-strokes                                    |
+| `rods`       | counting rods              | 5 rods, crossbar; alternating by place                        |
+| `braille`    | letters, digits            | 6 dots                                                        |
+| `ogham`      | letters                    | stemline, 5 each of right, left, cross strokes and notches    |
+| `morse`      | letters, digits            | 5 places of a dot or a dash                                   |
+| `semaphore`  | letters                    | hub and 8 arms                                                |
+| `dice`       | 0–9                        | 9 pips                                                        |
+| `tally`      | counts                     | gates of 4 strokes and a slash                                |
+| `bcd`        | digits                     | 4 lamps per digit                                             |
+| `bargraph`   | a level from 0 to 1        | N bars                                                        |
 
 The visual companion's mockup of each, with sample text, is
 `.superpowers/brainstorm/51653-1793823017/content/display-types-v2.html` (not committed, since
@@ -220,12 +220,12 @@ table. Adding or removing a readout rebuilds the tables, which is rare.
 The builder may change names. The shape is what matters.
 
 ```ts
-const surface = createPanel(canvas, { gpu, backend });       // or createOverlay({ gpu, backend })
+const surface = createPanel(canvas, { gpu, backend }); // or createOverlay({ gpu, backend })
 const clock = surface.readout({ type: 'seven', cells: 5, at: { x: 20, y: 20 }, height: 64 });
 const score = overlay.readout({ type: 'nixie', cells: 4, follow: element });
 clock.set('12:34');
 score.set(1984);
-clock.color(0x6cff8a);                                       // tint, as hex
+clock.color(0x6cff8a); // tint, as hex
 clock.destroy();
 surface.destroy();
 ```
