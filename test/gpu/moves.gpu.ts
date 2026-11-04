@@ -90,6 +90,10 @@ test('scroll-in and scroll-out, both ways, fold on the GPU as the CPU does', asy
     for (const direction of ['left', 'right']) await agree(dev(d), name, { direction });
 });
 
+test('drop-in and drop-out fold on the GPU as the CPU does', async (d) => {
+  for (const name of ['drop-in', 'drop-out'] as const) await agree(dev(d), name);
+});
+
 test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
   for (const from of [false, true])
     for (const to of [false, true])

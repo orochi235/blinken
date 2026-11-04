@@ -2,9 +2,23 @@ import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import { litAt, move, on } from './move.js';
+import { LIT, litOf, moveShader, ROUND } from './shader.js';
 
 /** How far a dot falls from or to: past the text's top or bottom. */
 const fall = (at: Placed) => at.text.rows + 1;
+
+/** The message `drop` rows from falling in (`out` 0) or out (`out` 1), as dropIn and dropOut move it. */
+const DROP = moveShader({
+  params: ['left', 'drop', 'out'],
+  wgsl: `let ph2 = phase * phase;
+let dy = ${ROUND('select(-params.drop * (1.0 - ph2), params.drop * ph2, params.out > 0.5)')};
+lit = ${LIT('params.left', 'dy')};`,
+  at(phase, d, p, t) {
+    const drop = p.drop as number;
+    const dy = Math.round(p.out ? drop * phase ** 2 : -drop * (1 - phase ** 2));
+    return litOf(t, d, p.left as number, dy);
+  },
+});
 
 const DROP_PARAM = {
   label: 'drop time',
@@ -30,6 +44,7 @@ export const dropIn = move({
       { writes: ['lit'] },
     );
   },
+  shader: (at, p) => DROP(at, p.ms, { left: at.left, drop: fall(at), out: 0 }),
 });
 
 /** The message falling out of the bottom under gravity. */
@@ -46,4 +61,5 @@ export const dropOut = move({
       { writes: ['lit'] },
     );
   },
+  shader: (at, p) => DROP(at, p.ms, { left: at.left, drop: fall(at), out: 1 }),
 });
