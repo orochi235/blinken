@@ -26,6 +26,7 @@ const more: Partial<Record<MoveName, Record<string, unknown>[]>> = {
   'scroll-across': [{ direction: 'right' }],
   'type-on': [{ cursor: 'line' }, { cursor: 'off' }, { pace: 'input' }],
   'type-off': [{ cursor: 'line' }, { cursor: 'off' }],
+  'bounce-in': [{ bounces: 0 }, { bounces: 5, ms: 4000 }],
   wave: [
     { by: 'column', height: 3 },
     { ms: 500, length: 4 },

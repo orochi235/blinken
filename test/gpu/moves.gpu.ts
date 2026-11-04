@@ -115,6 +115,10 @@ test('wave, by letter and column, alone and joined, folds on the GPU as the CPU 
       await agree(dev(d), 'wave', { by, height: 3, ms: 1200 }, { from, to });
 });
 
+test('bounce-in, with and without bounces, folds on the GPU as the CPU does', async (d) => {
+  for (const bounces of [0, 3, 5]) await agree(dev(d), 'bounce-in', { bounces });
+});
+
 test('scroll-across, alone and joined each way, folds on the GPU as the CPU does', async (d) => {
   for (const from of [false, true])
     for (const to of [false, true])
