@@ -150,5 +150,25 @@ test('invert on a triangle spread by column folds on the GPU as the CPU does', (
 test('two-color spread by column folds on the GPU as the CPU does', (d) =>
   agree(dev(d), { mod: 'two-color', spread: { by: 'column' } }, ['tint'], [110, 480, 830], COLOR));
 
+/** The first `n` frames' middles, ms, at which `layer` turns some dot's hue, from the CPU. */
+function torn(layer: LayerSpec, n: number): number[] {
+  const m = mix<Subject, Pose>(KIT);
+  m.sync(0);
+  cueLayer(m, b, layer, 1);
+  const found: number[] = [];
+  for (let t = 25; t < 60_000 && found.length < n; t += 50) {
+    m.sync(t);
+    if (b.dots.some((s) => m.probe(s).hue !== 0)) found.push(t);
+  }
+  return found;
+}
+
+test('glitch folds on the GPU as the CPU does', (d) => {
+  const layer: LayerSpec = { mod: 'glitch', params: { often: 120, strength: 1, seed: 3 } };
+  const times = torn(layer, 4);
+  if (times.length < 4) throw new Error('the CPU shows too few bursts');
+  return agree(dev(d), layer, ['hue', 'gain', 'invert'], [10, ...times], 1e-3);
+});
+
 test('aurora folds on the GPU as the CPU does', (d) =>
   agree(dev(d), { mod: 'aurora', params: { speed: 0.5 } }, ['hue'], [150, 900, 1650], 1e-3));

@@ -313,6 +313,7 @@ describe('modulator shaders', () => {
     neon: [{ often: 60, length: 1500 }],
     shimmer: [{ every: 900, angle: -40 }],
     chase: [{ dim: 0 }],
+    glitch: [{ often: 120, strength: 1 }],
   };
   for (const name of names.filter((n) => MODULATORS[n].shader))
     it(`${name}: the shader's at gives what patch does where it plays, and rests elsewhere`, () => {
