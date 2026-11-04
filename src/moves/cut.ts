@@ -11,6 +11,14 @@ const STAND = moveShader({
   at: (_phase, d, p, t) => litOf(t, d, p.left as number),
 });
 
+/** The message shown in the pass's second half where `on` is 1, its first half where it is 0. */
+const CUT = moveShader({
+  params: ['left', 'on'],
+  wgsl: `lit = select(0.0, ${LIT('params.left')}, (phase >= 0.5) == (params.on > 0.5));`,
+  at: (phase, d, p, t) =>
+    phase >= 0.5 === (p.on as number) > 0.5 ? litOf(t, d, p.left as number) : 0,
+});
+
 /** A dot switches on; an order spreads the switching into a wipe. */
 export const cutOn = move({
   name: 'cut-on',
@@ -21,6 +29,7 @@ export const cutOn = move({
     patch<Led, Pose>(CUT_MS, (phase, led) => on(phase >= 0.5 && litAt(at, led)), {
       writes: ['lit'],
     }),
+  shader: (at) => CUT(at, CUT_MS, { left: at.left, on: 1 }),
 });
 
 /** A dot switches off. */
@@ -33,6 +42,7 @@ export const cutOff = move({
     patch<Led, Pose>(CUT_MS, (phase, led) => on(phase < 0.5 && litAt(at, led)), {
       writes: ['lit'],
     }),
+  shader: (at) => CUT(at, CUT_MS, { left: at.left, on: 0 }),
 });
 
 /** The message standing still. */

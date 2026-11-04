@@ -80,3 +80,7 @@ async function agree(
 const dev = (d: unknown) => d as Device;
 
 test('stand folds on the GPU as the CPU does', (d) => agree(dev(d), 'stand'));
+
+test('cut-on folds on the GPU as the CPU does', (d) => agree(dev(d), 'cut-on'));
+
+test('cut-off folds on the GPU as the CPU does', (d) => agree(dev(d), 'cut-off'));
