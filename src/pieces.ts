@@ -1,5 +1,5 @@
 import type { ArcVoice } from '@msb235/blits';
-import type { Pose, Subject } from './board.js';
+import { everyOf, type Pose, type Subject } from './board.js';
 import { MODULATORS, type ModulatorName } from './modulators/index.js';
 import { type Joins, LOOSE, MOVES, type MoveName, type Rests, type Slot } from './moves/index.js';
 import { delayOf, type Order, type Placed, rankOf, spanOf } from './orders.js';
@@ -78,6 +78,8 @@ function settingsOf(
 /**
  * A piece as the arc voice that plays it in `slot`; modulators and `active` moves loop. `hold` is
  * the effect's, where one is given, and `joins` says an active move's neighbors hold the message.
+ * Staged for the gpu engine (`gpu`), a move playing on every dot at once is a shader patch on
+ * every subject where it has one.
  */
 export function stagePiece(
   piece: Piece,
@@ -86,6 +88,7 @@ export function stagePiece(
   subjects: readonly Subject[],
   hold?: number,
   joins: Joins = LOOSE,
+  gpu = false,
 ): StagedPiece {
   const loop = slot === 'active';
   if ('mod' in piece) {
@@ -104,14 +107,21 @@ export function stagePiece(
   const p = settingsOf(move, piece, slot, hold);
   const order = piece.order ?? TOGETHER;
   const delay = delayOf(order, at);
-  const pass = move.patch(at, p, joins) as ArcVoice<Subject, Pose>['patch'];
-  const voice: ArcVoice<Subject, Pose> = {
-    patch: pass,
-    subjects,
-    stagger: delay,
-    duration: pass.duration + spanOf(order, at),
-    ...(loop && { loop: true }),
-  };
+  const span = spanOf(order, at);
+  const shaded =
+    gpu && span === 0 && subjects.length === at.board.dots.length
+      ? move.shader?.(at, p, joins)
+      : null;
+  const pass = shaded ?? (move.patch(at, p, joins) as ArcVoice<Subject, Pose>['patch']);
+  const voice: ArcVoice<Subject, Pose> = shaded
+    ? { patch: shaded, subjects: everyOf(at.board), ...(loop && { loop: true }) }
+    : {
+        patch: pass,
+        subjects,
+        stagger: delay,
+        duration: pass.duration + span,
+        ...(loop && { loop: true }),
+      };
   const clips = at.text.cols > at.board.cols && !move.wide;
   const warnings = clips
     ? [{ slot, text: `${piece.move} clips ${at.label ?? 'the message'}` }]

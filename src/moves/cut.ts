@@ -1,8 +1,15 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import { litAt, move, on } from './move.js';
+import { LIT, litOf, moveShader } from './shader.js';
 
 const CUT_MS = 1;
+
+const STAND = moveShader({
+  params: ['left'],
+  wgsl: `lit = ${LIT('params.left')};`,
+  at: (_phase, d, p, t) => litOf(t, d, p.left as number),
+});
 
 /** A dot switches on; an order spreads the switching into a wipe. */
 export const cutOn = move({
@@ -45,4 +52,5 @@ export const stand = move({
     },
   },
   patch: (at, p) => patch<Led, Pose>(p.ms, (_, led) => on(litAt(at, led)), { writes: ['lit'] }),
+  shader: (at, p) => STAND(at, p.ms, { left: at.left }),
 });

@@ -74,13 +74,15 @@ const weighed = ({ voice, writes }: StagedPiece): ArcVoice<Subject, Pose> =>
 
 /**
  * An effect staged for a message in a color: its arcs, how long it lasts, and what to warn about.
- * `hold` overrides the effect's own.
+ * `hold` overrides the effect's own. Staged for the gpu engine (`gpu`), its moves are shader
+ * patches where they can be.
  */
 export function stageEffect(
   effect: EffectSpec,
   at: Placed,
   hex: number,
   hold?: number,
+  gpu = false,
 ): StagedEffect {
   const groups = effect.order ? groupsOf(effect.order, at) : [at.board.dots];
   const lag = duration(effect.order?.lag) ?? 0;
@@ -95,7 +97,7 @@ export function stageEffect(
     SLOTS.map((slot, s) =>
       (lists[s] ?? [])
         .filter(keep)
-        .map((piece) => stagePiece(piece, slot, at, subjects, given, joins)),
+        .map((piece) => stagePiece(piece, slot, at, subjects, given, joins, gpu)),
     );
   // Every piece staged once on the first group gives the warnings and the part lengths.
   const first = stageAll(groups[0] ?? [], () => true);

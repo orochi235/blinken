@@ -1,5 +1,5 @@
 import { type Handle, type Mix, type Patch, patch, type Signal } from '@msb235/blits';
-import type { Board, Pose, Subject } from './board.js';
+import { type Board, everyOf, type Pose, type Subject } from './board.js';
 import { EFFECTS, LAYERS, type LayerSpec } from './builtins.js';
 import { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 import { type Look, rasterize } from './font.js';
@@ -79,7 +79,7 @@ export interface StagedLayer {
 /**
  * Stages each scene of a program that plays for some time, in order; one taller than the board
  * shows what fits. Throws on a scene naming no effect or face, before anything is cued. Staged for
- * a mix on the gpu engine (`gpu`), its layers are shader patches where they can be.
+ * a mix on the gpu engine (`gpu`), its moves and layers are shader patches where they can be.
  */
 export function stageProgram(
   b: Board,
@@ -90,7 +90,7 @@ export function stageProgram(
   return scenes.flatMap((scene, i) => {
     const effect = effectOf(scene, effects);
     const at = placeText(b, scene.text, scene);
-    const s = stageEffect(tuned(effect, scene.params), at, scene.hex, scene.hold);
+    const s = stageEffect(tuned(effect, scene.params), at, scene.hex, scene.hold, gpu);
     if (s.ms <= 0) return [];
     const layers = Object.entries(scene.layers ?? {}).flatMap(([name, layer]) => {
       const spec = layerOf(name, layer);
@@ -153,18 +153,6 @@ function layerPatch(
     patch: mod.patch(at, p, rankOf(order, at)),
     subjects: mod.on === 'cells' ? b.cells : b.dots,
   };
-}
-
-const every = new WeakMap<Board, readonly Subject[]>();
-
-/** A board's dots and cells, the one list a shader layer plays on, as the gpu engine needs. */
-function everyOf(b: Board): readonly Subject[] {
-  let all = every.get(b);
-  if (!all) {
-    all = [...b.dots, ...b.cells];
-    every.set(b, all);
-  }
-  return all;
 }
 
 /** A layer for one scene: its cycles laid end to end through one pass `ms` long, against `at`. */

@@ -15,7 +15,7 @@ export type ModShader = ShaderPatch<Subject, Pose, Bound>;
 export const fieldsOf = (s: Subject): Record<string, number> =>
   s.kind === 'cell' ? { x: 0, y: 0, cell: 1, i: s.i } : { x: s.x, y: s.y, cell: 0, i: 0 };
 
-const FIELDS = { x: 'f32', y: 'f32', cell: 'f32', i: 'f32' } as const;
+export const FIELDS = { x: 'f32', y: 'f32', cell: 'f32', i: 'f32' } as const;
 
 /** Wave shapes by the code a shader reads. */
 export const SHAPES: readonly WaveShape[] = ['sine', 'triangle', 'saw', 'square'];
@@ -27,7 +27,7 @@ export const unitOf = (shape: number, x: number) => (waveAt(SHAPES[shape] ?? 'si
  * What every modulator's shader may call, one string so the kernel includes it once: `hash`,
  * `closedRank`, `unitOf`, `bump` and fire's `noise`.
  */
-const HELPERS = `${HASH_WGSL}
+export const HELPERS = `${HASH_WGSL}
 fn bree_rank(by: f32, cols: f32, x: f32, y: f32, cell: f32, i: f32) -> f32 {
   if (by < 0.5) { return 0.0; }
   if (cell > 0.5) { return i; }

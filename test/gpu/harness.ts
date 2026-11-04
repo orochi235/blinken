@@ -26,7 +26,7 @@ const f32 = new Float32Array(1);
 const bits = new Uint32Array(f32.buffer);
 
 /** The f32 `step` places from `t` (negative for down), as the GPU might have rounded it. */
-function nudge(t: number, step: number): number {
+export function nudge(t: number, step: number): number {
   f32[0] = Math.fround(t);
   if (f32[0] === 0) return step > 0 ? 2 ** -149 : -(2 ** -149);
   const b = bits[0] as number;

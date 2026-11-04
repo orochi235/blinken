@@ -2,6 +2,7 @@ import type { Patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { Params, Values } from '../params.js';
+import type { MoveShader } from './shader.js';
 
 /** Which third of an effect a move plays in. */
 export type Slot = 'enter' | 'active' | 'exit';
@@ -42,6 +43,11 @@ export interface Move<P extends Params = Params> {
   rests?(at: Placed, p: Values<P>): Rests | null;
   /** Writes `lit` only; its duration is one pass, before any order's delay. */
   patch(at: Placed, p: Values<P>, joins?: Joins): Patch<Led, Pose>;
+  /**
+   * `patch` as a shader patch on every dot and cell, for the gpu engine; null where the blits bree
+   * runs on cannot make one.
+   */
+  shader?(at: Placed, p: Values<P>, joins?: Joins): MoveShader | null;
 }
 
 /** Declares a move, keeping its params' keys in the type `patch` sees. */

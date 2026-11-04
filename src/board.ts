@@ -110,3 +110,15 @@ function ring(w: number, h: number): [number, number][] {
 
 /** The column a message standing centered starts at. */
 export const leftOf = (b: Board, text: Bitmap) => Math.floor((b.cols - text.cols) / 2);
+
+const every = new WeakMap<Board, readonly Subject[]>();
+
+/** A board's dots and cells, the one list a shader patch plays on, as the gpu engine needs. */
+export function everyOf(b: Board): readonly Subject[] {
+  let all = every.get(b);
+  if (!all) {
+    all = [...b.dots, ...b.cells];
+    every.set(b, all);
+  }
+  return all;
+}
