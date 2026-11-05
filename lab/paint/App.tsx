@@ -10,6 +10,8 @@ import {
   type LampSettings,
   type Layout,
   lampsOf,
+  MAX_COLS,
+  onGrid,
   type Shape,
   type Tool,
 } from './model.js';
@@ -156,14 +158,14 @@ function LayoutBar({ layout }: { layout: Layout }) {
         grid
         <select
           value={layout.grid}
-          onChange={(e) => paint.setLayout({ ...layout, grid: e.currentTarget.value as GridName })}
+          onChange={(e) => paint.setLayout(onGrid(layout, e.currentTarget.value as GridName))}
         >
           {Object.keys(GRIDS).map((g) => (
             <option key={g}>{g}</option>
           ))}
         </select>
       </label>
-      {number('cols', 'columns', 200)}
+      {number('cols', 'columns', MAX_COLS)}
       {number('rows', 'rows', 120)}
     </div>
   );

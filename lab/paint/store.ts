@@ -5,6 +5,7 @@ import {
   LAMPS,
   type LampSettings,
   type Layout,
+  MAX_COLS,
   type Picture,
   type Stamp,
 } from './model.js';
@@ -72,7 +73,7 @@ function load(): Saved {
   const m = (raw.lamps ?? {}) as Partial<LampSettings>;
   return {
     v: VERSION,
-    layout: { cols: whole(l.cols, 4, 200, 48), rows: whole(l.rows, 4, 120, 32), grid },
+    layout: { cols: whole(l.cols, 4, MAX_COLS, 48), rows: whole(l.rows, 4, 120, 32), grid },
     picture,
     stamps: (Array.isArray(raw.stamps) ? raw.stamps : []).flatMap((s) => stampOf(s) ?? []),
     lamps: {

@@ -1,13 +1,15 @@
-import { type Board, frameOf, type Grid } from '@/index.js';
+import { type Board, frameOf, GRIDS, type GridName, TRI_H, triangleAt } from '@/index.js';
 import { type Brush, reachOf, type Stamp } from './model.js';
 import { stampBox } from './stamps.js';
 
 /** What the overlay marks: the brush where the pointer is, and the stamps to pick up. */
 export interface Marks {
-  /** The pointer, in pitches, or null while it is off the board. */
+  /** Where the brush is centered, in pitches, or null while the pointer is off the board. */
   pointer: [number, number] | null;
   /** The dot a size-1 brush would paint, in pitches. */
   nearest: [number, number] | null;
+  /** That dot's column and row. */
+  cell: readonly [number, number] | null;
   brush: Brush;
   stamps: readonly Stamp[];
   picked: string | null;
@@ -23,8 +25,10 @@ export function createOverlay(
   overlay: HTMLCanvasElement,
   sign: HTMLCanvasElement,
   b: Board,
-  grid: Grid,
+  gridName: GridName,
 ) {
+  const grid = GRIDS[gridName];
+  const triangles = gridName === 'triangles';
   const ctx = overlay.getContext('2d') as CanvasRenderingContext2D;
   const frame = frameOf(b, grid);
   let scale = 1;
@@ -43,7 +47,13 @@ export function createOverlay(
   ];
 
   function stampFrame(s: Stamp): [number, number][] {
-    const { x, y, cols, rows } = stampBox(s);
+    const { x, y, cols, rows } = stampBox(s, gridName);
+    if (triangles) {
+      // Its triangles' outer edges: k runs half a pitch at a time, and each triangle is a pitch wide.
+      const [l, r] = [x / 2, (x + cols - 1) / 2 + 1];
+      const [t, bt] = [y * TRI_H, (y + rows) * TRI_H];
+      return [px([l, t]), px([r, t]), px([r, bt]), px([l, bt])];
+    }
     const corners = [
       grid(x, y),
       grid(x + cols - 1, y),
@@ -90,20 +100,25 @@ export function createOverlay(
     const { size, shape } = m.brush;
     if (size === 1) {
       if (!m.nearest) return;
-      const [x, y] = px(m.nearest);
       ctx.beginPath();
-      ctx.arc(x, y, r + line, 0, Math.PI * 2);
+      if (triangles && m.cell) for (const c of triangleAt(...m.cell).corners) ctx.lineTo(...px(c));
+      else ctx.arc(...px(m.nearest), r + line, 0, Math.PI * 2);
+      ctx.closePath();
       ctx.stroke();
       return;
     }
     const [x, y] = px(m.pointer);
     const reach = reachOf(size) * scale + r;
     const thin = r + line;
+    // A triangle row or column brush keeps to the cell's own row, or its own pitch-wide column.
+    const band = triangles ? m.cell : null;
+    const top = band ? px([0, band[1] * TRI_H])[1] : y - thin;
+    const left = band ? px([band[0] / 2, 0])[0] : x - thin;
     ctx.beginPath();
     if (shape === 'round') ctx.arc(x, y, reach, 0, Math.PI * 2);
     else if (shape === 'square') ctx.rect(x - reach, y - reach, reach * 2, reach * 2);
-    else if (shape === 'row') ctx.rect(x - reach, y - thin, reach * 2, thin * 2);
-    else if (shape === 'column') ctx.rect(x - thin, y - reach, thin * 2, reach * 2);
+    else if (shape === 'row') ctx.rect(x - reach, top, reach * 2, band ? TRI_H * scale : thin * 2);
+    else if (shape === 'column') ctx.rect(left, y - reach, band ? scale : thin * 2, reach * 2);
     else {
       // The diamond's corners reach as far as its dots do; its sides clear the dots along them.
       const tip = reachOf(size) * scale + r * Math.SQRT2;
