@@ -51,15 +51,15 @@ for (const backend of ['webgl', 'webgpu'] as const)
         c,
         board(12, 4, false, 'triangles'),
         board(12, 4, false, 'triangles').dots,
-        true,
+        'dark',
         GRIDS.triangles,
       ),
     );
     const gpu = middles((c) => {
       const b = board(12, 4, false, 'triangles');
       return backend === 'webgl'
-        ? createWebGlSign(c, b, b.dots, true, GRIDS.triangles)
-        : createWebGpuSign(c, b, b.dots, true, GRIDS.triangles, handleOf(device), null);
+        ? createWebGlSign(c, b, b.dots, 'dark', GRIDS.triangles)
+        : createWebGpuSign(c, b, b.dots, 'dark', GRIDS.triangles, handleOf(device), null);
     });
     const diffs = flat.out.map((px, i) => worst(px, gpu.out[i] as number[]));
     const lit = flat.out.filter((_, i) => flat.lit[i] === 1);

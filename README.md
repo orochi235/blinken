@@ -47,6 +47,11 @@ can name from the next pass. `sign.mix` is the mix itself, for cueing voices of 
 `marquee #<canvas id> <cols>×<rows>` (or `marquee <cols>×<rows>` for a canvas with no id), and
 `destroy` takes it off their list.
 
+`housing` is what shows round the lights: `'dark'`, the default, paints a dark housing with a
+socket for every dot; `'clear'` leaves the housing see-through, the sockets still showing over the
+page; `'none'` draws neither, so only lit light shows and an unlit dot is simply absent. Ghosting
+is light, so it still shows under `'none'`. `createThumbnail` takes it too.
+
 `pass()` says where the pass playing now stands: `at` ms into it, its `length`, and each scene it
 plays, end to end, with its index in the program, its `start` and its `ms`. It reads the mix clock,
 so `ramp` slows it with everything else. `seek(ms)` moves that pass to `ms` from its start, back

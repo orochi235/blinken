@@ -53,7 +53,7 @@ function drawBoth(glow: number, color?: number, brightness?: number) {
   const c2 = canvasIn(400, 200);
   const cg = canvasIn(400, 200);
   const flat = createSign(c2, b, leds);
-  const gl = createWebGlSign(cg, b, leds, true, (x, y) => [x, y]);
+  const gl = createWebGlSign(cg, b, leds, 'dark', (x, y) => [x, y]);
   if (!gl) throw new Error('no WebGL sign');
   const lamps = { pitch: PITCH, glow, brightness };
   flat.setLamps(lamps);
@@ -125,7 +125,7 @@ test('webgl: a dark dot shows its socket, with no glow', async () => {
 test('webgl: a 0 × 0 canvas renders, and destroy twice frees the slot once', async () => {
   const { b, leds, cols } = scene();
   const before = freeSlots();
-  const s = createWebGlSign(canvasIn(0, 0), b, leds, true, (x, y) => [x, y]);
+  const s = createWebGlSign(canvasIn(0, 0), b, leds, 'dark', (x, y) => [x, y]);
   if (!s) throw new Error('no WebGL sign');
   if (s.backend !== 'webgl') throw new Error(`backend ${s.backend}`);
   if (freeSlots() !== before - 1) throw new Error('the sign holds no slot');
@@ -138,7 +138,7 @@ test('webgl: a 0 × 0 canvas renders, and destroy twice frees the slot once', as
 test('webgl: a lost context draws nothing, and a restored one draws again', async () => {
   const { b, leds, cols } = scene();
   const canvas = canvasIn(400, 200);
-  const s = createWebGlSign(canvas, b, leds, true, (x, y) => [x, y]);
+  const s = createWebGlSign(canvas, b, leds, 'dark', (x, y) => [x, y]);
   if (!s) throw new Error('no WebGL sign');
   s.setLamps({ pitch: PITCH });
   const g = canvas.getContext('webgl2') as WebGL2RenderingContext;
@@ -184,11 +184,11 @@ function eventOn(target: EventTarget, name: string, ms = 3000): Promise<void> {
 async function reused(between: () => Promise<void> | void): Promise<Uint8Array> {
   const { b, leds, cols } = scene();
   const canvas = canvasIn(400, 200);
-  const first = createWebGlSign(canvas, b, leds, true, (x, y) => [x, y]);
+  const first = createWebGlSign(canvas, b, leds, 'dark', (x, y) => [x, y]);
   if (!first) throw new Error('no WebGL sign');
   first.destroy();
   await between();
-  const s = createWebGlSign(canvas, b, leds, true, (x, y) => [x, y]);
+  const s = createWebGlSign(canvas, b, leds, 'dark', (x, y) => [x, y]);
   if (!s) throw new Error('no second WebGL sign on the same canvas');
   s.setLamps({ pitch: PITCH });
   await eventOn(canvas, 'webglcontextrestored');

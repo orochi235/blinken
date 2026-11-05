@@ -36,7 +36,7 @@ describe('attach', () => {
       draw: false,
       backend: undefined,
       gpu: undefined,
-      backed: true,
+      housing: 'dark',
       grid: (x, y) => [x, y],
     });
     expect(d.backend).toBe('2d');

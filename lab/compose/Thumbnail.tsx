@@ -49,8 +49,7 @@ export function Thumbnail({
   playing?: boolean;
   /** Goes back to the still when `playing` ends, rather than holding where it got to. */
   rewind?: boolean;
-  /** False lets the page show between the dots. */
-  housing?: boolean;
+  housing?: ThumbnailOptions['housing'];
   /** A sign whose planes it wears; kept the same object across renders, or it is rebuilt each time. */
   follow?: Follow;
   hex?: number;

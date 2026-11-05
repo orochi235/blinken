@@ -66,7 +66,7 @@ function drawBoth(
   const cw = canvasIn(400, 200);
   const flat = createSign(c2, b, leds);
   const source = opts.cpu ? sourceOf(device, cols, leds.length, opts.cpu) : null;
-  const gpu = createWebGpuSign(cw, b, leds, true, (x, y) => [x, y], handleOf(device), source);
+  const gpu = createWebGpuSign(cw, b, leds, 'dark', (x, y) => [x, y], handleOf(device), source);
   const lamps = { pitch: PITCH, glow, brightness: opts.brightness };
   flat.setLamps(lamps);
   gpu.setLamps(lamps);
@@ -167,7 +167,7 @@ test('webgpu: a 0 × 0 canvas renders, and destroy twice is fine', async (d) => 
     canvasIn(0, 0),
     b,
     b.dots,
-    true,
+    'dark',
     (x, y) => [x, y],
     handleOf(d as unknown as GPUDevice),
     null,
@@ -186,7 +186,7 @@ test('webgpu: a destroyed device draws nothing and does not throw', async () => 
     canvasIn(400, 200),
     b,
     b.dots,
-    true,
+    'dark',
     (x, y) => [x, y],
     handleOf(device),
     null,
@@ -210,7 +210,7 @@ test('webgpu: a destroyed sign is not kept alive by its device', async (d) => {
   const made = (): WeakRef<HTMLCanvasElement> => {
     const canvas = canvasIn(400, 200);
     const b = board(10, 3, false);
-    const s = createWebGpuSign(canvas, b, b.dots, true, (x, y) => [x, y], handle, null);
+    const s = createWebGpuSign(canvas, b, b.dots, 'dark', (x, y) => [x, y], handle, null);
     s.render(scene(0xff0000), 0xff9a2e, 16);
     s.destroy();
     canvas.parentElement?.remove();
@@ -228,8 +228,24 @@ test('webgpu: a highlight swaps a dot’s invert, and a follower copies the plan
   const device = d as unknown as GPUDevice;
   const b = board(10, 3, false);
   const grid = (x: number, y: number): [number, number] => [x, y];
-  const lead = createWebGpuSign(canvasIn(400, 200), b, b.dots, true, grid, handleOf(device), null);
-  const after = createWebGpuSign(canvasIn(400, 200), b, b.dots, true, grid, handleOf(device), null);
+  const lead = createWebGpuSign(
+    canvasIn(400, 200),
+    b,
+    b.dots,
+    'dark',
+    grid,
+    handleOf(device),
+    null,
+  );
+  const after = createWebGpuSign(
+    canvasIn(400, 200),
+    b,
+    b.dots,
+    'dark',
+    grid,
+    handleOf(device),
+    null,
+  );
   const mask = new Uint8Array(30);
   mask[1] = 1;
   lead.setHighlight(mask);

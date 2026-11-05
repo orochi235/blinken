@@ -51,7 +51,7 @@ export function createPainter(
 ): Painter {
   const grid = GRIDS[layout.grid];
   const b = board(layout.cols, layout.rows, false);
-  const sign = createSign(canvas, b, b.dots, true, grid);
+  const sign = createSign(canvas, b, b.dots, 'dark', grid);
   const marks = createOverlay(overlay, canvas, b, grid);
   const cols = signColumns(b.dots.length);
   const at = b.dots.map((d) => grid(d.x, d.y));

@@ -150,7 +150,7 @@ function FaceRow({
         cols={cols}
         rows={rows}
         still={100}
-        housing={false}
+        housing="clear"
       />
       <span
         className="compose-font-metrics"
