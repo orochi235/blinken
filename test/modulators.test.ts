@@ -240,7 +240,8 @@ describe('modulators', () => {
 
   it('shimmer leans its glint by its angle', () => {
     const glint = (x: number, y: number, angle: number) =>
-      poseAt('shimmer', 664, b.dots.find((d) => d.x === x && d.y === y) as Subject, {
+      // 592 ms in, a 45° glint's middle has reached x + lean = 46 on this 80 × 7 board.
+      poseAt('shimmer', 592, b.dots.find((d) => d.x === x && d.y === y) as Subject, {
         angle,
       }).glow as number;
     expect(glint(40, 0, 0)).toBeCloseTo(glint(40, 6, 0));
@@ -248,6 +249,14 @@ describe('modulators', () => {
     expect(glint(40, 0, 45)).toBeGreaterThan(3);
     expect(glint(40, 0, 45)).toBeCloseTo(glint(46, 6, 45));
     expect(glint(40, 6, 45)).toBe(1);
+  });
+
+  it('shimmer starts and ends its sweep off the sign at any lean', () => {
+    for (const angle of [-60, -30, 0, 30, 60])
+      for (const t of [0, 1099]) {
+        const lit = b.dots.filter((d) => (poseAt('shimmer', t, d, { angle }).lit as number) > 0.01);
+        expect(lit, `${angle}° at ${t} ms`).toEqual([]);
+      }
   });
 
   it('aurora keeps its hue within half its range either way, drifting and closing its loop', () => {
