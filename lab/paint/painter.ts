@@ -8,6 +8,7 @@ import {
   signColumns,
   triangleUnder,
 } from '@/index.js';
+import { floodFill } from './fill.js';
 import {
   type Brush,
   covers,
@@ -53,6 +54,7 @@ export interface Painter {
 export function createPainter(
   canvas: HTMLCanvasElement,
   overlay: HTMLCanvasElement,
+  preview: HTMLCanvasElement,
   layout: Layout,
   view: View,
   hooks: PainterHooks,
@@ -61,6 +63,7 @@ export function createPainter(
   const triangles = layout.grid === 'triangles';
   const b = board(layout.cols, layout.rows, false);
   const sign = createSign(canvas, b, b.dots, true, grid);
+  const small = createSign(preview, b, b.dots, true, grid);
   const marks = createOverlay(overlay, canvas, b, layout.grid);
   const cols = signColumns(b.dots.length);
   const at = b.dots.map((d) => grid(d.x, d.y));
@@ -176,6 +179,18 @@ export function createPainter(
     light();
   }
 
+  /** Fills the region under `p` with the brush's color, or turns it off when `erase`. */
+  function fill(p: [number, number], brush: Brush, erase: boolean): void {
+    const d = b.dots[dotUnder(...p)];
+    if (!d) return;
+    const to = erase ? null : { hex: brush.hex, level: brush.level };
+    const next = floodFill(shown.picture, layout, [d.x, d.y], to);
+    if (next === shown.picture) return;
+    shown.picture = next;
+    light();
+    hooks.onPaint({ ...next });
+  }
+
   /** The stamp being dragged, and which of its dots the pointer holds it by. */
   let held: { id: string; dx: number; dy: number } | null = null;
 
@@ -202,8 +217,13 @@ export function createPainter(
     if (e.button !== 0 && e.button !== 2) return;
     const p = pitchAt(e);
     canvas.setPointerCapture(e.pointerId);
-    if (hooks.brush().tool === 'text') {
+    const brush = hooks.brush();
+    if (brush.tool === 'text') {
       if (e.button === 0) grab(p);
+      return;
+    }
+    if (brush.tool === 'fill') {
+      fill(p, brush, e.button === 2);
       return;
     }
     erasing = e.button === 2;
@@ -212,8 +232,9 @@ export function createPainter(
   };
   const move = (e: PointerEvent) => {
     pointer = pitchAt(e);
-    if (canvas.hasPointerCapture(e.pointerId)) {
-      if (hooks.brush().tool === 'text') drag(pointer);
+    const tool = hooks.brush().tool;
+    if (canvas.hasPointerCapture(e.pointerId) && tool !== 'fill') {
+      if (tool === 'text') drag(pointer);
       else stroke(pointer);
     }
     redraw();
@@ -225,7 +246,8 @@ export function createPainter(
     if (held) {
       held = null;
       hooks.onStamps(shown.stamps);
-    } else if (hooks.brush().tool !== 'text') hooks.onPaint({ ...shown.picture });
+    } else if (hooks.brush().tool !== 'text' && hooks.brush().tool !== 'fill')
+      hooks.onPaint({ ...shown.picture });
   };
   const leave = () => {
     pointer = null;
@@ -248,6 +270,7 @@ export function createPainter(
   let then = performance.now();
   let frameId = requestAnimationFrame(function tick(now) {
     sign.render(cols, 0xffffff, now - then);
+    small.render(cols, 0xffffff, now - then);
     then = now;
     frameId = requestAnimationFrame(tick);
   });
@@ -275,6 +298,7 @@ export function createPainter(
       canvas.removeEventListener('pointerleave', leave);
       canvas.removeEventListener('contextmenu', menu);
       sign.destroy();
+      small.destroy();
     },
   };
 }

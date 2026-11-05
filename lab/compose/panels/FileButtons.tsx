@@ -1,6 +1,6 @@
 import { Button } from '@weasel-js/labkit';
 import { useRef, useState } from 'react';
-import { download } from '../download.js';
+import { download } from '../../download.js';
 import { fromJson, toJson } from '../share.js';
 import { compose } from '../store.js';
 

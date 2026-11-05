@@ -61,7 +61,7 @@ export function lampsOf(s: LampSettings): Lamps {
   };
 }
 
-export type Tool = 'paint' | 'shade' | 'erase' | 'text';
+export type Tool = 'paint' | 'shade' | 'erase' | 'fill' | 'text';
 export const SHAPES = ['round', 'square', 'diamond', 'row', 'column'] as const;
 export type Shape = (typeof SHAPES)[number];
 

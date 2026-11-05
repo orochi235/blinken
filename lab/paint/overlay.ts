@@ -97,7 +97,8 @@ export function createOverlay(
     if (!m.pointer) return;
     ctx.strokeStyle = m.brush.tool === 'erase' ? '#ff8080' : '#ffffffcc';
     const r = m.radius * scale;
-    const { size, shape } = m.brush;
+    const { shape } = m.brush;
+    const size = m.brush.tool === 'fill' ? 1 : m.brush.size;
     if (size === 1) {
       if (!m.nearest) return;
       ctx.beginPath();

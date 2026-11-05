@@ -1,9 +1,9 @@
 import { Button, useUndoKeys } from '@weasel-js/labkit';
 import { useRef, useState } from 'react';
 import { designer, useDesk } from '../compose/designer/open.js';
-import { download } from '../compose/download.js';
 import { IconButton } from '../compose/IconButton.js';
 import { library, libraryJson, parseLibrary } from '../compose/library.js';
+import { download } from '../download.js';
 import './LibraryBar.css';
 
 const undoTarget = {

@@ -6,6 +6,10 @@ const TOOLS: { tool: Tool; about: string }[] = [
   { tool: 'paint', about: 'Light dots in the color, at the brightness. Right-drag erases.' },
   { tool: 'shade', about: 'Set lit dots to the brightness, keeping their color.' },
   { tool: 'erase', about: 'Turn dots off.' },
+  {
+    tool: 'fill',
+    about: 'Fill the dots joined to the one clicked and lit like it. Right-click fills with off.',
+  },
   { tool: 'text', about: 'Add text, then drag it where it goes.' },
 ];
 
@@ -45,7 +49,7 @@ export function Tools({
             size="sm"
             tooltip={`A ${s} brush.`}
             pressed={shape === s}
-            disabled={tool === 'text'}
+            disabled={tool === 'text' || tool === 'fill'}
             onClick={() => onShape(s)}
           >
             {s}

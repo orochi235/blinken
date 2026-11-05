@@ -4,6 +4,7 @@ import { GRIDS, type GridName } from '@/index.js';
 import { IconButton } from '../compose/IconButton.js';
 import { numOf } from '../compose/schema.js';
 import { PAGES } from '../pages.js';
+import { FileButtons } from './FileButtons.js';
 import { LampsBar } from './LampsBar.js';
 import {
   type Brush,
@@ -17,7 +18,6 @@ import {
 } from './model.js';
 import { PALETTE, Palette, type Swatch } from './Palette.js';
 import { createPainter, type Painter } from './painter.js';
-import { encode } from './share.js';
 import { paint, usePaint } from './store.js';
 import { TextBar } from './TextBar.js';
 import { Tools } from './Tools.js';
@@ -61,22 +61,12 @@ export function App() {
           <IconButton glyph="redo" label="redo" disabled={!paint.canRedo()} onClick={paint.redo} />
           <Button
             size="sm"
-            tooltip="Copy a link that opens this board and picture. Text not yet stamped down stays behind."
-            onClick={() => {
-              const { layout, picture } = paint.get();
-              const url = `${location.origin}${location.pathname}#${encode({ layout, picture })}`;
-              void navigator.clipboard.writeText(url);
-            }}
-          >
-            copy link
-          </Button>
-          <Button
-            size="sm"
             tooltip="Turn every dot off. Undo brings them back."
             onClick={paint.clear}
           >
             clear
           </Button>
+          <FileButtons />
         </div>
         <Tools
           tool={tool}
@@ -112,17 +102,25 @@ function Board({
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const overlay = useRef<HTMLCanvasElement>(null);
+  const preview = useRef<HTMLCanvasElement>(null);
   const painter = useRef<Painter | null>(null);
   const { cols, rows, grid } = layout;
 
   useEffect(() => {
-    if (!canvas.current || !overlay.current) return;
-    const p = createPainter(canvas.current, overlay.current, { cols, rows, grid }, paint.get(), {
-      brush: () => brush.current,
-      onPaint: paint.setPicture,
-      onStamps: (s) => paint.setStamps(s),
-      onPick: paint.pick,
-    });
+    if (!canvas.current || !overlay.current || !preview.current) return;
+    const p = createPainter(
+      canvas.current,
+      overlay.current,
+      preview.current,
+      { cols, rows, grid },
+      paint.get(),
+      {
+        brush: () => brush.current,
+        onPaint: paint.setPicture,
+        onStamps: (s) => paint.setStamps(s),
+        onPick: paint.pick,
+      },
+    );
     p.setLamps(lampsOf(paint.get().lamps));
     painter.current = p;
     const off = paint.subscribe(() => p.show(paint.get()));
@@ -138,10 +136,15 @@ function Board({
   useEffect(() => painter.current?.redraw(), [tool]);
 
   return (
-    <div className="paint-board" data-fit={lamps.fit}>
-      <div className="paint-stage" data-tool={tool}>
-        <canvas ref={canvas} />
-        <canvas ref={overlay} className="paint-overlay" />
+    <div className="paint-frame">
+      <div className="paint-board" data-fit={lamps.fit}>
+        <div className="paint-stage" data-tool={tool}>
+          <canvas ref={canvas} />
+          <canvas ref={overlay} className="paint-overlay" />
+        </div>
+      </div>
+      <div className="paint-preview" title="The picture at a small size">
+        <canvas ref={preview} />
       </div>
     </div>
   );
