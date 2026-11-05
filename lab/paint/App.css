@@ -107,7 +107,7 @@
 
 .paint-stage > canvas:first-child {
   border-radius: 8px;
-  cursor: none;
+  cursor: default;
   touch-action: none;
   box-shadow:
     0 0 0 6px #241a14,
