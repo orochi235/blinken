@@ -1,6 +1,8 @@
 import { Button } from '@weasel-js/labkit';
 import { Dialog } from '@weasel-js/ui';
 import { useState } from 'react';
+import { embedOf } from '../embed.js';
+import { useHardware } from '../hardware.js';
 import { encode, playable, toCode } from '../share.js';
 import { hasPrevious, restorePrevious } from '../storage.js';
 import { compose, opened } from '../store.js';
@@ -15,6 +17,7 @@ type Shown = { title: string; text: string; code: boolean } | null;
 /** Export in the lab's top bar: the composition as a file, a link, or a `createMarquee` call. */
 export function ShareBar() {
   const [shown, setShown] = useState<Shown>(null);
+  const [hardware] = useHardware();
   const show = (title: string, text: string, code: boolean) => {
     copy(text);
     setShown({ title, text, code });
@@ -57,6 +60,13 @@ export function ShareBar() {
       </Button>
       <Button size="sm" onClick={() => show('code copied', toCode(compose.get()), true)}>
         copy as code
+      </Button>
+      <Button
+        size="sm"
+        tooltip="HTML that plays this composition on any page, on this sign's hardware, through the bree-player script (npm run compile)."
+        onClick={() => show('embed copied', embedOf(compose.get(), hardware), true)}
+      >
+        copy embed
       </Button>
       {hasPrevious() && (
         <Button

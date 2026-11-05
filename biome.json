@@ -10,6 +10,7 @@
       "!**/dist",
       "!**/bench/runs",
       "!**/dist-lab",
+      "!**/dist-player",
       "!**/shots",
       "!**/node_modules",
       "!.superpowers",

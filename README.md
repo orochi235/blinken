@@ -6,6 +6,20 @@ every effect is a blits patch you can cue on a mix of your own. No three.js, no 
 
 `bree` is a codename; the package is unpublished until it has a real one.
 
+## On any page
+
+`npm run compile` builds `<bree-player>`, one script with everything inlined, which plays a
+composition from the lab's compose page on any page without a build step:
+
+```html
+<script src="bree-player.js"></script>
+<bree-player program="…" cols="40" rows="7"></bree-player>
+```
+
+Compose's **copy embed** gives those two lines for the composition and sign on screen. Giving
+`compile` a link or a composition file compiles that program in, for a sign in one file. Everything
+it takes is in [docs/player.md](docs/player.md).
+
 ## A sign of its own
 
 ```ts
@@ -329,6 +343,8 @@ npm run dev      # the lab, http://localhost:4885 and the same port on the LAN
 npm run smoke    # build the lab, play it headless at three sizes
 npm run shots    # build the lab, screenshot each effect alone into shots/
 npm run check    # lint, typecheck, tests
+npm run compile  # build <bree-player> into dist-player/
+npm run player:check  # play it on a bare page in headless Chromium
 ```
 
 With a blits checkout at `../blits`, the lab, tests and typecheck run on its source; `BLITS=npm`

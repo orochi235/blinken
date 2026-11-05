@@ -28,6 +28,8 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "dev": "vite lab",
     "lab:build": "vite build lab",
+    "compile": "node scripts/compile.mjs",
+    "player:check": "node scripts/compile.mjs && node scripts/player-check.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "biome check .",
