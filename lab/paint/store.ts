@@ -9,6 +9,7 @@ import {
   type Picture,
   type Stamp,
 } from './model.js';
+import { decode, type Linked } from './share.js';
 
 const KEY = 'bree:paint';
 /** How many strokes undo reaches back; older ones drop off. */
@@ -184,6 +185,12 @@ export const paint = {
     lastEdit = undefined;
     emit();
   },
+  /** Replaces the board and drawing with `linked`; undo brings the drawing back. */
+  open(linked: Linked) {
+    picked = null;
+    remember();
+    commit({ ...state, layout: linked.layout, picture: linked.picture, stamps: [] });
+  },
   clear() {
     if (Object.keys(state.picture).length === 0 && state.stamps.length === 0) return;
     picked = null;
@@ -209,3 +216,7 @@ export const paint = {
 };
 
 export const usePaint = () => useSyncExternalStore(paint.subscribe, paint.get);
+
+const linked = decode(location.hash);
+if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+if (linked) paint.open(linked);

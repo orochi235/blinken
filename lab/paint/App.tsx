@@ -17,6 +17,7 @@ import {
 } from './model.js';
 import { PALETTE, Palette, type Swatch } from './Palette.js';
 import { createPainter, type Painter } from './painter.js';
+import { encode } from './share.js';
 import { paint, usePaint } from './store.js';
 import { TextBar } from './TextBar.js';
 import { Tools } from './Tools.js';
@@ -58,6 +59,17 @@ export function App() {
           />
           <IconButton glyph="undo" label="undo" disabled={!paint.canUndo()} onClick={paint.undo} />
           <IconButton glyph="redo" label="redo" disabled={!paint.canRedo()} onClick={paint.redo} />
+          <Button
+            size="sm"
+            tooltip="Copy a link that opens this board and picture. Text not yet stamped down stays behind."
+            onClick={() => {
+              const { layout, picture } = paint.get();
+              const url = `${location.origin}${location.pathname}#${encode({ layout, picture })}`;
+              void navigator.clipboard.writeText(url);
+            }}
+          >
+            copy link
+          </Button>
           <Button
             size="sm"
             tooltip="Turn every dot off. Undo brings them back."
