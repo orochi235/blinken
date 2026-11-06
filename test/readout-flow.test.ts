@@ -15,7 +15,7 @@ describe('flow', () => {
     expect(f.at).toEqual([0, 1, 2, 5, 6, 7, 8, 9]);
     expect(flow(chars('ABC DEF'), 4, 2, 'left', true).at).toEqual([0, 1, 2, 3, 4, 5, 6]);
     expect(flow(chars('ABCD EF'), 4, 2, 'left', true).at).toEqual([0, 1, 2, 3, -1, 4, 5]);
-    expect(f.cut).toBe(false);
+    expect(f.cut).toBe(0);
   });
 
   it('breaks a word longer than a line across lines', () => {
@@ -25,7 +25,7 @@ describe('flow', () => {
   it('starts a line at a line break, and cuts what runs past the last line', () => {
     const f = flow(chars('A\nB\nC'), 3, 2, 'left', true);
     expect(f.at).toEqual([0, -1, 3, -1, -1]);
-    expect(f.cut).toBe(true);
+    expect(f.cut).toBe(1);
   });
 
   it('keeps a long line whole without wrap, cut at the edge', () => {

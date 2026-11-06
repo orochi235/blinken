@@ -44,6 +44,7 @@ async function run() {
   const cellsInput = $<HTMLInputElement>('cells');
   const linesInput = $<HTMLInputElement>('lines');
   const wrapInput = $<HTMLInputElement>('wrap');
+  const copySelect = $<HTMLSelectElement>('copy');
   const slantInput = $<HTMLInputElement>('slant');
   const alignSelect = $<HTMLSelectElement>('align');
   const faceSelect = $<HTMLSelectElement>('face');
@@ -77,7 +78,7 @@ async function run() {
   });
 
   /** What each readout holds, kept as the bar rebuilds them. */
-  const values = HEIGHTS.map(() => 'HELLO THERE');
+  const values = HEIGHTS.map(() => 'HELLO');
   let readouts: Readout[] = [];
   const look = () =>
     selectionSelect.value === 'own' ? undefined : (selectionSelect.value as Selection);
@@ -87,7 +88,17 @@ async function run() {
   let built = '';
   const build = () => {
     const settings = JSON.stringify(
-      [typeSelect, cellsInput, linesInput, slantInput, alignSelect, faceSelect, colorSelect, custom]
+      [
+        typeSelect,
+        cellsInput,
+        linesInput,
+        slantInput,
+        alignSelect,
+        faceSelect,
+        colorSelect,
+        custom,
+        copySelect,
+      ]
         .map((el) => el.value)
         .concat(String(wrapInput.checked)),
     );
@@ -123,6 +134,7 @@ async function run() {
         height: tall(h),
         lines,
         wrap: wrapInput.checked,
+        copy: copySelect.value as 'shown' | 'value',
         value: values[i],
         edit: true,
         onInput: show,
@@ -155,6 +167,7 @@ async function run() {
     slantInput,
     alignSelect,
     faceSelect,
+    copySelect,
   ])
     el.addEventListener('change', build);
   // A new look restyles the readouts in place, so what is selected or typed at stays.

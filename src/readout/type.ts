@@ -66,6 +66,11 @@ export interface Spelling {
   /** `value` a cell at a time: a character, and any mark that rides on its cell. */
   tokens(value: string | number): string[];
   lights(token: string): ReadonlySet<string>;
+  /**
+   * The character `ch` shows as: the one whose glyph it draws, as an uppercase-only type draws a
+   * lowercase letter. Default `ch` itself.
+   */
+  shown?(ch: string): string;
 }
 
 /** A kind of segment display: one cell's lights, and how a value lights a row of cells. */
@@ -169,6 +174,8 @@ export function textCoding(
       }
       return set;
     },
+    shown: (ch) =>
+      table[ch] !== undefined ? ch : table[ch.toUpperCase()] !== undefined ? ch.toUpperCase() : ch,
   };
   return { encode: spellEncoder(spell), spell };
 }

@@ -28,6 +28,7 @@ const glyphSpelling = (face: Face): Spelling => ({
       for (const [k, c] of [...row].entries()) if (c === '#') on.add(`${k},${r}`);
     return on;
   },
+  shown: (ch) => ch.toUpperCase(),
 });
 
 /** A type's coding from `glyphSpelling`. */

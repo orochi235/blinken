@@ -57,6 +57,11 @@ export interface ReadoutOptions {
   readonly lines?: number;
   /** Whether a word that won't fit its row moves to the next, on more than one row. Default true. */
   readonly wrap?: boolean;
+  /**
+   * What selecting and copying it gives: its characters as `shown`, in the case its glyphs draw
+   * (an uppercase-only type gives capitals), or as in its `value`. Default `'shown'`.
+   */
+  readonly copy?: 'shown' | 'value';
 }
 
 /** A readout on a surface. */

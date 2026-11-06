@@ -86,6 +86,10 @@ the readout is. The browser won't carry a drag across separately placed boxes, a
 a line inside one box only, so each readout's box reads the mouse itself, a cell at a time: drag,
 double-click for the run between blanks, triple-click for the whole readout, Shift+click to extend.
 A press also focuses the readout, and Cmd or Ctrl+A in a focused one selects all of it.
+Placed boxes copy as one run with no line breaks, so where the page's selection holds nothing but
+readouts' characters, one `copy` listener per document writes them itself, a readout to a line and
+a row to a line. Copied characters are in the case the type draws (its spelling's `shown`) unless
+the readout's `copy` is `'value'`.
 Each sets a real range on the page's selection, which copying and `selectionchange` read.
 
 **Where characters land** is one function, `flow` (`src/readout/flow.ts`): a type's `spell`

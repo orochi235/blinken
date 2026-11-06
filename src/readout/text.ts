@@ -18,8 +18,43 @@ const STYLE = `
   opacity: 0; pointer-events: none; user-select: text; -webkit-user-select: text;
 }
 .blinken-text-readout:focus { outline: none; }
+
 `;
 const styled = new WeakSet<Document>();
+
+/** A layer as a copy sees it: a line per readout with something selected. */
+interface Copier {
+  /** Null leaves the copy to the browser, as a focused field does. */
+  lines(): string[] | null;
+}
+const copiers = new WeakMap<Document, Set<Copier>>();
+
+/**
+ * Adds a layer to what a copy on `doc` writes, giving what takes it off. Placed boxes copy as one
+ * run with no line breaks, so where the selection holds nothing but readouts' characters, one
+ * listener per document writes every layer's, a line each; one holding other text is left to the
+ * browser.
+ */
+function copying(doc: Document, me: Copier): () => void {
+  let all = copiers.get(doc);
+  if (!all) {
+    const mine = new Set<Copier>();
+    all = mine;
+    copiers.set(doc, mine);
+    const bare = (t: string) => t.replace(/\s+/g, '').toLowerCase();
+    doc.addEventListener('copy', (e) => {
+      const got = [...mine].map((c) => c.lines());
+      if (got.includes(null) || !e.clipboardData) return;
+      const text = got.flatMap((l) => l ?? []);
+      if (text.length === 0) return;
+      if (bare(doc.getSelection()?.toString() ?? '') !== bare(text.join(''))) return;
+      e.clipboardData.setData('text/plain', text.join('\n'));
+      e.preventDefault();
+    });
+  }
+  all.add(me);
+  return () => all.delete(me);
+}
 
 function style(doc: Document): void {
   if (styled.has(doc)) return;
@@ -50,6 +85,8 @@ export interface TextLayer {
     cells: readonly string[],
     typed?: {
       value: string;
+      /** The value as it copies, a character for each of the value's. */
+      copied: string;
       places: readonly number[];
       carets: readonly (number | null)[];
     },
@@ -100,6 +137,8 @@ export function createTextLayer(
     input: HTMLInputElement | HTMLTextAreaElement | null;
     /** Each character's cell, or -1 where it shows nowhere. */
     places: readonly number[];
+    /** An editable one's value as it copies. */
+    copied: string;
     /** For each caret place, the cell a caret there stands at. */
     carets: readonly (number | null)[];
   } | null)[] = [];
@@ -132,9 +171,11 @@ export function createTextLayer(
       sel && !sel.isCollapsed
         ? Array.from({ length: sel.rangeCount }, (_, k) => sel.getRangeAt(k))
         : [];
+    // An editable one's field picks while it has the focus; otherwise the page's selection does,
+    // as for any readout, so a select-all takes it in too.
     const now = readouts.map((r) =>
       r
-        ? r.input
+        ? r.input && doc.activeElement === r.input
           ? typedPick(r, r.input)
           : { cells: r.texts.map((t) => ranges.some((range) => covers(range, t))), caret: null }
         : null,
@@ -340,6 +381,31 @@ export function createTextLayer(
   };
   doc.addEventListener('mousedown', outside, true);
 
+  /** What this layer copies: each readout's selected cells, row by row. */
+  const copied = (): string[] | null => {
+    const typing = readouts.find((r) => r?.input && doc.activeElement === r.input);
+    if (typing?.input) {
+      // A focused field copies its selection, in the case its readout copies in.
+      const s = typing.input.selectionStart ?? 0;
+      const e = typing.input.selectionEnd ?? s;
+      return e > s ? [typing.copied.slice(s, e)] : null;
+    }
+    const picks: (Picked | null)[] = shown ? JSON.parse(shown) : [];
+    const lines: string[] = [];
+    for (const [i, r] of readouts.entries()) {
+      const cells = picks[i]?.cells;
+      if (!r || !cells?.some(Boolean)) continue;
+      const rows: string[] = [];
+      for (const [k, on] of cells.entries()) {
+        const row = Math.floor(k / r.spot.perLine);
+        rows[row] = (rows[row] ?? '') + (on ? (r.texts[k]?.data ?? '') : '');
+      }
+      lines.push(rows.filter((row) => row !== '').join('\n'));
+    }
+    return lines;
+  };
+  const uncopy = copying(doc, { lines: copied });
+
   return {
     build(list) {
       // A rebuild replaces every box, so what was selected or typed at comes back with the value.
@@ -387,6 +453,7 @@ export function createTextLayer(
           input: null,
           places: [],
           carets: [],
+          copied: '',
         };
         if (one.edit) {
           const rows = spot.cells.length > spot.perLine;
@@ -428,24 +495,23 @@ export function createTextLayer(
     write(i, chars, typed) {
       const r = readouts[i];
       if (!r) return;
-      if (r.input) {
-        if (typed) {
-          r.places = typed.places;
-          r.carets = typed.carets;
-          if (r.input.value !== typed.value) r.input.value = typed.value;
-        }
-      } else
-        for (const [k, t] of r.texts.entries()) {
-          const next = chars[k] ?? '';
-          if (t.data !== next) t.data = next;
-        }
+      if (r.input && typed) {
+        r.places = typed.places;
+        r.copied = typed.copied;
+        r.carets = typed.carets;
+        if (r.input.value !== typed.value) r.input.value = typed.value;
+      }
+      for (const [k, t] of r.texts.entries()) {
+        const next = chars[k] ?? '';
+        if (t.data !== next) t.data = next;
+      }
       if (restore?.i === i) {
         const back = restore;
         restore = null;
         if ('start' in back && r.input) {
           r.input.focus();
           r.input.setSelectionRange(back.start, back.end, back.dir);
-        } else if ('a' in back && !r.input) choose(r, back.a, back.b);
+        } else if ('a' in back) choose(r, back.a, back.b);
       }
       report();
     },
@@ -507,6 +573,7 @@ export function createTextLayer(
     destroy() {
       doc.removeEventListener('selectionchange', report);
       doc.removeEventListener('mousedown', outside, true);
+      uncopy();
       layer.remove();
     },
   };

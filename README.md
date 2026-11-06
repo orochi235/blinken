@@ -200,7 +200,9 @@ whole readout. `selection` picks how a selected cell shows: `glow`, `recolor`, `
 (a dot-grid type's default) or the browser's `block`. `edit: true` makes one typed into: click it
 and type, a blinking bar under the cell the caret stands at; `onInput` hears each change.
 `lines: n` stacks rows of cells for a type that spells, word-wrapping by default (`wrap: false`
-breaks rows only at `\n`); an editable one takes Enter for a new row. The lab's
+breaks rows only at `\n`); an editable one takes Enter for a new row. Copied text takes the case
+the display draws (`copy: 'shown'`, so an uppercase-only type copies capitals), or the value's own
+with `copy: 'value'`; readouts copy a line each. The lab's
 `inputs` page tries it at four sizes. `select: false` turns this off, which an
 overlay readout over something clickable wants, since its cells take the pointer.
 

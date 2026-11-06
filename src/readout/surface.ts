@@ -94,8 +94,10 @@ interface Shown {
   readonly places: readonly number[];
   /** For each caret place in its value, the cell a caret there stands at. */
   readonly carets: readonly (number | null)[];
-  /** Whether some of its value was cut off for want of room. */
-  readonly cut: boolean;
+  /** Its value as it copies, a character for each of the value's. */
+  readonly copied: string;
+  /** How many of its value's characters were cut off for want of room. */
+  readonly cut: number;
 }
 
 /** How `e`'s value lays out on its cells, a ½ digit's first, row by row. */
@@ -121,8 +123,18 @@ function shownOf(e: Entry): Shown {
       const k = first + c;
       if (cells[k]) cells[k] = { ...cells[k], lit };
     }
-    return { cells, places: [], carets: [], cut: false };
+    return { cells, places: [], carets: [], cut: 0, copied: String(e.value) };
   }
+  // As shown, each character the one its glyph draws, where that keeps it one character.
+  const asShown = (tok: string) =>
+    e.opts.copy === 'value'
+      ? tok
+      : [...tok]
+          .map((ch) => {
+            const to = spell.shown?.(ch) ?? ch;
+            return [...to].length === 1 ? to : ch;
+          })
+          .join('');
   const toks = spell.tokens(rest);
   const f = flow(toks, e.opts.cells, lines, align, e.opts.wrap ?? true);
   /** A flowed cell, row by row `cells` wide, as a cell of the spot, past any ½ digit. */
@@ -132,7 +144,7 @@ function shownOf(e: Entry): Shown {
   const carets: (number | null)[] = [];
   for (const [t, tok] of toks.entries()) {
     const k = cellOf(f.at[t] ?? -1);
-    if (k >= 0 && cells[k]) cells[k] = { ...cells[k], lit: spell.lights(tok), text: tok };
+    if (k >= 0 && cells[k]) cells[k] = { ...cells[k], lit: spell.lights(tok), text: asShown(tok) };
     const before = f.carets[t];
     for (let c = 0; c < [...tok].length; c++) {
       places.push(k);
@@ -143,7 +155,7 @@ function shownOf(e: Entry): Shown {
   }
   const end = f.carets[toks.length];
   carets.push(end === null || end === undefined ? null : cellOf(end));
-  return { cells, places, carets, cut: f.cut };
+  return { cells, places, carets, cut: f.cut, copied: asShown(String(e.value)) };
 }
 
 /**
@@ -226,10 +238,11 @@ export function createSurface(
           const e = entries[i];
           if (!e) return false;
           const was = e.value;
+          const before = shownOf(e).cut;
           e.value = value;
-          // What runs past the cells is refused, but a one-line number keeps its last cells.
+          // An edit cutting off more than was is refused, but a one-line number keeps its last cells.
           const align = e.opts.align ?? TYPES[e.opts.type].align;
-          if (shownOf(e).cut && (linesOf(laidOf(e)) > 1 || align === 'left')) {
+          if (shownOf(e).cut > before && (linesOf(laidOf(e)) > 1 || align === 'left')) {
             e.value = was;
             return false;
           }
@@ -295,7 +308,12 @@ export function createSurface(
           i,
           shown.cells.map((c) => c.text),
           editable(e)
-            ? { value: String(e.value), places: shown.places, carets: shown.carets }
+            ? {
+                value: String(e.value),
+                copied: shown.copied,
+                places: shown.places,
+                carets: shown.carets,
+              }
             : undefined,
         );
     }

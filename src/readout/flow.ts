@@ -6,8 +6,8 @@ export interface Flowed {
   readonly at: readonly number[];
   /** For each caret place, 0 to the token count, the cell a caret there stands at, or null. */
   readonly carets: readonly (number | null)[];
-  /** Whether a token that should show was cut off for want of room. */
-  readonly cut: boolean;
+  /** How many tokens that should show were cut off for want of room. */
+  readonly cut: number;
 }
 
 /**
@@ -85,7 +85,7 @@ export function flow(
   const at = tokens.map((_, t) =>
     gone[t] ? -1 : cellOf(lineOf[t] as number, shiftOf(lineOf[t] as number) + (posOf[t] as number)),
   );
-  const cut = at.some((k, t) => k < 0 && !gone[t]);
+  const cut = at.filter((k, t) => k < 0 && !gone[t]).length;
   const clamp = (l: number, c: number) =>
     l < lines && cells > 0 ? l * cells + Math.min(cells - 1, Math.max(0, c)) : null;
   const carets = Array.from({ length: n + 1 }, (_, p) => {
