@@ -41,7 +41,8 @@ const sign = createMarquee(canvas, {
     { effect: 'blink', text: 'TONIGHT ONLY', hex: 0xff9a2e },
     { effect: 'scroll', text: 'SEE YOU THERE', hex: 0x6dff5a },
   ],
-  layers: { chase: true, sparkle: true },
+  border: { bulbs: 'chase' },
+  layers: { sparkle: true },
 });
 
 sign.setLayer('rainbow', true);
@@ -212,7 +213,8 @@ overlay readout over something clickable wants, since its cells take the pointer
 
 A piece is one thing happening to the dots. A move places the text: `stand` holds it, `scroll-across`
 carries it over the sign, `tumble` turns each letter end over end. A modulator changes how the dots
-look while it plays: `flash`, `pulse`, `hue-cycle`, `sparkle`, `chase`, and filters that dress the
+look while it plays: `flash`, `pulse`, `hue-cycle`, `sparkle`, `chase` (which steps the border's
+bulbs, and which `border: { bulbs: 'chase' }` plays), and filters that dress the
 whole sign — `scanline`, `fire`, `glitch`, `neon`, `shimmer`, `aurora`, and `gradient`. Each declares its tuning as
 `params`, plain data giving each number's label, range and default, for a control panel to be
 built from. `flash` blinks a number of times within a window of each pass, `from` and `to` as
@@ -249,8 +251,8 @@ The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Mat
 `tile`, `type` (typed on behind a cursor and backspaced off), `swarm` (dots flying together and
 apart), `bounce` (letters bouncing in), `wave` (letters riding a wave), `melt` (dripping off the
 bottom), and `shear` (halves sliding in from opposite edges), in `EFFECTS`. The
-built-in layers are `sparkle`, stray dots lighting for a moment; `chase`, the border's bulbs
-stepping around; `rainbow`, a hue running across the sign that recolors whatever is lit; and
+built-in layers are `sparkle`, stray dots lighting for a moment; `rainbow`, a hue running across
+the sign that recolors whatever is lit; and
 `invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when spread by
 column; `scanline`, a bright band rolling down the rows like a CRT's; `fire`, a rising flicker from
 deep red at the bottom to yellow at the top; `glitch`, rare bursts in which bands of rows jump color,
