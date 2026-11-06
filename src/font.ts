@@ -61,6 +61,11 @@ export interface Bitmap {
    */
   readonly above: number;
   readonly below: number;
+  /**
+   * How many rows apart its lines stand: its letters' body, the rows its style adds, and a blank, so
+   * neighbors' outlines and shadows never meet. A face's own ghost rows still reach into the gap.
+   */
+  readonly pitch: number;
   readonly rows: number;
   /**
    * Each letter's columns, in order: its glyph and a blank beside it, and the first row of its
@@ -95,7 +100,7 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
   const lineRows = face.rows + top + (style.outline ? 1 : 0) + (style.shadow ? 1 : 0);
   const above = (face.above ?? 0) + top;
   const below = (face.below ?? 0) + lineRows - face.rows - top;
-  const pitch = lineRows - above - below + 1;
+  const pitch = face.rows - (face.above ?? 0) - (face.below ?? 0) + (lineRows - face.rows) + 1;
   const lines = text
     .toUpperCase()
     .split('\n')
@@ -139,6 +144,7 @@ export function rasterize(text: string, look: Look = {}): Bitmap {
     rows,
     above,
     below,
+    pitch,
     letters,
     face,
     style,

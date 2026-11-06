@@ -51,16 +51,16 @@ export interface Placed {
 }
 
 /**
- * The message standing centered on the board, its lines a dot apart by its letters' body height
- * and as many as fit, each showing the same text. Ghost rows reach into the gap between lines or
+ * The message standing centered on the board, its lines its text's `pitch` apart and as many as
+ * fit, each showing the same text. Ghost rows reach into the gap between lines or
  * the board's margin; what runs past the board's edge is cut, and named in `cut`. A board shorter
  * than one line shows the top of it.
  */
 export function place(board: Board, text: Bitmap): Placed {
   const body = text.rows - text.above - text.below;
-  const pitch = body + 1;
-  const lines = Math.max(1, Math.floor((board.rows + 1) / pitch));
-  const top = Math.max(0, Math.floor((board.rows - (lines * pitch - 1)) / 2));
+  const { pitch } = text;
+  const lines = Math.max(1, Math.floor((board.rows - body) / pitch) + 1);
+  const top = Math.max(0, Math.floor((board.rows - ((lines - 1) * pitch + body)) / 2));
   const rowAt = (y: number) => {
     const n = Math.min(lines - 1, Math.max(0, Math.floor((y - top) / pitch)));
     for (const k of [n, n + 1, n - 1]) {

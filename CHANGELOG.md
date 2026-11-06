@@ -4,6 +4,14 @@ This package follows [semver](https://semver.org): before 1.0.0 a breaking chang
 version, and anything else the patch. Each release lists its changes as **Breaking**, **Added** and
 **Fixed**, and the release workflow refuses a tag with no section here.
 
+## Unreleased
+
+**Fixed**
+
+- Lines of outlined or shadowed text no longer overlap: lines stand the rows a style adds further
+  apart, both in a `\n`-separated message and in one repeated down a tall board. `Bitmap.pitch` gives
+  the spacing.
+
 ## 0.2.0
 
 **Breaking**

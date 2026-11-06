@@ -249,6 +249,24 @@ describe('a face taller than the sign', () => {
     expect(text.rows).toBe(8);
   });
 
+  it('spaces outlined and shadowed lines so neighbors never meet', () => {
+    for (const style of [{ outline: true }, { shadow: true }, { outline: true, shadow: true }]) {
+      const one = rasterize('I', { style });
+      const two = rasterize('I\nI', { style });
+      // The second line starts a blank row below everything the first draws.
+      expect(two.pitch).toBe(one.rows + 1);
+      const lit = (y: number) =>
+        Array.from({ length: two.cols }, (_, x) => two.lit(x, y)).some(Boolean);
+      expect(lit(one.rows)).toBe(false);
+      const placed = placeText(board(10, 40), 'I', { style });
+      expect(placed.lines).toBeGreaterThan(1);
+      const shows = board(10, 40)
+        .dots.filter((d) => d.x === 0)
+        .map((d) => placed.rowOf(d));
+      expect(shows.join(',')).toMatch(new RegExp(`,${one.rows - 1},-1,0,`));
+    }
+  });
+
   it('fits a board whose lines are as tall as it', () => {
     expect(
       stageProgram(board(80, 7), [{ text: 'A', hex: 0, effect: 'hold', face: 'wide' }]),
