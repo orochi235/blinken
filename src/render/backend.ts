@@ -16,6 +16,7 @@ export function pickBackend(
 
 const WEBGL_SLOTS = 12;
 let claimed = 0;
+const waiting = new Set<() => void>();
 
 /** Claims one of the page's WebGL contexts. Null when all are taken; call the result to give it back. */
 export function webglSlot(): (() => void) | null {
@@ -26,5 +27,18 @@ export function webglSlot(): (() => void) | null {
     if (!held) return;
     held = false;
     claimed--;
+    for (const fn of [...waiting]) {
+      if (claimed >= WEBGL_SLOTS) break;
+      waiting.delete(fn);
+      fn();
+    }
+  };
+}
+
+/** Calls `fn` once a WebGL slot is given back, earliest asker first. Gives what calls it off. */
+export function whenSlotFree(fn: () => void): () => void {
+  waiting.add(fn);
+  return () => {
+    waiting.delete(fn);
   };
 }

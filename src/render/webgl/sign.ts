@@ -1,9 +1,10 @@
 import type { Board, Led } from '../../board.js';
 import { rgb } from '../../color.js';
+import type { Defect } from '../../defects.js';
 import type { Lamps, Shape, Sign } from '../../draw.js';
 import type { Grid } from '../../grid.js';
 import type { Fade, Ghost } from '../../optics.js';
-import { webglSlot } from '../backend.js';
+import { webglSlot, whenSlotFree } from '../backend.js';
 import { BLOOM } from '../bloom-params.js';
 import { gaussian } from '../blur.js';
 import { backingRgba, type Housing, housingPaint, socketFloats } from '../housing.js';
@@ -51,7 +52,7 @@ export function createWebGlSignOf(
   const sockets = socketFloats(paint);
   const over = paint.lights === 'over';
   const release = webglSlot();
-  if (!release) return shed.has(canvas) ? dark() : null;
+  if (!release) return shed.has(canvas) ? waiting(canvas, lights, housing) : null;
   const made = canvas.getContext('webgl2', {
     alpha: true,
     premultipliedAlpha: true,
@@ -282,6 +283,69 @@ export function createWebGlSignOf(
       pending?.();
       shedContext(canvas, gl);
       release();
+    },
+  };
+}
+
+/**
+ * A sign on a canvas WebGL already owns, made while every slot was taken: dark until a slot frees,
+ * then the sign made there then, given everything this one was told meanwhile.
+ */
+function waiting(
+  canvas: HTMLCanvasElement,
+  lights: SignLights,
+  housing: Housing,
+): Sign & { readonly backend: 'webgl' } {
+  let inner: Sign | null = null;
+  let lamps: Lamps | undefined;
+  let fade: Fade | undefined;
+  let ghost: Ghost | undefined;
+  let shape: Shape | undefined;
+  let defects: readonly Defect[] | undefined;
+  let cancel = () => {};
+  const wake = () => {
+    inner = createWebGlSignOf(canvas, lights, housing);
+    if (!inner) {
+      cancel = whenSlotFree(wake);
+      return;
+    }
+    if (lamps) inner.setLamps(lamps);
+    if (fade) inner.setFade(fade);
+    if (ghost) inner.setGhost(ghost);
+    if (shape) inner.reshape(shape);
+    if (defects) inner.setDefects(defects);
+  };
+  cancel = whenSlotFree(wake);
+  return {
+    backend: 'webgl',
+    render(cols, fallback, dt) {
+      inner?.render(cols, fallback, dt);
+    },
+    setDefects(next) {
+      defects = next;
+      inner?.setDefects(next);
+    },
+    setFade(next) {
+      fade = next;
+      inner?.setFade(next);
+    },
+    setGhost(next) {
+      ghost = next;
+      inner?.setGhost(next);
+    },
+    setLamps(next) {
+      lamps = next;
+      inner?.setLamps(next);
+    },
+    reshape(next) {
+      shape = next;
+      defects = undefined;
+      inner?.reshape(next);
+    },
+    destroy() {
+      cancel();
+      inner?.destroy();
+      inner = null;
     },
   };
 }

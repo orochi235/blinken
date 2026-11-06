@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { pickBackend, webglSlot } from '@/render/backend.js';
+import { pickBackend, webglSlot, whenSlotFree } from '@/render/backend.js';
 import { gpu } from '@/render/gpu.js';
 
 const handle = { device: {}, format: 'bgra8unorm', lost: new Promise<void>(() => {}) } as never;
@@ -49,6 +49,26 @@ describe('webglSlot', () => {
     expect(webglSlot()).toBeNull();
     a?.();
     for (const r of held) r?.();
+  });
+
+  it('tells a waiter when a slot frees, and the next waiter only once that one is taken', () => {
+    const held = Array.from({ length: 12 }, () => webglSlot());
+    const got: (() => void)[] = [];
+    const first = vi.fn(() => {
+      const s = webglSlot();
+      if (s) got.push(s);
+    });
+    const second = vi.fn();
+    whenSlotFree(first);
+    const cancel = whenSlotFree(second);
+    held[0]?.();
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(got).toHaveLength(1);
+    expect(second).not.toHaveBeenCalled();
+    cancel();
+    held[1]?.();
+    expect(second).not.toHaveBeenCalled();
+    for (const r of [...held, ...got]) r?.();
   });
 });
 

@@ -22,7 +22,6 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - The gather shader hardcodes 7 channels and the `USES` table repeats the WGSL bindings, so a new channel or binding has to be added in two places that nothing checks agree (2026-11-04).
 - WebGPU allocates every frame (the `cpuChannels` Set, the `planOf` array, `only()`, `paintBulbs`'s spread), which is garbage the 2D and WebGL paths don't make (2026-11-04).
 - Every marquee statically imports the GPU modules, so a page that never draws with WebGPU still downloads them (2026-11-04).
-- A WebGL sign made on a shed canvas while no context slot is free is `dark()` (`src/render/webgl/sign.ts`) and never retries, so it stays blank after another sign frees a slot (2026-11-04).
 - No test covers `repaint` or `setHighlight` going through `prepare`, so a change there that drops a frame would pass (2026-11-04).
 - Where WebGPU is absent the lab shows a disabled "webgpu" option as selected, and its WebGL and 2D choices wait on `gpu()` at startup (2026-11-04).
 
