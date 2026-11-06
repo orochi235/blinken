@@ -89,11 +89,15 @@ if (fileAt(`${base}pagefind/pagefind.js`) === null) {
   failed++;
 }
 for (const [i, path] of pages.entries()) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
+  const page = await browser.newPage({
+    viewport: { width: 1280, height: 900 },
+    deviceScaleFactor: 2,
+  });
   const errors = [];
   // WebGL reports a bad call as a warning, not an error; the driver's performance notes aren't faults.
   page.on('console', (m) => {
-    const bad = ['error', 'warning'].includes(m.type()) && !/GL Driver Message.*Performance/.test(m.text());
+    const bad =
+      ['error', 'warning'].includes(m.type()) && !/GL Driver Message.*Performance/.test(m.text());
     if (bad) errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(e.message));
@@ -101,7 +105,7 @@ for (const [i, path] of pages.entries()) {
   await page.waitForTimeout(200);
   // A live file runs only while on screen, so each is brought into view to run.
   const lives = await page.locator('.live').count();
-  const cards = await page.locator('.card-sign').count();
+  const cards = await page.locator('.gallery .thumb-box').count();
   for (let k = 0; k < lives; k++) {
     await page.locator('.live').nth(k).scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);

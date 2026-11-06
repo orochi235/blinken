@@ -41,7 +41,7 @@ const code = (s: string) => s.replace(/`([^`]+)`/g, '<code>$1</code>');
       <ul class="gallery">
         {CARDS[g.kind].map((c) => (
           <li class="card" id={`${g.kind}-${c.name}`}>
-            <div class="card-sign" data-kind={g.kind} data-name={c.name}><canvas aria-hidden="true"></canvas></div>
+            <div class="thumb-box" data-kind={g.kind} data-name={c.name}><canvas aria-hidden="true"></canvas></div>
             <h3><code>{c.name}</code></h3>
             <p>{c.about}</p>
             {Object.keys(c.params).length > 0 && (
@@ -68,7 +68,7 @@ const code = (s: string) => s.replace(/`([^`]+)`/g, '<code>$1</code>');
   import { createThumbnail } from '@msb235/blinken';
   import { type CardKind, STILL, specOf } from '../gallery';
 
-  for (const box of document.querySelectorAll<HTMLElement>('.card-sign')) {
+  for (const box of document.querySelectorAll<HTMLElement>('.thumb-box')) {
     const canvas = box.querySelector('canvas');
     const kind = box.dataset.kind as CardKind;
     const name = box.dataset.name ?? '';

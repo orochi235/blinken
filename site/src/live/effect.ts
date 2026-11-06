@@ -14,9 +14,9 @@ const blink: EffectSpec = {
 };
 
 export default function run(root: HTMLElement) {
-  const canvas = stage(root, { cols: 48, rows: 7 });
+  const canvas = stage(root, { cols: 72, rows: 7 });
   const sign = createMarquee(canvas, {
-    cols: 48,
+    cols: 72,
     rows: 7,
     effects: { blink },
     program: [

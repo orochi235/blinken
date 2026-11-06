@@ -8,6 +8,7 @@ export default function run(root: HTMLElement) {
   root.append(strip);
   const thumbs: Thumbnail[] = ['flip', 'roll', 'tile', 'swarm'].map((effect) => {
     const box = document.createElement('div');
+    box.className = 'thumb-box';
     const canvas = document.createElement('canvas');
     box.append(canvas);
     strip.append(box);

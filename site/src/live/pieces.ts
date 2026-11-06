@@ -3,9 +3,9 @@ import { createMarquee } from '@msb235/blinken';
 import { held, stage } from './kit';
 
 export default function run(root: HTMLElement) {
-  const canvas = stage(root, { cols: 48, rows: 7 });
+  const canvas = stage(root, { cols: 64, rows: 7 });
   const sign = createMarquee(canvas, {
-    cols: 48,
+    cols: 64,
     rows: 7,
     program: [
       {

@@ -1,5 +1,4 @@
-/** The concepts in reading order. Each is a page at `/<slug>/` and files the exports it owns. */
-export const words = [
+const marquee = [
   { slug: 'sign', title: 'Sign' },
   { slug: 'program', title: 'Program' },
   { slug: 'effect', title: 'Effects' },
@@ -7,12 +6,22 @@ export const words = [
   { slug: 'layers', title: 'Layers' },
   { slug: 'text', title: 'Faces and styles' },
   { slug: 'grids', title: 'Grids' },
-  { slug: 'hardware', title: 'Broken lights' },
-  { slug: 'readouts', title: 'Readouts' },
+  { slug: 'defects', title: 'Defects' },
   { slug: 'thumbnails', title: 'Thumbnails' },
   { slug: 'mix', title: 'On your own mix' },
   { slug: 'player', title: 'Player' },
 ] as const;
+
+const readouts = [{ slug: 'readouts', title: 'Readouts' }] as const;
+
+/** The concepts in reading order, under the part of the package each is about. */
+export const sections = [
+  { title: 'Marquee', pages: marquee },
+  { title: 'Readouts', pages: readouts },
+] as const;
+
+/** Each concept is a page at `/<slug>/` and files the exports it owns. */
+export const words = [...marquee, ...readouts] as const;
 
 export type Word = (typeof words)[number]['slug'];
 

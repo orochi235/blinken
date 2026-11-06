@@ -21,14 +21,6 @@
   color: var(--ink-soft);
 }
 
-.card-sign {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 36 / 11;
-  background: #0e0b0a;
-  border-radius: 4px;
-}
-
 .card details {
   margin-top: 0.4rem;
   font-size: 0.85rem;

@@ -13,14 +13,14 @@ import { mix } from '@msb235/blits';
 import { onHold, stage } from './kit';
 
 export default function run(root: HTMLElement) {
-  const b = board(40, 7);
+  const b = board(64, 7);
   const m = mix<Subject, Pose>(KIT, { name: 'my sign' });
   play(m, b, [{ effect: 'roll', text: 'MY OWN MIX', hex: 0xff9a2e }]);
 
   const leds = [...b.dots, ...b.bulbs];
   const cols = signColumns(leds.length);
   const cells = signColumns(b.cells.length);
-  const sign = createSign(stage(root, { cols: 40, rows: 7 }), b, leds);
+  const sign = createSign(stage(root, { cols: 64, rows: 7 }), b, leds);
 
   let last = performance.now();
   let frame = 0;

@@ -1,19 +1,19 @@
 ---
 layout: ../layouts/Page.astro
-title: Broken lights
+title: Defects
 description: Dead, dim, flickering and stuck lights, filament fade, and ghosting between neighbors.
 ---
 import Live from '../components/Live';
 import Listing from '../components/Listing.astro';
 import ApiEntries from '../components/ApiEntries.astro';
 
-# Broken lights
+# Defects
 
 A sign can be aged and broken. Its broken lights show their fault whatever the program asks of them, and two more settings mimic how the hardware lights.
 
-<Live client:only="react" of="hardware.ts" />
+<Live client:only="react" of="defects.ts" />
 
-<Listing of="live/hardware.ts" />
+<Listing of="live/defects.ts" />
 
 | Fault | What the light does |
 |---|---|
@@ -38,4 +38,4 @@ sign.setDefects(scatter(sign.board, { dead: 0.03, dim: 0.05, flicker: 0.01 }, 7)
 
 Faults, fade and ghosting belong to the drawing, not the mix, so a mix you read yourself still sees every light as sound.
 
-<ApiEntries word="hardware" />
+<ApiEntries word="defects" />

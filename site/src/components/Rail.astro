@@ -1,7 +1,7 @@
 ---
 import pkg from '../../../package.json';
-import { FRAME, still } from '../live/logo';
-import { extra, start, under, words } from '../nav';
+import { FRAME, INSET, still } from '../live/logo';
+import { extra, sections, start, under } from '../nav';
 import Search from './Search.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -9,6 +9,7 @@ const here = Astro.url.pathname;
 const link = (slug: string) => `${base}${slug ? `${slug}/` : ''}`;
 const current = (slug: string) => (here === link(slug) ? 'page' : undefined);
 const aspect = `${FRAME.across} / ${FRAME.down}`;
+const inset = INSET;
 ---
 <nav class="rail" aria-label="Pages">
   <a class="mark" href={link('')} aria-label="blinken">
@@ -17,8 +18,6 @@ const aspect = `${FRAME.across} / ${FRAME.down}`;
   </a>
   <p class="meta">
     <a href={link('changelog')}>v{pkg.version}</a>
-    <a href="https://github.com/orochi235/blinken">GitHub</a>
-    <a href={`https://www.npmjs.com/package/${pkg.name}`}>npm</a>
   </p>
   <Search />
   <ul class="group">
@@ -35,16 +34,25 @@ const aspect = `${FRAME.across} / ${FRAME.down}`;
       </li>
     ))}
   </ul>
-  <ol class="group">
-    {words.map((w) => (
-      <li><a href={link(w.slug)} aria-current={current(w.slug)}>{w.title}</a></li>
-    ))}
-  </ol>
+  {sections.map((s) => (
+    <div class="group">
+      {s.pages.length > 1 && <h2 class="section">{s.title}</h2>}
+      <ol>
+        {s.pages.map((w) => (
+          <li><a href={link(w.slug)} aria-current={current(w.slug)}>{w.title}</a></li>
+        ))}
+      </ol>
+    </div>
+  ))}
   <ul class="group">
     {extra.map((w) => (
       <li><a href={w.href ? `${base}${w.href}` : link(w.slug)} aria-current={current(w.slug)}>{w.title}</a></li>
     ))}
   </ul>
+  <p class="meta out">
+    <a href="https://github.com/orochi235/blinken">GitHub</a>
+    <a href={`https://www.npmjs.com/package/${pkg.name}`}>npm</a>
+  </p>
 </nav>
 
 <script>
@@ -63,7 +71,7 @@ const aspect = `${FRAME.across} / ${FRAME.down}`;
   }
 </script>
 
-<style define:vars={{ aspect }}>
+<style define:vars={{ aspect, inset }}>
   .rail {
     padding: 2rem 1.25rem;
     font: 500 0.95rem / 1.4 var(--label);
@@ -73,6 +81,8 @@ const aspect = `${FRAME.across} / ${FRAME.down}`;
     align-self: start;
     height: 100vh;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     /* The dark-mode mark's blank margins hang past the rail. */
     overflow-x: hidden;
   }
@@ -113,12 +123,14 @@ const aspect = `${FRAME.across} / ${FRAME.down}`;
   }
 
   /* The logo is a sign of its own, shaped by `--aspect`, with the still standing in until it lights. */
+  /* Widened and pulled left by the word's inset, so the word lines up with the rail's text. */
   .mark {
     display: grid;
     place-items: center;
-    width: 100%;
+    flex-shrink: 0;
+    width: calc(100% / (1 - var(--inset)));
     aspect-ratio: var(--aspect);
-    margin: 0 0 0.9rem;
+    margin: 0 0 0.9rem calc(-100% * var(--inset) / (1 - var(--inset)));
   }
 
   .still,
@@ -149,6 +161,20 @@ const aspect = `${FRAME.across} / ${FRAME.down}`;
     font-variant-numeric: tabular-nums;
   }
 
+  /* Out of the site, at the rail's foot. */
+  .meta.out {
+    margin: auto 0 0;
+    padding-top: 1.5rem;
+  }
+
+  .section {
+    margin: 0 0 0.3rem;
+    font: 700 0.72rem var(--label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
   .meta a {
     color: var(--ink-soft);
     text-decoration: none;
@@ -162,10 +188,12 @@ const aspect = `${FRAME.across} / ${FRAME.down}`;
     .rail {
       position: static;
       height: auto;
+      display: block;
       border-bottom: 1px solid var(--rule);
       padding: 1rem;
     }
-    .group {
+    .group > ol,
+    ul.group {
       display: flex;
       flex-wrap: wrap;
       gap: 0 1rem;
@@ -179,6 +207,7 @@ const aspect = `${FRAME.across} / ${FRAME.down}`;
     }
     .mark {
       width: 12rem;
+      margin-left: calc(-12rem * var(--inset));
     }
   }
 </style>
