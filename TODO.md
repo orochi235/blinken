@@ -20,7 +20,6 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - The shaders compare f32 values at thresholds in `tile`, `neon` and `glitch`, so a dot within one f32 step of a boundary can disagree with the CPU for a frame; sampled times showed none. The WebGPU flicker step loses whole steps after hours of clock (2026-11-04).
 - The WebGL blur's taps are `max(1, 3σ/16)` texels apart, so at a large pitch times pixel ratio (around 120 device pixels) it may band; not measured (2026-11-04).
 - Every marquee statically imports the GPU modules, so a page that never draws with WebGPU still downloads them: `src/render/webgpu` is 25.5 KB of the 544 KB minified bundle (measured with esbuild's metafile, 2026-11-05); blits's GPU engine, another 59 KB, stays either way, since the built-in effects import `shaderPatch` and a mix takes its engine when made. Splitting it off means `gpu()` loading the module, so a handle built by hand needs a loader call too, or a WebGPU sign that draws nothing until its module lands (2026-11-04).
-- Where WebGPU is absent the lab shows a disabled "webgpu" option as selected, and its WebGL and 2D choices wait on `gpu()` at startup (2026-11-04).
 
 ## Known gaps
 

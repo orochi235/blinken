@@ -1,5 +1,5 @@
 import type { Pass, Slot, Stretch } from '@/index.js';
-import { CHOICES, type Choice } from '../../backend.js';
+import { CHOICES, type Choice, choiceOn } from '../../backend.js';
 import { useGpu } from '../../gpu.js';
 import { type Focus, Playback } from '../Playback.js';
 import { compose, pickedOf, useChoice, useCompose, useDrawing } from '../store.js';
@@ -42,13 +42,14 @@ const NO_WEBGPU = 'This browser has no WebGPU.';
 function BackendSelect() {
   const choice = useChoice();
   const drawing = useDrawing();
-  const webgpu = Boolean(useGpu());
+  const handle = useGpu();
+  const webgpu = Boolean(handle);
   return (
     <div className="compose-playback-backend">
       <select
         aria-label="backend"
         title="What draws the sign. Switching builds it again on a fresh canvas."
-        value={choice}
+        value={choiceOn(choice, handle)}
         onChange={(e) => compose.setBackend(e.target.value as Choice)}
       >
         {CHOICES.map((c) => {

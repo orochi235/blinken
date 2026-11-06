@@ -7,7 +7,7 @@ import {
   type Marquee,
   type Scene,
 } from '@/index.js';
-import { type Choice, drawWith } from '../backend.js';
+import { type Choice, drawWith, usesGpu } from '../backend.js';
 import { useGpu } from '../gpu.js';
 import { borderOf, equip, type Hardware } from './sign-hardware.js';
 import './Sign.css';
@@ -32,7 +32,9 @@ export function Sign({
   onSign: (m: Marquee | null) => void;
   choice?: Choice;
 }) {
-  const handle = useGpu();
+  const page = useGpu();
+  // WebGL and 2D draw without the handle, so they neither wait for it nor rebuild once it comes.
+  const handle = usesGpu(choice) ? page : null;
   const canvas = useRef<HTMLCanvasElement>(null);
   const sign = useRef<Marquee | null>(null);
   const latest = useRef({ hardware, program, effects, onSign });

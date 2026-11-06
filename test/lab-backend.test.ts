@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Gpu } from '@/index.js';
-import { drawWith } from '../lab/backend.js';
+import { choiceOn, drawWith, usesGpu } from '../lab/backend.js';
 import { BACKEND, loadChoice, saveChoice } from '../lab/compose/storage.js';
 
 const handle = { device: {} } as unknown as Gpu;
@@ -22,6 +22,24 @@ describe('drawWith', () => {
   it('names WebGL and 2D without passing a handle on', () => {
     expect(drawWith('webgl', handle)).toEqual({ backend: 'webgl' });
     expect(drawWith('2d', null)).toEqual({ backend: '2d' });
+  });
+});
+
+describe('choiceOn', () => {
+  it('shows WebGPU as auto once the page is known to have none, and waits until then', () => {
+    expect(choiceOn('webgpu', null)).toBe('auto');
+    expect(choiceOn('webgpu', undefined)).toBe('webgpu');
+    expect(choiceOn('webgpu', handle)).toBe('webgpu');
+    expect(choiceOn('webgl', null)).toBe('webgl');
+  });
+
+  it('has only auto and WebGPU wait on the handle', () => {
+    expect(['auto', 'webgpu', 'webgl', '2d'].map((c) => usesGpu(c as never))).toEqual([
+      true,
+      true,
+      false,
+      false,
+    ]);
   });
 });
 

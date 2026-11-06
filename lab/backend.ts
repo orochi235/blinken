@@ -4,13 +4,19 @@ import type { Backend, Gpu } from '@/index.js';
 export type Choice = 'auto' | Backend;
 export const CHOICES: readonly Choice[] = ['auto', 'webgpu', 'webgl', '2d'];
 
-/** What a sign is given for `choice`. WebGPU without a handle reads as auto. */
+/** What `choice` comes to once the page's WebGPU request has settled: WebGPU without a handle is auto. */
+export const choiceOn = (choice: Choice, handle: Gpu | null | undefined): Choice =>
+  choice === 'webgpu' && handle === null ? 'auto' : choice;
+
+/** Whether a sign for `choice` uses the page's WebGPU handle, so must wait for its request. */
+export const usesGpu = (choice: Choice): boolean => choice === 'auto' || choice === 'webgpu';
+
+/** What a sign is given for `choice`. */
 export function drawWith(choice: Choice, handle: Gpu | null): { gpu?: Gpu; backend?: Backend } {
-  if (choice === 'auto' || choice === 'webgpu') {
-    if (!handle) return {};
-    return choice === 'auto' ? { gpu: handle } : { gpu: handle, backend: 'webgpu' };
-  }
-  return { backend: choice };
+  const on = choiceOn(choice, handle);
+  if (on === 'webgpu') return { gpu: handle as Gpu, backend: 'webgpu' };
+  if (on === 'auto') return handle ? { gpu: handle } : {};
+  return { backend: on };
 }
 
 /**
