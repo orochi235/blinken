@@ -13,10 +13,8 @@ import { layOut, PassClock, type PassScene } from './pass.js';
 import { cueProgram, effectOf, type StagedScene, stageProgram } from './program.js';
 import { attach, pullChannels, readChannels, register } from './render/attach.js';
 import { createOverlay } from './render/overlay.js';
-import { createTicker } from './ticker.js';
+import { awayGaps, createTicker } from './ticker.js';
 
-/** A gap between frames this long is a hidden tab coming back, and is left out of the show. */
-const AWAY_MS = 250;
 /** Frames a WebGPU sign keeps reading its channels back after `columns` was last read. */
 const READ_FRAMES = 60;
 
@@ -136,6 +134,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const border = cueBorder(m, b, opts.border || { bulbs: 'unlit' });
 
   let last = performance.now();
+  const away = awayGaps();
   let mixMs = 0;
   let drawMs = 0;
   let frames = 0;
@@ -144,7 +143,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const frame = (now: number) => {
     let gap = now - last;
     last = now;
-    if (gap > AWAY_MS) {
+    if (away(gap)) {
       m.rebase();
       gap = 0;
     }

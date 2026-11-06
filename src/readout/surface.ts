@@ -7,7 +7,7 @@ import { GRIDS } from '../grid.js';
 import { attach, pullChannels } from '../render/attach.js';
 import type { Placement } from '../render/placement.js';
 import type { SignLights } from '../render/sign-lights.js';
-import { createTicker } from '../ticker.js';
+import { awayGaps, createTicker } from '../ticker.js';
 import type { Readout, ReadoutDefect, ReadoutOptions, Surface, SurfaceOptions } from './api.js';
 import { type Layout, layOutReadouts } from './layout.js';
 import { type Box, type Canvas, type Placed, surfacePlacement } from './placement.js';
@@ -16,7 +16,6 @@ import { half as HALF } from './types/segments.js';
 import { valueVoice } from './voice.js';
 
 /** A gap between frames this long is a hidden tab coming back. */
-const AWAY_MS = 250;
 const NIXIE = 0xff6a1a;
 
 interface Entry extends Placed {
@@ -131,10 +130,11 @@ export function createSurface(
   };
 
   let last = performance.now();
+  const away = awayGaps();
   const frame = (now: number) => {
     let gap = now - last;
     last = now;
-    if (gap > AWAY_MS || gap < 0) {
+    if (away(gap)) {
       m.rebase();
       gap = 0;
     }

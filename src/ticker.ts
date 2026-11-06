@@ -48,3 +48,19 @@ export function createTicker(opts: { fps?: number } = {}): Ticker {
     },
   };
 }
+
+/** A gap at least this long, and far longer than the one before it, is the page coming back. */
+const AWAY_MS = 250;
+
+/**
+ * Tells a frame gap left out of a show, a hidden tab coming back or a backward clock, from an
+ * ordinary step. A long gap among short ones is away; long gaps in a row are a slow sign's pace.
+ */
+export function awayGaps(): (gap: number) => boolean {
+  let before = 0;
+  return (gap) => {
+    const away = gap < 0 || (gap > AWAY_MS && gap > before * 4);
+    before = gap;
+    return away;
+  };
+}
