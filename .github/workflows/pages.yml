@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "lab/**"
+      - "site/**"
+      - "CHANGELOG.md"
       - "src/**"
       - "blits.config.ts"
       - "package.json"
@@ -27,6 +29,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      BLINKEN_SITE_BASE: /blinken/
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -34,12 +38,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: npm ci --prefix site
+      - run: npx playwright install --with-deps chromium
       - run: npm run typecheck
+      - run: npm --prefix site run typecheck
       - uses: actions/configure-pages@v6
-      - run: npm run lab:build
+      # The docs site, with the lab's pages built into it at the URLs they had before.
+      - run: npm run site:smoke
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: dist-lab
+          path: site/dist
 
   deploy:
     needs: build

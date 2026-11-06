@@ -1,7 +1,7 @@
 # blinken
 
 An old-fashioned LED sign on a canvas: a grid of dots under a border of chasing bulbs, playing a
-program of messages. Every dot is lit by one [blits](https://github.com/orochi235/blits) mix, and
+program of messages. Documentation, with live signs: [michaelbaker.tech/blinken](https://michaelbaker.tech/blinken/). Every dot is lit by one [blits](https://github.com/orochi235/blits) mix, and
 every effect is a blits patch you can cue on a mix of your own. No three.js, no assets.
 
 ## On any page
@@ -368,6 +368,8 @@ npm run shots    # build the lab, screenshot each effect alone into shots/
 npm run check    # lint, typecheck, tests
 npm run compile  # build <blinken-player> into dist-player/
 npm run player:check  # play it on a bare page in headless Chromium
+npm run site     # the docs site, http://localhost:4886; site/README.md has the rest
+npm run site:smoke  # build the site with the lab in it, load every page headless
 ```
 
 With a blits checkout at `../blits`, the lab, tests and typecheck run on its source; `BLITS=npm`

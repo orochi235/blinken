@@ -13,8 +13,11 @@ export default function run(root: HTMLElement) {
         hex: 0xff4030,
         effect: {
           name: 'spin',
-          enter: { move: 'tumble' },
-          active: [{ move: 'stand' }, { mod: 'hue-cycle' }, { mod: 'pulse' }],
+          enter: { move: 'unfold' },
+          active: [
+            { move: 'tumble' },
+            { mod: 'hue-cycle', spread: { by: 'column' }, params: { phase: 0.015 } },
+          ],
           exit: { move: 'rain-out' },
           order: { by: 'letter', lag: 60 },
           hold: 3000,

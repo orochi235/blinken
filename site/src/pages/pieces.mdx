@@ -16,7 +16,7 @@ A piece is one thing happening to the dots. Effects are made of them, and there 
 | Move | Places the message: `stand` holds it, `scroll-across` carries it over the sign, `tumble` turns each letter end over end. | `{ move: 'tumble' }` |
 | Modulator | Changes how the lit dots look while it plays: `flash`, `pulse`, `hue-cycle`, `sparkle`, and filters like `fire`, `glitch` and `neon`. | `{ mod: 'pulse' }` |
 
-A move is written for one slot (`enter`, `active` or `exit`), and `MOVES` says which. Modulators go in any slot. Here a scene carries its own effect, made of a move for each slot and two modulators while it holds:
+A move is written for one slot (`enter`, `active` or `exit`), and `MOVES` says which. Modulators go in any slot. Here a scene carries its own effect: a move for each slot, and a hue cycle spread by column while it holds:
 
 <Live client:only="react" of="pieces.ts" />
 
