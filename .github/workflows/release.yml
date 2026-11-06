@@ -1,0 +1,70 @@
+name: Release
+
+# Publishes `@msb235/blinken` on a pushed `v*` tag, with no npm token anywhere: npm's trusted
+# publishing swaps the workflow's OIDC token for a short-lived credential, which is why
+# `id-token: write` is the one permission that matters here.
+#
+# npmjs.com holds the trust: `npm trust github @msb235/blinken --file release.yml --repo
+# orochi235/blinken --allow-publish` registered it (2026-11-05), and `npm trust list
+# @msb235/blinken` shows it.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      # Trusted publishing needs npm 11.5.1 or later, newer than some Node lines ship with.
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      # Separately rather than through `npm run check`, so a failure names which one broke.
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # A tag that disagrees with the manifest publishes a version nobody asked for.
+      - name: The tag has to be the version being published
+        if: github.ref_type == 'tag'
+        run: |
+          manifest="$(node -p 'require("./package.json").version')"
+          if [ "${GITHUB_REF_NAME#v}" != "$manifest" ]; then
+            echo "tag says ${GITHUB_REF_NAME#v}, package.json says $manifest" >&2
+            exit 1
+          fi
+
+      - name: The changelog has a section for this version
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          if ! grep -qx "## $version" CHANGELOG.md; then
+            echo "CHANGELOG.md has no '## $version' section" >&2
+            exit 1
+          fi
+
+      # prepack builds dist and the player against the published blits, as a hand publish does.
+      - run: npm publish
