@@ -9,10 +9,11 @@ import { swapMarked } from '../render/highlight.js';
 import type { SignLights } from '../render/sign-lights.js';
 import { awayGaps, createTicker } from '../ticker.js';
 import type { Readout, ReadoutDefect, ReadoutOptions, Surface, SurfaceOptions } from './api.js';
-import { type Layout, layOutReadouts } from './layout.js';
+import { flow } from './flow.js';
+import { dotOf, type Laid, type Layout, layOutReadouts, linesOf } from './layout.js';
 import { type Box, type Canvas, type Placed, surfacePlacement } from './placement.js';
 import { createTextLayer, type Picked } from './text.js';
-import type { Selection } from './type.js';
+import type { SegLight, Selection } from './type.js';
 import { TYPES } from './types/index.js';
 import { half as HALF } from './types/segments.js';
 import { valueVoice } from './voice.js';
@@ -28,11 +29,13 @@ interface Entry extends Placed {
   picked: readonly boolean[];
   /** The cell an editable one's caret stands at, while it has the focus. */
   caret: number | null;
+  /** How its selected cells show, where `setSelection` changed it. */
+  selection: Selection | undefined;
 }
 
 /** How a readout's selected cells show. */
 const selectionOf = (e: Entry): Selection =>
-  e.opts.selection ?? TYPES[e.opts.type].selection ?? 'glow';
+  e.selection ?? e.opts.selection ?? TYPES[e.opts.type].selection ?? 'glow';
 
 /** A selected light's color: `lab` paler and a little less saturated. */
 const paler = ([l = 0, a = 0, b = 0, alpha = 1]: readonly number[]): number[] => [
@@ -58,29 +61,89 @@ function splitHalf(value: string | number, cells: number): [string, string | num
   return [`${minus ? '-' : ''}${one ? '1' : ''}`, one ? body.slice(1) : body];
 }
 
-/** Board rows a readout's cells' lights take: its type's slots, or its ½ digit's where that has more. */
-const slotsOf = (e: Entry) =>
-  Math.max(TYPES[e.opts.type].cell.lights.length, e.opts.half ? HALF.cell.lights.length : 0);
-
 /** Whether a readout can be typed into: asked to be, of a type that spells, with no ½ digit. */
 const editable = (e: Entry) =>
-  (e.opts.edit ?? false) && !e.opts.half && TYPES[e.opts.type].places !== undefined;
+  (e.opts.edit ?? false) && !e.opts.half && TYPES[e.opts.type].spell !== undefined;
 
 /** How long a caret shows, then hides, ms. */
 const BLINK_MS = 530;
 
 /** Whether a readout's characters can be selected: its type spells, and it wasn't asked not to. */
-const selectable = (e: Entry) => (e.opts.select ?? true) && TYPES[e.opts.type].text !== undefined;
+const selectable = (e: Entry) => (e.opts.select ?? true) && TYPES[e.opts.type].spell !== undefined;
 
-/** The characters each of a readout's cells shows, a ½ digit's first. */
-function textOf(e: Entry): string[] {
+/** What the layout needs of a readout. */
+const laidOf = (e: Entry): Laid => ({
+  type: TYPES[e.opts.type],
+  cells: e.opts.cells,
+  face: e.opts.face ?? 'plate',
+  ends: e.opts.ends,
+  half: e.opts.half,
+  underline: selectable(e) && (selectionOf(e) === 'underline' || editable(e)),
+  lines: e.opts.lines,
+});
+
+/** A readout as its value lays it out, cell by cell in `Spot.cells` order. */
+interface Shown {
+  /** Each cell's lights, which of them are lit, and the characters it shows. */
+  readonly cells: readonly {
+    readonly lights: readonly SegLight[];
+    readonly lit: ReadonlySet<string>;
+    readonly text: string;
+  }[];
+  /** For one that spells, each character of its value's cell, or -1 where it shows nowhere. */
+  readonly places: readonly number[];
+  /** For each caret place in its value, the cell a caret there stands at. */
+  readonly carets: readonly (number | null)[];
+  /** Whether some of its value was cut off for want of room. */
+  readonly cut: boolean;
+}
+
+/** How `e`'s value lays out on its cells, a ½ digit's first, row by row. */
+function shownOf(e: Entry): Shown {
   const type = TYPES[e.opts.type];
   const align = e.opts.align ?? type.align;
+  const { perLine, first } = e.spot;
+  const lines = linesOf(laidOf(e));
+  const none = new Set<string>();
+  const cells = Array.from({ length: lines * perLine }, (_, k) => ({
+    lights: k % perLine < first ? HALF.cell.lights : type.cell.lights,
+    lit: none as ReadonlySet<string>,
+    text: '',
+  }));
   const [lead, rest] = e.opts.half ? splitHalf(e.value, e.opts.cells) : ['', e.value];
-  return [
-    ...(e.opts.half ? (HALF.text?.(lead, 1, 'right') ?? []) : []),
-    ...(type.text?.(rest, e.opts.cells, align) ?? []),
-  ];
+  if (e.opts.half && cells[0]) {
+    const tok = HALF.spell?.tokens(lead)[0] ?? '';
+    cells[0] = { ...cells[0], lit: HALF.spell?.lights(tok) ?? none, text: tok };
+  }
+  const spell = type.spell;
+  if (!spell) {
+    for (const [c, lit] of type.encode(rest, e.opts.cells, align).entries()) {
+      const k = first + c;
+      if (cells[k]) cells[k] = { ...cells[k], lit };
+    }
+    return { cells, places: [], carets: [], cut: false };
+  }
+  const toks = spell.tokens(rest);
+  const f = flow(toks, e.opts.cells, lines, align, e.opts.wrap ?? true);
+  /** A flowed cell, row by row `cells` wide, as a cell of the spot, past any ½ digit. */
+  const cellOf = (at: number) =>
+    at < 0 ? -1 : Math.floor(at / e.opts.cells) * perLine + first + (at % e.opts.cells);
+  const places: number[] = [];
+  const carets: (number | null)[] = [];
+  for (const [t, tok] of toks.entries()) {
+    const k = cellOf(f.at[t] ?? -1);
+    if (k >= 0 && cells[k]) cells[k] = { ...cells[k], lit: spell.lights(tok), text: tok };
+    const before = f.carets[t];
+    for (let c = 0; c < [...tok].length; c++) {
+      places.push(k);
+      carets.push(
+        c === 0 || k < 0 ? (before === null || before === undefined ? null : cellOf(before)) : k,
+      );
+    }
+  }
+  const end = f.carets[toks.length];
+  carets.push(end === null || end === undefined ? null : cellOf(end));
+  return { cells, places, carets, cut: f.cut };
 }
 
 /**
@@ -127,6 +190,10 @@ export function createSurface(
   let blinkOn = true;
   const mark = (picked: readonly (Picked | null)[]) => {
     const b = layout.board;
+    const lightsAt = (e: Entry, k: number) =>
+      k % e.spot.perLine < e.spot.first
+        ? HALF.cell.lights.length
+        : TYPES[e.opts.type].cell.lights.length;
     const mask = new Uint8Array(b.dots.length);
     let any = false;
     for (const [i, e] of entries.entries()) {
@@ -147,7 +214,7 @@ export function createSurface(
       for (const [k, on] of cells.entries()) {
         if (!on) continue;
         any = true;
-        for (let s = 0; s < slotsOf(e); s++) mask[(e.spot.base + s) * b.cols + k] = 1;
+        for (let s = 0; s < lightsAt(e, k); s++) mask[dotOf(e.spot, b.cols, k, s)] = 1;
       }
     }
     marked = any ? mask : null;
@@ -158,12 +225,14 @@ export function createSurface(
       ? createTextLayer(canvas, sizing.fixed ?? false, mark, (i, value) => {
           const e = entries[i];
           if (!e) return false;
-          const type = TYPES[e.opts.type];
-          const align = e.opts.align ?? type.align;
-          // Text that runs past its cells is refused; a number keeps its last cells, as shown.
-          if (align === 'left' && type.places?.(value, e.opts.cells, align).includes(-1))
-            return false;
+          const was = e.value;
           e.value = value;
+          // What runs past the cells is refused, but a one-line number keeps its last cells.
+          const align = e.opts.align ?? TYPES[e.opts.type].align;
+          if (shownOf(e).cut && (linesOf(laidOf(e)) > 1 || align === 'left')) {
+            e.value = was;
+            return false;
+          }
           valued = true;
           e.opts.onInput?.(value);
           return true;
@@ -173,16 +242,7 @@ export function createSurface(
   let caretAt = 0;
 
   const reshape = () => {
-    layout = layOutReadouts(
-      entries.map((e) => ({
-        type: TYPES[e.opts.type],
-        cells: e.opts.cells,
-        face: e.opts.face ?? 'plate',
-        ends: e.opts.ends,
-        half: e.opts.half,
-        underline: selectable(e) && (selectionOf(e) === 'underline' || editable(e)),
-      })),
-    );
+    layout = layOutReadouts(entries.map(laidOf));
     for (const [i, e] of entries.entries()) e.spot = layout.spots[i] as Layout['spots'][number];
     drawing.reshape(lightsOf(layout));
     cols = signColumns(layout.leds.length);
@@ -209,55 +269,36 @@ export function createSurface(
     const b = layout.board;
     const on = new Float32Array(b.cols * b.rows);
     const tint = new Float32Array(b.cols * b.rows * 4);
-    for (const e of entries) {
-      const type = TYPES[e.opts.type];
-      const align = e.opts.align ?? type.align;
-      const [lead, rest] = e.opts.half ? splitHalf(e.value, e.opts.cells) : ['', e.value];
-      const shown = [
-        ...(e.opts.half
-          ? HALF.encode(lead, 1, 'right').map((s) => ({ s, lights: HALF.cell.lights }))
-          : []),
-        ...type.encode(rest, e.opts.cells, align).map((s) => ({ s, lights: type.cell.lights })),
-      ];
+    for (const [i, e] of entries.entries()) {
+      const shown = shownOf(e);
       const color = oklab(e.color);
       const pale = paler(color);
       const how = selectionOf(e);
       // Stacked lights, as a Nixie's cathodes are, tangle when the unlit ones glow too.
-      const dimUnlit = how === 'glow' && type.socket === 'segment';
-      for (const [c, { s, lights }] of shown.entries()) {
-        const picked = e.picked[c] ?? false;
-        const caret = e.caret === c && blinkOn;
+      const dimUnlit = how === 'glow' && TYPES[e.opts.type].socket === 'segment';
+      for (const [k, { lights, lit }] of shown.cells.entries()) {
+        const picked = e.picked[k] ?? false;
+        const caret = e.caret === k && blinkOn;
         if ((caret || (picked && how === 'underline')) && e.spot.underline !== null) {
-          const i = (e.spot.base + e.spot.underline) * b.cols + c;
-          on[i] = 1;
-          tint.set(color, i * 4);
+          const at = dotOf(e.spot, b.cols, k, e.spot.underline);
+          on[at] = 1;
+          tint.set(color, at * 4);
         }
         for (const [slot, light] of lights.entries()) {
-          const i = (e.spot.base + slot) * b.cols + c;
-          const lit = s.has(light.name);
-          on[i] = lit ? 1 : picked && dimUnlit ? GLOW_UNLIT : 0;
-          tint.set(picked && (how === 'recolor' || how === 'glow') ? pale : color, i * 4);
+          const at = dotOf(e.spot, b.cols, k, slot);
+          on[at] = lit.has(light.name) ? 1 : picked && dimUnlit ? GLOW_UNLIT : 0;
+          tint.set(picked && (how === 'recolor' || how === 'glow') ? pale : color, at * 4);
         }
       }
-    }
-    if (text)
-      for (const [i, e] of entries.entries()) {
-        if (!selectable(e)) continue;
-        const type = TYPES[e.opts.type];
-        const align = e.opts.align ?? type.align;
-        const value = String(e.value);
+      if (text && selectable(e))
         text.write(
           i,
-          textOf(e),
+          shown.cells.map((c) => c.text),
           editable(e)
-            ? {
-                value,
-                places: type.places?.(value, e.opts.cells, align) ?? [],
-                right: align === 'right',
-              }
+            ? { value: String(e.value), places: shown.places, carets: shown.carets }
             : undefined,
         );
-      }
+    }
     voice?.fade({ over: 0 });
     voice = m.cue({ name: 'values', patch: valueVoice(b, on, tint), subjects: b.dots, loop: true });
   };
@@ -315,9 +356,19 @@ export function createSurface(
         color: o.color ?? (o.type === 'nixie' ? NIXIE : AMBER),
         defects: o.defects ?? [],
         slant: o.slant ?? 0,
-        spot: { base: 0, first: 0, width: 1, height: 1, cells: [], underline: null },
+        spot: {
+          base: 0,
+          first: 0,
+          perLine: 1,
+          lineSlots: 1,
+          width: 1,
+          height: 1,
+          cells: [],
+          underline: null,
+        },
         picked: [],
         caret: null,
+        selection: undefined,
         box: boxOf(o, canvas),
       };
       entries.push(e);
@@ -339,6 +390,10 @@ export function createSurface(
         },
         setDefects(defects) {
           e.defects = defects;
+          shaped = true;
+        },
+        setSelection(look) {
+          e.selection = look;
           shaped = true;
         },
         destroy() {

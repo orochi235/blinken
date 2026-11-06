@@ -6,6 +6,7 @@ import {
   type Align,
   createPanel,
   createTicker,
+  type Readout,
   SELECTIONS,
   type Selection,
   type Surface,
@@ -21,7 +22,7 @@ const choice = (params.get('backend') ?? 'auto') as Choice;
 const HEIGHTS = [24, 40, 64, 96];
 /** Room above each readout for its caption. */
 const CAPTION = 18;
-const SPELLING = (Object.keys(TYPES) as TypeName[]).filter((t) => TYPES[t].places);
+const SPELLING = (Object.keys(TYPES) as TypeName[]).filter((t) => TYPES[t].spell && t !== 'half');
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -36,6 +37,8 @@ async function run() {
   const typeSelect = $<HTMLSelectElement>('type');
   for (const t of SPELLING) typeSelect.add(new Option(t, t, t === 'fourteen', t === 'fourteen'));
   const cellsInput = $<HTMLInputElement>('cells');
+  const linesInput = $<HTMLInputElement>('lines');
+  const wrapInput = $<HTMLInputElement>('wrap');
   const slantInput = $<HTMLInputElement>('slant');
   const alignSelect = $<HTMLSelectElement>('align');
   const faceSelect = $<HTMLSelectElement>('face');
@@ -54,11 +57,8 @@ async function run() {
   const canvas = $<HTMLCanvasElement>('panel');
   const box = canvas.parentElement as HTMLElement;
   box.classList.add('inputs-panel');
-  const rowOf = (h: number) => h + CAPTION + 12;
   box.style.setProperty('--rows', '1');
-  box.style.setProperty('--row', `${HEIGHTS.reduce((n, h) => n + rowOf(h), 0)}px`);
   const rows = $<HTMLDivElement>('rows');
-  rows.style.gridTemplateRows = HEIGHTS.map((h) => `${rowOf(h)}px`).join(' ');
   const shown = HEIGHTS.map((h) => {
     const row = document.createElement('div');
     row.className = 'input-row';
@@ -72,14 +72,32 @@ async function run() {
   });
 
   /** What each readout holds, kept as the bar rebuilds them. */
-  const values = HEIGHTS.map(() => 'HELLO');
+  const values = HEIGHTS.map(() => 'HELLO THERE');
+  let readouts: Readout[] = [];
+  const look = () =>
+    selectionSelect.value === 'own' ? undefined : (selectionSelect.value as Selection);
   const ticker = createTicker();
   let surface: Surface | null = null;
+  /** The settings the panel was last built with, so a field's change on blur doesn't rebuild it. */
+  let built = '';
   const build = () => {
+    const settings = JSON.stringify(
+      [typeSelect, cellsInput, linesInput, slantInput, alignSelect, faceSelect, colorSelect, custom]
+        .map((el) => el.value)
+        .concat(String(wrapInput.checked)),
+    );
+    if (settings === built) return;
+    built = settings;
     surface?.destroy();
     const type = typeSelect.value as TypeName;
     const panel = createPanel(canvas, { ...drawWith(choice, handle), ticker });
     surface = panel;
+    const lines = Math.max(1, Math.min(6, Number(linesInput.value) || 1));
+    const tall = (h: number) => h * lines + (h * (lines - 1)) / 4;
+    const rowAt = (h: number) => tall(h) + CAPTION + 12;
+    box.style.setProperty('--row', `${HEIGHTS.reduce((n, h) => n + rowAt(h), 0)}px`);
+    rows.style.gridTemplateRows = HEIGHTS.map((h) => `${rowAt(h)}px`).join(' ');
+    readouts = [];
     let y = 0;
     for (const [i, h] of HEIGHTS.entries()) {
       const show = (v: string) => {
@@ -87,28 +105,42 @@ async function run() {
         (shown[i] as HTMLElement).textContent = JSON.stringify(v);
       };
       show(values[i] ?? '');
-      panel.readout({
+      const r = panel.readout({
         type,
         cells: Math.max(1, Math.min(24, Number(cellsInput.value) || 1)),
         slant: Number(slantInput.value),
         align: alignSelect.value === 'own' ? undefined : (alignSelect.value as Align),
         face: faceSelect.value as 'plate' | 'none',
-        selection:
-          selectionSelect.value === 'own' ? undefined : (selectionSelect.value as Selection),
+        selection: look(),
         color: color(),
         at: { x: 12, y: y + CAPTION },
-        height: h,
+        height: tall(h),
+        lines,
+        wrap: wrapInput.checked,
         value: values[i],
         edit: true,
         onInput: show,
       });
-      y += rowOf(h);
+      readouts.push(r);
+      y += rowAt(h);
     }
     $('got').textContent = `${panel.backend} · ${type}`;
   };
   build();
-  for (const el of [typeSelect, cellsInput, slantInput, alignSelect, faceSelect, selectionSelect])
+  for (const el of [
+    typeSelect,
+    cellsInput,
+    linesInput,
+    wrapInput,
+    slantInput,
+    alignSelect,
+    faceSelect,
+  ])
     el.addEventListener('change', build);
+  // A new look restyles the readouts in place, so what is selected or typed at stays.
+  selectionSelect.addEventListener('change', () => {
+    for (const r of readouts) r.setSelection(look());
+  });
   colorSelect.onchange = () => {
     custom.disabled = colorSelect.value !== 'custom';
     build();

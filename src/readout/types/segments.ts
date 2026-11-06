@@ -110,6 +110,8 @@ export const half: DisplayType = {
   ...family,
   encode: (value, cells, align) =>
     fitCells([new Set(HALF[String(value)] ?? [])], cells, align, new Set<string>()),
-  text: (value, cells, align) =>
-    fitCells([HALF[String(value)] ? String(value) : ''], cells, align, ''),
+  spell: {
+    tokens: (value) => (HALF[String(value)] ? [String(value)] : []),
+    lights: (tok) => new Set(HALF[tok] ?? []),
+  },
 };

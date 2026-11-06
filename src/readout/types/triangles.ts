@@ -1,6 +1,6 @@
 import { type Face, faceOf } from '../../faces.js';
 import { triangleAt } from '../../grid.js';
-import { charPlaces, charText, type DisplayType, fitCells, type SegLight } from '../type.js';
+import { type DisplayType, type SegLight, type Spelling, spellEncoder } from '../type.js';
 
 /** A cell of `cols` × `rows` triangles of the tiling, each a light named `k,r`. */
 function cellOf(cols: number, rows: number): DisplayType['cell'] {
@@ -19,21 +19,22 @@ function cellOf(cols: number, rows: number): DisplayType['cell'] {
   };
 }
 
-/** An encoder lighting each cell's triangles where `face`'s glyph for its character is lit. */
-const glyphEncoder =
-  (face: Face): DisplayType['encode'] =>
-  (value, cells, align) =>
-    fitCells(
-      [...String(value).toUpperCase()].map((ch) => {
-        const on = new Set<string>();
-        for (const [r, row] of (face.glyph(ch) ?? []).entries())
-          for (const [k, c] of [...row].entries()) if (c === '#') on.add(`${k},${r}`);
-        return on;
-      }),
-      cells,
-      align,
-      new Set<string>(),
-    );
+/** A spelling lighting each cell's triangles where `face`'s glyph for its character is lit. */
+const glyphSpelling = (face: Face): Spelling => ({
+  tokens: (value) => [...String(value)],
+  lights(ch) {
+    const on = new Set<string>();
+    for (const [r, row] of (face.glyph(ch.toUpperCase()) ?? []).entries())
+      for (const [k, c] of [...row].entries()) if (c === '#') on.add(`${k},${r}`);
+    return on;
+  },
+});
+
+/** A type's coding from `glyphSpelling`. */
+const glyphCoding = (face: Face) => {
+  const spell = glyphSpelling(face);
+  return { encode: spellEncoder(spell), spell };
+};
 
 /** Each cell a run of the tiling whose width is even, so the next cell carries on the tiling. */
 const family = {
@@ -55,12 +56,10 @@ export const triangles: DisplayType = {
   name: 'triangles',
   cell: cellOf(12, doubled.rows),
   ...family,
-  encode: glyphEncoder({
+  ...glyphCoding({
     ...doubled,
     glyph: (ch) => doubled.glyph(ch)?.map((r) => [...r].map((c) => c + c).join('')),
   }),
-  text: charText,
-  places: charPlaces,
 };
 
 /** Letters drawn at triangle resolution from 16-segment strokes, as the `strokes` face draws them. */
@@ -68,7 +67,5 @@ export const trianglesFine: DisplayType = {
   name: 'triangles-fine',
   cell: cellOf(faceOf('strokes').width, faceOf('strokes').rows),
   ...family,
-  encode: glyphEncoder(faceOf('strokes')),
-  text: charText,
-  places: charPlaces,
+  ...glyphCoding(faceOf('strokes')),
 };

@@ -1,3 +1,4 @@
+import { flow } from './flow.js';
 /** A segment's shape, in its cell's units from the cell's top left. */
 export type SegShape =
   | { readonly kind: 'disc'; readonly x: number; readonly y: number; readonly r: number }
@@ -60,6 +61,13 @@ export type TypeName =
 export type Selection = 'invert' | 'block' | 'recolor' | 'glow' | 'underline';
 export const SELECTIONS: readonly Selection[] = ['invert', 'block', 'recolor', 'glow', 'underline'];
 
+/** How a type spells: a value split into the cells it takes, and the lights each one lights. */
+export interface Spelling {
+  /** `value` a cell at a time: a character, and any mark that rides on its cell. */
+  tokens(value: string | number): string[];
+  lights(token: string): ReadonlySet<string>;
+}
+
 /** A kind of segment display: one cell's lights, and how a value lights a row of cells. */
 export interface DisplayType {
   readonly name: TypeName;
@@ -79,15 +87,10 @@ export interface DisplayType {
   /** The lit lights' names in each of `cells` cells. */
   encode(value: string | number, cells: number, align: Align): ReadonlySet<string>[];
   /**
-   * The characters each of `cells` cells shows, '' for a blank, where a type spells letters or
-   * numbers; a readout of such a type can be selected and copied as text.
+   * How it spells, where it shows letters or numbers: a readout of such a type can be selected,
+   * copied, typed into and laid out on several lines.
    */
-  text?(value: string | number, cells: number, align: Align): string[];
-  /**
-   * Where `text` puts each character of `value`: the cell it shows in, or -1 where the readout
-   * cuts it off. Given wherever `text` is.
-   */
-  places?(value: string | number, cells: number, align: Align): number[];
+  readonly spell?: Spelling;
   /**
    * How a selected cell shows by default. `invert` reads on a grid of dots; on segments it lights
    * every segment the character leaves dark. Default `'glow'`.
@@ -134,6 +137,17 @@ function tokens(value: string | number, mark: Record<string, string | undefined>
   return out;
 }
 
+/** An encoder laying `spell`'s tokens on one line, as `flow` fits them. */
+export function spellEncoder(spell: Spelling): DisplayType['encode'] {
+  return (value, cells, align) => {
+    const toks = spell.tokens(value);
+    const out = Array.from({ length: cells }, () => new Set<string>() as ReadonlySet<string>);
+    for (const [t, k] of flow(toks, cells, 1, align, false).at.entries())
+      if (k >= 0) out[k] = spell.lights(toks[t] as string);
+    return out;
+  };
+}
+
 /**
  * A type's coding over a character table, each character naming its lit lights space-separated. A
  * character the table lacks shows blank. Where a type has them, a `.`, `:` or `,` after a
@@ -142,39 +156,21 @@ function tokens(value: string | number, mark: Record<string, string | undefined>
 export function textCoding(
   table: Readonly<Record<string, string>>,
   marks: Marks = {},
-): Pick<DisplayType, 'encode' | 'text' | 'places'> {
+): Pick<DisplayType, 'encode' | 'spell'> {
   const mark = markOf(marks);
-  return {
-    encode: (value, cells, align) =>
-      fitCells(
-        tokens(value, mark).map((tok) => {
-          const [ch = ''] = tok;
-          const set = new Set(words(table[ch] ?? table[ch.toUpperCase()]));
-          for (const c of tok) {
-            const on = mark[c];
-            if (on) set.add(on);
-          }
-          return set;
-        }),
-        cells,
-        align,
-        new Set<string>(),
-      ),
-    text: (value, cells, align) => fitCells(tokens(value, mark), cells, align, ''),
-    places: (value, cells, align) => placesOf(tokens(value, mark), cells, align),
+  const spell: Spelling = {
+    tokens: (value) => tokens(value, mark),
+    lights(tok) {
+      const [ch = ''] = tok;
+      const set = new Set(words(table[ch] ?? table[ch.toUpperCase()]));
+      for (const c of tok) {
+        const on = mark[c];
+        if (on) set.add(on);
+      }
+      return set;
+    },
   };
-}
-
-/** Where `fitCells` puts each character of `toks`, a token a cell: its cell, or -1 where it's cut. */
-function placesOf(toks: readonly string[], cells: number, align: Align): number[] {
-  const kept = Math.min(toks.length, Math.max(0, cells));
-  // Numbers keep their last tokens, right of any padding; text its first, from cell 0.
-  const first = align === 'right' ? toks.length - kept : 0;
-  const shift = align === 'right' ? cells - kept : 0;
-  return toks.flatMap((tok, t) => {
-    const at = t >= first && t < first + kept ? t - first + shift : -1;
-    return [...tok].map(() => at);
-  });
+  return { encode: spellEncoder(spell), spell };
 }
 
 /** `textCoding`'s encoder alone, for a type whose characters aren't text to copy. */
@@ -182,11 +178,3 @@ export const textEncoder = (
   table: Readonly<Record<string, string>>,
   marks: Marks = {},
 ): DisplayType['encode'] => textCoding(table, marks).encode;
-
-/** Each character a cell, as a type that spells with no marks shows it. */
-export const charText: NonNullable<DisplayType['text']> = (value, cells, align) =>
-  fitCells([...String(value)], cells, align, '');
-
-/** Where `charText` puts each character. */
-export const charPlaces: NonNullable<DisplayType['places']> = (value, cells, align) =>
-  placesOf([...String(value)], cells, align);

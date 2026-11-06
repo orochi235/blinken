@@ -50,6 +50,13 @@ export interface ReadoutOptions {
   readonly edit?: boolean;
   /** Called with its value as typed, each time it changes. */
   readonly onInput?: (value: string) => void;
+  /**
+   * How many rows of cells it has, for a type that spells; a `\n` in its value starts a row. Not
+   * with a ½ digit. Default 1.
+   */
+  readonly lines?: number;
+  /** Whether a word that won't fit its row moves to the next, on more than one row. Default true. */
+  readonly wrap?: boolean;
 }
 
 /** A readout on a surface. */
@@ -60,6 +67,8 @@ export interface Readout {
   /** Moves it, on a panel. */
   moveTo(at: { readonly x: number; readonly y: number }, height?: number): void;
   setDefects(defects: readonly ReadoutDefect[]): void;
+  /** Changes how its selected cells show; undefined goes back to its own. */
+  setSelection(look: Selection | undefined): void;
   destroy(): void;
 }
 

@@ -87,10 +87,18 @@ a line inside one box only, so each readout's box reads the mouse itself, a cell
 double-click for the run between blanks, triple-click for the whole readout, Shift+click to extend.
 Each sets a real range on the page's selection, which copying and `selectionchange` read.
 
-An `edit: true` readout also holds a hidden `<input>` with its value, which takes the keyboard
-(typing, arrows, copy and paste, undo). The same gestures move its caret and selection, through the
-type's `places`, which says the cell each character lands in; the caret is the cell's underline,
-blinking. Text that would run past the cells is refused; a number keeps its last cells.
+**Where characters land** is one function, `flow` (`src/readout/flow.ts`): a type's `spell`
+splits a value into tokens (a character, and any mark riding on its cell), and `flow` lays them in
+`lines` rows of `cells`, each row aligned, word-wrapping unless `wrap` is false. One row is fitted
+as before: text keeps its first cells, numbers their last. Its result drives the lights, the
+copyable text, and an editable readout's character places and carets. The layout gives a readout
+`lines × slots` board rows; `dotOf` turns (cell, slot) into a board dot (2026-11-06).
+
+An `edit: true` readout also holds a hidden `<input>` with its value (a `<textarea>` on more than
+one row), which takes the keyboard: typing, copy and paste, undo. The mouse gestures, and ↑ ↓ Home
+End on rows, move its caret and selection by the readout's own cells, since the hidden field wraps
+its text differently. The caret is the cell's underline, blinking. What would run past the cells is
+refused, except that a one-row number keeps its last cells.
 
 How a selected cell shows is the readout's `selection`, else its type's: `invert` swaps its lights
 through the sign's highlight (the default for `matrix` and the triangle types, as compose's size

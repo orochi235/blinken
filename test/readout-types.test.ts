@@ -147,21 +147,25 @@ describe('every type', () => {
   });
 });
 
-describe('cell text', () => {
-  it('gives each cell the characters it shows, a mark riding on the cell before it', () => {
-    expect(TYPES.seven.text?.('12.5', 5, 'right')).toEqual(['', '', '1', '2.', '5']);
-    expect(TYPES.seven.text?.('12:30', 4, 'right')).toEqual(['1', '2:', '3', '0']);
-    expect(TYPES.fourteen.text?.('HI,', 3, 'left')).toEqual(['H', 'I,', '']);
+describe('spelling', () => {
+  const tokens = (t: keyof typeof TYPES, v: string) => TYPES[t].spell?.tokens(v);
+
+  it('splits a value into the cells it takes, a mark riding on the cell before it', () => {
+    expect(tokens('seven', '12.5')).toEqual(['1', '2.', '5']);
+    expect(tokens('seven', '12:30')).toEqual(['1', '2:', '3', '0']);
+    expect(tokens('fourteen', 'HI,')).toEqual(['H', 'I,']);
   });
 
-  it('keeps the cells a long value keeps', () => {
-    expect(TYPES.seven.text?.('123456', 4, 'right')).toEqual(['3', '4', '5', '6']);
-    expect(TYPES.matrix.text?.('HELLO', 3, 'left')).toEqual(['H', 'E', 'L']);
+  it('lights what the encoder lights for a token', () => {
+    const seven = TYPES.seven;
+    expect([...(seven.spell?.lights('2.') ?? [])].sort()).toEqual(
+      [...(seven.encode('2.', 1, 'left')[0] ?? [])].sort(),
+    );
   });
 
   it('is there only for types that spell letters or numbers', () => {
     const spelling = Object.values(TYPES)
-      .filter((t) => t.text)
+      .filter((t) => t.spell)
       .map((t) => t.name)
       .sort();
     expect(spelling).toEqual(
@@ -179,17 +183,5 @@ describe('cell text', () => {
         'twentytwo',
       ].sort(),
     );
-  });
-});
-
-describe('cell places', () => {
-  it('puts each character in the cell its text shows it in, a mark on its cell', () => {
-    expect(TYPES.seven.places?.('12.5', 5, 'right')).toEqual([2, 3, 3, 4]);
-    expect(TYPES.fourteen.places?.('HI', 4, 'left')).toEqual([0, 1]);
-  });
-
-  it('gives -1 to a character the readout cuts off', () => {
-    expect(TYPES.seven.places?.('12345', 3, 'right')).toEqual([-1, -1, 0, 1, 2]);
-    expect(TYPES.matrix.places?.('HELLO', 3, 'left')).toEqual([0, 1, 2, -1, -1]);
   });
 });

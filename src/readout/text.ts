@@ -47,7 +47,11 @@ export interface TextLayer {
   write(
     i: number,
     cells: readonly string[],
-    typed?: { value: string; places: readonly number[]; right: boolean },
+    typed?: {
+      value: string;
+      places: readonly number[];
+      carets: readonly (number | null)[];
+    },
   ): void;
   /** Moves every box to where its readout is drawn now. */
   place(fits: readonly (Fit | null)[]): void;
@@ -91,15 +95,21 @@ export function createTextLayer(
     cells: HTMLElement[];
     /** Its fit when last placed, so an unmoved readout isn't restyled. */
     at: string;
-    /** An editable one's field, its value and where each of its characters shows. */
-    input: HTMLInputElement | null;
+    /** An editable one's field: a text area where it has more than one row. */
+    input: HTMLInputElement | HTMLTextAreaElement | null;
+    /** Each character's cell, or -1 where it shows nowhere. */
     places: readonly number[];
-    /** Whether an editable one's value aligns right, so an empty one's caret stands at its end. */
-    right: boolean;
+    /** For each caret place, the cell a caret there stands at. */
+    carets: readonly (number | null)[];
   } | null)[] = [];
+  /** A caret or selection to put back once a rebuilt readout has its value again. */
+  let restore:
+    | { i: number; start: number; end: number; dir: 'forward' | 'backward' | 'none' }
+    | { i: number; a: number; b: number }
+    | null = null;
   let shown = '';
   /** What of editable `r` its field's caret or selection picks, while it has the focus. */
-  const typedPick = (r: One, input: HTMLInputElement): Picked => {
+  const typedPick = (r: One, input: HTMLInputElement | HTMLTextAreaElement): Picked => {
     const n = r.cells.length;
     const none = new Array<boolean>(n).fill(false);
     if (doc.activeElement !== input) return { cells: none, caret: null };
@@ -113,7 +123,7 @@ export function createTextLayer(
       }
       return { cells, caret: null };
     }
-    return { cells: none, caret: caretCell(r, s) };
+    return { cells: none, caret: r.carets[s] ?? null };
   };
   const report = () => {
     const sel = doc.getSelection();
@@ -136,26 +146,21 @@ export function createTextLayer(
   doc.addEventListener('selectionchange', report);
 
   type One = NonNullable<(typeof readouts)[number]>;
-  /**
-   * The cell a caret before character `at` stands under: that character's, else the one after the
-   * last character, else the last cell, as a calculator's cursor sits under its last digit.
-   */
-  const caretCell = (r: One, at: number): number | null => {
-    const n = r.cells.length;
-    if (n === 0) return null;
-    const here = r.places[at];
-    if (here !== undefined && here >= 0) return here;
-    let last: number | undefined;
-    for (const p of r.places) if (p >= 0) last = p;
-    if (last === undefined) return r.places.length > 0 ? null : r.right ? n - 1 : 0;
-    return Math.min(last + 1, n - 1);
-  };
   /** Where in an editable readout's value a press on cell `k` puts the caret, `after` its middle or not. */
   const posAt = (r: One, k: number, after: boolean): number => {
     const ks = r.places.flatMap((p, i) => (p === k ? [i] : []));
     if (ks.length > 0) return after ? (ks.at(-1) as number) + 1 : (ks[0] as number);
-    const first = r.places.findIndex((p) => p >= 0);
-    return first >= 0 && k < (r.places[first] as number) ? first : r.places.length;
+    // A blank cell: the start of its row's characters if it's before them, else their end.
+    const row = Math.floor(k / r.spot.perLine);
+    const mine = r.places.flatMap((p, i) =>
+      p >= 0 && Math.floor(p / r.spot.perLine) === row ? [i] : [],
+    );
+    if (mine.length > 0)
+      return k < (r.places[mine[0] as number] as number)
+        ? (mine[0] as number)
+        : (mine.at(-1) as number) + 1;
+    const at = r.carets.findIndex((c) => c !== null && Math.floor(c / r.spot.perLine) === row);
+    return at >= 0 ? at : r.places.length;
   };
   /** Selects cells `a` to `b` of `r`, either order, as the page's selection. */
   const choose = (r: One, a: number, b: number) => {
@@ -169,13 +174,14 @@ export function createTextLayer(
     sel.removeAllRanges();
     sel.addRange(range);
   };
-  /** The cell of `r` nearest `x` across, in client pixels. */
-  const cellAt = (r: One, x: number): number => {
+  /** The cell of `r` nearest (`x`, `y`), in client pixels: in the nearest row, the nearest across. */
+  const cellAt = (r: One, x: number, y: number): number => {
     let best = 0;
     let gap = Number.POSITIVE_INFINITY;
     for (const [k, cell] of r.cells.entries()) {
       const b = cell.getBoundingClientRect();
-      const d = Math.abs(x - (b.left + b.right) / 2);
+      const off = Math.max(0, Math.abs(y - (b.top + b.bottom) / 2) - b.height / 2);
+      const d = off * 1e4 + Math.abs(x - (b.left + b.right) / 2);
       if (d < gap) {
         gap = d;
         best = k;
@@ -189,14 +195,14 @@ export function createTextLayer(
   // The browser selects nothing reliably across separately placed cells, so a press is read here,
   // a whole cell at a time: drag, double-click for a run between blanks, triple-click for it all.
   /** A press on an editable readout: the same gestures, moving its field's caret or selection. */
-  const pressTyped = (r: One, input: HTMLInputElement, e: MouseEvent) => {
+  const pressTyped = (r: One, input: HTMLInputElement | HTMLTextAreaElement, e: MouseEvent) => {
     input.focus();
-    const posOf = (x: number) => {
-      const k = cellAt(r, x);
+    const posOf = (m: MouseEvent) => {
+      const k = cellAt(r, m.clientX, m.clientY);
       const b = r.cells[k]?.getBoundingClientRect();
-      return posAt(r, k, b ? x > (b.left + b.right) / 2 : false);
+      return posAt(r, k, b ? m.clientX > (b.left + b.right) / 2 : false);
     };
-    const at = posOf(e.clientX);
+    const at = posOf(e);
     if (e.detail >= 3) {
       input.select();
       report();
@@ -218,7 +224,7 @@ export function createTextLayer(
     input.setSelectionRange(Math.min(from, at), Math.max(from, at));
     report();
     const move = (m: MouseEvent) => {
-      const to = posOf(m.clientX);
+      const to = posOf(m);
       input.setSelectionRange(
         Math.min(from, to),
         Math.max(from, to),
@@ -233,6 +239,45 @@ export function createTextLayer(
     doc.addEventListener('mousemove', move);
     doc.addEventListener('mouseup', up);
   };
+  // A text area's own rows wrap where its hidden text does, not where the cells do, so the keys
+  // that move by row move by the readout's rows here.
+  const rowKey = (r: One, input: HTMLTextAreaElement, k: KeyboardEvent) => {
+    if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(k.key) || k.metaKey || k.ctrlKey) return;
+    const back = input.selectionDirection === 'backward';
+    const start = input.selectionStart ?? 0;
+    const end = input.selectionEnd ?? start;
+    const at = back ? start : end;
+    const cell = r.carets[at];
+    if (cell === null || cell === undefined) return;
+    k.preventDefault();
+    const per = r.spot.perLine;
+    const row = Math.floor(cell / per);
+    const col = cell % per;
+    const on = (want: number) =>
+      r.carets.flatMap((c, p) => (c !== null && Math.floor(c / per) === want ? [p] : []));
+    let to: number;
+    if (k.key === 'Home') to = on(row)[0] ?? at;
+    else if (k.key === 'End') to = on(row).at(-1) ?? at;
+    else {
+      const want = row + (k.key === 'ArrowUp' ? -1 : 1);
+      const ps = on(want);
+      if (ps.length === 0) to = k.key === 'ArrowUp' ? 0 : r.carets.length - 1;
+      else
+        to = ps.reduce((best, p) =>
+          Math.abs(((r.carets[p] as number) % per) - col) <
+          Math.abs(((r.carets[best] as number) % per) - col)
+            ? p
+            : best,
+        );
+    }
+    const from = k.shiftKey ? (back ? end : start) : to;
+    input.setSelectionRange(
+      Math.min(from, to),
+      Math.max(from, to),
+      to < from ? 'backward' : 'forward',
+    );
+    report();
+  };
   const press = (r: One) => (e: MouseEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
@@ -240,7 +285,7 @@ export function createTextLayer(
       pressTyped(r, r.input, e);
       return;
     }
-    const k = cellAt(r, e.clientX);
+    const k = cellAt(r, e.clientX, e.clientY);
     if (e.detail >= 3) {
       choose(r, 0, r.cells.length - 1);
       return;
@@ -262,8 +307,9 @@ export function createTextLayer(
     const from = { r, k: anchor?.r === r ? anchor.k : k };
     const x0 = e.clientX;
     const move = (m: MouseEvent) => {
-      if (Math.abs(m.clientX - x0) < 3 && cellAt(r, m.clientX) === from.k) return;
-      choose(r, from.k, cellAt(r, m.clientX));
+      const to = cellAt(r, m.clientX, m.clientY);
+      if (Math.abs(m.clientX - x0) < 3 && to === from.k) return;
+      choose(r, from.k, to);
     };
     const up = () => {
       doc.removeEventListener('mousemove', move);
@@ -285,6 +331,22 @@ export function createTextLayer(
 
   return {
     build(list) {
+      // A rebuild replaces every box, so what was selected or typed at comes back with the value.
+      const active = readouts.findIndex((r) => r?.input && doc.activeElement === r.input);
+      const was = active >= 0 ? readouts[active]?.input : null;
+      if (was)
+        restore = {
+          i: active,
+          start: was.selectionStart ?? 0,
+          end: was.selectionEnd ?? 0,
+          dir: was.selectionDirection ?? 'none',
+        };
+      else {
+        const picks: (Picked | null)[] = shown ? JSON.parse(shown) : [];
+        const i = picks.findIndex((p) => p?.cells.some(Boolean));
+        const cells = picks[i]?.cells ?? [];
+        restore = i >= 0 ? { i, a: cells.indexOf(true), b: cells.lastIndexOf(true) } : null;
+      }
       layer.replaceChildren();
       readouts = list.map((one) => {
         if (!one) return null;
@@ -313,12 +375,13 @@ export function createTextLayer(
           at: '',
           input: null,
           places: [],
-          right: false,
+          carets: [],
         };
         if (one.edit) {
-          const input = doc.createElement('input');
+          const rows = spot.cells.length > spot.perLine;
+          const input = rows ? doc.createElement('textarea') : doc.createElement('input');
           input.className = 'blinken-text-input';
-          input.type = 'text';
+          if (input instanceof HTMLInputElement) input.type = 'text';
           input.spellcheck = false;
           input.autocomplete = 'off';
           group.append(input);
@@ -337,6 +400,8 @@ export function createTextLayer(
             }
             report();
           });
+          if (input instanceof HTMLTextAreaElement)
+            input.addEventListener('keydown', (k) => rowKey(made, input, k));
           for (const name of ['keyup', 'select', 'selectionchange', 'focus', 'blur'])
             input.addEventListener(name, report);
         }
@@ -353,7 +418,7 @@ export function createTextLayer(
       if (r.input) {
         if (typed) {
           r.places = typed.places;
-          r.right = typed.right;
+          r.carets = typed.carets;
           if (r.input.value !== typed.value) r.input.value = typed.value;
         }
       } else
@@ -361,6 +426,14 @@ export function createTextLayer(
           const next = chars[k] ?? '';
           if (t.data !== next) t.data = next;
         }
+      if (restore?.i === i) {
+        const back = restore;
+        restore = null;
+        if ('start' in back && r.input) {
+          r.input.focus();
+          r.input.setSelectionRange(back.start, back.end, back.dir);
+        } else if ('a' in back && !r.input) choose(r, back.a, back.b);
+      }
       report();
     },
     place(fits) {
