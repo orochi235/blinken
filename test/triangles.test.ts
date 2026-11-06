@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { board } from '@/board.js';
 import { faceOf } from '@/faces.js';
 import { rasterize } from '@/font.js';
-import { GRIDS, pointsUp, TRI_H, triangleAt } from '@/grid.js';
+import { GRIDS, pointsUp, TRI_H, triangleAt, triangleUnder } from '@/grid.js';
 import { createMarquee } from '@/marquee.js';
 import { placeText } from '@/orders.js';
 import { TYPES } from '@/readout/types/index.js';
@@ -23,6 +23,19 @@ describe('the triangle tiling', () => {
     expect(a.filter((c) => b.includes(c))).toHaveLength(2);
     expect(triangleAt(0, 0).middle).toEqual([0.5, (2 * TRI_H) / 3]);
     expect(GRIDS.triangles(1, 0)).toEqual([1, TRI_H / 3]);
+  });
+
+  it('finds the triangle a point falls in, right up to its edges', () => {
+    for (let r = -2; r <= 3; r++)
+      for (let k = -3; k <= 6; k++) {
+        const { corners, middle } = triangleAt(k, r);
+        expect(triangleUnder(...middle)).toEqual([k, r]);
+        // Most of the way from the middle to each corner is still inside.
+        for (const [cx, cy] of corners)
+          expect(
+            triangleUnder(middle[0] + (cx - middle[0]) * 0.95, middle[1] + (cy - middle[1]) * 0.95),
+          ).toEqual([k, r]);
+      }
   });
 });
 

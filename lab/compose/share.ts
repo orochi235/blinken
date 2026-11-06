@@ -1,4 +1,5 @@
 import { AMBER } from '@/index.js';
+import { fromBase64url, toBase64url } from '../base64url.js';
 import { demo } from '../demo.js';
 import { pack, type ShareData, unpack } from './codec.js';
 import { effectOf, entriesOf, isObj, layersIn, sceneOf } from './readers.js';
@@ -45,14 +46,6 @@ export function playable(state: ComposeState): ComposeState {
     editing: {},
   };
 }
-
-const toBase64url = (bytes: Uint8Array) => {
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-};
-const fromBase64url = (text: string) =>
-  Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
 
 /** The composition packed for the URL hash. */
 export const encode = (state: ComposeState): string => toBase64url(pack(shareOf(state)));

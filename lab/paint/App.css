@@ -55,6 +55,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+.paint-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.paint-preview {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 180px;
+  height: 100px;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border: 1px solid #5a4339;
+  border-radius: 6px;
+  background: #0c0a08e6;
+  pointer-events: none;
+}
+
+.paint-preview > canvas {
+  display: block;
+}
+
 .paint-board {
   flex: 1;
   min-height: 0;
@@ -81,7 +107,7 @@
 
 .paint-stage > canvas:first-child {
   border-radius: 8px;
-  cursor: none;
+  cursor: default;
   touch-action: none;
   box-shadow:
     0 0 0 6px #241a14,
@@ -94,4 +120,8 @@
 
 .paint-overlay {
   pointer-events: none;
+}
+
+.paint-warning {
+  color: #ffb080;
 }

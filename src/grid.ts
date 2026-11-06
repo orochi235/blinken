@@ -39,6 +39,16 @@ export function triangleAt(
   return { corners, middle: [x + 0.5, up ? top + (2 * TRI_H) / 3 : top + TRI_H / 3] };
 }
 
+/** The triangle `[k, r]` of the triangle tiling that point `x`, `y` (in pitches) falls in. */
+export function triangleUnder(x: number, y: number): [number, number] {
+  const r = Math.floor(y / TRI_H);
+  const down = y / TRI_H - r;
+  const k = Math.floor(2 * x);
+  // Triangles k - 1 and k both span x; at this height exactly one of them is wide enough to hold it.
+  const holds = (j: number) => Math.abs(2 * x - (j + 1)) <= (pointsUp(j, r) ? down : 1 - down);
+  return [holds(k) ? k : k - 1, r];
+}
+
 /**
  * The grids a sign can be given by name. `square` sets each row under the last; `hex` sets each
  * half a dot left of the one above, rows √3/2 apart, so every dot has six neighbors a pitch away

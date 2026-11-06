@@ -1,32 +1,15 @@
 import { useEffect, useRef } from 'react';
 import {
-  type Border,
   createMarquee,
   type EffectSpec,
   type GridName,
   type Marquee,
   type Scene,
-  scatter,
 } from '@/index.js';
 import { type Choice, drawWith } from '../backend.js';
 import { useGpu } from '../gpu.js';
-import type { Hardware } from './hardware.js';
+import { borderOf, equip, type Hardware } from './sign-hardware.js';
 import './Sign.css';
-
-/** How the hardware's border lights its bulbs; with none, nothing is asked of a sign with none. */
-const borderOf = ({ border }: Hardware): Border => ({
-  bulbs: border.bulbs === 'none' ? 'unlit' : (border.bulbs as Border['bulbs']),
-  beat: border.beat,
-  dim: border.dim,
-});
-
-/** Gives a sign the hardware's lights, its defects scattered over that sign's own dots. */
-function equip(m: Marquee, hardware: Hardware): void {
-  m.setBorder(borderOf(hardware));
-  m.setFade(hardware.fade);
-  m.setGhost(hardware.ghost);
-  m.setDefects(scatter(m.board, hardware.defects, hardware.defects.seed));
-}
 
 /**
  * A sign built from `hardware` playing `program`, handed to `onSign` as it is made and as null as

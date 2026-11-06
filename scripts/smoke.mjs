@@ -7,6 +7,7 @@ import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { litPixels } from './lit.mjs';
 import { serve } from './serve.mjs';
 
 const { origin, close } = await serve();
@@ -38,13 +39,7 @@ try {
     let lit = 0;
     for (let s = 0; s < 5; s++) {
       if (s) await page.waitForTimeout(150);
-      const n = await page.evaluate(() => {
-        const c = document.getElementById('sign');
-        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-        let n = 0;
-        for (let k = 0; k < d.length; k += 4) if (d[k] > 160) n++;
-        return n;
-      });
+      const n = await litPixels(page, page.locator('#sign'));
       lit = Math.max(lit, n);
     }
     const cost = await page.evaluate(() => document.getElementById('cost')?.value ?? '');

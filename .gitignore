@@ -9,3 +9,4 @@ playwright-report/
 .claude/worktrees/
 bench/runs/
 .onto-out/
+dist-player/

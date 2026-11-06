@@ -1,13 +1,15 @@
 import { useSyncExternalStore } from 'react';
-import { FACE_NAMES, type FaceName, GRIDS, type GridName } from '@/index.js';
+import { GRIDS, type GridName } from '@/index.js';
 import {
   type Dot,
   LAMPS,
   type LampSettings,
   type Layout,
+  MAX_COLS,
   type Picture,
   type Stamp,
 } from './model.js';
+import { decode, type Linked, stampOf } from './share.js';
 
 const KEY = 'bree:paint';
 /** How many strokes undo reaches back; older ones drop off. */
@@ -41,21 +43,6 @@ function dotOf(v: unknown): Dot | null {
   return null;
 }
 
-function stampOf(v: unknown): Stamp | null {
-  const s = v as Partial<Stamp> | null;
-  if (!s || typeof s.text !== 'string' || typeof s.id !== 'string') return null;
-  const face: FaceName = s.face && FACE_NAMES.includes(s.face) ? s.face : 'standard';
-  return {
-    id: s.id,
-    text: s.text,
-    face,
-    x: whole(s.x, -400, 400, 0),
-    y: whole(s.y, -400, 400, 0),
-    hex: typeof s.hex === 'number' ? s.hex : 0xffffff,
-    level: real(s.level, 0, 1, 1),
-  };
-}
-
 function load(): Saved {
   let raw: Partial<Saved> = {};
   try {
@@ -72,7 +59,7 @@ function load(): Saved {
   const m = (raw.lamps ?? {}) as Partial<LampSettings>;
   return {
     v: VERSION,
-    layout: { cols: whole(l.cols, 4, 200, 48), rows: whole(l.rows, 4, 120, 32), grid },
+    layout: { cols: whole(l.cols, 4, MAX_COLS, 48), rows: whole(l.rows, 4, 120, 32), grid },
     picture,
     stamps: (Array.isArray(raw.stamps) ? raw.stamps : []).flatMap((s) => stampOf(s) ?? []),
     lamps: {
@@ -183,6 +170,12 @@ export const paint = {
     lastEdit = undefined;
     emit();
   },
+  /** Replaces the board and drawing with `linked`; undo brings the drawing back. */
+  open(linked: Linked) {
+    picked = null;
+    remember();
+    commit({ ...state, ...linked });
+  },
   clear() {
     if (Object.keys(state.picture).length === 0 && state.stamps.length === 0) return;
     picked = null;
@@ -208,3 +201,7 @@ export const paint = {
 };
 
 export const usePaint = () => useSyncExternalStore(paint.subscribe, paint.get);
+
+const linked = decode(location.hash);
+if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+if (linked) paint.open(linked);

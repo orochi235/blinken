@@ -33,6 +33,10 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 
 ## Known gaps
 
+- `npm run smoke`'s `stretched` page (a 320 × 63 sign) lights 0 pixels, at about 3 fps with an 87 ms mix, while the other four pass. Until the lit count was read from a screenshot (`scripts/lit.mjs`), the smoke crashed on its first page, since a WebGL or WebGPU canvas has no 2D context, so this went unseen; it isn't known whether the sign is dark or just hasn't reached its first message in 2.2 s at that rate (2026-11-04).
+- `dim` and `desaturate` change once and stay changed, so looped they snap back at each repeat; every other looping effect closes its loop, which `test/loop-seams.test.ts` holds at each setting's least and most. Making these two seamless means changing what they are: going there and back, or holding the end instead of repeating (2026-11-05).
+- `<bree-player>` carries the whole runtime, about 195 KB gzipped, whatever its program uses (`docs/player.md`) (2026-11-04).
+
 - On `grid: 'triangles'`, the `reel-in` move spins letters rasterized without doubling, so they show half width; it reads glyphs through `rasterize` rather than `placeText`'s `lookOn` (2026-11-04).
 - The `strokes` face samples each glyph as if it starts on an up-pointing triangle; text placed at an odd column or row draws each triangle flipped, which roughens its strokes, and a scroll by one place shows it every other step (2026-11-04).
 - The triangle grid draws no seams between its hexagons: they only describe the tiling. Other tilings (squares cut into four, say) would each be a `triangleAt` of their own (2026-11-04).

@@ -1,5 +1,14 @@
 import { oklab } from '@msb235/blits';
-import { board, createSign, frameOf, GRIDS, type Lamps, signColumns } from '@/index.js';
+import {
+  board,
+  createSign,
+  frameOf,
+  GRIDS,
+  type Lamps,
+  signColumns,
+  triangleUnder,
+} from '@/index.js';
+import { floodFill } from './fill.js';
 import {
   type Brush,
   covers,
@@ -45,14 +54,17 @@ export interface Painter {
 export function createPainter(
   canvas: HTMLCanvasElement,
   overlay: HTMLCanvasElement,
+  preview: HTMLCanvasElement,
   layout: Layout,
   view: View,
   hooks: PainterHooks,
 ): Painter {
   const grid = GRIDS[layout.grid];
+  const triangles = layout.grid === 'triangles';
   const b = board(layout.cols, layout.rows, false);
   const sign = createSign(canvas, b, b.dots, 'dark', grid);
-  const marks = createOverlay(overlay, canvas, b, grid);
+  const small = createSign(preview, b, b.dots, 'dark', grid);
+  const marks = createOverlay(overlay, canvas, b, layout.grid);
   const cols = signColumns(b.dots.length);
   const at = b.dots.map((d) => grid(d.x, d.y));
   const indexOf = new Map(b.dots.map((d, i) => [key(d.x, d.y), i]));
@@ -95,13 +107,33 @@ export function createPainter(
     return [near, nearest];
   }
 
+  /**
+   * The index of the dot under `[px, py]`, or -1. Off the board, the nearest dot within `reach`
+   * pitches; on the triangle tiling, on it, the triangle it is in, since neighbors' middles sit too
+   * close for the nearest to be the right one by an edge.
+   */
+  function dotUnder(px: number, py: number, reach = reachOf(1) + 1): number {
+    if (triangles) {
+      const i = indexOf.get(key(...triangleUnder(px, py)));
+      if (i !== undefined) return i;
+    }
+    const [near, nearest] = nearestTo(px, py);
+    return nearest <= reach ? near : -1;
+  }
+
+  /** Where a brush at `[px, py]` is centered: on the triangle tiling, the middle of the triangle under it. */
+  function centerOf(px: number, py: number, under: number): [number, number] {
+    return triangles && under >= 0 ? (at[under] as [number, number]) : [px, py];
+  }
+
   function redraw(): void {
-    const near = pointer ? nearestTo(...pointer) : null;
+    const under = pointer ? dotUnder(...pointer) : -1;
     const brush = hooks.brush();
+    const d = b.dots[under];
     marks.draw({
-      pointer,
-      // Off the board's edge by more than a dot paints nothing.
-      nearest: near && near[1] <= reachOf(1) + 1 ? (at[near[0]] as [number, number]) : null,
+      pointer: pointer && centerOf(...pointer, under),
+      nearest: under >= 0 ? (at[under] as [number, number]) : null,
+      cell: d ? [d.x, d.y] : null,
       brush,
       stamps: shown.stamps,
       picked: shown.picked,
@@ -109,12 +141,13 @@ export function createPainter(
     });
   }
 
-  /** Inks every dot the brush covers at `[px, py]`, or the nearest one at size 1. */
+  /** Inks every dot the brush covers at `[px, py]`, and the one under it. */
   function dab(px: number, py: number, brush: Brush, erase: boolean): void {
+    const under = dotUnder(px, py, reachOf(brush.size) + 1);
+    const [cx, cy] = centerOf(px, py, under);
     for (const [i, [x, y]] of at.entries())
-      if (covers(brush.shape, brush.size, x - px, y - py)) ink(i, brush, erase);
-    const [near, nearest] = nearestTo(px, py);
-    if (near >= 0 && nearest <= reachOf(brush.size) + 1) ink(near, brush, erase);
+      if (covers(brush.shape, brush.size, x - cx, y - cy)) ink(i, brush, erase);
+    if (under >= 0) ink(under, brush, erase);
   }
 
   function ink(i: number, brush: Brush, erase: boolean): void {
@@ -146,14 +179,26 @@ export function createPainter(
     light();
   }
 
+  /** Fills the region under `p` with the brush's color, or turns it off when `erase`. */
+  function fill(p: [number, number], brush: Brush, erase: boolean): void {
+    const d = b.dots[dotUnder(...p)];
+    if (!d) return;
+    const to = erase ? null : { hex: brush.hex, level: brush.level };
+    const next = floodFill(shown.picture, layout, [d.x, d.y], to);
+    if (next === shown.picture) return;
+    shown.picture = next;
+    light();
+    hooks.onPaint({ ...next });
+  }
+
   /** The stamp being dragged, and which of its dots the pointer holds it by. */
   let held: { id: string; dx: number; dy: number } | null = null;
 
   function grab(p: [number, number]): void {
-    const d = b.dots[nearestTo(...p)[0]];
+    const d = b.dots[dotUnder(p[0], p[1], Number.POSITIVE_INFINITY)];
     if (!d) return;
     const hit = [...shown.stamps].reverse().find((s) => {
-      const box = stampBox(s);
+      const box = stampBox(s, layout.grid);
       return d.x >= box.x && d.x < box.x + box.cols && d.y >= box.y && d.y < box.y + box.rows;
     });
     held = hit ? { id: hit.id, dx: d.x - hit.x, dy: d.y - hit.y } : null;
@@ -161,7 +206,7 @@ export function createPainter(
   }
 
   function drag(p: [number, number]): void {
-    const d = b.dots[nearestTo(...p)[0]];
+    const d = b.dots[dotUnder(p[0], p[1], Number.POSITIVE_INFINITY)];
     if (!held || !d) return;
     const { id, dx, dy } = held;
     shown.stamps = shown.stamps.map((s) => (s.id === id ? { ...s, x: d.x - dx, y: d.y - dy } : s));
@@ -172,8 +217,13 @@ export function createPainter(
     if (e.button !== 0 && e.button !== 2) return;
     const p = pitchAt(e);
     canvas.setPointerCapture(e.pointerId);
-    if (hooks.brush().tool === 'text') {
+    const brush = hooks.brush();
+    if (brush.tool === 'text') {
       if (e.button === 0) grab(p);
+      return;
+    }
+    if (brush.tool === 'fill') {
+      fill(p, brush, e.button === 2);
       return;
     }
     erasing = e.button === 2;
@@ -182,8 +232,9 @@ export function createPainter(
   };
   const move = (e: PointerEvent) => {
     pointer = pitchAt(e);
-    if (canvas.hasPointerCapture(e.pointerId)) {
-      if (hooks.brush().tool === 'text') drag(pointer);
+    const tool = hooks.brush().tool;
+    if (canvas.hasPointerCapture(e.pointerId) && tool !== 'fill') {
+      if (tool === 'text') drag(pointer);
       else stroke(pointer);
     }
     redraw();
@@ -195,7 +246,8 @@ export function createPainter(
     if (held) {
       held = null;
       hooks.onStamps(shown.stamps);
-    } else if (hooks.brush().tool !== 'text') hooks.onPaint({ ...shown.picture });
+    } else if (hooks.brush().tool !== 'text' && hooks.brush().tool !== 'fill')
+      hooks.onPaint({ ...shown.picture });
   };
   const leave = () => {
     pointer = null;
@@ -218,6 +270,7 @@ export function createPainter(
   let then = performance.now();
   let frameId = requestAnimationFrame(function tick(now) {
     sign.render(cols, 0xffffff, now - then);
+    small.render(cols, 0xffffff, now - then);
     then = now;
     frameId = requestAnimationFrame(tick);
   });
@@ -245,6 +298,7 @@ export function createPainter(
       canvas.removeEventListener('pointerleave', leave);
       canvas.removeEventListener('contextmenu', menu);
       sign.destroy();
+      small.destroy();
     },
   };
 }

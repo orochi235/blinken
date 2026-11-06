@@ -26,6 +26,19 @@ export interface Layout {
   grid: GridName;
 }
 
+/** The most columns a board can have. */
+export const MAX_COLS = 200;
+
+/**
+ * `layout` moved onto `grid`, keeping its width: the triangle tiling sets its places half a pitch
+ * apart, so it takes twice the columns.
+ */
+export function onGrid(layout: Layout, grid: GridName): Layout {
+  const per = (g: GridName) => (g === 'triangles' ? 2 : 1);
+  const cols = Math.round((layout.cols * per(grid)) / per(layout.grid));
+  return { ...layout, grid, cols: Math.min(Math.max(cols, 4), MAX_COLS) };
+}
+
 /** The page's look for every light: sizes and gaps in CSS pixels, unless `fit` scales them to the page. */
 export interface LampSettings {
   size: number;
@@ -48,7 +61,7 @@ export function lampsOf(s: LampSettings): Lamps {
   };
 }
 
-export type Tool = 'paint' | 'shade' | 'erase' | 'text';
+export type Tool = 'paint' | 'shade' | 'erase' | 'fill' | 'text';
 export const SHAPES = ['round', 'square', 'diamond', 'row', 'column'] as const;
 export type Shape = (typeof SHAPES)[number];
 

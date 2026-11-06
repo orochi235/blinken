@@ -126,20 +126,21 @@ function Compose() {
 
 export function App() {
   return (
-    <LabShell
-      title="bree compose"
-      mode="dark"
-      pages={PAGES}
-      header={
-        <>
-          <UndoBar />
-          <ShareBar />
-        </>
-      }
-    >
-      <Persistence storageKey={SIGN_RECORDS} storage={localStorageAdapter}>
+    // Outside the shell, so the share bar in its header can read the sign's hardware too.
+    <Persistence storageKey={SIGN_RECORDS} storage={localStorageAdapter}>
+      <LabShell
+        title="bree compose"
+        mode="dark"
+        pages={PAGES}
+        header={
+          <>
+            <UndoBar />
+            <ShareBar />
+          </>
+        }
+      >
         <Compose />
-      </Persistence>
-    </LabShell>
+      </LabShell>
+    </Persistence>
   );
 }

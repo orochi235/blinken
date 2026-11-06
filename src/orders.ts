@@ -103,7 +103,7 @@ export const placeText = (board: Board, text: string, look?: Look): Placed => ({
  * `look` as `board` shows it: on the triangle tiling a face's columns are doubled, two places to a
  * dot, its letters spaced a dot apart; the `strokes` face is drawn there as it is.
  */
-export function lookOn(board: Board, look: Look = {}): Look {
+export function lookOn(board: Pick<Board, 'grid'>, look: Look = {}): Look {
   const face = faceOf(look.face);
   if (board.grid !== 'triangles' || face.name === 'strokes') return look;
   const tracking = look.style?.tracking ?? 0;

@@ -3,12 +3,10 @@
 // Playwright's default headless shell only gets SwiftShader.
 import { readdir } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { build } from 'esbuild';
 import { chromium } from 'playwright';
-import { blitsAlias } from '../../blits.config.ts';
+import { bundle } from '../../scripts/bundle.mjs';
 
 const dir = new URL('.', import.meta.url).pathname;
-const src = new URL('../../src/', import.meta.url).pathname;
 const only = process.argv[2];
 const files = (await readdir(dir)).filter(
   (f) => f.endsWith('.gpu.ts') && (!only || f.includes(only)),
@@ -16,25 +14,11 @@ const files = (await readdir(dir)).filter(
 const entry =
   files.map((f) => `import './${f}';`).join('\n') +
   "\nimport { runAll } from './harness.js';\nrunAll();\n";
-const out = await build({
+const out = await bundle({
   stdin: { contents: entry, resolveDir: dir, loader: 'ts' },
-  bundle: true,
   format: 'esm',
-  write: false,
-  alias: blitsAlias,
-  plugins: [
-    {
-      name: 'bree-src',
-      setup(b) {
-        b.onResolve({ filter: /^@\// }, (a) =>
-          b.resolve(`./${a.path.slice(2)}`, { resolveDir: src, kind: a.kind }),
-        );
-      },
-    },
-  ],
   // The package says it has no side effects, which would drop every test file's registrations.
   ignoreAnnotations: true,
-  logLevel: 'error',
 });
 const js = out.outputFiles[0].text;
 const server = createServer((req, res) => {

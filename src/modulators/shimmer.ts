@@ -47,8 +47,8 @@ const boundOf = (at: Placed, p: { every: number; width: number; angle: number })
   return {
     rows,
     slope,
-    from: -p.width - Math.max(0, (rows - 1) * slope),
-    to: cols - 1 + p.width - Math.min(0, (rows - 1) * slope),
+    from: Math.min(0, (rows - 1) * slope) - p.width,
+    to: cols - 1 + Math.max(0, (rows - 1) * slope) + p.width,
     sweep: Math.min(p.every, SWEEP) / p.every,
     width: p.width,
   };

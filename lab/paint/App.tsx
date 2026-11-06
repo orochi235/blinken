@@ -4,12 +4,15 @@ import { GRIDS, type GridName } from '@/index.js';
 import { IconButton } from '../compose/IconButton.js';
 import { numOf } from '../compose/schema.js';
 import { PAGES } from '../pages.js';
+import { FileButtons } from './FileButtons.js';
 import { LampsBar } from './LampsBar.js';
 import {
   type Brush,
   type LampSettings,
   type Layout,
   lampsOf,
+  MAX_COLS,
+  onGrid,
   type Shape,
   type Tool,
 } from './model.js';
@@ -63,6 +66,7 @@ export function App() {
           >
             clear
           </Button>
+          <FileButtons />
         </div>
         <Tools
           tool={tool}
@@ -98,17 +102,25 @@ function Board({
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const overlay = useRef<HTMLCanvasElement>(null);
+  const preview = useRef<HTMLCanvasElement>(null);
   const painter = useRef<Painter | null>(null);
   const { cols, rows, grid } = layout;
 
   useEffect(() => {
-    if (!canvas.current || !overlay.current) return;
-    const p = createPainter(canvas.current, overlay.current, { cols, rows, grid }, paint.get(), {
-      brush: () => brush.current,
-      onPaint: paint.setPicture,
-      onStamps: (s) => paint.setStamps(s),
-      onPick: paint.pick,
-    });
+    if (!canvas.current || !overlay.current || !preview.current) return;
+    const p = createPainter(
+      canvas.current,
+      overlay.current,
+      preview.current,
+      { cols, rows, grid },
+      paint.get(),
+      {
+        brush: () => brush.current,
+        onPaint: paint.setPicture,
+        onStamps: (s) => paint.setStamps(s),
+        onPick: paint.pick,
+      },
+    );
     p.setLamps(lampsOf(paint.get().lamps));
     painter.current = p;
     const off = paint.subscribe(() => p.show(paint.get()));
@@ -124,10 +136,15 @@ function Board({
   useEffect(() => painter.current?.redraw(), [tool]);
 
   return (
-    <div className="paint-board" data-fit={lamps.fit}>
-      <div className="paint-stage" data-tool={tool}>
-        <canvas ref={canvas} />
-        <canvas ref={overlay} className="paint-overlay" />
+    <div className="paint-frame">
+      <div className="paint-board" data-fit={lamps.fit}>
+        <div className="paint-stage" data-tool={tool}>
+          <canvas ref={canvas} />
+          <canvas ref={overlay} className="paint-overlay" />
+        </div>
+      </div>
+      <div className="paint-preview" title="The picture at a small size">
+        <canvas ref={preview} />
       </div>
     </div>
   );
@@ -156,14 +173,14 @@ function LayoutBar({ layout }: { layout: Layout }) {
         grid
         <select
           value={layout.grid}
-          onChange={(e) => paint.setLayout({ ...layout, grid: e.currentTarget.value as GridName })}
+          onChange={(e) => paint.setLayout(onGrid(layout, e.currentTarget.value as GridName))}
         >
           {Object.keys(GRIDS).map((g) => (
             <option key={g}>{g}</option>
           ))}
         </select>
       </label>
-      {number('cols', 'columns', 200)}
+      {number('cols', 'columns', MAX_COLS)}
       {number('rows', 'rows', 120)}
     </div>
   );

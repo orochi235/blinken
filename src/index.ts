@@ -54,7 +54,16 @@ export {
   type Span,
   type TextStyle,
 } from './font.js';
-export { GRIDS, type Grid, type GridName, gridOf } from './grid.js';
+export {
+  GRIDS,
+  type Grid,
+  type GridName,
+  gridOf,
+  pointsUp,
+  TRI_H,
+  triangleAt,
+  triangleUnder,
+} from './grid.js';
 export type { LayerOption } from './layers.js';
 export { createMarquee } from './marquee.js';
 export type { Follow, FrameCost, Marquee, MarqueeOptions } from './marquee-api.js';
@@ -70,6 +79,7 @@ export {
 } from './moves/index.js';
 export { FADE, type Fade, type Ghost, ghosts, settle } from './optics.js';
 export {
+  lookOn,
   ORDERS,
   type Order,
   type OrderBy,
