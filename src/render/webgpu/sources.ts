@@ -54,6 +54,7 @@ export function createSources(device: GPUDevice, b: Board): Sources {
     layout,
     compute: { module: device.createShaderModule({ code: GATHER_WGSL }), entryPoint: 'main' },
   });
+  const plan: (GpuChannel | null)[] = [];
   let follow: Follow | null = null;
   let group: { src: GPUBuffer; from: GPUBuffer; group: GPUBindGroup } | null = null;
 
@@ -71,7 +72,9 @@ export function createSources(device: GPUDevice, b: Board): Sources {
       head[0] = n;
       head[1] = dots;
       head[2] = follow ? followMask(follow.planes) : 0;
-      for (const [c, on] of planOf(source).entries()) {
+      planOf(source, plan);
+      for (let c = 0; c < CHANNELS.length; c++) {
+        const on = plan[c];
         const name = CHANNELS[c] as (typeof CHANNELS)[number];
         const axes = axesOf(name);
         const base = n * SLOT[name];
@@ -109,17 +112,22 @@ export function createSources(device: GPUDevice, b: Board): Sources {
 }
 
 /**
- * Where a gather reads each channel this frame, in `CHANNELS` order: `source`'s buffer, or null
- * for the columns. The channels read from the GPU must all share one buffer.
+ * Where a gather reads each channel this frame, in `CHANNELS` order, written into `into`:
+ * `source`'s buffer, or null for the columns. The channels read from the GPU must all share one
+ * buffer.
  */
-export function planOf(source: ChannelSource | null): (GpuChannel | null)[] {
+export function planOf(
+  source: ChannelSource | null,
+  into: (GpuChannel | null)[] = [],
+): (GpuChannel | null)[] {
   let src: unknown = null;
-  return CHANNELS.map((name) => {
-    const on = source?.channel(name) ?? null;
-    if (!on?.buffer || on.offset % 4 !== 0 || (src !== null && src !== on.buffer)) return null;
-    src = on.buffer;
-    return on;
-  });
+  for (let c = 0; c < CHANNELS.length; c++) {
+    const on = source?.channel(CHANNELS[c] as (typeof CHANNELS)[number]) ?? null;
+    const ok = on?.buffer && on.offset % 4 === 0 && (src === null || src === on.buffer);
+    if (ok) src = on.buffer;
+    into[c] = ok ? on : null;
+  }
+  return into;
 }
 
 /** One bit per pose number the followed planes carry. */

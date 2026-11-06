@@ -171,12 +171,24 @@ function readback(
   return { next, destroy: () => staging?.destroy() };
 }
 
-/** The columns `cols` holds of `channels`: all of it when that is every channel. */
+const picks = new WeakMap<SignColumns, Map<number, Partial<SignColumns>>>();
+/** The columns `cols` holds of `channels`: all of it when that is every channel, else one kept per set. */
 function only(cols: SignColumns, channels: ReadonlySet<Channel>): Partial<SignColumns> {
   if (channels.size === CHANNELS.length) return cols;
-  const out: Partial<Record<Channel, Float64Array>> = {};
-  for (const c of channels) out[c] = cols[c];
-  return out;
+  let mask = 0;
+  for (let c = 0; c < CHANNELS.length; c++)
+    if (channels.has(CHANNELS[c] as Channel)) mask |= 1 << c;
+  let byMask = picks.get(cols);
+  if (!byMask) {
+    byMask = new Map();
+    picks.set(cols, byMask);
+  }
+  const kept = byMask.get(mask);
+  if (kept) return kept;
+  const made: Partial<Record<Channel, Float64Array>> = {};
+  for (const c of channels) made[c] = cols[c];
+  byMask.set(mask, made);
+  return made;
 }
 
 /**

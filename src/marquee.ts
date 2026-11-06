@@ -186,7 +186,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   const overlay = createOverlay(b, cols, drawing, () => self, opts.follow);
   /** Settles and lays the follow outside a frame, pulling any channel it moved onto the CPU. */
   const prepare = () => {
-    const was = drawing.cpuChannels();
+    const was = new Set(drawing.cpuChannels());
     overlay.prepare();
     const moved = [...drawing.cpuChannels()].filter((c) => !was.has(c));
     pullChannels(m, b, cols, cells, new Set(moved));

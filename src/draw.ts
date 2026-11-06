@@ -32,12 +32,13 @@ export function paintBulbs(
   channels: Iterable<keyof SignColumns> = CHANNELS,
 ): void {
   const after = b.dots.length;
-  const which = [...channels];
-  for (let j = 0; j < b.bulbs.length; j++) {
-    const c = b.cellOf[j] as number;
-    for (const ch of which) {
-      const n = axesOf(ch);
-      cols[ch].set(cells[ch].subarray(c * n, c * n + n), (after + j) * n);
+  for (const ch of channels) {
+    const n = axesOf(ch);
+    const from = cells[ch];
+    const to = cols[ch];
+    for (let j = 0; j < b.bulbs.length; j++) {
+      const c = b.cellOf[j] as number;
+      for (let a = 0; a < n; a++) to[(after + j) * n + a] = from[c * n + a] as number;
     }
   }
 }

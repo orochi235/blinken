@@ -24,7 +24,7 @@ export interface WebGpuSign extends Sign {
   /**
    * The channels the next render reads from the columns rather than the source's buffer, dots and
    * bulbs alike. It holds until the source's mix syncs or changes again, or the source starts or
-   * stops keeping a channel on the CPU.
+   * stops keeping a channel on the CPU. The set is reused: the next call changes it.
    */
   cpuChannels(): ReadonlySet<keyof SignColumns>;
 }
@@ -75,6 +75,8 @@ export function createWebGpuSignOf(
   const lost = watchLost(handle);
   let off = false;
   let gone = false;
+  const plan: ReturnType<typeof planOf> = [];
+  const onCpu = new Set<keyof SignColumns>();
 
   const look = (): Look => ({
     pitch: placement.pitch,
@@ -107,8 +109,11 @@ export function createWebGpuSignOf(
       return parts.sources.pose;
     },
     cpuChannels() {
-      const plan = planOf(source);
-      return new Set(CHANNELS.filter((_, c) => plan[c] === null));
+      planOf(source, plan);
+      onCpu.clear();
+      for (let c = 0; c < CHANNELS.length; c++)
+        if (plan[c] === null) onCpu.add(CHANNELS[c] as keyof SignColumns);
+      return onCpu;
     },
     render(cols, fallback, dt) {
       guard(() => {

@@ -19,7 +19,6 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - GPU paths missing tests: the RGBA8 fallback (where `EXT_color_buffer_float` is missing), a layer cued on a gpu mix, and partial weight, params-while-off and seek-past-loop for a layer cued only while on (2026-11-04).
 - The shaders compare f32 values at thresholds in `tile`, `neon` and `glitch`, so a dot within one f32 step of a boundary can disagree with the CPU for a frame; sampled times showed none. The WebGPU flicker step loses whole steps after hours of clock (2026-11-04).
 - The WebGL blur's taps are `max(1, 3σ/16)` texels apart, so at a large pitch times pixel ratio (around 120 device pixels) it may band; not measured (2026-11-04).
-- WebGPU allocates every frame (the `cpuChannels` Set, the `planOf` array, `only()`, `paintBulbs`'s spread), which is garbage the 2D and WebGL paths don't make (2026-11-04).
 - Every marquee statically imports the GPU modules, so a page that never draws with WebGPU still downloads them (2026-11-04).
 - Where WebGPU is absent the lab shows a disabled "webgpu" option as selected, and its WebGL and 2D choices wait on `gpu()` at startup (2026-11-04).
 
