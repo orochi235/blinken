@@ -30,4 +30,5 @@ export const matrix: DisplayType = {
   glow: 1,
   align: 'left',
   ...textCoding(table),
+  selection: 'invert',
 };

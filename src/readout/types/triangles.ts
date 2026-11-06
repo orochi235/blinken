@@ -37,6 +37,7 @@ const glyphEncoder =
 
 /** Each cell a run of the tiling whose width is even, so the next cell carries on the tiling. */
 const family = {
+  selection: 'invert',
   gap: -0.5,
   ends: 'round',
   socket: 'segment',

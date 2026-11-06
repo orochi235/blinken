@@ -195,7 +195,8 @@ page shows every type.
 
 A readout whose type spells letters or numbers (the segment types, `matrix`, `nixie` and the
 triangle types) can be selected and copied like text: dragging across its cells selects the
-characters they show, `1.` or `2:` with their mark. `select: false` turns this off, which an
+characters they show, `1.` or `2:` with their mark; a dot-grid type shows the selection by
+inverting its lights. `select: false` turns this off, which an
 overlay readout over something clickable wants, since its cells take the pointer.
 
 ## Pieces, effects and programs

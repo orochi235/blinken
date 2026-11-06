@@ -4,6 +4,7 @@ import type { Follow, Marquee } from '../marquee-api.js';
 import { axesOf } from '../optics.js';
 import { PLANES } from '../planes.js';
 import { type Drawing, drawingOf } from './attach.js';
+import { swapMarked } from './highlight.js';
 import { POSE, SLOT } from './webgpu/wgsl-optics.js';
 
 /** What a marquee lays over its pulled columns: a followed sign's planes, and a highlight. */
@@ -47,15 +48,14 @@ export function createOverlay(
   /** The source the WebGPU sign is following on the GPU. */
   let bound: Marquee | null = null;
 
-  let marked: ((dot: Led) => boolean) | null = null;
+  let marked: Uint8Array | null = null;
   /** The invert each marked dot had from the mix, so marking it again doesn't swap it back. */
   let mixed: Float64Array | null = null;
 
   function highlight(): void {
     if (!marked || mine.webgpu) return;
     mixed = Float64Array.from(cols.invert.subarray(0, b.dots.length));
-    for (let i = 0; i < b.dots.length; i++)
-      if (marked(b.dots[i] as Led)) cols.invert[i] = 1 - Math.min(1, Math.max(0, mixed[i] ?? 0));
+    swapMarked(cols, marked);
   }
 
   return {
@@ -107,9 +107,9 @@ export function createOverlay(
     },
     highlight,
     setHighlight(next) {
-      marked = next;
+      marked = next ? Uint8Array.from(b.dots, (d) => (next(d) ? 1 : 0)) : null;
       if (mine.webgpu) {
-        mine.webgpu.setHighlight(next ? Uint8Array.from(b.dots, (d) => (next(d) ? 1 : 0)) : null);
+        mine.webgpu.setHighlight(marked);
         return;
       }
       // A held sign won't pull again, so the mix's own invert comes back from what was kept.

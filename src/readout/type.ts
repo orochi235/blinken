@@ -75,6 +75,12 @@ export interface DisplayType {
    * numbers; a readout of such a type can be selected and copied as text.
    */
   text?(value: string | number, cells: number, align: Align): string[];
+  /**
+   * How a selected cell shows: its lights inverted, which reads on a grid of dots, or a block of the
+   * selection color, where inverting would light every segment its character leaves dark. Default
+   * `'block'`.
+   */
+  readonly selection?: 'invert' | 'block';
 }
 
 /** Fits `shown`, one entry per cell, into `cells`: numbers keep their last, text its first. */
