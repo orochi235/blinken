@@ -1,7 +1,7 @@
 import { AMBER, type Marquee, type Scene } from '@/index.js';
 import { designer } from '../compose/designer/open.js';
 import { library, shelved } from '../compose/library.js';
-import type { Player } from '../compose/player.js';
+import { carried, carrier, type Player } from '../compose/player.js';
 import { STILL } from '../compose/Thumbnail.js';
 
 /**
@@ -14,37 +14,17 @@ export function previewScene(): Scene {
   return { effect, text: designer.text() || ' ', hex: AMBER };
 }
 
-let sign: Marquee | null = null;
-let rate = 1;
-let held = false;
-/** Where the last sign's pass stood when it was taken down, for the next one to play on from. */
-let resume: number | undefined;
+const state = carried();
 let shown = JSON.stringify(previewScene());
 
 /** The effects page's sign, which the playback controls and the scrubber drive. */
 export const preview: Player & { attach(next: Marquee | null): void; step(): void } = {
-  pass: () => sign?.pass() ?? null,
+  ...carrier(state),
   /** Moves an effect paced by input on a letter. */
-  step: () => sign?.step(),
-  seek(ms, hold = false) {
-    held = hold;
-    sign?.seek(ms, { hold });
-  },
+  step: () => state.sign?.step(),
   restart() {
-    held = false;
-    sign?.restart(0);
-  },
-  rate: () => rate,
-  setRate(next) {
-    rate = next;
-    sign?.ramp(next, 150);
-  },
-  /** Takes the sign the page drew, or null as it goes; a new one plays on from where the last stood. */
-  attach(next) {
-    if (!next) resume = sign?.pass()?.at;
-    sign = next;
-    if (next && rate !== 1) next.ramp(rate, 0);
-    if (next && resume !== undefined) next.seek(resume, { hold: held });
+    state.held = false;
+    state.sign?.restart(0);
   },
 };
 
@@ -53,6 +33,6 @@ designer.subscribe(() => {
   const next = JSON.stringify(previewScene());
   if (next === shown) return;
   shown = next;
-  held = false;
-  sign?.restart(0);
+  state.held = false;
+  state.sign?.restart(0);
 });

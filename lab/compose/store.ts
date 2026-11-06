@@ -11,6 +11,7 @@ import {
 import type { Choice } from '../backend.js';
 import { gestureKey } from './gesture.js';
 import { type Library, library, shelved } from './library.js';
+import { type Carried, carried, carrier } from './player.js';
 import type { ComposeState } from './state.js';
 import { loadChoice, open, save, saveChoice } from './storage.js';
 import { createUndo, type Undo } from './undo.js';
@@ -18,19 +19,12 @@ import { createUndo, type Undo } from './undo.js';
 /** What the sign does after an edit: play again from a scene, or nothing. */
 export type After = { replay: number | 'picked' } | null;
 
-interface Live {
+interface Live extends Carried {
   opened: ReturnType<typeof open>;
   state: ComposeState;
   solo: boolean;
-  /** The rate the sign plays at. */
-  rate: number;
   /** The backend the sign is asked to draw with. */
   backend: Choice;
-  sign: Marquee | null;
-  /** Whether the scrubber holds the sign still, which a sign built to replace it keeps. */
-  held: boolean;
-  /** Where the last sign's pass stood when it was taken down, for the next one to play on from. */
-  resume: number | undefined;
   listeners: Set<() => void>;
   undo: Undo;
 }
@@ -56,14 +50,11 @@ function begin(): Live {
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   // Undo reads the state through this object, so it is made before the history that needs it.
   const l = {
+    ...carried(),
     opened,
     state: opened.state,
     solo: false,
-    rate: 1,
     backend: loadChoice(),
-    sign: null,
-    held: false,
-    resume: undefined,
     listeners: new Set(),
   } as Live;
   l.undo = createUndo({
@@ -77,6 +68,7 @@ function begin(): Live {
 }
 
 export const opened = live.opened;
+const carry = carrier(live);
 
 /** Plays the whole program again from scene `from`, so the pass always spans every scene. */
 function replay(from: number): void {
@@ -143,20 +135,15 @@ export const compose = {
   },
   restart: () => replay(pickedOf(live.state)),
   /** Where the sign's pass stands, or null with no sign or nothing playing. */
-  pass: (): Pass | null => live.sign?.pass() ?? null,
+  pass: (): Pass | null => carry.pass(),
   /** Moves the sign's pass to `ms`, held there with `hold`. */
-  seek(ms: number, hold = false) {
-    if (!live.sign) return;
-    live.held = hold;
-    live.sign.seek(ms, { hold });
-  },
+  seek: (ms: number, hold = false) => carry.seek(ms, hold),
   /** The program scene a scene of the pass plays: soloed, the pass is the picked scene alone. */
   sceneOf: (p: PassScene): number => (live.solo ? pickedOf(live.state) : p.scene),
   /** The rate the sign plays at, which a sign built later takes too. */
-  rate: () => live.rate ?? 1,
+  rate: () => carry.rate(),
   setRate(rate: number) {
-    live.rate = rate;
-    live.sign?.ramp(rate, 150);
+    carry.setRate(rate);
     notify();
   },
   /** The backend the sign is asked to draw with, which builds it again on a fresh canvas. */
@@ -173,10 +160,7 @@ export const compose = {
    * plays on from where the last one's pass stood, still held if it was.
    */
   attach(next: Marquee | null) {
-    if (!next) live.resume = live.sign?.pass()?.at;
-    live.sign = next;
-    if (next && live.rate !== 1) next.ramp(live.rate, 0);
-    if (next && live.resume !== undefined) next.seek(live.resume, { hold: live.held });
+    carry.attach(next);
     notify();
   },
 };
