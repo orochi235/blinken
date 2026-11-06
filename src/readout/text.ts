@@ -437,6 +437,8 @@ export function createTextLayer(
         for (let k = 0; k < spot.cells.length; k++) {
           const cell = doc.createElement('span');
           cell.className = 'blinken-text-cell';
+          // An editable one's field is what a screen reader reads; its cells would read it twice.
+          if (one.edit) cell.setAttribute('aria-hidden', 'true');
           const text = doc.createTextNode('');
           cell.append(text);
           group.append(cell);
