@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { board } from '@/board.js';
+import { board, type Led } from '@/board.js';
 import { faceOf } from '@/faces.js';
 import { rasterize } from '@/font.js';
 import { GRIDS, pointsUp, TRI_H, triangleAt, triangleUnder } from '@/grid.js';
 import { createMarquee } from '@/marquee.js';
+import { MOVES } from '@/moves/index.js';
 import { placeText } from '@/orders.js';
+import { values } from '@/params.js';
 import { TYPES } from '@/readout/types/index.js';
 import { PRIM, primBuilder, radiusOfPrim, SOCKET, sdf } from '@/render/prims.js';
 import { boardLights } from '@/render/sign-lights.js';
@@ -77,6 +79,26 @@ describe('a sign on the triangle tiling', () => {
     for (let y = 0; y < plain.rows; y++)
       for (let x = 0; x < plain.cols; x++)
         for (const d of [0, 1]) expect(shown.lit(x * 2 + d, y)).toBe(plain.lit(x, y));
+  });
+
+  it('spins reel-in through letters doubled as its own are', () => {
+    const b = board(40, 7, false, 'triangles');
+    const at = placeText(b, 'TT');
+    const reel = MOVES['reel-in'];
+    const patch = reel.patch(at, values(reel) as never);
+    const litOf = (phase: number, x: number, y: number) =>
+      patch.at(phase, b.dots[y * b.cols + x] as Led, {} as never).lit ?? 0;
+    let lit = 0;
+    for (let k = 1; k < 40; k++)
+      for (const d of b.dots) {
+        const x = d.x - at.left;
+        const letter = at.text.letters[at.text.letterAt(x, at.rowOf(d))];
+        if (!letter || (x - letter.x) % 2 !== 0) continue;
+        const a = litOf(k / 40, d.x, d.y);
+        if (a > 0) lit++;
+        expect(litOf(k / 40, d.x + 1, d.y)).toBe(a);
+      }
+    expect(lit).toBeGreaterThan(0);
   });
 
   it('draws the strokes face as it is, a place to a triangle', () => {

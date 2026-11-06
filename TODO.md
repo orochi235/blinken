@@ -32,7 +32,6 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - `dim` and `desaturate` change once and stay changed, so looped they snap back at each repeat; every other looping effect closes its loop, which `test/loop-seams.test.ts` holds at each setting's least and most. Making these two seamless means changing what they are: going there and back, or holding the end instead of repeating (2026-11-05).
 - `<blinken-player>` carries the whole runtime, about 195 KB gzipped, whatever its program uses (`docs/player.md`) (2026-11-04).
 
-- On `grid: 'triangles'`, the `reel-in` move spins letters rasterized without doubling, so they show half width; it reads glyphs through `rasterize` rather than `placeText`'s `lookOn` (2026-11-04).
 - The `strokes` face samples each glyph as if it starts on an up-pointing triangle; text placed at an odd column or row draws each triangle flipped, which roughens its strokes, and a scroll by one place shows it every other step (2026-11-04).
 - The triangle grid draws no seams between its hexagons: they only describe the tiling. Other tilings (squares cut into four, say) would each be a `triangleAt` of their own (2026-11-04).
 
