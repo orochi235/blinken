@@ -12,6 +12,7 @@ import type { Readout, ReadoutDefect, ReadoutOptions, Surface, SurfaceOptions } 
 import { type Layout, layOutReadouts } from './layout.js';
 import { type Box, type Canvas, type Placed, surfacePlacement } from './placement.js';
 import { createTextLayer } from './text.js';
+import type { Selection } from './type.js';
 import { TYPES } from './types/index.js';
 import { half as HALF } from './types/segments.js';
 import { valueVoice } from './voice.js';
@@ -23,7 +24,23 @@ interface Entry extends Placed {
   value: string | number;
   color: number;
   defects: readonly ReadoutDefect[];
+  /** Which of its cells the page's selection takes in. */
+  picked: readonly boolean[];
 }
+
+/** How a readout's selected cells show. */
+const selectionOf = (e: Entry): Selection =>
+  e.opts.selection ?? TYPES[e.opts.type].selection ?? 'glow';
+
+/** A selected light's color: `lab` paler and a little less saturated. */
+const paler = ([l = 0, a = 0, b = 0, alpha = 1]: readonly number[]): number[] => [
+  l + (1 - l) * 0.6,
+  a * 0.5,
+  b * 0.5,
+  alpha,
+];
+/** How brightly a selected cell's unlit lights glow, where they do. */
+const GLOW_UNLIT = 0.18;
 
 const insides = new WeakMap<Surface, { mix: Mix<Subject, Pose>; layout: () => Layout }>();
 
@@ -39,9 +56,10 @@ function splitHalf(value: string | number, cells: number): [string, string | num
   return [`${minus ? '-' : ''}${one ? '1' : ''}`, one ? body.slice(1) : body];
 }
 
-/** Board rows a readout's band spans: its type's slots, or its ½ digit's where that has more. */
+/** Board rows a readout's band spans: its type's slots, or its ½ digit's where that has more, and an underline's. */
 const slotsOf = (e: Entry) =>
-  Math.max(TYPES[e.opts.type].cell.lights.length, e.opts.half ? HALF.cell.lights.length : 0);
+  Math.max(TYPES[e.opts.type].cell.lights.length, e.opts.half ? HALF.cell.lights.length : 0) +
+  (e.spot.underline === null ? 0 : 1);
 
 /** Whether a readout's characters can be selected: its type spells, and it wasn't asked not to. */
 const selectable = (e: Entry) => (e.opts.select ?? true) && TYPES[e.opts.type].text !== undefined;
@@ -101,9 +119,14 @@ export function createSurface(
     const b = layout.board;
     const mask = new Uint8Array(b.dots.length);
     let any = false;
-    for (const [i, cells] of picked.entries()) {
-      const e = entries[i];
-      if (!e || !cells || TYPES[e.opts.type].selection !== 'invert') continue;
+    for (const [i, e] of entries.entries()) {
+      const cells = picked[i] ?? [];
+      const was = e.picked;
+      e.picked = cells;
+      if (selectionOf(e) !== 'invert') {
+        if (cells.some((on, k) => on !== (was[k] ?? false))) valued = true;
+        continue;
+      }
       for (const [k, on] of cells.entries()) {
         if (!on) continue;
         any = true;
@@ -126,6 +149,7 @@ export function createSurface(
         face: e.opts.face ?? 'plate',
         ends: e.opts.ends,
         half: e.opts.half,
+        underline: selectable(e) && selectionOf(e) === 'underline',
       })),
     );
     for (const [i, e] of entries.entries()) e.spot = layout.spots[i] as Layout['spots'][number];
@@ -142,7 +166,7 @@ export function createSurface(
     placement.refit();
     text?.build(
       entries.map((e) =>
-        selectable(e) ? { spot: e.spot, block: TYPES[e.opts.type].selection !== 'invert' } : null,
+        selectable(e) ? { spot: e.spot, block: selectionOf(e) === 'block' } : null,
       ),
     );
   };
@@ -163,12 +187,24 @@ export function createSurface(
         ...type.encode(rest, e.opts.cells, align).map((s) => ({ s, lights: type.cell.lights })),
       ];
       const color = oklab(e.color);
-      for (const [c, { s, lights }] of shown.entries())
-        for (const [slot, light] of lights.entries()) {
-          const i = (e.spot.base + slot) * b.cols + c;
-          on[i] = s.has(light.name) ? 1 : 0;
+      const pale = paler(color);
+      const how = selectionOf(e);
+      // Stacked lights, as a Nixie's cathodes are, tangle when the unlit ones glow too.
+      const dimUnlit = how === 'glow' && type.socket === 'segment';
+      for (const [c, { s, lights }] of shown.entries()) {
+        const picked = e.picked[c] ?? false;
+        if (picked && how === 'underline' && e.spot.underline !== null) {
+          const i = (e.spot.base + e.spot.underline) * b.cols + c;
+          on[i] = 1;
           tint.set(color, i * 4);
         }
+        for (const [slot, light] of lights.entries()) {
+          const i = (e.spot.base + slot) * b.cols + c;
+          const lit = s.has(light.name);
+          on[i] = lit ? 1 : picked && dimUnlit ? GLOW_UNLIT : 0;
+          tint.set(picked && (how === 'recolor' || how === 'glow') ? pale : color, i * 4);
+        }
+      }
     }
     if (text) for (const [i, e] of entries.entries()) if (selectable(e)) text.write(i, textOf(e));
     voice?.fade({ over: 0 });
@@ -221,7 +257,8 @@ export function createSurface(
         color: o.color ?? (o.type === 'nixie' ? NIXIE : AMBER),
         defects: o.defects ?? [],
         slant: o.slant ?? 0,
-        spot: { base: 0, first: 0, width: 1, height: 1, cells: [] },
+        spot: { base: 0, first: 0, width: 1, height: 1, cells: [], underline: null },
+        picked: [],
         box: boxOf(o, canvas),
       };
       entries.push(e);

@@ -11,6 +11,8 @@ export interface Laid {
   readonly ends?: Ends;
   /** Whether a ½ digit leads the cells. */
   readonly half?: boolean;
+  /** Whether each cell has a bar under it, unlit until something lights it. */
+  readonly underline?: boolean;
 }
 
 /** Where a readout's lights and shapes landed. */
@@ -29,6 +31,8 @@ export interface Spot {
     readonly width: number;
     readonly height: number;
   }[];
+  /** The slot of each cell's underline, or null where it has none. */
+  readonly underline: number | null;
 }
 
 /** Every readout's lights as one board's dots, and the shapes that draw them, a view each. */
@@ -49,8 +53,9 @@ const CORNER = 1 / 30;
  */
 export function layOutReadouts(readouts: readonly Laid[]): Layout {
   const widthOf = (r: Laid) => r.cells + (r.half ? 1 : 0);
-  const slotsOf = (r: Laid) =>
+  const lightsOf = (r: Laid) =>
     Math.max(r.type.cell.lights.length, r.half ? HALF.cell.lights.length : 0);
+  const slotsOf = (r: Laid) => lightsOf(r) + (r.underline ? 1 : 0);
   const cols = Math.max(1, ...readouts.map(widthOf));
   const rows = Math.max(
     1,
@@ -110,7 +115,22 @@ export function layOutReadouts(readouts: readonly Laid[]): Layout {
       boxes.push({ x, y: pad, width: cell.width, height: cell.height });
       x += cell.width + r.type.gap;
     }
-    spots.push({ base, first, width: total, height, cells: boxes });
+    const underline = r.underline ? lightsOf(r) : null;
+    if (underline !== null)
+      for (const [col, b] of boxes.entries())
+        out.bar(
+          (base + underline) * cols + col,
+          v,
+          SOCKET.none,
+          b.x + pad / 2,
+          b.y + b.height + pad / 2,
+          b.x + b.width - pad / 2,
+          b.y + b.height + pad / 2,
+          pad / 3,
+          ENDS.round,
+          r.type.glow,
+        );
+    spots.push({ base, first, width: total, height, cells: boxes, underline });
     base += slotsOf(r);
   }
   return { board: b, leds: b.dots, prims: out.build(), spots };

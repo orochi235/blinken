@@ -70,6 +70,11 @@ body {
   pointer-events: none;
 }
 
+.label,
+.caption {
+  user-select: none;
+}
+
 .label {
   padding: 1px 12px;
   color: #9c8f89;

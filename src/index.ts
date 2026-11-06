@@ -122,7 +122,16 @@ export type {
 } from './readout/api.js';
 export { createOverlay } from './readout/overlay.js';
 export { createPanel } from './readout/panel.js';
-export type { Align, DisplayType, Ends, SegLight, SegShape, TypeName } from './readout/type.js';
+export type {
+  Align,
+  DisplayType,
+  Ends,
+  SegLight,
+  SegShape,
+  Selection,
+  TypeName,
+} from './readout/type.js';
+export { SELECTIONS } from './readout/type.js';
 export { TYPES } from './readout/types/index.js';
 export type { Backend } from './render/backend.js';
 export { type Gpu, gpu } from './render/gpu.js';

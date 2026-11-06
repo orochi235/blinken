@@ -5,7 +5,7 @@ import type { Fade, Ghost } from '../optics.js';
 import type { Backend } from '../render/backend.js';
 import type { Gpu } from '../render/gpu.js';
 import type { Ticker } from '../ticker.js';
-import type { Align, Ends, TypeName } from './type.js';
+import type { Align, Ends, Selection, TypeName } from './type.js';
 
 /** A fault in one segment of a readout: its cell, and its slot in the type's cell. */
 export type ReadoutDefect = Fault & {
@@ -41,6 +41,8 @@ export interface ReadoutOptions {
    * take the pointer. Default true.
    */
   readonly select?: boolean;
+  /** How a selected cell shows, in place of its type's way. */
+  readonly selection?: Selection;
 }
 
 /** A readout on a surface. */

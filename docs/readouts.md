@@ -82,10 +82,19 @@ readout lays the board out again at the next frame and reshapes the sign in plac
 one per cell of each readout whose type has `text`, holding the characters that cell shows (the
 tokenizer `textCoding` shares with its encoder, so a mark rides on its cell). Each frame they're
 moved to the fit the placement used for the views (`fitOf`), skewed with the slant and clipped as
-the readout is, so the browser does selecting and copying. A type's `selection` says how a selected cell shows:
-`matrix` and the triangle types invert its lights through the sign's highlight, as compose's
-size readouts do; every other type gets a block of the selection color, since inverting a segment
-cell lights every segment its character leaves dark (2026-11-06).
+the readout is. The browser won't carry a drag across separately placed boxes, and finds a word or
+a line inside one box only, so each readout's box reads the mouse itself, a cell at a time: drag,
+double-click for the run between blanks, triple-click for the whole readout, Shift+click to extend.
+Each sets a real range on the page's selection, which copying and `selectionchange` read.
+
+How a selected cell shows is the readout's `selection`, else its type's: `invert` swaps its lights
+through the sign's highlight (the default for `matrix` and the triangle types, as compose's size
+readouts do); `glow` (every other type's default) pales its lit lights and lights its unlit ones
+dimly, except where they overlap as a Nixie's cathodes do; `recolor` only pales them; `underline`
+lights a bar the layout adds under each cell; `block` is the browser's own highlight. All but
+`invert` and `block` go through the value voice, so they draw alike on every backend. Inverting a
+segment cell lights every segment its character leaves dark; a lit faceplate with dark segments
+would need lights that cover rather than add, which no backend has (2026-11-06).
 
 **Ghosts** are a surface option: `row` leaks along a segment line (the same segment across a
 readout's digits, as a multiplexed display leaks); `col` runs down a board column and so crosses

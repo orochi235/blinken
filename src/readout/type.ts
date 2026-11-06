@@ -52,6 +52,14 @@ export type TypeName =
   | 'triangles'
   | 'triangles-fine';
 
+/**
+ * How a selected cell shows: `invert` swaps its lights; `block` is the browser's selection color
+ * over it; `recolor` turns its lit lights a paler shade; `glow` does that and lights its unlit ones
+ * dimly too, where they don't overlap as a Nixie's cathodes do; `underline` lights a bar under it.
+ */
+export type Selection = 'invert' | 'block' | 'recolor' | 'glow' | 'underline';
+export const SELECTIONS: readonly Selection[] = ['invert', 'block', 'recolor', 'glow', 'underline'];
+
 /** A kind of segment display: one cell's lights, and how a value lights a row of cells. */
 export interface DisplayType {
   readonly name: TypeName;
@@ -76,11 +84,10 @@ export interface DisplayType {
    */
   text?(value: string | number, cells: number, align: Align): string[];
   /**
-   * How a selected cell shows: its lights inverted, which reads on a grid of dots, or a block of the
-   * selection color, where inverting would light every segment its character leaves dark. Default
-   * `'block'`.
+   * How a selected cell shows by default. `invert` reads on a grid of dots; on segments it lights
+   * every segment the character leaves dark. Default `'glow'`.
    */
-  readonly selection?: 'invert' | 'block';
+  readonly selection?: Selection;
 }
 
 /** Fits `shown`, one entry per cell, into `cells`: numbers keep their last, text its first. */

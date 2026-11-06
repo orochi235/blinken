@@ -7,6 +7,8 @@ import {
   createTicker,
   type Readout,
   type ReadoutOptions,
+  SELECTIONS,
+  type Selection,
   type Surface,
   TYPES,
   type TypeName,
@@ -67,6 +69,8 @@ async function run() {
     location.search = params.toString();
   };
   const faceSelect = $<HTMLSelectElement>('face');
+  const selectionSelect = $<HTMLSelectElement>('selection');
+  for (const name of ['own', ...SELECTIONS]) selectionSelect.add(new Option(name));
   const colorSelect = $<HTMLSelectElement>('color');
   const custom = $<HTMLInputElement>('custom');
   for (const name of ['own', ...Object.keys(PALETTE), 'custom']) colorSelect.add(new Option(name));
@@ -94,6 +98,7 @@ async function run() {
     const card = document.createElement('div');
     card.className = 'card';
     const label = document.createElement('div');
+    label.className = 'caption';
     label.textContent = `card ${i + 1} · ${CARD_TYPES[i % CARD_TYPES.length]}`;
     const slot = document.createElement('div');
     slot.className = 'slot';
@@ -110,6 +115,8 @@ async function run() {
     for (const s of surfaces) s.destroy();
     const face = faceSelect.value as 'plate' | 'none';
     const color = picked();
+    const selection =
+      selectionSelect.value === 'own' ? undefined : (selectionSelect.value as Selection);
     const panel = createPanel(panelCanvas, draw);
     const overlay = createOverlay(draw);
     surfaces = [panel, overlay];
@@ -121,6 +128,7 @@ async function run() {
           cells: s.cells,
           face,
           color,
+          selection,
           half: s.half,
           at: { x: (i % 2) * width + 12, y: Math.floor(i / 2) * ROW + 18 },
           height: HEIGHT,
@@ -131,13 +139,14 @@ async function run() {
         const type = CARD_TYPES[i % CARD_TYPES.length] as TypeName;
         const feed: Feed = type === 'fourteen' ? () => `CARD${i + 1}` : ({ n }) => n + i * 37;
         const cells = type === 'cistercian' ? 1 : type === 'fourteen' ? 6 : 4;
-        return { r: overlay.readout({ type, cells, face, color, follow: slot }), feed };
+        return { r: overlay.readout({ type, cells, face, color, selection, follow: slot }), feed };
       }),
     ];
     $('got').textContent = `${panel.backend} · ${Object.keys(TYPES).length} types`;
   };
   build();
   faceSelect.onchange = build;
+  selectionSelect.onchange = build;
   // A color recolors the readouts in place; going back to their own builds them afresh.
   const recolor = () => {
     const hex = picked();

@@ -4,10 +4,10 @@ import type { Fit } from './placement.js';
 const STYLE = `
 .blinken-text { position: absolute; pointer-events: none; overflow: hidden; }
 .blinken-text-fixed { position: fixed; inset: 0; }
-.blinken-text-readout { position: absolute; inset: 0; }
+.blinken-text-readout { position: absolute; pointer-events: auto; cursor: text; user-select: none; -webkit-user-select: none; }
 .blinken-text-cell {
   position: absolute; box-sizing: border-box; margin: 0; padding: 0;
-  pointer-events: auto; cursor: text; user-select: text; -webkit-user-select: text;
+  pointer-events: none; user-select: text; -webkit-user-select: text;
   color: transparent; background: transparent; white-space: pre; overflow: hidden;
   font-family: ui-monospace, monospace; text-align: center; transform-origin: 0 0;
 }
@@ -86,6 +86,75 @@ export function createTextLayer(
     selected(now);
   };
   doc.addEventListener('selectionchange', report);
+
+  type One = NonNullable<(typeof readouts)[number]>;
+  /** Selects cells `a` to `b` of `r`, either order, as the page's selection. */
+  const choose = (r: One, a: number, b: number) => {
+    const lo = r.texts[Math.min(a, b)];
+    const hi = r.texts[Math.max(a, b)];
+    const sel = doc.getSelection();
+    if (!lo || !hi || !sel) return;
+    const range = doc.createRange();
+    range.setStart(lo, 0);
+    range.setEnd(hi, hi.length);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  };
+  /** The cell of `r` nearest `x` across, in client pixels. */
+  const cellAt = (r: One, x: number): number => {
+    let best = 0;
+    let gap = Number.POSITIVE_INFINITY;
+    for (const [k, cell] of r.cells.entries()) {
+      const b = cell.getBoundingClientRect();
+      const d = Math.abs(x - (b.left + b.right) / 2);
+      if (d < gap) {
+        gap = d;
+        best = k;
+      }
+    }
+    return best;
+  };
+  /** Where the last press's selection started: its readout and cell, for a drag or a Shift+click. */
+  let anchor: { r: One; k: number } | null = null;
+  const blank = (t: Text | undefined) => !t || t.data.trim() === '';
+  // The browser selects nothing reliably across separately placed cells, so a press is read here,
+  // a whole cell at a time: drag, double-click for a run between blanks, triple-click for it all.
+  const press = (r: One) => (e: MouseEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const k = cellAt(r, e.clientX);
+    if (e.detail >= 3) {
+      choose(r, 0, r.cells.length - 1);
+      return;
+    }
+    if (e.detail === 2) {
+      if (blank(r.texts[k])) return;
+      let a = k;
+      let b = k;
+      while (a > 0 && !blank(r.texts[a - 1])) a--;
+      while (b < r.texts.length - 1 && !blank(r.texts[b + 1])) b++;
+      choose(r, a, b);
+      return;
+    }
+    if (e.shiftKey && anchor?.r === r) choose(r, anchor.k, k);
+    else {
+      anchor = { r, k };
+      doc.getSelection()?.removeAllRanges();
+    }
+    const from = { r, k: anchor?.r === r ? anchor.k : k };
+    const x0 = e.clientX;
+    const move = (m: MouseEvent) => {
+      if (Math.abs(m.clientX - x0) < 3 && cellAt(r, m.clientX) === from.k) return;
+      choose(r, from.k, cellAt(r, m.clientX));
+    };
+    const up = () => {
+      doc.removeEventListener('mousemove', move);
+      doc.removeEventListener('mouseup', up);
+    };
+    doc.addEventListener('mousemove', move);
+    doc.addEventListener('mouseup', up);
+  };
+
   return {
     build(list) {
       layer.replaceChildren();
@@ -108,8 +177,11 @@ export function createTextLayer(
           texts.push(text);
         }
         layer.append(group);
-        return { spot, group, texts, cells, at: '' };
+        const made = { spot, group, texts, cells, at: '' };
+        group.addEventListener('mousedown', press(made));
+        return made;
       });
+      anchor = null;
       shown = '';
       report();
     },
@@ -145,16 +217,29 @@ export function createTextLayer(
         r.at = at;
         r.group.hidden = !f;
         if (!f) continue;
+        // The group covers the readout's whole box and takes the pointer, so a drag ending between
+        // its cells lands in them rather than in whatever text the page has elsewhere.
+        const { width, height } = r.spot;
+        const gx = f.left - height * f.slant * f.scale;
+        const gy = f.top;
+        const gw = (width + height * f.slant) * f.scale;
+        const gh = height * f.scale;
         const c = f.clip;
-        r.group.style.clipPath = `inset(${c.y0}px ${w - c.x1}px ${h - c.y1}px ${c.x0}px)`;
+        Object.assign(r.group.style, {
+          left: `${gx}px`,
+          top: `${gy}px`,
+          width: `${gw}px`,
+          height: `${gh}px`,
+          clipPath: `inset(${c.y0 - gy}px ${gx + gw - c.x1}px ${gy + gh - c.y1}px ${c.x0 - gx}px)`,
+        });
         const skew = `skewX(${-Math.atan(f.slant)}rad)`;
         for (const [k, cell] of r.cells.entries()) {
           const b = r.spot.cells[k];
           if (!b) continue;
           const tall = b.height * f.scale;
           Object.assign(cell.style, {
-            left: `${f.left + (b.x - b.y * f.slant) * f.scale}px`,
-            top: `${f.top + b.y * f.scale}px`,
+            left: `${f.left - gx + (b.x - b.y * f.slant) * f.scale}px`,
+            top: `${b.y * f.scale}px`,
             width: `${b.width * f.scale}px`,
             height: `${tall}px`,
             fontSize: `${tall * 0.8}px`,
