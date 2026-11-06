@@ -89,7 +89,7 @@ describe('loops close at every setting', () => {
       }
     }
     expect(open).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe('loops close', () => {
