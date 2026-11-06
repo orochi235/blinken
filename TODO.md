@@ -1,9 +1,5 @@
 # TODO
 
-## Finish the rename to blinken
-
-The code, the GitHub repo (orochi235/blinken) and the site path (michaelbaker.tech/blinken/) are renamed (2026-11-05). Left: move `~/src/bree` to `~/src/blinken` once no session or dev server runs from it, and move `~/.claude-msb/projects/-Users-mike-src-bree` to `-Users-mike-src-blinken` in the same step.
-
 ## Parked
 
 - Authoring an effect's params in the designer: naming a param and picking the settings it changes. Parked 2026-10-24 as more than the lab needs for now; effects declare params in code, as the built-ins do. The section as built is in e294d8a (`lab/compose/designer/ParamsBox.tsx`).
