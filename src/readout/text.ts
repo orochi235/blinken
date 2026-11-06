@@ -15,8 +15,9 @@ const STYLE = `
 .blinken-text-block .blinken-text-cell::selection { background: color-mix(in srgb, Highlight 45%, transparent); }
 .blinken-text-input {
   position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0;
-  opacity: 0; pointer-events: none;
+  opacity: 0; pointer-events: none; user-select: text; -webkit-user-select: text;
 }
+.blinken-text-readout:focus { outline: none; }
 `;
 const styled = new WeakSet<Document>();
 
@@ -278,6 +279,14 @@ export function createTextLayer(
     );
     report();
   };
+  /** Cmd or Ctrl+A in a readout selects all of it, rather than leaving it to the page. */
+  const selectAll = (r: One) => (k: KeyboardEvent) => {
+    if (k.key.toLowerCase() !== 'a' || !(k.metaKey || k.ctrlKey) || k.altKey || k.shiftKey) return;
+    k.preventDefault();
+    if (r.input) r.input.select();
+    else choose(r, 0, r.cells.length - 1);
+    report();
+  };
   const press = (r: One) => (e: MouseEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
@@ -285,6 +294,8 @@ export function createTextLayer(
       pressTyped(r, r.input, e);
       return;
     }
+    // Focused, so the keyboard reaches it: Cmd+A selects it, as in a field.
+    r.group.focus({ preventScroll: true });
     const k = cellAt(r, e.clientX, e.clientY);
     if (e.detail >= 3) {
       choose(r, 0, r.cells.length - 1);
@@ -406,6 +417,8 @@ export function createTextLayer(
             input.addEventListener(name, report);
         }
         group.addEventListener('mousedown', press(made));
+        group.addEventListener('keydown', selectAll(made));
+        if (!one.edit) group.tabIndex = -1;
         return made;
       });
       anchor = null;

@@ -85,6 +85,7 @@ moved to the fit the placement used for the views (`fitOf`), skewed with the sla
 the readout is. The browser won't carry a drag across separately placed boxes, and finds a word or
 a line inside one box only, so each readout's box reads the mouse itself, a cell at a time: drag,
 double-click for the run between blanks, triple-click for the whole readout, Shift+click to extend.
+A press also focuses the readout, and Cmd or Ctrl+A in a focused one selects all of it.
 Each sets a real range on the page's selection, which copying and `selectionchange` read.
 
 **Where characters land** is one function, `flow` (`src/readout/flow.ts`): a type's `spell`
