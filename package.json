@@ -1,5 +1,5 @@
 {
-  "name": "blinken",
+  "name": "@msb235/blinken",
   "version": "0.1.0",
   "description": "An old-fashioned LED marquee on a canvas, and the composable blits effects it plays",
   "license": "MIT",
@@ -45,6 +45,9 @@
     "dist-player/blinken-player.js",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=24"
   },

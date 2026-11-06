@@ -10,11 +10,11 @@ every effect is a blits patch you can cue on a mix of your own. No three.js, no 
 lab's compose page on any page without a build step. The package ships it, so a CDN serves it:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/blinken@0.1.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@msb235/blinken@0.1.0"></script>
 <blinken-player program="…" cols="40" rows="7"></blinken-player>
 ```
 
-A bundler can import it as `blinken/player`, and `npm run compile` builds it from a checkout.
+A bundler can import it as `@msb235/blinken/player`, and `npm run compile` builds it from a checkout.
 
 Compose's **copy embed** gives those two lines for the composition and sign on screen. Giving
 `compile` a link or a composition file compiles that program in, for a sign in one file. Everything
@@ -23,7 +23,7 @@ it takes is in [docs/player.md](docs/player.md).
 ## A sign of its own
 
 ```ts
-import { createMarquee } from 'blinken';
+import { createMarquee } from '@msb235/blinken';
 
 const sign = createMarquee(canvas, {
   cols: 80,
@@ -116,7 +116,7 @@ A sign draws with WebGPU, WebGL 2 or 2D. Ask the browser for a WebGPU device onc
 to every sign; `gpu()` resolves to null where there is none:
 
 ```ts
-import { createMarquee, gpu } from 'blinken';
+import { createMarquee, gpu } from '@msb235/blinken';
 
 const g = await gpu(); // once per page
 const a = createMarquee(canvasA, { gpu: g }); // WebGPU, or WebGL where g is null
@@ -154,7 +154,7 @@ measurements and what a frame costs on each.
 `createThumbnail` loops one effect on a small sign, for a preview beside its name:
 
 ```ts
-import { createThumbnail } from 'blinken';
+import { createThumbnail } from '@msb235/blinken';
 
 const thumb = createThumbnail(canvas, { effect: 'flip', text: 'OPEN', hex: 0xff4030 });
 thumb.marquee.setEffects(mine); // a changed effect plays from its next pass
@@ -174,7 +174,7 @@ matrix, and notations like Cistercian and Maya numerals, Braille, Morse and sema
 lists all 23, `triangles` and `triangles-fine` drawing letters on the triangle grid. Many readouts share one canvas and one sign, on a panel or over the page:
 
 ```ts
-import { createOverlay, createPanel } from 'blinken';
+import { createOverlay, createPanel } from '@msb235/blinken';
 
 const panel = createPanel(canvas, { gpu: handle });
 const clock = panel.readout({ type: 'seven', cells: 4, at: { x: 20, y: 20 }, height: 64 });

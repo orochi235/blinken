@@ -9,8 +9,8 @@ plays and how its sign is built.
 `npm run compile` writes `dist-player/blinken-player.js`: one classic script, about 550 KB minified
 and 195 KB gzipped, with blits, the fonts and the shaders inlined and nothing fetched. Loading it
 defines `<blinken-player>`. The npm package ships this plain player, built against the published
-blits, so `https://cdn.jsdelivr.net/npm/blinken` or unpkg serves it and a bundler imports it as
-`blinken/player`.
+blits, so `https://cdn.jsdelivr.net/npm/@msb235/blinken` or unpkg serves it and a bundler imports
+it as `@msb235/blinken/player`.
 
 ```html
 <script src="blinken-player.js"></script>
