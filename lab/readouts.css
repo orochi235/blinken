@@ -26,6 +26,12 @@ body {
   gap: 16px;
   padding: 10px 16px;
   border-bottom: 1px solid #2a201b;
+  user-select: none;
+}
+
+.bar input[type='text'],
+.bar input:not([type]) {
+  user-select: text;
 }
 
 .title {
