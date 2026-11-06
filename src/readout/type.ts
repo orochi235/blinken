@@ -70,6 +70,11 @@ export interface DisplayType {
   readonly align: Align;
   /** The lit lights' names in each of `cells` cells. */
   encode(value: string | number, cells: number, align: Align): ReadonlySet<string>[];
+  /**
+   * The characters each of `cells` cells shows, '' for a blank, where a type spells letters or
+   * numbers; a readout of such a type can be selected and copied as text.
+   */
+  text?(value: string | number, cells: number, align: Align): string[];
 }
 
 /** Fits `shown`, one entry per cell, into `cells`: numbers keep their last, text its first. */
@@ -87,33 +92,66 @@ export function fitCells<T>(shown: readonly T[], cells: number, align: Align, bl
 
 const words = (s: string | undefined) => (s ? s.split(' ').filter(Boolean) : []);
 
+/** The lights a `.`, `:` or `,` after a character lights on its cell instead of taking one. */
+export interface Marks {
+  readonly dp?: string;
+  readonly colon?: string;
+  readonly comma?: string;
+}
+
+const markOf = (marks: Marks): Record<string, string | undefined> => ({
+  '.': marks.dp,
+  ':': marks.colon,
+  ',': marks.comma,
+});
+
+/** `value` split into the cells it takes: a character, and the marks lit on its cell after it. */
+function tokens(value: string | number, mark: Record<string, string | undefined>): string[] {
+  const out: string[] = [];
+  for (const ch of String(value)) {
+    const last = out.at(-1);
+    if (mark[ch] && last !== undefined && !last.includes(ch)) out[out.length - 1] = last + ch;
+    else out.push(ch);
+  }
+  return out;
+}
+
 /**
- * An encoder over a character table, each character naming its lit lights space-separated. A
+ * A type's coding over a character table, each character naming its lit lights space-separated. A
  * character the table lacks shows blank. Where a type has them, a `.`, `:` or `,` after a
  * character lights that cell's `dp`, `colon` or `comma` light instead of taking a cell.
  */
-export function textEncoder(
+export function textCoding(
   table: Readonly<Record<string, string>>,
-  marks: { readonly dp?: string; readonly colon?: string; readonly comma?: string } = {},
-): DisplayType['encode'] {
-  const mark: Record<string, string | undefined> = {
-    '.': marks.dp,
-    ':': marks.colon,
-    ',': marks.comma,
-  };
-  return (value, cells, align) => {
-    const out: Set<string>[] = [];
-    for (const ch of String(value)) {
-      const on = mark[ch];
-      const last = out.at(-1);
-      if (on && last && !last.has(on)) {
-        last.add(on);
-        continue;
-      }
-      const set = new Set(words(table[ch] ?? table[ch.toUpperCase()]));
-      if (on) set.add(on);
-      out.push(set);
-    }
-    return fitCells(out, cells, align, new Set<string>());
+  marks: Marks = {},
+): Pick<DisplayType, 'encode' | 'text'> {
+  const mark = markOf(marks);
+  return {
+    encode: (value, cells, align) =>
+      fitCells(
+        tokens(value, mark).map((tok) => {
+          const [ch = ''] = tok;
+          const set = new Set(words(table[ch] ?? table[ch.toUpperCase()]));
+          for (const c of tok) {
+            const on = mark[c];
+            if (on) set.add(on);
+          }
+          return set;
+        }),
+        cells,
+        align,
+        new Set<string>(),
+      ),
+    text: (value, cells, align) => fitCells(tokens(value, mark), cells, align, ''),
   };
 }
+
+/** `textCoding`'s encoder alone, for a type whose characters aren't text to copy. */
+export const textEncoder = (
+  table: Readonly<Record<string, string>>,
+  marks: Marks = {},
+): DisplayType['encode'] => textCoding(table, marks).encode;
+
+/** Each character a cell, as a type that spells with no marks shows it. */
+export const charText: NonNullable<DisplayType['text']> = (value, cells, align) =>
+  fitCells([...String(value)], cells, align, '');

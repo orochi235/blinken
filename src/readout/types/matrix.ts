@@ -1,5 +1,5 @@
 import { STANDARD } from '../../glyphs/standard.js';
-import { type DisplayType, textEncoder } from '../type.js';
+import { type DisplayType, textCoding } from '../type.js';
 import { disc, light } from './kit.js';
 
 const COLS = 5;
@@ -29,5 +29,5 @@ export const matrix: DisplayType = {
   socket: 'segment',
   glow: 1,
   align: 'left',
-  encode: textEncoder(table),
+  ...textCoding(table),
 };

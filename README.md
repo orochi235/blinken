@@ -193,6 +193,11 @@ digit (`half`) and `defects` by `{ cell, slot }`; a surface takes `gpu`, `backen
 `fade`, `ghost` and `ticker`. How they're drawn is in `docs/readouts.md`; the lab's `readouts`
 page shows every type.
 
+A readout whose type spells letters or numbers (the segment types, `matrix`, `nixie` and the
+triangle types) can be selected and copied like text: dragging across its cells selects the
+characters they show, `1.` or `2:` with their mark. `select: false` turns this off, which an
+overlay readout over something clickable wants, since its cells take the pointer.
+
 ## Pieces, effects and programs
 
 A piece is one thing happening to the dots. A move places the text: `stand` holds it, `scroll-across`

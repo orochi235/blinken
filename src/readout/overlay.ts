@@ -16,6 +16,7 @@ function style(doc: Document): void {
 
 /** The overlay fills the viewport, resized with the window. */
 const VIEWPORT: Canvas = {
+  fixed: true,
   size: () => ({ width: innerWidth, height: innerHeight }),
   watch(_canvas, resized) {
     addEventListener('resize', resized);

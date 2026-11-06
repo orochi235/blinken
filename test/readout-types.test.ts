@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DisplayType } from '@/readout/type.js';
 import { fourteen, sixteen, twentytwo } from '@/readout/types/alpha.js';
+import { TYPES } from '@/readout/types/index.js';
 import { eight, half, nine, seven } from '@/readout/types/segments.js';
 
 const ALL: readonly DisplayType[] = [seven, eight, nine, half, fourteen, sixteen, twentytwo];
@@ -143,5 +144,40 @@ describe('every type', () => {
     }
     for (const t of TEXT.slice(0, 3)) expect(t.align).toBe('right');
     for (const t of TEXT.slice(3)) expect(t.align).toBe('left');
+  });
+});
+
+describe('cell text', () => {
+  it('gives each cell the characters it shows, a mark riding on the cell before it', () => {
+    expect(TYPES.seven.text?.('12.5', 5, 'right')).toEqual(['', '', '1', '2.', '5']);
+    expect(TYPES.seven.text?.('12:30', 4, 'right')).toEqual(['1', '2:', '3', '0']);
+    expect(TYPES.fourteen.text?.('HI,', 3, 'left')).toEqual(['H', 'I,', '']);
+  });
+
+  it('keeps the cells a long value keeps', () => {
+    expect(TYPES.seven.text?.('123456', 4, 'right')).toEqual(['3', '4', '5', '6']);
+    expect(TYPES.matrix.text?.('HELLO', 3, 'left')).toEqual(['H', 'E', 'L']);
+  });
+
+  it('is there only for types that spell letters or numbers', () => {
+    const spelling = Object.values(TYPES)
+      .filter((t) => t.text)
+      .map((t) => t.name)
+      .sort();
+    expect(spelling).toEqual(
+      [
+        'eight',
+        'fourteen',
+        'half',
+        'matrix',
+        'nine',
+        'nixie',
+        'seven',
+        'sixteen',
+        'triangles',
+        'triangles-fine',
+        'twentytwo',
+      ].sort(),
+    );
   });
 });

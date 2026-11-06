@@ -1,4 +1,4 @@
-import { type DisplayType, textEncoder } from '../type.js';
+import { type DisplayType, textCoding } from '../type.js';
 import { arc, curve, light, type Point, path, poly } from './kit.js';
 
 const W = 0.7;
@@ -79,5 +79,5 @@ export const nixie: DisplayType = {
   socket: 'wire',
   glow: 2.5,
   align: 'right',
-  encode: textEncoder(Object.fromEntries(STACK.map((d) => [d, d]))),
+  ...textCoding(Object.fromEntries(STACK.map((d) => [d, d]))),
 };

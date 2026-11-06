@@ -22,6 +22,13 @@ export interface Spot {
   /** Its extent in local units, faceplate margin included, from (0, 0). */
   readonly width: number;
   readonly height: number;
+  /** Each cell's box in local units, a ½ digit's first, its board column its index. */
+  readonly cells: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  }[];
 }
 
 /** Every readout's lights as one board's dots, and the shapes that draw them, a view each. */
@@ -91,16 +98,19 @@ export function layOutReadouts(readouts: readonly Laid[]): Layout {
     const total = (r.half ? HALF.cell.width + r.type.gap : 0) + width(r.cells) + pad * 2;
     const height = cell.height + pad * 2;
     if (r.face === 'plate') out.plate(v, 0, 0, total, height, cell.height * CORNER);
+    const boxes: Spot['cells'][number][] = [];
     if (r.half) {
       place(HALF.cell.lights, 0, r.type.glow);
+      boxes.push({ x, y: pad, width: HALF.cell.width, height: HALF.cell.height });
       x += HALF.cell.width + r.type.gap;
     }
     const first = r.half ? 1 : 0;
     for (let c = 0; c < r.cells; c++) {
       place(cell.lights, first + c, r.type.glow);
+      boxes.push({ x, y: pad, width: cell.width, height: cell.height });
       x += cell.width + r.type.gap;
     }
-    spots.push({ base, first, width: total, height });
+    spots.push({ base, first, width: total, height, cells: boxes });
     base += slotsOf(r);
   }
   return { board: b, leds: b.dots, prims: out.build(), spots };

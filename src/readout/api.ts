@@ -35,6 +35,12 @@ export interface ReadoutOptions {
   /** On an overlay: the element it is fitted inside. */
   readonly follow?: Element;
   readonly value?: string | number;
+  /**
+   * Whether its characters can be selected and copied, a selected cell showing as a block of the
+   * page's selection color, for a type that spells letters or numbers. On an overlay its cells then
+   * take the pointer. Default true.
+   */
+  readonly select?: boolean;
 }
 
 /** A readout on a surface. */

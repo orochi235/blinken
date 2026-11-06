@@ -78,6 +78,14 @@ readout lays the board out again at the next frame and reshapes the sign in plac
   that element's scrolling ancestors clip it. Rects are read every frame; a detached, hidden or
   scrolled-away element's readout gets scale 0 and its primitives are culled.
 
+**Selectable text** (`src/readout/text.ts`). Beside the canvas sits a layer of see-through spans,
+one per cell of each readout whose type has `text`, holding the characters that cell shows (the
+tokenizer `textCoding` shares with its encoder, so a mark rides on its cell). Each frame they're
+moved to the fit the placement used for the views (`fitOf`), skewed with the slant and clipped as
+the readout is, so the browser does selecting and copying. A selection shows as the system
+selection color over the whole cell; inverting the segments instead, as a dot sign's highlight
+does, made a selected letter unreadable (2026-11-06).
+
 **Ghosts** are a surface option: `row` leaks along a segment line (the same segment across a
 readout's digits, as a multiplexed display leaks); `col` runs down a board column and so crosses
 readouts. **Defects** are per readout, by `{ cell, slot }`.

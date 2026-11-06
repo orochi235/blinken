@@ -1,4 +1,4 @@
-import { type DisplayType, type SegLight, textEncoder } from '../type.js';
+import { type DisplayType, type SegLight, textCoding } from '../type.js';
 import { FOURTEEN, SIXTEEN, TWENTYTWO } from './alpha-glyphs.js';
 import { bar, DP, light, RING } from './bars.js';
 
@@ -52,7 +52,7 @@ export const fourteen: DisplayType = {
     lights: [...RING, ...STAR, DP, light('comma', bar(10.6, 18.4, 9.8, 20, 1.2))],
   },
   ...family,
-  encode: textEncoder(FOURTEEN, { dp: 'dp', comma: 'comma' }),
+  ...textCoding(FOURTEEN, { dp: 'dp', comma: 'comma' }),
 };
 
 /** The 16-segment starburst: 14 segments with the top and bottom bars split. */
@@ -60,7 +60,7 @@ export const sixteen: DisplayType = {
   name: 'sixteen',
   cell: { width: 10, height: 18, lights: [...SPLIT_RING, ...STAR, DP] },
   ...family,
-  encode: textEncoder(SIXTEEN, { dp: 'dp' }),
+  ...textCoding(SIXTEEN, { dp: 'dp' }),
 };
 
 /** The 22-segment display: a starburst over a descender, for upper and lower case. */
@@ -68,5 +68,5 @@ export const twentytwo: DisplayType = {
   name: 'twentytwo',
   cell: { width: 10, height: 24, lights: [...SPLIT_RING, ...STAR, ...DESCENDER, DP] },
   ...family,
-  encode: textEncoder(TWENTYTWO, { dp: 'dp' }),
+  ...textCoding(TWENTYTWO, { dp: 'dp' }),
 };

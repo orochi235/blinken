@@ -5,17 +5,16 @@ import type { Defect } from '../defects.js';
 import { signColumns } from '../draw.js';
 import { GRIDS } from '../grid.js';
 import { attach, pullChannels } from '../render/attach.js';
-import type { Placement } from '../render/placement.js';
 import type { SignLights } from '../render/sign-lights.js';
 import { awayGaps, createTicker } from '../ticker.js';
 import type { Readout, ReadoutDefect, ReadoutOptions, Surface, SurfaceOptions } from './api.js';
 import { type Layout, layOutReadouts } from './layout.js';
 import { type Box, type Canvas, type Placed, surfacePlacement } from './placement.js';
+import { createTextLayer } from './text.js';
 import { TYPES } from './types/index.js';
 import { half as HALF } from './types/segments.js';
 import { valueVoice } from './voice.js';
 
-/** A gap between frames this long is a hidden tab coming back. */
 const NIXIE = 0xff6a1a;
 
 interface Entry extends Placed {
@@ -39,6 +38,20 @@ function splitHalf(value: string | number, cells: number): [string, string | num
   return [`${minus ? '-' : ''}${one ? '1' : ''}`, one ? body.slice(1) : body];
 }
 
+/** Whether a readout's characters can be selected: its type spells, and it wasn't asked not to. */
+const selectable = (e: Entry) => (e.opts.select ?? true) && TYPES[e.opts.type].text !== undefined;
+
+/** The characters each of a readout's cells shows, a ½ digit's first. */
+function textOf(e: Entry): string[] {
+  const type = TYPES[e.opts.type];
+  const align = e.opts.align ?? type.align;
+  const [lead, rest] = e.opts.half ? splitHalf(e.value, e.opts.cells) : ['', e.value];
+  return [
+    ...(e.opts.half ? (HALF.text?.(lead, 1, 'right') ?? []) : []),
+    ...(type.text?.(rest, e.opts.cells, align) ?? []),
+  ];
+}
+
 /**
  * A surface on `canvas`, its readouts placed by `boxOf` and the canvas sized by `sizing`: the core
  * of `createPanel` and `createOverlay`.
@@ -50,7 +63,7 @@ export function createSurface(
   boxOf: (o: ReadoutOptions, canvas: HTMLCanvasElement) => () => Box | null,
 ): Surface {
   const entries: Entry[] = [];
-  const placement: Placement = surfacePlacement(() => entries, sizing);
+  const placement = surfacePlacement(() => entries, sizing);
   let layout: Layout = layOutReadouts([]);
   const lightsOf = (l: Layout): SignLights => ({
     board: l.board,
@@ -77,6 +90,8 @@ export function createSurface(
   let voice: Handle<Subject> | null = null;
   let shaped = true;
   let valued = true;
+  const text =
+    sign && typeof document !== 'undefined' ? createTextLayer(canvas, sizing.fixed ?? false) : null;
 
   const reshape = () => {
     layout = layOutReadouts(
@@ -100,6 +115,7 @@ export function createSurface(
     );
     sign?.setDefects(defects);
     placement.refit();
+    text?.build(entries.map((e) => (selectable(e) ? e.spot : null)));
   };
 
   /** Cues the readouts' values afresh, the last cue faded out at once. */
@@ -125,6 +141,7 @@ export function createSurface(
           tint.set(color, i * 4);
         }
     }
+    if (text) for (const [i, e] of entries.entries()) if (selectable(e)) text.write(i, textOf(e));
     voice?.fade({ over: 0 });
     voice = m.cue({ name: 'values', patch: valueVoice(b, on, tint), subjects: b.dots, loop: true });
   };
@@ -152,6 +169,7 @@ export function createSurface(
     pullChannels(m, layout.board, cols, cells, drawing.cpuChannels());
     const t1 = performance.now();
     sign?.render(cols, AMBER, gap);
+    text?.place(placement.fits);
     if (!opts.onFrame) return;
     const raw = { mixMs: t1 - t0, drawMs: performance.now() - t1 };
     mixMs += (raw.mixMs - mixMs) * 0.05;
@@ -173,7 +191,7 @@ export function createSurface(
         color: o.color ?? (o.type === 'nixie' ? NIXIE : AMBER),
         defects: o.defects ?? [],
         slant: o.slant ?? 0,
-        spot: { base: 0, first: 0, width: 1, height: 1 },
+        spot: { base: 0, first: 0, width: 1, height: 1, cells: [] },
         box: boxOf(o, canvas),
       };
       entries.push(e);
@@ -208,6 +226,7 @@ export function createSurface(
     },
     destroy() {
       stop();
+      text?.destroy();
       drawing.destroy();
       m.close();
     },

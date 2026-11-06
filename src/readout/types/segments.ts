@@ -1,4 +1,4 @@
-import { type DisplayType, fitCells, type SegLight, textEncoder } from '../type.js';
+import { type DisplayType, fitCells, type SegLight, textCoding } from '../type.js';
 import { bar, DP, disc, light, RING } from './bars.js';
 
 const SEVEN: Readonly<Record<string, string>> = {
@@ -62,7 +62,7 @@ export const seven: DisplayType = {
   name: 'seven',
   cell: { width: 10, height: 18, lights: SEVEN_LIGHTS },
   ...family,
-  encode: textEncoder(SEVEN, MARKS),
+  ...textCoding(SEVEN, MARKS),
 };
 
 /** Seven segments and the diagonal F. W. Wood's 1908 patent draws its 4 with. */
@@ -74,7 +74,7 @@ export const eight: DisplayType = {
     lights: [...SEVEN_LIGHTS, light('h', bar(8.6, 2.4, 1.4, 8.6))],
   },
   ...family,
-  encode: textEncoder({ ...SEVEN, '4': 'h g b c' }, MARKS),
+  ...textCoding({ ...SEVEN, '4': 'h g b c' }, MARKS),
 };
 
 /** Seven segments and two diagonals, for a slanted 7, Z and slash. */
@@ -90,7 +90,7 @@ export const nine: DisplayType = {
     ],
   },
   ...family,
-  encode: textEncoder({ ...SEVEN, '7': 'a b i', Z: 'a b i d', '/': 'h i' }, MARKS),
+  ...textCoding({ ...SEVEN, '7': 'a b i', Z: 'a b i d', '/': 'h i' }, MARKS),
 };
 
 const HALF: Readonly<Record<string, readonly string[]>> = {
@@ -110,4 +110,6 @@ export const half: DisplayType = {
   ...family,
   encode: (value, cells, align) =>
     fitCells([new Set(HALF[String(value)] ?? [])], cells, align, new Set<string>()),
+  text: (value, cells, align) =>
+    fitCells([HALF[String(value)] ? String(value) : ''], cells, align, ''),
 };
