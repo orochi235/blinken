@@ -268,3 +268,69 @@ test('webgpu: a highlight swaps a dot’s invert, and a follower copies the plan
     if (at(follows, i, 2) !== 0) throw new Error(`the follower took dot ${i}'s color too`);
   }
 });
+
+test('webgpu: a highlight clamps an invert past 0 or 1 before swapping it, as the CPU does', async (d) => {
+  const device = d as unknown as GPUDevice;
+  const b = board(10, 3, false);
+  const sign = createWebGpuSign(
+    canvasIn(400, 200),
+    b,
+    b.dots,
+    'dark',
+    (x, y) => [x, y],
+    handleOf(device),
+    null,
+  );
+  const mask = new Uint8Array(30);
+  mask[3] = 1;
+  mask[4] = 1;
+  sign.setHighlight(mask);
+  const cols = scene(0xff0000);
+  cols.invert[3] = 1.7;
+  cols.invert[4] = -0.5;
+  sign.render(cols, 0xff9a2e, 16);
+  const pose = await readBack(device as never, sign.output as never, 0, 30 * 40);
+  sign.destroy();
+  const at = (i: number) => pose[i * 10 + 9] as number;
+  if (at(3) !== 0 || at(4) !== 1)
+    throw new Error(`inverts read ${at(3)} and ${at(4)}, not 0 and 1`);
+});
+
+test('webgpu: a sign whose box is resized draws at the new size', async (d) => {
+  const device = d as unknown as GPUDevice;
+  const b = board(10, 3, false);
+  const canvas = canvasIn(400, 200);
+  const sign = createWebGpuSign(
+    canvas,
+    b,
+    b.dots,
+    'dark',
+    (x, y) => [x, y],
+    handleOf(device),
+    null,
+  );
+  const cols = scene(0xff0000);
+  sign.render(cols, 0xff9a2e, 1000);
+  const before = canvas.width;
+  (canvas.parentElement as HTMLElement).style.width = '200px';
+  (canvas.parentElement as HTMLElement).style.height = '100px';
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  for (let k = 0; k < 4; k++) sign.render(cols, 0xff9a2e, 1000);
+  const w = canvas.width;
+  const copy = document.createElement('canvas');
+  copy.width = w;
+  copy.height = canvas.height;
+  const ctx = copy.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
+  ctx.drawImage(canvas, 0, 0);
+  const t = lightTable(b, b.dots, (x, y) => [x, y]);
+  const scale = w / t.frame.across;
+  const px = ctx.getImageData(
+    Math.floor((t.at[0] as number) * scale),
+    Math.floor((t.at[1] as number) * scale),
+    1,
+    1,
+  ).data;
+  sign.destroy();
+  if (w >= before) throw new Error(`the canvas stayed ${w} wide, from ${before}`);
+  if ((px[0] as number) < 200) throw new Error(`the first light reads ${[...px]} after the resize`);
+});

@@ -224,6 +224,35 @@ test('marquee: a WebGPU sign highlights on the GPU, leaving its columns alone', 
     throw new Error('the highlight changed the columns');
 });
 
+test('marquee: a WebGPU sign repaints a 2D leader that appeared since its last frame', async (d) => {
+  const ticker = manual();
+  const lead = createMarquee(canvasIn(400, 140), {
+    ...SIGN,
+    backend: '2d',
+    ticker,
+    program: [{ effect: 'hold', text: 'WW', hex: 0x00ff00 }],
+  });
+  let source: Marquee | null = null;
+  const after = createMarquee(canvasIn(400, 140), {
+    ...SIGN,
+    gpu: handleOf(d as unknown as GPUDevice),
+    ticker,
+    follow: { source: () => source, planes: ['color'] },
+  });
+  for (let k = 0; k < 4; k++) ticker.step(k * FRAME_MS);
+  source = lead;
+  after.repaint();
+  const onCpu = drawingOf(after)?.cpuChannels() ?? new Set();
+  const want = [...lead.columns.tint];
+  const got = [...after.columns.tint];
+  lead.destroy();
+  after.destroy();
+  if (!['tint', 'hue', 'chroma'].every((c) => onCpu.has(c as never)))
+    throw new Error(`the follow left ${[...onCpu].join(', ')} on the CPU`);
+  if (JSON.stringify(got) !== JSON.stringify(want))
+    throw new Error('the repaint does not wear the leader’s color');
+});
+
 test('marquee: a 2D sign following a WebGPU sign reads its poses back', async (d) => {
   const ticker = manual();
   const lead = createMarquee(canvasIn(400, 140), {

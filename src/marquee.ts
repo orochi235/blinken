@@ -184,12 +184,13 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     opts.onFrame?.({ mixMs, drawMs, backend, raw });
   };
   const overlay = createOverlay(b, cols, drawing, () => self, opts.follow);
-  /** Settles the follow outside a frame, pulling any channel it moved onto the CPU. */
+  /** Settles and lays the follow outside a frame, pulling any channel it moved onto the CPU. */
   const prepare = () => {
     const was = drawing.cpuChannels();
     overlay.prepare();
     const moved = [...drawing.cpuChannels()].filter((c) => !was.has(c));
     pullChannels(m, b, cols, cells, new Set(moved));
+    overlay.follow();
   };
 
   const self: Marquee = {
@@ -201,7 +202,6 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     },
     repaint() {
       prepare();
-      overlay.follow();
       sign?.render(cols, color, 0);
     },
     setHighlight(next) {

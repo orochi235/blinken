@@ -585,6 +585,48 @@ describe('follow', () => {
   });
 });
 
+describe('between frames', () => {
+  const make = () => {
+    const fns: ((now: number) => void)[] = [];
+    const ticker = {
+      add(fn: (now: number) => void) {
+        fns.push(fn);
+        return () => {};
+      },
+      size: 0,
+    };
+    const opts = { draw: false, backend: '2d', ticker, cols: 10, rows: 7 } as const;
+    const lead = createMarquee({} as HTMLCanvasElement, {
+      ...opts,
+      program: [{ effect: 'hold', text: 'A', hex: 0x00ff00 }],
+    });
+    let source: typeof lead | null = null;
+    const after = createMarquee({} as HTMLCanvasElement, {
+      ...opts,
+      follow: { source: () => source, planes: ['color'] },
+      program: [{ effect: 'hold', text: 'WW', hex: 0xff0000 }],
+    });
+    for (let now = 0; now <= 800; now += 100) for (const fn of fns) fn(now);
+    source = lead;
+    return { lead, after };
+  };
+
+  it('repaint lays a source that appeared since the last frame', () => {
+    const { lead, after } = make();
+    expect([...after.columns.tint]).not.toEqual([...lead.columns.tint]);
+    after.repaint();
+    expect([...after.columns.tint]).toEqual([...lead.columns.tint]);
+    for (const m of [lead, after]) m.destroy();
+  });
+
+  it('setHighlight lays a source that appeared since the last frame', () => {
+    const { lead, after } = make();
+    after.setHighlight((dot) => dot.x < 2);
+    expect([...after.columns.tint]).toEqual([...lead.columns.tint]);
+    for (const m of [lead, after]) m.destroy();
+  });
+});
+
 describe('setHighlight', () => {
   it('swaps the marked dots over what the mix gives, and puts them back when cleared', () => {
     const fns: ((now: number) => void)[] = [];
