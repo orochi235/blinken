@@ -155,6 +155,16 @@ export function createTextLayer(
     doc.addEventListener('mouseup', up);
   };
 
+  // A press on the canvas, or anywhere else that isn't text, leaves the page's selection as it was,
+  // so one outside every readout clears a selection held in this layer.
+  const outside = (e: MouseEvent) => {
+    if (e.button !== 0 || e.shiftKey) return;
+    if (e.target instanceof Node && layer.contains(e.target)) return;
+    const sel = doc.getSelection();
+    if (sel?.anchorNode && layer.contains(sel.anchorNode)) sel.removeAllRanges();
+  };
+  doc.addEventListener('mousedown', outside, true);
+
   return {
     build(list) {
       layer.replaceChildren();
@@ -251,6 +261,7 @@ export function createTextLayer(
     },
     destroy() {
       doc.removeEventListener('selectionchange', report);
+      doc.removeEventListener('mousedown', outside, true);
       layer.remove();
     },
   };
