@@ -1,5 +1,9 @@
 # TODO
 
+## Rename to blinken
+
+Decided 2026-11-05: bree becomes `blinken` (free on npm). Covers the package name, the `bree:` error prefixes, the `bree_` WGSL helpers, page titles, and storage keys (old drafts migrated on read). The GitHub repo becomes orochi235/blinken and the site moves to michaelbaker.tech/blinken/; the old /bree/ path may 404. `~/src/bree` and `~/src/bree-gpu` get renamed once no session is in them. The code rename waits for the `player` branch (in `~/src/bree-gpu`) to merge, so it isn't rebased over a sweeping rename (2026-11-05).
+
 ## Parked
 
 - Authoring an effect's params in the designer: naming a param and picking the settings it changes. Parked 2026-10-24 as more than the lab needs for now; effects declare params in code, as the built-ins do. The section as built is in e294d8a (`lab/compose/designer/ParamsBox.tsx`).
