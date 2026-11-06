@@ -89,9 +89,13 @@ if (fileAt(`${base}pagefind/pagefind.js`) === null) {
   failed++;
 }
 for (const [i, path] of pages.entries()) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
   const errors = [];
-  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  // WebGL reports a bad call as a warning, not an error; the driver's performance notes aren't faults.
+  page.on('console', (m) => {
+    const bad = ['error', 'warning'].includes(m.type()) && !/GL Driver Message.*Performance/.test(m.text());
+    if (bad) errors.push(m.text());
+  });
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(origin + base.slice(0, -1) + path, { waitUntil: 'networkidle' });
   await page.waitForTimeout(200);

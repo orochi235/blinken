@@ -40,6 +40,13 @@
   margin: 0 auto;
 }
 
+/* Sized here: a panel sizes its pixels from its CSS box, so an unsized canvas grows without end. */
+.panel-canvas {
+  display: block;
+  width: 100%;
+  height: 11.5rem;
+}
+
 .live-stage {
   padding-bottom: 0.9rem;
   background: #0e0b0a;
