@@ -13,9 +13,9 @@
   --light: #f2a516;
   --code-bg: #ebe5dc;
   --focus: #b4560a;
-  --serif: 'Source Serif 4', Georgia, serif;
-  --label: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --serif: "Source Serif 4", Georgia, serif;
+  --label: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
   color-scheme: light dark;
 }
 

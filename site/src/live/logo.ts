@@ -22,7 +22,7 @@ export function playLogo(canvas: HTMLCanvasElement): () => void {
     ...LOGO,
     name: 'logo',
     program: program(still),
-    layers: { chase: !still },
+    border: { bulbs: still ? 'lit' : 'chase' },
     backend: '2d',
   });
   return () => sign.destroy();

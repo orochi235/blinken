@@ -1,0 +1,40 @@
+---
+layout: ../layouts/Page.astro
+title: Program
+description: Scenes, the program that loops through them, scene layers, and pacing a scene by input.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Program
+
+A program is a list of scenes. Each scene is a message, its color as `hex`, and the effect it plays, and each starts where the one before it ends:
+
+```ts
+program: [
+  { effect: 'hold', text: 'NOW SHOWING', hex: 0xff4030 },
+  { effect: 'fall', text: 'TONIGHT', hex: 0xff9a2e, params: { drop: 600 } },
+  { effect: 'scroll', text: 'SEE YOU THERE', hex: 0x6dff5a, face: 'slim' },
+],
+```
+
+A scene names an effect, a built-in or one of the sign's `effects`, or carries one inline. `params` tunes the effect (see [Effects](../effect/)), `face` and `style` set how the text is drawn (see [Faces and styles](../text/)), and `layers` lays effects over just this scene (see [Layers](../layers/)). A `\n` in the text starts a new line.
+
+The program loops. Given as a function, it is read again at the start of every pass, so it can change what it says each time round. `setProgram` replaces it from the next pass, and `restart` starts over now.
+
+A scene that runs off the sign still plays, showing what fits, and staging it warns with the height of sign that would show all of it.
+
+## Paced by input
+
+`type-on` and `type-off`, the moves behind the built-in `type` effect, take a `pace` setting. Set to `input`, the sign holds before each letter and goes on when `sign.step()` is called, however long that takes:
+
+<Live client:only="react" of="paced.ts" />
+
+<Listing of="live/paced.ts" />
+
+Typing on, it waits first with the cursor showing and nothing typed, and the step that puts the last letter down lets the rest of the pass play on. A seek or a restart drops the wait, and a looping program waits again on its next pass. Layers keep playing while it waits, and `pass()` says `waiting: true`.
+
+A move of your own is paced this way by declaring `rests(at, params)`: where in its own time it waits.
+
+<ApiEntries word="program" />

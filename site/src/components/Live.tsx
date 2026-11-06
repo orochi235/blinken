@@ -6,7 +6,9 @@ import { onSpace } from './space';
 /** A file in `src/live/`: draws into `root` and returns a function that stops it and clears up. */
 type Run = (root: HTMLElement) => () => void;
 
-const runs = import.meta.glob<Run>(['../live/**/*.ts', '!../live/kit.ts', '!../live/logo.ts'], { import: 'default' });
+const runs = import.meta.glob<Run>(['../live/**/*.ts', '!../live/kit.ts', '!../live/logo.ts'], {
+  import: 'default',
+});
 
 /**
  * Runs one file from `src/live/` while it is on screen, and starts it over from the top when it

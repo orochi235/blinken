@@ -1,0 +1,72 @@
+---
+layout: ../layouts/Page.astro
+title: Sign
+description: createMarquee and what it takes, the housing round the lights, the three renderers, and where a pass stands.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Sign
+
+`createMarquee(canvas, options)` makes a sign and starts it playing. Every option has a default, so `createMarquee(canvas)` alone is an empty 80 × 7 sign with a border of bulbs. It returns a `Marquee`, whose methods change the sign while it plays; `destroy` stops it and lets go of the canvas.
+
+| Option | What it sets |
+|---|---|
+| `cols`, `rows` | Dots across and down. Default 80 × 7, one line of text. |
+| `program` | The scenes it plays, looping. See [Program](../program/). |
+| `effects` | Effects of your own that scenes can name. See [Effects](../effect/). |
+| `layers` | Effects laid over the whole sign. See [Layers](../layers/). |
+| `border` | How the bulbs round the edge light: `unlit`, `lit` or `chase`; `false` for no border. |
+| `housing` | What shows round the lights, below. |
+| `color` | The color of a lit dot nothing has tinted. Default amber. |
+| `grid` | How the dots are set out. See [Grids](../grids/). |
+| `defects`, `fade`, `ghost` | Broken lights and filament behavior. See [Broken lights](../hardware/). |
+| `gpu`, `backend` | What draws it, below. |
+| `name` | What debuggers list its mix as. |
+
+## Housing
+
+`housing` is what shows round the lights. `dark`, the default, paints a dark housing with a socket for every dot. `clear` leaves the housing see-through and draws each socket as a faint gray veil, which stands out from a white page as much as from a black one, so one sign reads alike on either (a middle gray page hides it). `none` draws neither: only lit light shows, and an unlit dot is simply absent.
+
+<Live client:only="react" of="housing.ts" />
+
+<Listing of="live/housing.ts" />
+
+## Renderers
+
+A sign draws with WebGPU, WebGL 2 or the 2D canvas. Ask for a WebGPU device once per page and give it to every sign; `gpu()` resolves to null where the browser has none.
+
+```ts
+const g = await gpu(); // once per page
+const a = createMarquee(canvasA, { gpu: g }); // WebGPU, or WebGL where g is null
+const b = createMarquee(canvasB, { backend: '2d' }); // forced
+a.backend; // 'webgpu' | 'webgl' | '2d': what is drawing
+```
+
+With no `gpu`, a sign draws with WebGL where the browser gives it a context, and with 2D otherwise.
+
+| Renderer | How it works |
+|---|---|
+| WebGPU | Computes each light's brightness and color on the GPU wherever blits's `gpu` engine can, and draws from those buffers. An effect the engine can't run is computed on the CPU and uploaded. |
+| WebGL | Computes on the CPU, uploads the result and draws with shaders. |
+| 2D | Draws on the canvas directly. |
+
+The GPU renderers share one look: a softer filament and a real bloom, with each light's center color within 1/255 of 2D's.
+
+- A canvas keeps the context type it first drew with, so a sign that must switch renderers needs a fresh canvas.
+- A page gets about 12 WebGL contexts. Signs past that draw in 2D, and `backend` says so.
+- When the WebGPU device is lost, every sign on it goes dark for good. Watch `gpu.lost`, then ask for a new device and build the signs again.
+
+## Where a pass stands
+
+One pass is the program played through once. `pass()` says where the pass playing now stands: `at` ms into it, its `length`, and each scene with its `start` and `ms`. `seek(ms)` moves the pass to that point, back as readily as forward, and `{ hold: true }` keeps it there until a seek without it or the next restart:
+
+```ts
+sign.restart(1); // play this pass from the second scene
+sign.seek(1500, { hold: true }); // show the pass 1.5 s in, held there
+sign.seek(1500); // and play on from there
+sign.ramp(0.5, 400); // half speed, over 400 ms
+```
+
+<ApiEntries word="sign" />

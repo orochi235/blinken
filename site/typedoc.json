@@ -1,7 +1,17 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "intentionallyNotExported": [
-    "effects", "layers", "faces", "modulators", "moves", "ValueOf", "Spelling", "Target",
-    "ModShader", "MoveShader", "Shape", "Ranked"
+    "effects",
+    "layers",
+    "faces",
+    "modulators",
+    "moves",
+    "ValueOf",
+    "Spelling",
+    "Target",
+    "ModShader",
+    "MoveShader",
+    "Shape",
+    "Ranked"
   ]
 }

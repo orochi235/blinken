@@ -1,4 +1,4 @@
-// Loads every page of the built site in headless Chromium, runs its explainers, scrubs back once,
+// Loads every page of the built site in headless Chromium, runs each live demo,
 // and fails on any console error or page error, on a page laid out wider than a phone's viewport,
 // on a link into the site that leads nowhere, or on a build without its search index. `--shots <dir>` also saves a screenshot per page at each width.
 import { createReadStream, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
@@ -7,8 +7,8 @@ import { extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
-const root = process.env.BLITS_SITE_OUT
-  ? `${resolve(fileURLToPath(new URL('..', import.meta.url)), process.env.BLITS_SITE_OUT)}/`
+const root = process.env.BLINKEN_SITE_OUT
+  ? `${resolve(fileURLToPath(new URL('..', import.meta.url)), process.env.BLINKEN_SITE_OUT)}/`
   : fileURLToPath(new URL('../dist/', import.meta.url));
 const shotsAt = process.argv.indexOf('--shots');
 const shots = shotsAt > 0 ? process.argv[shotsAt + 1] : null;
@@ -16,6 +16,8 @@ if (shots) mkdirSync(shots, { recursive: true });
 
 const types = {
   '.html': 'text/html',
+  '.png': 'image/png',
+  '.woff2': 'font/woff2',
   '.js': 'text/javascript',
   '.css': 'text/css',
   '.json': 'application/json',
@@ -23,7 +25,7 @@ const types = {
 };
 
 // The site is built under its base path, so the server strips it before reading dist.
-const base = (process.env.BLITS_SITE_BASE ?? '/').replace(/\/?$/, '/');
+const base = (process.env.BLINKEN_SITE_BASE ?? '/').replace(/\/?$/, '/');
 
 /** The file a site path serves, or null where there is none. */
 function fileAt(url) {
@@ -92,17 +94,10 @@ for (const [i, path] of pages.entries()) {
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(origin + base.slice(0, -1) + path, { waitUntil: 'networkidle' });
-  const explainers = await page.locator('.explainer').count();
-  await page.waitForTimeout(explainers ? 2000 : 200);
-  for (let k = 0; k < explainers; k++) {
-    const time = page.locator('.explainer').nth(k).locator('[role=slider][aria-label=Time]');
-    await time.scrollIntoViewIfNeeded();
-    await time.focus();
-    await time.press('Home');
-  }
-  if (explainers) await page.waitForTimeout(300);
+  await page.waitForTimeout(200);
   // A live file runs only while on screen, so each is brought into view to run.
   const lives = await page.locator('.live').count();
+  const cards = await page.locator('.card-sign').count();
   for (let k = 0; k < lives; k++) {
     await page.locator('.live').nth(k).scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
@@ -112,7 +107,7 @@ for (const [i, path] of pages.entries()) {
     await page.screenshot({ path: join(shots, `${name}.png`), fullPage: true });
   }
   if (path === '/') {
-    await page.fill('.search input', 'stagger');
+    await page.fill('.search input', 'flicker');
     const hit = await page
       .locator('.search .results li a')
       .first()
@@ -121,7 +116,7 @@ for (const [i, path] of pages.entries()) {
         () => true,
         () => false,
       );
-    if (!hit) errors.push('a search for "stagger" found nothing');
+    if (!hit) errors.push('a search for "flicker" found nothing');
   }
   const links = await page.$$eval('a[href]', (as) => as.map((a) => a.href));
   for (const href of new Set(links)) {
@@ -147,7 +142,7 @@ for (const [i, path] of pages.entries()) {
   const ok = errors.length === 0;
   if (!ok) failed++;
   console.log(
-    `${String(i + 1).padStart(2)}/${pages.length}  ${ok ? 'ok  ' : 'FAIL'}  ${path}  ${explainers} explainer${explainers === 1 ? '' : 's'}, ${lives} live`,
+    `${String(i + 1).padStart(2)}/${pages.length}  ${ok ? 'ok  ' : 'FAIL'}  ${path}  ${lives} live${cards ? `, ${cards} cards` : ''}`,
   );
   for (const e of errors) console.log(`       ${e}`);
   await page.close();

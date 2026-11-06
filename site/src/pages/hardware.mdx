@@ -1,0 +1,41 @@
+---
+layout: ../layouts/Page.astro
+title: Broken lights
+description: Dead, dim, flickering and stuck lights, filament fade, and ghosting between neighbors.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Broken lights
+
+A sign can be aged and broken. Its broken lights show their fault whatever the program asks of them, and two more settings mimic how the hardware lights.
+
+<Live client:only="react" of="hardware.ts" />
+
+<Listing of="live/hardware.ts" />
+
+| Fault | What the light does |
+|---|---|
+| `dead` | Never lights. |
+| `dim` | Lights at a fraction of its brightness. |
+| `flicker` | Drops out at random. |
+| `stuck` | Stays lit. |
+
+Name faults one by one, by a dot's column and row or a bulb's place in the border, or let `scatter` break a share of the dots, the same ones for the same seed:
+
+```ts
+const sign = createMarquee(canvas, {
+  defects: [
+    { kind: 'dead', at: { x: 12, y: 3 } },
+    { kind: 'stuck', at: { bulb: 5 } },
+  ],
+});
+sign.setDefects(scatter(sign.board, { dead: 0.03, dim: 0.05, flicker: 0.01 }, 7));
+```
+
+`fade` is how long a light takes to light and to go dark, in ms. The default, 12 up and 110 down, is a filament's; 0 for both is an LED's hard switch. `ghost` is how much an unlit dot shows of its lit neighbors, the way a multiplexed sign leaks current along its drivers: `row` is the share of its row's mean brightness, `col` of its column's.
+
+Faults, fade and ghosting belong to the drawing, not the mix, so a mix you read yourself still sees every light as sound.
+
+<ApiEntries word="hardware" />

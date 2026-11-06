@@ -1,0 +1,29 @@
+---
+layout: ../layouts/Page.astro
+title: On your own mix
+description: Play blinken's effects on a blits mix of your own and draw the result yourself.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# On your own mix
+
+Every sign is a [blits](https://michaelbaker.tech/blits/) mix underneath, and `sign.mix` hands it over for cueing voices of your own on `sign.board`'s dots and cells. Going further, the parts `createMarquee` is made of are exported, so a mix of your own can play a program and you can draw it however you like.
+
+<Live client:only="react" of="mix.ts" />
+
+<Listing of="live/mix.ts" />
+
+| Part | What it is |
+|---|---|
+| `board(cols, rows)` | The dots and the border, as subjects a mix drives. |
+| `KIT` | The pose they fold to: `lit` by `max`, `gain` by `mul`, `tint` by color, `hue` as an angle that adds and wraps, and `chroma` and `glow` by `mul`. |
+| `play(mix, board, scenes, effects?)` | Cues one pass of a program. |
+| `cueLayer` | Cues a layer, looping. |
+| `createSign(canvas, board, leds)` | Draws the columns a mix was read into, with the sign's faults, fade and ghosting. |
+| `paintBulbs` | Gives the border's bulbs their cells' poses. |
+
+Read the mix's columns every frame and hand them to `createSign`, or read them and draw them some other way.
+
+<ApiEntries word="mix" />

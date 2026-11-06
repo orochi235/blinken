@@ -1,0 +1,31 @@
+---
+layout: ../layouts/Page.astro
+title: Pieces
+description: Moves place the message; modulators change how its dots look. Effects are made of both.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Pieces
+
+A piece is one thing happening to the dots. Effects are made of them, and there are two kinds.
+
+| Kind | What it does | Written as |
+|---|---|---|
+| Move | Places the message: `stand` holds it, `scroll-across` carries it over the sign, `tumble` turns each letter end over end. | `{ move: 'tumble' }` |
+| Modulator | Changes how the lit dots look while it plays: `flash`, `pulse`, `hue-cycle`, `sparkle`, and filters like `fire`, `glitch` and `neon`. | `{ mod: 'pulse' }` |
+
+A move is written for one slot (`enter`, `active` or `exit`), and `MOVES` says which. Modulators go in any slot. Here a scene carries its own effect, made of a move for each slot and two modulators while it holds:
+
+<Live client:only="react" of="pieces.ts" />
+
+<Listing of="live/pieces.ts" />
+
+A piece takes `params`, which set its settings by name, how long it plays (`ms`) among them. A move also takes an `order` of its own, staggering its dots, and a modulator a `spread`: an order that shifts its phase across the dots rather than delaying them, so a hue cycle runs as a rainbow when spread by column.
+
+Each piece declares its settings as `params`: plain data giving each number's label, range and default, for a control panel to be built from. `flash` blinks a number of times within a window of each pass, `from` and `to` as shares of it, which is how `hold` flashes three times in the middle third of its hold.
+
+Every move and modulator is in the [gallery](../gallery/#move), with its settings.
+
+<ApiEntries word="pieces" />

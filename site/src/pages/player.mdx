@@ -1,0 +1,52 @@
+---
+layout: ../layouts/Page.astro
+title: Player
+description: <blinken-player>, one script that plays a composition on any page with no build step.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Player
+
+`<blinken-player>` plays a composition from the [lab](../compose.html) on any page, with no build step. It is one classic script with blits, the fonts and the shaders inlined and nothing fetched, about 195 KB gzipped. The package ships it, so a CDN serves it:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@msb235/blinken@0.1.0"></script>
+<blinken-player program="…" cols="40" rows="7"></blinken-player>
+```
+
+A bundler imports it as `@msb235/blinken/player`. The lab's compose page has a **copy embed** button that writes those two lines for what is on screen.
+
+| Attribute | What it sets |
+|---|---|
+| `program` | The composition: a share link, the part after its `#`, or a composition file's JSON. |
+| `cols`, `rows`, `grid` | The sign's size and grid. |
+| `bulbs` | `none`, `unlit`, `lit` or `chase`. |
+| `housing` | `dark` (the default), `clear` or `none`, as `createMarquee` takes it. |
+| `hardware` | Any of the lab's hardware settings as JSON: `{"fade":{"fall":400},"ghost":{"row":0.1}}`. |
+
+A program can also sit inside the element as a composition file, which is easier to write by hand than a share string:
+
+```html
+<blinken-player>
+  <script type="application/json">
+    { "blinken": "composition", "format": 2, "effects": {},
+      "program": [{ "effect": "scroll", "text": "OPEN LATE", "hex": 16756736 }],
+      "hardware": { "size": { "cols": 60 } } }
+  </script>
+</blinken-player>
+```
+
+Each source overrides the one before: what was compiled in, then the JSON inside the element, then its attributes. The program comes whole from the last source that names one; hardware merges setting by setting, so `cols="60"` changes only the width. Changing any attribute rebuilds the sign. A program it can't read plays nothing and logs an error.
+
+## Compiled in
+
+From a checkout, `npm run compile -- <link or file.json> --out sign.js --tag shop-sign` compiles a program into the script, so the file alone plays it:
+
+```html
+<script src="sign.js"></script>
+<shop-sign></shop-sign>
+```
+
+`--cols`, `--rows`, `--grid`, `--bulbs` and `--hardware` compile hardware in the same way, and a page can still override anything with attributes. Two compiled signs on one page need different tags. Every compiled file carries the whole runtime, every effect and font included.

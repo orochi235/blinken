@@ -4,8 +4,11 @@ import {
   LAYERS,
   MODULATORS,
   MOVES,
+  type MoveName,
   type Param,
   type Params,
+  type SlotPieces,
+  tuningOf,
 } from '@msb235/blinken';
 
 export type CardKind = 'effect' | 'layer' | 'move' | 'modulator';
@@ -17,12 +20,20 @@ export interface Card {
   params: Params;
 }
 
-const of = (kind: CardKind, list: Readonly<Record<string, { name: string; about?: string; params?: Params }>>) =>
-  Object.values(list).map((x): Card => ({ kind, name: x.name, about: x.about ?? '', params: x.params ?? {} }));
+const of = (
+  kind: CardKind,
+  list: Readonly<Record<string, { name: string; about: string; params: Params }>>,
+) =>
+  Object.values(list).map((x): Card => ({ kind, name: x.name, about: x.about, params: x.params }));
 
 /** Every built-in a gallery card shows, grouped by what it is. */
 export const CARDS: Record<CardKind, Card[]> = {
-  effect: of('effect', EFFECTS),
+  effect: Object.values(EFFECTS).map((e: EffectSpec) => ({
+    kind: 'effect',
+    name: e.name,
+    about: e.about ?? '',
+    params: tuningOf(e),
+  })),
   layer: Object.entries(LAYERS).map(([name, l]) => ({
     kind: 'layer',
     name,
@@ -37,10 +48,15 @@ export const CARDS: Record<CardKind, Card[]> = {
 export function specOf(kind: CardKind, name: string): string | EffectSpec {
   if (kind === 'effect' || kind === 'layer') return kind === 'effect' ? name : 'still';
   if (kind === 'modulator')
-    return { name, active: [{ move: 'stand' }, { mod: name }], hold: 3000 };
+    return {
+      name,
+      active: [{ move: 'stand' }, { mod: name as keyof typeof MODULATORS }],
+      hold: 3000,
+    };
   const move = MOVES[name as keyof typeof MOVES];
-  if (move.slot === 'active') return { name, active: { move: name }, hold: 2400 };
-  return { name, [move.slot]: { move: name }, active: { move: 'stand' }, hold: 900 };
+  const piece: SlotPieces = { move: name as MoveName };
+  if (move.slot === 'active') return { name, active: piece, hold: 2400 };
+  return { name, [move.slot]: piece, active: { move: 'stand' }, hold: 900 };
 }
 
 /** The still effect a layer's card plays under it. */

@@ -1,6 +1,6 @@
-import { held, stage } from './kit';
 // ---
 import { createMarquee } from '@msb235/blinken';
+import { held, stage } from './kit';
 
 export default function run(root: HTMLElement) {
   const canvas = stage(root, { cols: 64, rows: 9 });
@@ -15,7 +15,8 @@ export default function run(root: HTMLElement) {
       { effect: 'bounce', text: 'TONIGHT ONLY', hex: 0xff9a2e },
       { effect: 'tile', text: 'OPEN LATE', hex: 0xff4030, layers: { rainbow: true } },
     ],
-    layers: { chase: true, sparkle: true },
+    border: { bulbs: 'chase' },
+    layers: { sparkle: true },
   });
   return held(root, sign);
 }

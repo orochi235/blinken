@@ -9,7 +9,8 @@ interface Props {
   self?: string;
 }
 const { doc, here, self } = Astro.props;
-const fence = (para: Doc[number]) => para.length === 1 && para[0]?.kind === 'code' && para[0].text.startsWith('```');
+const fence = (para: Doc[number]) =>
+  para.length === 1 && para[0]?.kind === 'code' && para[0].text.startsWith('```');
 const code = (text: string) => text.replace(/^```\w*\n?|\n?```$/g, '');
 ---
 {doc.length > 0 && (

@@ -1,9 +1,30 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
-  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
-  "javascript": { "formatter": { "quoteStyle": "single" } },
-  "linter": { "enabled": true, "rules": { "preset": "recommended" } },
-  "overrides": [{ "includes": ["src/glyphs/fonts/index.ts"], "formatter": { "enabled": false } }],
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/glyphs/fonts/index.ts"],
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ],
   "files": {
     "includes": [
       "**",
@@ -17,7 +38,11 @@
       "!.playwright-mcp",
       "!.claude",
       "!**/test-results",
-      "!**/playwright-report"
+      "!**/playwright-report",
+      "!site/.astro",
+      "!site/.generated",
+      "!site/public",
+      "!site/src/**/*.astro"
     ]
   }
 }

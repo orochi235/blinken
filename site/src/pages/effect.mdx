@@ -1,0 +1,41 @@
+---
+layout: ../layouts/Page.astro
+title: Effects
+description: An effect is plain data made of pieces in three slots, staggered by an order, with params a scene can tune.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Effects
+
+An effect is plain data: what plays as the message comes on (`enter`), while it stays (`active`) and as it goes (`exit`). Each slot holds a piece, or several playing together; pieces are on the [next page](../pieces/). An optional `order` staggers the dots, by column, by row, by letter or at random, and `hold` is how long `active` plays.
+
+<Live client:only="react" of="effect.ts" />
+
+<Listing of="live/effect.ts" />
+
+In `active`, a piece whose `ms` is left unset plays one pass over the hold. `blend` crossfades across each boundary between slots, in ms.
+
+## The built-ins
+
+`EFFECTS` holds the built-in effects: `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Matrix rain), `tile`, `type` (typed on behind a cursor and backspaced off), `swarm`, `bounce`, `wave`, `melt` and `shear`. The [gallery](../gallery/#effect) plays each one.
+
+## Params
+
+An effect's `params` are what a scene playing it can tune, each with a label, an `about`, and the settings it drives in `to`: `enter.0.ms` is the first enter piece's `ms`, `enter.0.lag` that piece's order lag, and `lag` or `blend` the effect's own.
+
+```ts
+fall: {
+  // …its pieces
+  params: {
+    drop: { label: 'drop time', about: 'How long a column takes to fall.', to: ['enter.0.ms', 'exit.0.ms'] },
+  },
+},
+// and in the program:
+{ effect: 'fall', text: 'TONIGHT', hex: 0xff9a2e, params: { drop: 600, blend: 120 } },
+```
+
+A param takes its kind, range and default from the first setting in `to`: a number, a choice, or a list of colors. `blend`, and `lag` on an effect with an order, are always there besides. `tuningOf(effect)` lists them, and `tuned(effect, values)` is the effect as those values set it.
+
+<ApiEntries word="effect" />

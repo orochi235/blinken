@@ -1,0 +1,22 @@
+---
+layout: ../layouts/Page.astro
+title: Thumbnails
+description: A small sign looping one effect, for a preview beside its name, and the shared ticker that keeps many cheap.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Thumbnails
+
+`createThumbnail` loops one effect on a small sign, for a preview beside its name:
+
+<Live client:only="react" of="thumbnails.ts" />
+
+<Listing of="live/thumbnails.ts" />
+
+A thumbnail is a marquee of 32 × 7 dots by default, with no layers and the border's bulbs dark. `effect` is a built-in's name, one of `effects`, or a spec; `text`, `hex`, `face` and `style` are as a scene's. `still` draws one moment and holds it: a time in ms, or `'action'` for the moment that best shows the effect at work. `thumb.marquee` is the sign it plays on.
+
+Every thumbnail draws from one shared ticker at 30 fps, and one scrolled out of view comes off it until it is back, so a page of them costs only the ones on screen; the [gallery](../gallery/) is one. `createTicker({ fps })` makes a ticker of your own, and `createMarquee`'s `ticker` option runs any sign on one.
+
+<ApiEntries word="thumbnails" />

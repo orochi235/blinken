@@ -178,7 +178,8 @@ function entry(n: Node): Entry {
   const sig = n.signatures?.[0];
   const comment = sig?.comment ?? n.comment;
   const word = wordOf(n.comment) ?? wordOf(sig?.comment) ?? fileOf(n);
-  if (!word) throw new Error(`site: ${n.name} has no page: add its module to FILED or tag it @category`);
+  if (!word)
+    throw new Error(`site: ${n.name} has no page: add its module to FILED or tag it @category`);
   if (!words.some((w) => w.slug === word))
     throw new Error(`site: ${n.name} is filed under ${word}, which is not a page`);
   const hasMembers = kind === 'interface' || kind === 'class';

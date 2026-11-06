@@ -1,12 +1,32 @@
 ---
-import Page from '../layouts/Page.astro';
 import { CARDS, type CardKind, rangeOf } from '../gallery';
+import Page from '../layouts/Page.astro';
 
 const GROUPS: { kind: CardKind; title: string; lede: string; href: string }[] = [
-  { kind: 'effect', title: 'Effects', lede: 'What a scene names as its `effect`.', href: 'effect/' },
-  { kind: 'layer', title: 'Layers', lede: 'What `layers` turns on, under the whole sign or one scene.', href: 'layers/' },
-  { kind: 'move', title: 'Moves', lede: 'Pieces that place the message, each written for one slot.', href: 'pieces/' },
-  { kind: 'modulator', title: 'Modulators', lede: 'Pieces that change how the lit dots look while they play.', href: 'pieces/' },
+  {
+    kind: 'effect',
+    title: 'Effects',
+    lede: 'What a scene names as its `effect`.',
+    href: 'effect/',
+  },
+  {
+    kind: 'layer',
+    title: 'Layers',
+    lede: 'What `layers` turns on, under the whole sign or one scene.',
+    href: 'layers/',
+  },
+  {
+    kind: 'move',
+    title: 'Moves',
+    lede: 'Pieces that place the message, each written for one slot.',
+    href: 'pieces/',
+  },
+  {
+    kind: 'modulator',
+    title: 'Modulators',
+    lede: 'Pieces that change how the lit dots look while they play.',
+    href: 'pieces/',
+  },
 ];
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const code = (s: string) => s.replace(/`([^`]+)`/g, '<code>$1</code>');

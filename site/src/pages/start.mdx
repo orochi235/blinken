@@ -1,0 +1,40 @@
+---
+layout: ../layouts/Page.astro
+title: Get started
+description: Install blinken, put a sign on a canvas, and give it a program to play.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Get started
+
+```sh
+npm install @msb235/blinken
+```
+
+blinken needs a canvas and nothing else: no framework, no three.js, no fonts or images to load. It brings [blits](https://michaelbaker.tech/blits/) with it, which mixes the effects.
+
+## A sign
+
+`createMarquee` puts a sign on a canvas and plays a program on it: a list of scenes, each a message, its color, and the effect it plays. The program loops.
+
+<Live client:only="react" of="start.ts" />
+
+<Listing of="live/start.ts" />
+
+The canvas takes the largest size its parent element allows, keeping the sign's shape, so give the parent a size. (`stage` and `held` belong to this site: `stage` makes a canvas in a box shaped like the sign, and `held` pauses it with the demo's Pause button.)
+
+## What else it does
+
+| To | See |
+|---|---|
+| Change the program while it plays, seek, or wait for a key press | [Program](../program/) |
+| Make an effect of your own | [Effects](../effect/) and [Pieces](../pieces/) |
+| Lay a rainbow, sparkle or fire over the whole sign | [Layers](../layers/) |
+| Pick a typeface, outline or shadow | [Faces and styles](../text/) |
+| Break some lights, or slow their filaments | [Broken lights](../hardware/) |
+| Show a clock or a score in segment displays | [Readouts](../readouts/) |
+| Put a sign on a page with no build step | [Player](../player/) |
+
+The [gallery](../gallery/) plays every built-in effect, layer, move and modulator. The [lab](../compose.html) composes programs and shares them by link.

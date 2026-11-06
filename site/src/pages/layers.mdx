@@ -1,0 +1,35 @@
+---
+layout: ../layouts/Page.astro
+title: Layers
+description: Modulators laid over the whole sign or one scene, looping, by name or as a spec of your own.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Layers
+
+A layer is a modulator that plays under the whole sign and loops, whatever the program is doing. Turn one on by name:
+
+<Live client:only="react" of="layers.ts" />
+
+<Listing of="live/layers.ts" />
+
+`layers` on `createMarquee` takes the name of a built-in with on, off or a weight, or a full layer spec under a name of your own. `setLayer(name, on, params)` changes one while the sign plays; new params cue it again.
+
+| Layer | What it does |
+|---|---|
+| `sparkle` | Stray dots light for a moment. |
+| `rainbow` | A hue runs across the sign, recoloring whatever is lit. |
+| `invert` | Swaps lit and dark dots, held or swinging, and swept across the sign when spread by column. |
+| `scanline` | A bright band rolls down the rows, like a CRT's. |
+| `fire` | A rising flicker from deep red at the bottom to yellow at the top. |
+| `glitch` | Rare bursts in which bands of rows jump color, drop out or flip. |
+| `neon` | Letters buzz like failing tubes, a few worse than the rest. |
+| `shimmer` | A slanted glint sweeps across now and then. |
+| `aurora` | Colors drift in soft bands. |
+| `gradient` | A still blend of colors from edge to edge. |
+
+A scene's `layers` take the same names and play only as long as the scene: `{ rainbow: true }`, or `{ rainbow: { params: { arc: 90 } } }` laid over the built-in's settings. `on: false` keeps a layer's settings without playing it.
+
+<ApiEntries word="layers" />

@@ -24,13 +24,13 @@ export function stage(root: HTMLElement, { cols, rows, border = true, grid }: St
 }
 
 /**
- * Pauses `sign` while the page's Pause button holds `root` or the window is out of focus, and
- * returns what stops it: `sign.destroy()`, after `also`.
+ * Calls `pause(true)` while the page's Pause button holds `root` or the window is out of focus,
+ * and `pause(false)` when neither does; returns what stops listening.
  */
-export function held(root: HTMLElement, sign: Marquee, also?: () => void): () => void {
+export function onHold(root: HTMLElement, pause: (paused: boolean) => void): () => void {
   let paused = false;
   let away = !document.hasFocus();
-  const apply = () => sign.ramp(paused || away ? 0 : 1, 0);
+  const apply = () => pause(paused || away);
   const hold = (e: Event) => {
     paused = (e as CustomEvent<boolean>).detail;
     apply();
@@ -51,6 +51,54 @@ export function held(root: HTMLElement, sign: Marquee, also?: () => void): () =>
     root.removeEventListener(HOLD, hold);
     window.removeEventListener('blur', blur);
     window.removeEventListener('focus', focus);
+  };
+}
+
+/** A row of controls under the demo's signs. */
+export function controls(root: HTMLElement): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'live-controls';
+  root.append(row);
+  return row;
+}
+
+/** A labeled control in `row`. */
+export function field<T extends HTMLElement>(row: HTMLElement, label: string, input: T): T {
+  const wrap = document.createElement('label');
+  wrap.append(label, input);
+  row.append(wrap);
+  return input;
+}
+
+/** A checkbox, checked or not. */
+export function checkbox(on = false): HTMLInputElement {
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.checked = on;
+  return box;
+}
+
+/** A range input over `min`..`max`. */
+export function slider(min: number, max: number, step: number, value: number): HTMLInputElement {
+  const range = document.createElement('input');
+  range.type = 'range';
+  Object.assign(range, {
+    min: String(min),
+    max: String(max),
+    step: String(step),
+    value: String(value),
+  });
+  return range;
+}
+
+/**
+ * Pauses `sign` while the page's Pause button holds `root` or the window is out of focus, and
+ * returns what stops it: `sign.destroy()`, after `also`.
+ */
+export function held(root: HTMLElement, sign: Marquee, also?: () => void): () => void {
+  const stop = onHold(root, (paused) => sign.ramp(paused ? 0 : 1, 0));
+  return () => {
+    stop();
     also?.();
     sign.destroy();
   };

@@ -1,0 +1,33 @@
+---
+layout: ../layouts/Page.astro
+title: Faces and styles
+description: The dot-matrix typefaces a scene is drawn in, outline and shadow, kerning, tracking, and lines.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+import ApiEntries from '../components/ApiEntries.astro';
+
+# Faces and styles
+
+A scene names the face its message is drawn in as `face`, and a style for it as `style`:
+
+<Live client:only="react" of="faces.ts" />
+
+<Listing of="live/faces.ts" />
+
+The drawn faces are `standard`, the classic 5 × 7 letters and the default; `slim`, 3 × 7, fitting more across the sign; `wide`, the standard letters with every column doubled; and `bold`, each lit dot also lighting the one to its right. Beside them are faces converted from published pixel fonts, from the 3 × 5 `tom-thumb` to the italic `monogram-italic`; `FACE_NAMES` lists them all, and the package's `src/glyphs/fonts/CREDITS.md` names each one's source and license. Text is drawn in capitals.
+
+| Style | What it does |
+|---|---|
+| `outline` | Draws each letter hollow: the ring of dots round it lit, the letter dark. |
+| `shadow` | Lays a dim copy of each letter one dot down and right, behind it. With `outline`, it is the outline's shadow. |
+| `monospace` | Gives every letter the face's widest width. |
+| `tracking` | Adds blank columns between letters, from −1, which lets them touch, to 6. |
+
+Without `monospace`, each letter is kerned by its shape: it slides left until its ink is a blank from the ink before it, in its own row and the rows either side, so letters never touch, even at a corner.
+
+A `\n` starts a new line. Lines stack a blank row apart, each centered on the widest, and play as one message.
+
+A face can also be given whole, as a `Face` with `rows`, `width` and a `glyph` for each character. `rasterize(text, { face, style })` lays text out as a `Bitmap` without a sign, for drawing it some other way.
+
+<ApiEntries word="text" />
