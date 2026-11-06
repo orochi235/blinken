@@ -1,0 +1,46 @@
+---
+import license from '../../../LICENSE?raw';
+import credits from '../../../src/glyphs/fonts/CREDITS.md?raw';
+import ofl from '../../../src/glyphs/fonts/OFL.txt?raw';
+import spleen from '../../../src/glyphs/fonts/spleen.LICENSE?raw';
+import Page from '../layouts/Page.astro';
+
+/** Each face's line in the package's font credits: its name, and who made what it was cut from. */
+const faces = [...credits.matchAll(/^- `([^`]+)`: (.+)$/gm)].map(([, name, credit]) => ({
+  name,
+  credit,
+}));
+const linked = (credit: string) =>
+  credit.replace(/https?:\/\/[^\s),]+/g, (url) => `<a href="${url}">${url.replace(/^https?:\/\//, '')}</a>`);
+---
+<Page title="Credits" description="blinken's license, and the fonts its faces are cut from.">
+  <h1>Credits</h1>
+  <p class="lede">blinken is MIT licensed. Its built-in faces are converted from the pixel fonts below, each under its own license, and the package ships these credits with them.</p>
+
+  <h2>Faces</h2>
+  <table>
+    <thead><tr><th>Face</th><th>From</th></tr></thead>
+    <tbody>
+      {faces.map((f) => (
+        <tr><td><code>{f.name}</code></td><td set:html={linked(f.credit)} /></tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>This site</h2>
+  <p>Set in <a href="https://fonts.google.com/specimen/Archivo">Archivo</a>, <a href="https://fonts.google.com/specimen/Source+Serif+4">Source Serif 4</a>, and <a href="https://fonts.google.com/specimen/JetBrains+Mono">JetBrains Mono</a>, each under the SIL Open Font License, served by Google Fonts.</p>
+
+  <h2>License texts</h2>
+  <details>
+    <summary>blinken: MIT License</summary>
+    <pre>{license}</pre>
+  </details>
+  <details>
+    <summary>SIL Open Font License 1.1</summary>
+    <pre>{ofl}</pre>
+  </details>
+  <details>
+    <summary>Spleen: BSD 2-Clause</summary>
+    <pre>{spleen}</pre>
+  </details>
+</Page>

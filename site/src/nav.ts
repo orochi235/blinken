@@ -41,6 +41,7 @@ interface Entry {
 export const extra: readonly Entry[] = [
   { slug: 'reference', title: 'Reference' },
   { slug: 'changelog', title: 'Changelog' },
+  { slug: 'credits', title: 'Credits' },
   { slug: 'lab', title: 'Lab', href: 'compose.html' },
 ];
 
