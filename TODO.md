@@ -19,7 +19,6 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - GPU paths missing tests: the RGBA8 fallback (where `EXT_color_buffer_float` is missing), a layer cued on a gpu mix, and partial weight, params-while-off and seek-past-loop for a layer cued only while on (2026-11-04).
 - The shaders compare f32 values at thresholds in `tile`, `neon` and `glitch`, so a dot within one f32 step of a boundary can disagree with the CPU for a frame; sampled times showed none. The WebGPU flicker step loses whole steps after hours of clock (2026-11-04).
 - The WebGL blur's taps are `max(1, 3σ/16)` texels apart, so at a large pitch times pixel ratio (around 120 device pixels) it may band; not measured (2026-11-04).
-- The gather shader hardcodes 7 channels and the `USES` table repeats the WGSL bindings, so a new channel or binding has to be added in two places that nothing checks agree (2026-11-04).
 - WebGPU allocates every frame (the `cpuChannels` Set, the `planOf` array, `only()`, `paintBulbs`'s spread), which is garbage the 2D and WebGL paths don't make (2026-11-04).
 - Every marquee statically imports the GPU modules, so a page that never draws with WebGPU still downloads them (2026-11-04).
 - Where WebGPU is absent the lab shows a disabled "webgpu" option as selected, and its WebGL and 2D choices wait on `gpu()` at startup (2026-11-04).
@@ -28,6 +27,7 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 
 - Over a white page, a lit dot's pale core and its glow read as pastel rather than as the saturated light it shows over black: the core is white light, which a white page can't show. The unlit sockets were made to read alike on both (`veil` in `src/render/housing.ts`); the lit dots weren't (2026-11-05).
 
+- `test/gpu/readouts.gpu.ts`'s "a faceplate is dark" fails on all three backends: readout surfaces draw with `housing: 'clear'`, which since fffdb50 makes the faceplate a veil (alpha 7/255) like every other socket, and `test/housing.test.ts` asserts that. `ReadoutOptions.face` still documents `'plate'` as "a dark faceplate". Either the plate stays opaque on a clear housing or the doc and GPU test change (2026-11-05).
 - `npm run smoke`'s `stretched` page (a 320 × 63 sign) lights 0 pixels, at about 3 fps with an 87 ms mix, while the other four pass. Until the lit count was read from a screenshot (`scripts/lit.mjs`), the smoke crashed on its first page, since a WebGL or WebGPU canvas has no 2D context, so this went unseen; it isn't known whether the sign is dark or just hasn't reached its first message in 2.2 s at that rate (2026-11-04).
 - `dim` and `desaturate` change once and stay changed, so looped they snap back at each repeat; every other looping effect closes its loop, which `test/loop-seams.test.ts` holds at each setting's least and most. Making these two seamless means changing what they are: going there and back, or holding the end instead of repeating (2026-11-05).
 - `<blinken-player>` carries the whole runtime, about 195 KB gzipped, whatever its program uses (`docs/player.md`) (2026-11-04).

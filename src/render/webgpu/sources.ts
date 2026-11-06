@@ -2,8 +2,9 @@ import type { GpuChannel } from '@msb235/blits/gpu';
 import type { Board } from '../../board.js';
 import { axesOf, CHANNELS, type SignColumns } from '../../optics.js';
 import { PLANES, type Plane } from '../../planes.js';
+import { layoutOf } from './bindings.js';
 import { BUFFER } from './usage.js';
-import { GATHER_WGSL, GROUP, POSE, SLOT } from './wgsl-optics.js';
+import { GATHER_BINDINGS, GATHER_WGSL, GROUP, POSE, SLOT } from './wgsl-optics.js';
 
 /** Where the GPU folds a mix's channels: `gpuOf(m)` is one. */
 export interface ChannelSource {
@@ -45,11 +46,12 @@ export function createSources(device: GPUDevice, b: Board): Sources {
   for (let i = 0; i < n; i++) info[i * 4] = i < dots ? i : dots + (b.cellOf[i - dots] as number);
   const infoBuf = buffer(info.byteLength, STORAGE_IN, 'light info');
   device.queue.writeBuffer(infoBuf, 0, info);
-  const uniform = buffer(16 + 7 * 16, BUFFER.UNIFORM | BUFFER.COPY_DST, 'gather');
-  const head = new Uint32Array(4 + 7 * 4);
+  const head = new Uint32Array(4 + CHANNELS.length * 4);
+  const uniform = buffer(head.byteLength, BUFFER.UNIFORM | BUFFER.COPY_DST, 'gather');
   const empty = buffer(16, BUFFER.STORAGE, 'nothing');
+  const { layout, group: groupOf } = layoutOf(device, GATHER_BINDINGS);
   const pipeline = device.createComputePipeline({
-    layout: 'auto',
+    layout,
     compute: { module: device.createShaderModule({ code: GATHER_WGSL }), entryPoint: 'main' },
   });
   let follow: Follow | null = null;
@@ -57,13 +59,7 @@ export function createSources(device: GPUDevice, b: Board): Sources {
 
   const bindings = (src: GPUBuffer, from: GPUBuffer) => {
     if (group?.src === src && group.from === from) return group.group;
-    const made = device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [uniform, src, cpu, infoBuf, from, pose].map((b, binding) => ({
-        binding,
-        resource: { buffer: b },
-      })),
-    });
+    const made = groupOf([uniform, src, cpu, infoBuf, from, pose]);
     group = { src, from, group: made };
     return made;
   };

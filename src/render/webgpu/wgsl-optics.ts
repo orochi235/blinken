@@ -2,9 +2,18 @@ import { FLICKER_SEED } from '../../defects.js';
 import { axesOf, CHANNELS } from '../../optics.js';
 import { MIN_SHOWN } from '../optics-frame.js';
 import { HASH_WGSL } from '../wgsl-hash.js';
+import { type Bindings, declare } from './bindings.js';
 
 /** Each channel's first number in a light's pose, ten numbers per light, as `output` holds them. */
-export const SLOT = { lit: 0, gain: 1, tint: 2, hue: 6, chroma: 7, glow: 8, invert: 9 } as const;
+export const SLOT = {
+  lit: 0,
+  gain: 1,
+  tint: 2,
+  hue: 6,
+  chroma: 7,
+  glow: 8,
+  invert: 9,
+} as const satisfies Record<(typeof CHANNELS)[number], number>;
 export const POSE = 10;
 const list = (xs: readonly number[]) =>
   `array<u32, ${xs.length}>(${xs.map((x) => `${x}u`).join(', ')})`;
@@ -12,19 +21,23 @@ const list = (xs: readonly number[]) =>
 export const SHOWS = 5;
 export const GROUP = 64;
 
+/** The gather's buffers, binding 0 onward. */
+export const GATHER_BINDINGS: Bindings = [
+  ['g', 'uniform', 'Gather'],
+  ['src', 'read', 'array<f32>'],
+  ['cpu', 'read', 'array<f32>'],
+  ['info', 'read', 'array<vec4u>'],
+  ['followed', 'read', 'array<f32>'],
+  ['pose', 'write', 'array<f32>'],
+];
 /**
  * Gathers each light's pose from the mix's buffer (`src`, by subject) or the uploaded columns
  * (`cpu`, by light, channel after channel), then lays a followed sign's planes over the dots and
  * swaps the highlighted dots' `invert`.
  */
 export const GATHER_WGSL = `
-struct Gather { n: u32, dots: u32, follow: u32, pad: u32, ch: array<vec4u, 7> }
-@group(0) @binding(0) var<uniform> g: Gather;
-@group(0) @binding(1) var<storage, read> src: array<f32>;
-@group(0) @binding(2) var<storage, read> cpu: array<f32>;
-@group(0) @binding(3) var<storage, read> info: array<vec4u>;
-@group(0) @binding(4) var<storage, read> followed: array<f32>;
-@group(0) @binding(5) var<storage, read_write> pose: array<f32>;
+struct Gather { n: u32, dots: u32, follow: u32, pad: u32, ch: array<vec4u, ${CHANNELS.length}> }
+${declare(GATHER_BINDINGS)}
 const SLOTS = ${list(CHANNELS.map((c) => SLOT[c]))};
 const AXES = ${list(CHANNELS.map(axesOf))};
 @compute @workgroup_size(${GROUP})
@@ -32,7 +45,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   let i = id.x;
   if (i >= g.n) { return; }
   let at = info[i];
-  for (var c = 0u; c < 7u; c++) {
+  for (var c = 0u; c < ${CHANNELS.length}u; c++) {
     let ch = g.ch[c];
     for (var a = 0u; a < AXES[c]; a++) {
       var v: f32;
@@ -96,6 +109,16 @@ fn bytes_lab(b: vec3f) -> vec3f {
   return linear_lab(vec3f(byte_linear(b.x), byte_linear(b.y), byte_linear(b.z)));
 }`;
 
+/** The optics' buffers, binding 0 onward. */
+export const OPTICS_BINDINGS: Bindings = [
+  ['o', 'uniform', 'Optics'],
+  ['pose', 'read', 'array<f32>'],
+  ['faults', 'read', 'array<vec4u>'],
+  ['shown', 'write', 'array<f32>'],
+  ['lines', 'write', 'array<f32>'],
+  ['shows', 'write', 'array<f32>'],
+];
+
 /**
  * `createOpticsFrame`'s step, in three dispatches: `settle_main` (fault, then settle, per light),
  * `lines_main` (each row's and column's sum, for the ghosts) and `show_main` (ghost, shine and
@@ -110,12 +133,7 @@ struct Optics {
   fallback_lab: vec4f,
   fallback_bytes: vec4f,
 }
-@group(0) @binding(0) var<uniform> o: Optics;
-@group(0) @binding(1) var<storage, read> pose: array<f32>;
-@group(0) @binding(2) var<storage, read> faults: array<vec4u>;
-@group(0) @binding(3) var<storage, read_write> shown: array<f32>;
-@group(0) @binding(4) var<storage, read_write> lines: array<f32>;
-@group(0) @binding(5) var<storage, read_write> shows: array<f32>;
+${declare(OPTICS_BINDINGS)}
 
 fn shown_lit(lit: f32, invert: f32) -> f32 {
   let on = min(max(lit, 0.0), 1.0);

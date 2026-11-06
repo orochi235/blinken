@@ -4,8 +4,9 @@ import { rgb } from '../../color.js';
 import { afflictions, type Defect } from '../../defects.js';
 import { FADE, type Fade, type Ghost } from '../../optics.js';
 import { hashThreshold } from '../wgsl-hash.js';
+import { layoutOf } from './bindings.js';
 import { BUFFER } from './usage.js';
-import { GROUP, OPTICS_WGSL, SHOWS } from './wgsl-optics.js';
+import { GROUP, OPTICS_BINDINGS, OPTICS_WGSL, SHOWS } from './wgsl-optics.js';
 
 /** `createOpticsFrame` on the GPU, reading poses from a buffer and writing what each light shows. */
 export interface GpuOptics {
@@ -19,12 +20,8 @@ export interface GpuOptics {
   destroy(): void;
 }
 
-/** Each entry point, in dispatch order, and the bindings it reads: `layout: 'auto'` leaves out the rest. */
-const USES: Record<string, readonly number[]> = {
-  settle_main: [0, 1, 2, 3],
-  lines_main: [0, 3, 4],
-  show_main: [0, 1, 2, 3, 4, 5],
-};
+/** Each entry point, in dispatch order. */
+const ENTRIES = ['settle_main', 'lines_main', 'show_main'] as const;
 
 /** The optics for `leds` on `b`, dots first, reading each light's pose from `pose`. */
 export function createGpuOptics(
@@ -47,18 +44,11 @@ export function createGpuOptics(
   const f32 = new Float32Array(head);
   u32.set([n, b.dots.length, b.cols, b.rows]);
   const module = device.createShaderModule({ code: OPTICS_WGSL });
-  const pipes = Object.entries(USES).map(([entryPoint, uses]) => {
-    const pipe = device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint } });
-    const all = [uniform, pose, faults, shown, lines, shows];
-    const group = device.createBindGroup({
-      layout: pipe.getBindGroupLayout(0),
-      entries: uses.map((binding) => ({
-        binding,
-        resource: { buffer: all[binding] as GPUBuffer },
-      })),
-    });
-    return { pipe, group };
-  });
+  const { layout, group: groupOf } = layoutOf(device, OPTICS_BINDINGS);
+  const group = groupOf([uniform, pose, faults, shown, lines, shows]);
+  const pipes = ENTRIES.map((entryPoint) =>
+    device.createComputePipeline({ layout, compute: { module, entryPoint } }),
+  );
   let fade: Fade = FADE;
   let ghost: Ghost = {};
   let clock = 0;
@@ -95,9 +85,9 @@ export function createGpuOptics(
       if (n === 0) return;
       const pass = enc.beginComputePass();
       const counts = [n, b.rows + b.cols, n];
-      pipes.forEach(({ pipe, group }, k) => {
+      pass.setBindGroup(0, group);
+      pipes.forEach((pipe, k) => {
         pass.setPipeline(pipe);
-        pass.setBindGroup(0, group);
         pass.dispatchWorkgroups(Math.ceil((counts[k] as number) / GROUP));
       });
       pass.end();
