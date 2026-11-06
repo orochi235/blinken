@@ -1,10 +1,25 @@
 {
   "name": "blinken",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "An old-fashioned LED marquee on a canvas, and the composable blits effects it plays",
   "license": "MIT",
   "author": "orochi235",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/blinken.git"
+  },
+  "homepage": "https://github.com/orochi235/blinken#readme",
+  "bugs": "https://github.com/orochi235/blinken/issues",
+  "keywords": [
+    "led",
+    "marquee",
+    "sign",
+    "canvas",
+    "webgpu",
+    "webgl",
+    "animation",
+    "blits"
+  ],
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -19,6 +34,9 @@
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",
+    "src/glyphs/fonts/spleen.LICENSE",
+    "src/glyphs/fonts/OFL.txt",
+    "src/glyphs/fonts/CREDITS.md",
     "LICENSE"
   ],
   "engines": {
