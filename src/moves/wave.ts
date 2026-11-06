@@ -31,8 +31,8 @@ function shape(at: Placed, p: { ms: number; period: number; by: string }) {
 /** The wave, reading the column it is read at for each column of the text from `anchor`. */
 const WAVE = moveShader({
   params: ['left', 'cols', 'height', 'length', 'waves', 'swell', 'from', 'to'],
-  wgsl: `let env = select(1.0, bree_smooth(min(1.0, phase / params.swell)), params.from > 0.5)
-  * select(1.0, bree_smooth(min(1.0, (1.0 - phase) / params.swell)), params.to > 0.5);
+  wgsl: `let env = select(1.0, blinken_smooth(min(1.0, phase / params.swell)), params.from > 0.5)
+  * select(1.0, blinken_smooth(min(1.0, (1.0 - phase) / params.swell)), params.to > 0.5);
 let x = subject.x - params.left;
 let a = select(x, table_anchor(x, 0.0), x >= 0.0 && x < params.cols);
 let turns = a / params.length - params.waves * phase;

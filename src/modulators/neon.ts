@@ -46,7 +46,7 @@ out.glow = 1.0;
 if (subject.cell < 0.5) {
   let tube = i32(select(floor(subject.x / ${f32(TUBE)}), ${RANK}, params.spread > 0.5));
   let seed = i32(params.seed);
-  let h = bree_hash(tube, seed, 1);
+  let h = blinken_hash(tube, seed, 1);
   let bad = h * h * h;
   let chance = (params.often / 60.0) * ${f32(SLOT / 1000)} * bad;
   let t = ph * ${f32(LOOP)};
@@ -54,18 +54,18 @@ if (subject.cell < 0.5) {
   var out_ = false;
   for (var j = now; j > now - 3; j--) {
     let k = ((j % ${SLOTS}) + ${SLOTS}) % ${SLOTS};
-    if (bree_hash(tube, k, seed + 2) >= chance) { continue; }
-    let start = f32(j) * ${f32(SLOT)} + bree_hash(tube, k, seed + 3) * ${f32(SLOT)};
-    let end = start + params.length * (0.6 + 0.8 * bree_hash(tube, k, seed + 4));
+    if (blinken_hash(tube, k, seed + 2) >= chance) { continue; }
+    let start = f32(j) * ${f32(SLOT)} + blinken_hash(tube, k, seed + 3) * ${f32(SLOT)};
+    let end = start + params.length * (0.6 + 0.8 * blinken_hash(tube, k, seed + 4));
     if (t < start || t >= end) { continue; }
     let flick = i32(floor((t - start) / ${f32(FLICKER)}));
-    if (flick == 0 || bree_hash_u32(tube, flick, seed + 5 + k) < ${STAYS}u) { out_ = true; break; }
+    if (flick == 0 || blinken_hash_u32(tube, flick, seed + 5 + k) < ${STAYS}u) { out_ = true; break; }
   }
   if (out_) {
     out.gain = ${f32(OUT.gain as number)};
     out.glow = ${f32(OUT.glow as number)};
   } else {
-    out.gain = 1.0 - 0.1 * bad * bree_hash(tube, i32(floor(t / ${f32(FLICKER)})), seed + 6);
+    out.gain = 1.0 - 0.1 * bad * blinken_hash(tube, i32(floor(t / ${f32(FLICKER)})), seed + 6);
     out.glow = ${f32(HALO)};
   }
 }`,

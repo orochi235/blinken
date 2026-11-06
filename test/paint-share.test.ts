@@ -25,14 +25,14 @@ describe('paint links and files', () => {
   it('reads no picture from an empty hash, a composition or garbage', () => {
     expect(decode('')).toBeNull();
     expect(decode('#not base64!')).toBeNull();
-    expect(decode(`#${btoa('{"bree":"composition"}')}`)).toBeNull();
-    expect(fromJson('{"bree":"composition"}')).toBeNull();
+    expect(decode(`#${btoa('{"blinken":"composition"}')}`)).toBeNull();
+    expect(fromJson('{"blinken":"composition"}')).toBeNull();
     expect(fromJson('not json')).toBeNull();
   });
 
   it('skips dots it cannot read and falls back to the square grid', () => {
     const json = JSON.stringify({
-      bree: 'picture',
+      blinken: 'picture',
       cols: 10,
       rows: 8,
       grid: 'nonsense',

@@ -1,6 +1,6 @@
-"""Writes bree face tables from faces.json: one module per face, an index, and the credits list.
+"""Writes blinken face tables from faces.json: one module per face, an index, and the credits list.
 
-usage: gen.py <faces.json> <bree src/glyphs/fonts dir>
+usage: gen.py <faces.json> <blinken src/glyphs/fonts dir>
 """
 import json
 import os
@@ -8,7 +8,7 @@ import sys
 
 SRC, OUT = sys.argv[1:3]
 
-# json name -> (bree name, about, credit). Fonts with a Reserved Font Name take another name here.
+# json name -> (blinken name, about, credit). Fonts with a Reserved Font Name take another name here.
 META = {
     "Tom Thumb": ("tom-thumb", "Tiny 3 × 5 capitals.", "Tom Thumb, Robey Pointer after Brian Swetland, CC0 — https://robey.lag.net/2010/01/23/tiny-monospace-font.html"),
     "Bytesized": ("bytesized", "Crude 3 × 4 micro capitals.", "Bytesized, Copyright 2024 The Bytesized Project Authors (https://github.com/balt-dev/bytesized-gf), OFL 1.1"),

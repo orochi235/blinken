@@ -1,6 +1,6 @@
 # Handoff
 
-What a session picking up bree needs that the code and `TODO.md` don't already say. Written
+What a session picking up blinken needs that the code and `TODO.md` don't already say. Written
 2026-10-24, updated 2026-11-04.
 
 ## State
@@ -10,7 +10,7 @@ What a session picking up bree needs that the code and `TODO.md` don't already s
 - An audit on 2026-11-01 fixed what it found; what it left is in `TODO.md`. `main` is ahead of
   `origin` and unpushed.
 - The GPU renderers (WebGPU, WebGL 2, 2D) are built on branch `gpu-renderers` in the worktree
-  `~/src/bree-gpu`, unmerged (2026-11-04). Everything it needs from blits shipped in 1.0.0.
+  `~/src/blinken-gpu`, unmerged (2026-11-04). Everything it needs from blits shipped in 1.0.0.
 - Segment readouts are built on the same branch (2026-11-04): 21 display types on a shared panel
   or a page overlay, every backend drawing primitives through placed views. How in
   `docs/readouts.md`, what's left in `TODO.md`. The lab's `readouts` page shows them all;

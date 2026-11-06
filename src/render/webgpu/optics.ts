@@ -36,7 +36,7 @@ export function createGpuOptics(
   const n = leds.length;
   const usage = BUFFER.STORAGE | BUFFER.COPY_DST;
   const buffer = (bytes: number, use: number, label: string) =>
-    device.createBuffer({ size: Math.max(16, bytes), usage: use, label: `bree ${label}` });
+    device.createBuffer({ size: Math.max(16, bytes), usage: use, label: `blinken ${label}` });
   const faults = buffer(n * 16, usage, 'faults');
   const shown = buffer(n * 4, usage, 'shown');
   const lines = buffer((b.rows + b.cols) * 4, usage, 'lines');

@@ -20,7 +20,7 @@ const table = Object.fromEntries(
   ]),
 );
 
-/** A 5 × 7 dot matrix per character, in bree's standard face. */
+/** A 5 × 7 dot matrix per character, in blinken's standard face. */
 export const matrix: DisplayType = {
   name: 'matrix',
   cell: { width: COLS * 2, height: ROWS * 2, lights },

@@ -1,4 +1,4 @@
-// Plays <bree-player> on a bare page in headless Chromium, the way someone embedding it would: a
+// Plays <blinken-player> on a bare page in headless Chromium, the way someone embedding it would: a
 // program in a `program` attribute, one in a JSON child, and one compiled in under its own tag.
 // Checks each lights pixels with no page errors, and that changing an attribute rebuilds the sign.
 // `npm run player:check` compiles the plain player first.
@@ -11,7 +11,7 @@ import { litPixels } from './lit.mjs';
 
 const root = new URL('..', import.meta.url).pathname;
 const file = JSON.stringify({
-  bree: 'composition',
+  blinken: 'composition',
   format: 2,
   effects: {},
   program: [{ effect: 'hold', text: 'OPEN', hex: 0xffb000 }],
@@ -29,14 +29,14 @@ execFileSync(
 );
 
 const page = `<!doctype html><meta charset="utf-8"><body style="margin:0;background:#000;width:800px">
-<script src="/bree-player.js"></script><script src="/check-sign.js"></script>
-<bree-player id="attr" program="${link}" cols="20" grid="hex"></bree-player>
-<bree-player id="child"><script type="application/json">${file}</script></bree-player>
+<script src="/blinken-player.js"></script><script src="/check-sign.js"></script>
+<blinken-player id="attr" program="${link}" cols="20" grid="hex"></blinken-player>
+<blinken-player id="child"><script type="application/json">${file}</script></blinken-player>
 <check-sign id="baked"></check-sign>
 </body>`;
 const files = {
   '/': ['text/html', page],
-  '/bree-player.js': ['text/javascript', readFileSync('dist-player/bree-player.js')],
+  '/blinken-player.js': ['text/javascript', readFileSync('dist-player/blinken-player.js')],
   '/check-sign.js': ['text/javascript', readFileSync(baked)],
 };
 const server = createServer((req, res) => {

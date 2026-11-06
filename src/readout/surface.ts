@@ -166,7 +166,7 @@ export function createSurface(
     backend: drawing.backend,
     readout(o) {
       const type = TYPES[o.type];
-      if (!type) throw new Error(`bree: no readout type named ${o.type}`);
+      if (!type) throw new Error(`blinken: no readout type named ${o.type}`);
       const e: Entry = {
         opts: o,
         value: o.value ?? '',

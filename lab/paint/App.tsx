@@ -41,7 +41,12 @@ export function App() {
   const editing = tool === 'text' && stamp !== null;
 
   return (
-    <LabShell title="bree paint" mode="dark" pages={PAGES} header={<LayoutBar layout={layout} />}>
+    <LabShell
+      title="blinken paint"
+      mode="dark"
+      pages={PAGES}
+      header={<LayoutBar layout={layout} />}
+    >
       <div className="paint-page">
         <LampsBar lamps={lamps} />
         <div className="paint-row">

@@ -1,4 +1,5 @@
 import '@weasel-js/labkit/styles.css';
+import '../renamed-storage.js';
 import { IconRegistryProvider } from '@weasel-js/core';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 import { StrictMode } from 'react';

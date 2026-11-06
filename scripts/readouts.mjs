@@ -10,7 +10,7 @@ import { serve } from './serve.mjs';
 const at = process.argv.indexOf('--out');
 const kept = at > 0 ? process.argv[at + 1] : null;
 if (kept) mkdirSync(kept, { recursive: true });
-const out = kept ?? mkdtempSync(join(tmpdir(), 'bree-readouts-'));
+const out = kept ?? mkdtempSync(join(tmpdir(), 'blinken-readouts-'));
 const backends = ['webgpu', 'webgl', '2d'];
 
 const { origin, close } = await serve();

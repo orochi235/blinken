@@ -20,7 +20,7 @@ const SPARKLE = shader({
   params: ['frames', 'share', 'hi', 'lo', 'frac', 'scale'],
   wgsl: `out.lit = 0.0;
 if (subject.cell < 0.5 && params.hi < 65536.0) {
-  let h = bree_hash_u32(i32(subject.x), i32(subject.y), i32(floor(ph * params.frames)));
+  let h = blinken_hash_u32(i32(subject.x), i32(subject.y), i32(floor(ph * params.frames)));
   let b = (u32(params.hi) << 16u) | u32(params.lo);
   if (h > b) { out.lit = (f32(h - b) - params.frac) * params.scale; }
 }`,

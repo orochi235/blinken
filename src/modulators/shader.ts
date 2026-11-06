@@ -28,7 +28,7 @@ export const unitOf = (shape: number, x: number) => (waveAt(SHAPES[shape] ?? 'si
  * `closedRank`, `unitOf`, `bump` and fire's `noise`.
  */
 export const HELPERS = `${HASH_WGSL}
-fn bree_rank(by: f32, cols: f32, x: f32, y: f32, cell: f32, i: f32) -> f32 {
+fn blinken_rank(by: f32, cols: f32, x: f32, y: f32, cell: f32, i: f32) -> f32 {
   if (by < 0.5) { return 0.0; }
   if (cell > 0.5) { return i; }
   let col = clamp(floor(x + 0.5), 0.0, cols - 1.0);
@@ -37,7 +37,7 @@ fn bree_rank(by: f32, cols: f32, x: f32, y: f32, cell: f32, i: f32) -> f32 {
   if (by < 3.5) { return floor(abs(col - (cols - 1.0) * 0.5)); }
   return y;
 }
-fn bree_unit(shape: f32, x: f32) -> f32 {
+fn blinken_unit(shape: f32, x: f32) -> f32 {
   let u = x - floor(x);
   var w: f32;
   if (shape < 0.5) { w = sin(6.283185307179586 * u); }
@@ -46,26 +46,26 @@ fn bree_unit(shape: f32, x: f32) -> f32 {
   else { w = select(-1.0, 1.0, u < 0.5); }
   return (w + 1.0) * 0.5;
 }
-fn bree_smooth(t: f32) -> f32 { return t * t * (3.0 - 2.0 * t); }
-fn bree_noise_at(i: i32, j: i32, period: i32) -> f32 {
-  return bree_hash(i, ((j % period) + period) % period, period);
+fn blinken_smooth(t: f32) -> f32 { return t * t * (3.0 - 2.0 * t); }
+fn blinken_noise_at(i: i32, j: i32, period: i32) -> f32 {
+  return blinken_hash(i, ((j % period) + period) % period, period);
 }
-fn bree_noise(x: f32, y: f32, period: i32) -> f32 {
+fn blinken_noise(x: f32, y: f32, period: i32) -> f32 {
   let ix = i32(floor(x));
   let iy = i32(floor(y));
-  let fx = bree_smooth(x - floor(x));
-  let fy = bree_smooth(y - floor(y));
-  let top = bree_noise_at(ix, iy, period) + (bree_noise_at(ix + 1, iy, period) - bree_noise_at(ix, iy, period)) * fx;
-  let low = bree_noise_at(ix, iy + 1, period) + (bree_noise_at(ix + 1, iy + 1, period) - bree_noise_at(ix, iy + 1, period)) * fx;
+  let fx = blinken_smooth(x - floor(x));
+  let fy = blinken_smooth(y - floor(y));
+  let top = blinken_noise_at(ix, iy, period) + (blinken_noise_at(ix + 1, iy, period) - blinken_noise_at(ix, iy, period)) * fx;
+  let low = blinken_noise_at(ix, iy + 1, period) + (blinken_noise_at(ix + 1, iy + 1, period) - blinken_noise_at(ix, iy + 1, period)) * fx;
   return top + (low - top) * fy;
 }
-fn bree_bump(d: f32) -> f32 {
+fn blinken_bump(d: f32) -> f32 {
   return select(0.5 + 0.5 * cos(3.141592653589793 * d), 0.0, abs(d) >= 1.0);
 }`;
 
-/** The rank a shader reads for subject `s`: `bree_rank` over `params.by` and `params.cols`. */
+/** The rank a shader reads for subject `s`: `blinken_rank` over `params.by` and `params.cols`. */
 export const RANK =
-  'bree_rank(params.by, params.cols, subject.x, subject.y, subject.cell, subject.i)';
+  'blinken_rank(params.by, params.cols, subject.x, subject.y, subject.cell, subject.i)';
 
 /** `closedRank` reading the order and width a ranked shader is bound with. */
 export const rankAt = (p: Bound, s: Subject) => closedRank(p.by ?? 0, p.cols ?? 1, s);

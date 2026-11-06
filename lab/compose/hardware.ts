@@ -51,7 +51,7 @@ export const hardwareSchema = () =>
   );
 
 /** The lab records the sign's hardware is kept in, under compose's name, which every page opens. */
-export const SIGN_RECORDS = 'bree-compose';
+export const SIGN_RECORDS = 'blinken-compose';
 
 /**
  * The sign's hardware, shared by every page under a `<Persistence>` of `SIGN_RECORDS`, and a

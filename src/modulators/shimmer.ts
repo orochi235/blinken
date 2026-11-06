@@ -28,7 +28,7 @@ const SHIMMER = shader({
   wgsl: `var k = 0.0;
 if (subject.cell < 0.5 && ph < params.sweep) {
   let lean = (params.rows - 1.0 - subject.y) * params.slope;
-  k = bree_bump((subject.x + lean - (params.from + (params.to - params.from) * (ph / params.sweep))) / params.width);
+  k = blinken_bump((subject.x + lean - (params.from + (params.to - params.from) * (ph / params.sweep))) / params.width);
 }
 out.lit = ${f32(SHEEN)} * k;
 out.glow = 1.0 + ${f32(GLOW)} * k;

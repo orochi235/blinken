@@ -129,7 +129,7 @@ export function App() {
     // Outside the shell, so the share bar in its header can read the sign's hardware too.
     <Persistence storageKey={SIGN_RECORDS} storage={localStorageAdapter}>
       <LabShell
-        title="bree compose"
+        title="blinken compose"
         mode="dark"
         pages={PAGES}
         header={

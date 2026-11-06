@@ -63,11 +63,11 @@ canvas { display: block; }
  * when nothing on the page says otherwise; a `<script type="application/json">` inside it, then its
  * attributes, override that.
  */
-export function definePlayer(tag = 'bree-player', baked: Source = {}): void {
+export function definePlayer(tag = 'blinken-player', baked: Source = {}): void {
   if (customElements.get(tag)) return;
   customElements.define(
     tag,
-    class BreePlayer extends HTMLElement {
+    class BlinkenPlayer extends HTMLElement {
       static observedAttributes = ATTRIBUTES;
       readonly #box: HTMLDivElement;
       #sign: Marquee | null = null;

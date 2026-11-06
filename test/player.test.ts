@@ -53,7 +53,7 @@ describe('the compose page embed', () => {
   it('plays the composition on its hardware, naming only what differs from the defaults', () => {
     const hardware = { ...HARDWARE, size: { cols: 40, rows: 7, grid: 'hex' } };
     const html = embedOf(state, { ...hardware, fade: { ...HARDWARE.fade, fall: 500 } });
-    expect(html).toContain('<script src="bree-player.js"></script>');
+    expect(html).toContain('<script src="blinken-player.js"></script>');
     expect(html).toContain(`program="${encode(playable(state))}"`);
     expect(html).toContain('cols="40" rows="7" grid="hex"');
     expect(html).toContain('hardware="{&quot;fade&quot;:{&quot;fall&quot;:500}}"');

@@ -22,7 +22,7 @@ function OpenDiagram() {
  */
 export function App() {
   return (
-    <LabShell title="bree effects" mode="dark" pages={PAGES} header={<LibraryBar />}>
+    <LabShell title="blinken effects" mode="dark" pages={PAGES} header={<LibraryBar />}>
       {/* compose's records, for the sign's hardware the two pages share. */}
       <Persistence storageKey={SIGN_RECORDS} storage={localStorageAdapter}>
         <div className="effects-panes">

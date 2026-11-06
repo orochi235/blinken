@@ -11,7 +11,7 @@ import {
 } from './model.js';
 import { decode, type Linked, stampOf } from './share.js';
 
-const KEY = 'bree:paint';
+const KEY = 'blinken:paint';
 /** How many strokes undo reaches back; older ones drop off. */
 const DEPTH = 100;
 /** Version 2 lights each dot at a level, and moved every board onto the square grid. */

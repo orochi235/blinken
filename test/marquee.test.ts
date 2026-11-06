@@ -234,12 +234,12 @@ describe('createMarquee', () => {
   it('a bare weight for a layer that does not exist throws', async () => {
     expect(() =>
       createMarquee({} as HTMLCanvasElement, { draw: false, layers: { nope: true } }),
-    ).toThrow('bree: no layer named nope');
+    ).toThrow('blinken: no layer named nope');
   });
 
   it('setLayer on an unknown name with no spec throws', async () => {
     await withSign({}, (sign) => {
-      expect(() => sign.setLayer('nope', true)).toThrow('bree: no layer named nope');
+      expect(() => sign.setLayer('nope', true)).toThrow('blinken: no layer named nope');
     });
   });
 
@@ -339,9 +339,9 @@ describe('createMarquee', () => {
       { program: [{ effect: 'quick', text: 'I', hex: 0 }], effects: { quick } },
       (sign) => {
         expect(() => sign.setProgram([{ effect: 'nope', text: 'I', hex: 0 }])).toThrow(
-          'bree: no effect named nope',
+          'blinken: no effect named nope',
         );
-        expect(() => sign.setEffects({})).toThrow('bree: no effect named quick');
+        expect(() => sign.setEffects({})).toThrow('blinken: no effect named quick');
       },
     );
   });

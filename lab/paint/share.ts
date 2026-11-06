@@ -21,7 +21,7 @@ function dataOf({ layout, picture, stamps }: Linked) {
     groups.set(id, g);
   }
   const dots = [...groups.values()].map(([hex, level, at]) => [hex, level, at.join(' ')]);
-  return { bree: KIND, ...layout, dots, ...(stamps.length ? { stamps } : {}) };
+  return { blinken: KIND, ...layout, dots, ...(stamps.length ? { stamps } : {}) };
 }
 
 /** `linked` packed for the URL hash. */
@@ -57,7 +57,7 @@ export function stampOf(v: unknown): Stamp | null {
 /** What `data` holds, or null when it is no picture; dots and stamps it can't read are skipped. */
 function parse(data: unknown): Linked | null {
   const d = data as Record<string, unknown> | null;
-  if (d?.bree !== KIND || !isWhole(d.cols, 4, MAX_COLS) || !isWhole(d.rows, 4, 120)) return null;
+  if (d?.blinken !== KIND || !isWhole(d.cols, 4, MAX_COLS) || !isWhole(d.rows, 4, 120)) return null;
   const grid = typeof d.grid === 'string' && Object.hasOwn(GRIDS, d.grid) ? d.grid : 'square';
   const picture: Picture = {};
   for (const g of Array.isArray(d.dots) ? d.dots : []) {

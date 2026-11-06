@@ -1,4 +1,4 @@
-// esbuild with bree's own module paths: `@/` to src/, and blits to a checkout beside it if there is one.
+// esbuild with blinken's own module paths: `@/` to src/, and blits to a checkout beside it if there is one.
 import { build } from 'esbuild';
 import { blitsAlias } from '../blits.config.ts';
 
@@ -14,7 +14,7 @@ export const bundle = (options) =>
     ...options,
     plugins: [
       {
-        name: 'bree-src',
+        name: 'blinken-src',
         setup(b) {
           b.onResolve({ filter: /^@\// }, (a) =>
             b.resolve(`./${a.path.slice(2)}`, { resolveDir: src, kind: a.kind }),

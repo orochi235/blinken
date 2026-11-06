@@ -60,12 +60,12 @@ export function cueLayers(
       known?.voice?.fade({ over: 0 });
       add(name, v, true);
     } else if (known) weigh(known, weightOf(known.spec, v));
-    else throw new Error(`bree: no layer named ${name}`);
+    else throw new Error(`blinken: no layer named ${name}`);
   }
   return {
     set(name, on, params) {
       const layer = layers.get(name);
-      if (!layer) throw new Error(`bree: no layer named ${name}`);
+      if (!layer) throw new Error(`blinken: no layer named ${name}`);
       if (params) {
         // Fresh params start the layer's loop over.
         layer.voice?.fade({ over: 0 });

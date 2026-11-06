@@ -13,7 +13,7 @@ describe('pickBackend', () => {
 
   it('refuses webgpu without a handle', () => {
     expect(() => pickBackend('webgpu', null, () => true)).toThrow(
-      "bree: backend 'webgpu' needs a gpu handle",
+      "blinken: backend 'webgpu' needs a gpu handle",
     );
     expect(() => pickBackend('webgpu', undefined, () => true)).toThrow(/needs a gpu handle/);
   });

@@ -46,7 +46,7 @@ const swing = (s: Spec): Modulator => {
     (typeof s.shape === 'string' ? s.shape : p.shape) as WaveShape;
   const cycle = shader({
     params: ['shape', 'amount', 'phase', 'start', 'by', 'cols'],
-    wgsl: `let u = bree_unit(params.shape, ph + ${RANK} * params.phase + params.start);
+    wgsl: `let u = blinken_unit(params.shape, ph + ${RANK} * params.phase + params.start);
 let a = params.amount;
 out.${s.channel} = select(${s.wgsl}, ${f32(s.rest)}, subject.cell > 0.5);`,
     at: (ph, subject, p) => {

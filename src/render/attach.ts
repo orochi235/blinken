@@ -147,7 +147,7 @@ function readback(
       staging ??= device.createBuffer({
         size: bytes,
         usage: BUFFER.MAP_READ | BUFFER.COPY_DST,
-        label: 'bree poses read back',
+        label: 'blinken poses read back',
       });
       const into = staging;
       const enc = device.createCommandEncoder();

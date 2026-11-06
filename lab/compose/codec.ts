@@ -49,7 +49,7 @@ import {
 import { BLEND, HOLD } from './state.js';
 
 /*
- * A composition packed into bits, using what bree already knows: each move, modulator, order,
+ * A composition packed into bits, using what blinken already knows: each move, modulator, order,
  * face, built-in effect and layer is its place in its registry, and each number is a count of its
  * setting's steps. Settings left at their defaults are not written. Any change to a registry's
  * order or a setting's range or step changes what old links mean, so it bumps VERSION. A registry
@@ -140,7 +140,7 @@ function readEffect(r: BitReader, version: number, reg: Registries): EffectSpec 
   if (about === ABOUT.builtin)
     out.about = EFFECTS[reg.effects[r.index(reg.effects.length)] as keyof typeof EFFECTS].about;
   else if (about === ABOUT.text) out.about = r.text();
-  else if (about !== ABOUT.none) throw new RangeError('bree: a link has an unknown about');
+  else if (about !== ABOUT.none) throw new RangeError('blinken: a link has an unknown about');
   const order = readOrder(r);
   if (order) out.order = order;
   for (const slot of SLOTS) {
@@ -297,7 +297,8 @@ export function pack(data: ShareData): Uint8Array {
 export function unpack(bytes: Uint8Array): ShareData {
   const r = new BitReader(bytes);
   const version = r.uint(8);
-  if (version < 1 || version > VERSION) throw new RangeError('bree: a link from another version');
+  if (version < 1 || version > VERSION)
+    throw new RangeError('blinken: a link from another version');
   // Version 1 wrote the layers once, for the whole program, ahead of the effects.
   const layers = version === 1 ? readLayers(r, V1_LAYERS) : undefined;
   const reg = registriesAt(version);

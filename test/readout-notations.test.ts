@@ -176,7 +176,7 @@ describe('notation cells', () => {
 
     it(`${t.name}: every name it lights is a light of its cell`, () => {
       const known = new Set(t.cell.lights.map((l) => l.name));
-      const samples = ['0', '7', '19', '1993', '9999', 'BREE', 'hello 42', 'ᚁᚍ', '0.5', '1'];
+      const samples = ['0', '7', '19', '1993', '9999', 'BLINKEN', 'hello 42', 'ᚁᚍ', '0.5', '1'];
       for (const v of samples)
         for (const cell of t.encode(v, 6, t.align))
           for (const n of cell) expect(known).toContain(n);

@@ -1,4 +1,4 @@
-// Screenshots the built play page on the triangle grid, A (bree's faces, two places to a dot) and
+// Screenshots the built play page on the triangle grid, A (blinken's faces, two places to a dot) and
 // B (the strokes face), on WebGPU, into `--out <dir>`. Fails on a console or page error.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';

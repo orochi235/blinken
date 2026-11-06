@@ -53,7 +53,7 @@ describe('pieces', () => {
 
   it('refuses a move in the wrong slot', () => {
     expect(() => stagePiece({ move: 'cut-on' }, 'exit', at, b.dots)).toThrow(
-      'bree: cut-on is an enter move',
+      'blinken: cut-on is an enter move',
     );
   });
 

@@ -58,7 +58,7 @@ export function createWebGpuSignOf(
   const paint = housingPaint(housing);
   const { device, format } = handle;
   const ctx = canvas.getContext('webgpu') as GPUCanvasContext | null;
-  if (!ctx) throw new Error('bree: this canvas has no WebGPU context to give');
+  if (!ctx) throw new Error('blinken: this canvas has no WebGPU context to give');
   ctx.configure({ device, format, alphaMode: 'premultiplied' });
   const make = (shape: Shape) => {
     const sources = createSources(device, shape.board);

@@ -123,13 +123,13 @@ function program(gl: WebGL2RenderingContext, vs: string, fs: string): Program {
     gl.shaderSource(s, src);
     gl.compileShader(s);
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS) && !gl.isContextLost())
-      throw new Error(`bree: shader failed: ${gl.getShaderInfoLog(s)}`);
+      throw new Error(`blinken: shader failed: ${gl.getShaderInfoLog(s)}`);
     gl.attachShader(p, s);
     gl.deleteShader(s);
   }
   gl.linkProgram(p);
   if (!gl.getProgramParameter(p, gl.LINK_STATUS) && !gl.isContextLost())
-    throw new Error(`bree: program failed: ${gl.getProgramInfoLog(p)}`);
+    throw new Error(`blinken: program failed: ${gl.getProgramInfoLog(p)}`);
   const u = Object.fromEntries(UNIFORMS.map((n) => [n, gl.getUniformLocation(p, n)]));
   return { program: p, u };
 }

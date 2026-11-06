@@ -17,7 +17,7 @@ const nearAt = (ph: number, y: number, p: Bound) => {
 const SCANLINE = shader({
   params: ['travel', 'band', 'dim'],
   wgsl: `let off = abs(subject.y - (ph * params.travel - params.band / 2.0));
-let k = select(bree_bump(min(off, params.travel - off) / (params.band / 2.0 + 0.5)), 0.0, subject.cell > 0.5);
+let k = select(blinken_bump(min(off, params.travel - off) / (params.band / 2.0 + 0.5)), 0.0, subject.cell > 0.5);
 out.gain = select(1.0 - params.dim * (1.0 - k), 1.0, subject.cell > 0.5);
 out.glow = 1.0 + ${f32(GLOW)} * k;`,
   at: (ph, s, p) => {

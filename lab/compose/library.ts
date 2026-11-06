@@ -3,7 +3,7 @@ import { EFFECTS, type EffectSpec } from '@/index.js';
 import { effectOf, entriesOf, isObj } from './readers.js';
 
 /** The browser-storage key the effects library is kept under, which every lab page reads. */
-export const LIBRARY = 'bree-effects-library';
+export const LIBRARY = 'blinken-effects-library';
 
 /** The effects designed on the effects page, by name: what compose offers beside the built-ins. */
 export type Library = Readonly<Record<string, EffectSpec>>;
@@ -45,7 +45,7 @@ export function parseLibrary(json: string): { effects: Library; dropped: string[
 
 /** Effects as the JSON a library file holds. */
 export const libraryJson = (effects: Library): string =>
-  `${JSON.stringify({ bree: 'effects', version: 1, effects }, null, 2)}\n`;
+  `${JSON.stringify({ blinken: 'effects', version: 1, effects }, null, 2)}\n`;
 
 const notify = () => {
   for (const l of listeners) l();

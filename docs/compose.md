@@ -1,6 +1,6 @@
 # Pieces, effects and programs: design
 
-**Built** (2026-10-22). For whoever works on bree's composable effects and its compose lab.
+**Built** (2026-10-22). For whoever works on blinken's composable effects and its compose lab.
 It answers: what are the small parts an effect is made from, how do they make an effect, and how
 do effects make a sign program.
 
@@ -13,7 +13,7 @@ reused or recombined.
 
 blits now has the means: `mix.arc({ enter, active, exit, hold, blend })` (blits `2a98ed7`,
 unreleased) plays three parts that hand over on one clock, each part one voice or several layered.
-klieg's `fire({ enter, active, exit })` has the same shape, and bree lines up with it on purpose.
+klieg's `fire({ enter, active, exit })` has the same shape, and blinken lines up with it on purpose.
 
 ## The three levels
 
@@ -64,7 +64,7 @@ arriving and leaving on their own come out the same way.
 ### Planes and channels
 
 A plane is blits's word for a group of a kit's channels that belong together (vocabulary,
-2026-10-22). blits folds by channel and never reads planes, so bree declares and checks them. Every
+2026-10-22). blits folds by channel and never reads planes, so blinken declares and checks them. Every
 piece says which planes it writes. The sign's kit grows from two channels to these:
 
 | Plane      | Channel        | Folds by                | What it holds                                            |
@@ -181,7 +181,7 @@ The lab serves three pages: the composer at `/compose` (`lab/compose.html`), the
   link" puts the whole composition in the URL hash, as klieg's `/show/` page does, and "copy player
   link" puts on `/play` only what plays: the effects the program names, without their about text,
   and the layers that are on. "Save" downloads the composition as a JSON file marked
-  `"bree": "composition"`, and "load" opens one in place of it as an undoable edit, read as
+  `"blinken": "composition"`, and "load" opens one in place of it as an undoable edit, read as
   forgivingly as a link. The current draft is kept in browser storage, so a reload doesn't lose
   it; it is a convenience, not a save. A link that opens over a different draft moves that draft
   aside, and the last five moved aside are kept: "restore previous draft" steps back through
@@ -209,7 +209,7 @@ The lab serves three pages: the composer at `/compose` (`lab/compose.html`), the
 
 ## Constraints
 
-- Runs on blits `mix.arc`, unreleased. bree uses the `../blits` checkout until blits publishes;
+- Runs on blits `mix.arc`, unreleased. blinken uses the `../blits` checkout until blits publishes;
   then it pins that version and restores `labelOf` (see `TODO.md`).
 - An `'open'` hold is refused inside a span, so program scenes always have a finite hold.
 - Published source keeps relative imports; the lab and tests use the `@/` alias.

@@ -37,7 +37,7 @@ export function layerOf(name: string, layer: SceneLayer): LayerSpec | null {
   const base = Object.hasOwn(LAYERS, name) ? LAYERS[name as keyof typeof LAYERS] : undefined;
   const given = typeof layer === 'object' ? layer : {};
   const mod = given.mod ?? base?.mod;
-  if (!mod) throw new Error(`bree: no layer named ${name}`);
+  if (!mod) throw new Error(`blinken: no layer named ${name}`);
   return {
     ...base,
     ...given,
@@ -55,7 +55,7 @@ export function effectOf(
   const name = scene.effect;
   if (Object.hasOwn(effects, name)) return effects[name] as EffectSpec;
   if (Object.hasOwn(EFFECTS, name)) return EFFECTS[name as keyof typeof EFFECTS];
-  throw new Error(`bree: no effect named ${name}`);
+  throw new Error(`blinken: no effect named ${name}`);
 }
 
 /** A scene of a program staged to play: which scene it is, and what it plays. */
@@ -169,7 +169,7 @@ function stageLayer(
   const shaded = stretch(cycle, ms);
   if (shaded) return { name, patch: shaded, subjects, weight };
   const cycles = ms / Math.max(1, cycle.duration);
-  if (cycle.form !== 'fn') throw new Error(`bree: layer ${name} is not a plain patch`);
+  if (cycle.form !== 'fn') throw new Error(`blinken: layer ${name} is not a plain patch`);
   const stretched = patch<Subject, Pose>(
     ms,
     (phase, subject, setting) => cycle.at((phase * cycles) % 1, subject, setting),

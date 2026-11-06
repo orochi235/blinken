@@ -1,19 +1,17 @@
-# bree
+# blinken
 
 An old-fashioned LED sign on a canvas: a grid of dots under a border of chasing bulbs, playing a
 program of messages. Every dot is lit by one [blits](https://github.com/orochi235/blits) mix, and
 every effect is a blits patch you can cue on a mix of your own. No three.js, no assets.
 
-`bree` is a codename; the package is unpublished until it has a real one.
-
 ## On any page
 
-`npm run compile` builds `<bree-player>`, one script with everything inlined, which plays a
+`npm run compile` builds `<blinken-player>`, one script with everything inlined, which plays a
 composition from the lab's compose page on any page without a build step:
 
 ```html
-<script src="bree-player.js"></script>
-<bree-player program="…" cols="40" rows="7"></bree-player>
+<script src="blinken-player.js"></script>
+<blinken-player program="…" cols="40" rows="7"></blinken-player>
 ```
 
 Compose's **copy embed** gives those two lines for the composition and sign on screen. Giving
@@ -23,7 +21,7 @@ it takes is in [docs/player.md](docs/player.md).
 ## A sign of its own
 
 ```ts
-import { createMarquee } from 'bree';
+import { createMarquee } from 'blinken';
 
 const sign = createMarquee(canvas, {
   cols: 80,
@@ -115,7 +113,7 @@ A sign draws with WebGPU, WebGL 2 or 2D. Ask the browser for a WebGPU device onc
 to every sign; `gpu()` resolves to null where there is none:
 
 ```ts
-import { createMarquee, gpu } from 'bree';
+import { createMarquee, gpu } from 'blinken';
 
 const g = await gpu(); // once per page
 const a = createMarquee(canvasA, { gpu: g }); // WebGPU, or WebGL where g is null
@@ -153,7 +151,7 @@ measurements and what a frame costs on each.
 `createThumbnail` loops one effect on a small sign, for a preview beside its name:
 
 ```ts
-import { createThumbnail } from 'bree';
+import { createThumbnail } from 'blinken';
 
 const thumb = createThumbnail(canvas, { effect: 'flip', text: 'OPEN', hex: 0xff4030 });
 thumb.marquee.setEffects(mine); // a changed effect plays from its next pass
@@ -173,7 +171,7 @@ matrix, and notations like Cistercian and Maya numerals, Braille, Morse and sema
 lists all 23, `triangles` and `triangles-fine` drawing letters on the triangle grid. Many readouts share one canvas and one sign, on a panel or over the page:
 
 ```ts
-import { createOverlay, createPanel } from 'bree';
+import { createOverlay, createPanel } from 'blinken';
 
 const panel = createPanel(canvas, { gpu: handle });
 const clock = panel.readout({ type: 'seven', cells: 4, at: { x: 20, y: 20 }, height: 64 });
@@ -348,7 +346,7 @@ npm run dev      # the lab, http://localhost:4885 and the same port on the LAN
 npm run smoke    # build the lab, play it headless at three sizes
 npm run shots    # build the lab, screenshot each effect alone into shots/
 npm run check    # lint, typecheck, tests
-npm run compile  # build <bree-player> into dist-player/
+npm run compile  # build <blinken-player> into dist-player/
 npm run player:check  # play it on a bare page in headless Chromium
 ```
 

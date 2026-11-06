@@ -1,6 +1,6 @@
 # GPU renderers: benchmark and rounds
 
-For whoever works on how bree draws. It answers: how the three backends (2D, WebGL, WebGPU) are
+For whoever works on how blinken draws. It answers: how the three backends (2D, WebGL, WebGPU) are
 built and what "matches 2D" means, what a frame costs on each as the light count grows, what each
 round of tuning bought, and where tuning stopped and why. How to use them is in the
 [README](../README.md#gpu).
@@ -72,7 +72,7 @@ throughput rather than the display. The first second is warmup and is left out o
   so on WebGL and WebGPU only fps and the frame gaps (p50, p95) show the GPU's own time.
 
 Every run's record goes to `bench/runs/<time>-<backend>-<lights>.json` (gitignored). It holds every
-frame's raw mix and draw times, the machine, load, Chrome version, GPU adapter, and the bree and
+frame's raw mix and draw times, the machine, load, Chrome version, GPU adapter, and the blinken and
 blits commits. On a fleet node the blits commit names the node's checkout, which onto syncs newer
 files over: the runs below record blits `dd75131` but built the files of `1919a94`. The sweep
 prunes the directory to the newest 200 records when it starts.
@@ -81,7 +81,7 @@ prunes the directory to the newest 200 records when it starts.
 Timed runs go to a quiet fleet node with a GPU, not to a machine in use:
 
 ```
-onto do --kind bench --solo --node teitou --task bree-gpu-bench --expect 6m \
+onto do --kind bench --solo --node teitou --task blinken-gpu-bench --expect 6m \
   --out bench/runs --about "..." -- node scripts/bench.mjs --label <round>
 ```
 
@@ -196,7 +196,7 @@ WebGPU's frame no longer has CPU work worth a round: under 0.2 ms at 80,000 ligh
 
 - **Effects that still fold on the CPU on WebGPU**: spreads by letter or at random, and the moves
   and modulators with no shader form (`TODO.md`, "GPU renderers").
-- **2D and WebGL's mix** is blits's CPU fold, which bree calls but does not own.
+- **2D and WebGL's mix** is blits's CPU fold, which blinken calls but does not own.
 - **2D drawing.** In Chrome CPU profiles (not kept), the drawing code's own time was 6.5% of a 2D
   frame at 80,000 lights; the rest of the draw was the canvas filling and blurring, which a round
   could change only by changing 2D's output, and this project holds that fixed.

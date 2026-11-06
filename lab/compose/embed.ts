@@ -5,7 +5,7 @@ import type { ComposeState } from './state.js';
 const attr = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
 /**
- * HTML that plays `state` on a page through the `<bree-player>` script (`npm run compile`): the
+ * HTML that plays `state` on a page through the `<blinken-player>` script (`npm run compile`): the
  * size and grid as attributes, and only the hardware that differs from the defaults.
  */
 export function embedOf(state: ComposeState, hardware: Hardware): string {
@@ -21,7 +21,7 @@ export function embedOf(state: ComposeState, hardware: Hardware): string {
   }
   const extra = Object.keys(rest).length ? ` hardware="${attr(JSON.stringify(rest))}"` : '';
   return [
-    '<script src="bree-player.js"></script>',
-    `<bree-player program="${encode(playable(state))}" cols="${cols}" rows="${rows}" grid="${grid}"${extra}></bree-player>`,
+    '<script src="blinken-player.js"></script>',
+    `<blinken-player program="${encode(playable(state))}" cols="${cols}" rows="${rows}" grid="${grid}"${extra}></blinken-player>`,
   ].join('\n');
 }

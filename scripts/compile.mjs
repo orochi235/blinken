@@ -1,8 +1,8 @@
-// Builds the <bree-player> element into one self-contained script: everything inlined, nothing
+// Builds the <blinken-player> element into one self-contained script: everything inlined, nothing
 // fetched. Given a program (a share link, the part after its `#`, or a composition .json file), it
 // is compiled in as what the element plays when the page gives it none.
 //
-//   npm run compile                                   the plain player, dist-player/bree-player.js
+//   npm run compile                                   the plain player, dist-player/blinken-player.js
 //   npm run compile -- '<link>' --out sign.js --tag shop-sign --cols 40 --grid triangles
 //   npm run compile -- show.json --hardware '{"fade":{"fall":400}}'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -14,8 +14,8 @@ import { bundle, load } from './bundle.mjs';
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
-    out: { type: 'string', default: 'dist-player/bree-player.js' },
-    tag: { type: 'string', default: 'bree-player' },
+    out: { type: 'string', default: 'dist-player/blinken-player.js' },
+    tag: { type: 'string', default: 'blinken-player' },
     hardware: { type: 'string' },
     cols: { type: 'string' },
     rows: { type: 'string' },
@@ -71,8 +71,8 @@ const out = await bundle({
   // The package says it has no side effects, which would drop the element's definition.
   ignoreAnnotations: true,
   define: {
-    __BREE_TAG__: JSON.stringify(values.tag),
-    __BREE_BAKED__: JSON.stringify(baked),
+    __BLINKEN_TAG__: JSON.stringify(values.tag),
+    __BLINKEN_BAKED__: JSON.stringify(baked),
     'process.env.NODE_ENV': '"production"',
   },
 });

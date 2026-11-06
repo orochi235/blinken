@@ -65,7 +65,7 @@ export class BitReader {
     let v = 0;
     for (let i = 0; i < width; i++, this.at++) {
       const byte = this.bytes[this.at >> 3];
-      if (byte === undefined) throw new RangeError('bree: read past the end of a link');
+      if (byte === undefined) throw new RangeError('blinken: read past the end of a link');
       v = v * 2 + ((byte >> (7 - (this.at & 7))) & 1);
     }
     return v;
@@ -78,7 +78,7 @@ export class BitReader {
   /** One of `n` choices, throwing a RangeError for a number past them. */
   index(n: number): number {
     const i = this.uint(widthOf(n));
-    if (i >= n) throw new RangeError('bree: a link names a choice that does not exist');
+    if (i >= n) throw new RangeError('blinken: a link names a choice that does not exist');
     return i;
   }
 
@@ -88,7 +88,8 @@ export class BitReader {
     while (more) {
       more = this.flag();
       v = v * 16 + this.uint(4);
-      if (v > Number.MAX_SAFE_INTEGER) throw new RangeError('bree: a count in a link is too big');
+      if (v > Number.MAX_SAFE_INTEGER)
+        throw new RangeError('blinken: a count in a link is too big');
     }
     return v;
   }
@@ -106,7 +107,7 @@ export class BitReader {
 
   text(): string {
     const n = this.count();
-    if (n > this.bytes.length) throw new RangeError('bree: read past the end of a link');
+    if (n > this.bytes.length) throw new RangeError('blinken: read past the end of a link');
     const utf8 = new Uint8Array(n);
     for (let i = 0; i < n; i++) utf8[i] = this.uint(8);
     return new TextDecoder('utf-8', { fatal: true }).decode(utf8);

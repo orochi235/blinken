@@ -8,7 +8,7 @@ const STEADY = -1;
 
 const INVERT = shader({
   params: ['shape', 'depth', 'phase', 'by', 'cols'],
-  wgsl: `let swing = select(1.0, bree_unit(params.shape, ph + ${RANK} * params.phase), params.shape >= 0.0);
+  wgsl: `let swing = select(1.0, blinken_unit(params.shape, ph + ${RANK} * params.phase), params.shape >= 0.0);
 out.invert = select(params.depth * swing, 0.0, subject.cell > 0.5);`,
   at: (ph, s, p) => {
     if (s.kind === 'cell') return { invert: 0 };

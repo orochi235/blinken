@@ -31,8 +31,15 @@ describe('saved composition files', () => {
 
   it('writes readable JSON that says what it is', () => {
     const json = toJson(state());
-    expect(JSON.parse(json).bree).toBe('composition');
+    expect(JSON.parse(json).blinken).toBe('composition');
     expect(json).toContain('\n  "program": [');
+  });
+
+  it('reads a file saved under the old name', () => {
+    const { blinken, ...rest } = JSON.parse(toJson(state()));
+    const { read, state: back } = fromJson(JSON.stringify({ bree: blinken, ...rest }));
+    expect(read).toBe(true);
+    expect(back.program).toEqual(state().program);
   });
 
   it('reads a file saved before it had a format as monospace unless it set proportional', () => {
@@ -48,7 +55,7 @@ describe('saved composition files', () => {
   });
 
   it('reads anything that is not a saved composition as unread', () => {
-    for (const text of ['', 'not json', '[]', '{"name":"bree","version":"0.0.0"}'])
+    for (const text of ['', 'not json', '[]', '{"name":"blinken","version":"0.0.0"}'])
       expect(fromJson(text).read, text).toBe(false);
   });
 

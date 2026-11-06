@@ -105,6 +105,6 @@ export const FACE_NAMES = Object.keys(faces) as readonly FaceName[];
 /** A face given by name or in full; throws on a name no built-in has. */
 export function faceOf(face: FaceName | Face = 'standard'): Face {
   if (typeof face !== 'string') return face;
-  if (!Object.hasOwn(FACES, face)) throw new Error(`bree: no face named ${face}`);
+  if (!Object.hasOwn(FACES, face)) throw new Error(`blinken: no face named ${face}`);
   return FACES[face];
 }

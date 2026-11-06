@@ -114,13 +114,14 @@ const FORMAT = 2;
 
 /** The composition as a JSON file's text, readable by hand and by `fromJson`. */
 export const toJson = (state: ComposeState): string =>
-  `${JSON.stringify({ bree: FILE_KIND, format: FORMAT, ...shareOf(state) }, null, 2)}\n`;
+  `${JSON.stringify({ blinken: FILE_KIND, format: FORMAT, ...shareOf(state) }, null, 2)}\n`;
 
 /** A composition from a saved file's text, read as forgivingly as a link. */
 export function fromJson(text: string): Decoded {
   try {
     const data: unknown = JSON.parse(text);
-    if (isObj(data) && data.bree === FILE_KIND) return parse(data, data.format === undefined);
+    if (isObj(data) && (data.blinken ?? data.bree) === FILE_KIND)
+      return parse(data, data.format === undefined);
   } catch {}
   return { state: defaultState(), dropped: [], read: false };
 }

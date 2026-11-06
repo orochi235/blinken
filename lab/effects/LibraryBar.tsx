@@ -56,7 +56,7 @@ export function LibraryBar() {
       <Button
         size="sm"
         tooltip="Download every effect in the library as one JSON file."
-        onClick={() => download('bree-effects.json', libraryJson(library.get()))}
+        onClick={() => download('blinken-effects.json', libraryJson(library.get()))}
       >
         export
       </Button>

@@ -10,7 +10,7 @@ import { values } from '@/params.js';
 import { cueLayer, layerOf, play, type Scene, stageProgram } from '@/program.js';
 import { blitsAlias } from '../blits.config.ts';
 
-/** blits's `gpuDescriptor`, from the blits the tests run on: the checkout beside bree, or npm's. */
+/** blits's `gpuDescriptor`, from the blits the tests run on: the checkout beside blinken, or npm's. */
 const { gpuDescriptor } = (await import(
   blitsAlias['@msb235/blits/gpu']?.replace(/gpu\.ts$/, 'gpu/shader-patch.ts') ??
     '../node_modules/@msb235/blits/dist/gpu/shader-patch.js'
@@ -157,7 +157,7 @@ describe('play', () => {
 
   it('names an unknown effect in the error', () => {
     expect(() => play(fresh(), b, [{ text: 'I', hex: 0, effect: 'nope' }])).toThrow(
-      'bree: no effect named nope',
+      'blinken: no effect named nope',
     );
   });
 
@@ -165,7 +165,7 @@ describe('play', () => {
     const m = fresh();
     const good: Scene = { text: 'I', hex: 0, effect: LEFT };
     expect(() => play(m, b, [good, { text: 'I', hex: 0, effect: 'constructor' }])).toThrow(
-      'bree: no effect named constructor',
+      'blinken: no effect named constructor',
     );
     expect(m.marks(0, 100_000)).toEqual([]);
   });

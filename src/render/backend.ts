@@ -8,7 +8,7 @@ export function pickBackend(
   handle: Gpu | null | undefined,
   canWebgl: () => boolean,
 ): Backend {
-  if (want === 'webgpu' && !handle) throw new Error("bree: backend 'webgpu' needs a gpu handle");
+  if (want === 'webgpu' && !handle) throw new Error("blinken: backend 'webgpu' needs a gpu handle");
   if (want) return want;
   if (handle) return 'webgpu';
   return canWebgl() ? 'webgl' : '2d';

@@ -1,9 +1,5 @@
 # TODO
 
-## Rename to blinken
-
-Decided 2026-11-05: bree becomes `blinken` (free on npm). Covers the package name, the `bree:` error prefixes, the `bree_` WGSL helpers, page titles, and storage keys (old drafts migrated on read). The GitHub repo becomes orochi235/blinken and the site moves to michaelbaker.tech/blinken/; the old /bree/ path may 404. `~/src/bree` and `~/src/bree-gpu` get renamed once no session is in them. The code rename waits for the `player` branch (in `~/src/bree-gpu`) to merge, so it isn't rebased over a sweeping rename (2026-11-05).
-
 ## Parked
 
 - Authoring an effect's params in the designer: naming a param and picking the settings it changes. Parked 2026-10-24 as more than the lab needs for now; effects declare params in code, as the built-ins do. The section as built is in e294d8a (`lab/compose/designer/ParamsBox.tsx`).
@@ -35,14 +31,14 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 
 - `npm run smoke`'s `stretched` page (a 320 × 63 sign) lights 0 pixels, at about 3 fps with an 87 ms mix, while the other four pass. Until the lit count was read from a screenshot (`scripts/lit.mjs`), the smoke crashed on its first page, since a WebGL or WebGPU canvas has no 2D context, so this went unseen; it isn't known whether the sign is dark or just hasn't reached its first message in 2.2 s at that rate (2026-11-04).
 - `dim` and `desaturate` change once and stay changed, so looped they snap back at each repeat; every other looping effect closes its loop, which `test/loop-seams.test.ts` holds at each setting's least and most. Making these two seamless means changing what they are: going there and back, or holding the end instead of repeating (2026-11-05).
-- `<bree-player>` carries the whole runtime, about 195 KB gzipped, whatever its program uses (`docs/player.md`) (2026-11-04).
+- `<blinken-player>` carries the whole runtime, about 195 KB gzipped, whatever its program uses (`docs/player.md`) (2026-11-04).
 
 - On `grid: 'triangles'`, the `reel-in` move spins letters rasterized without doubling, so they show half width; it reads glyphs through `rasterize` rather than `placeText`'s `lookOn` (2026-11-04).
 - The `strokes` face samples each glyph as if it starts on an up-pointing triangle; text placed at an odd column or row draws each triangle flipped, which roughens its strokes, and a scroll by one place shows it every other step (2026-11-04).
 - The triangle grid draws no seams between its hexagons: they only describe the tiling. Other tilings (squares cut into four, say) would each be a `triangleAt` of their own (2026-11-04).
 
 - On the effects page in a window 1200px wide or less, the diagram and the card designer still share one scrolling column, so picking a node scrolls its card into view and carries the diagram off screen; wider, the designer has a column of its own (2026-11-01).
-- Duplicate copies ship in `WEASEL=npm` runs and the deployed lab: `@msb235/blits-panel@0.4.1` pins weasel `1.12.0` exactly, so npm nests weasel 1.12 under it beside bree's 1.15, and each weasel pins its own blits (1.15 → `0.12.0`, 1.12 → `0.11.0`) beside bree's `0.16.1`. Needs a blits-panel release on current weasel, and weasel taking blits as a range (2026-11-01).
+- Duplicate copies ship in `WEASEL=npm` runs and the deployed lab: `@msb235/blits-panel@0.4.1` pins weasel `1.12.0` exactly, so npm nests weasel 1.12 under it beside blinken's 1.15, and each weasel pins its own blits (1.15 → `0.12.0`, 1.12 → `0.11.0`) beside bree's `0.16.1`. Needs a blits-panel release on current weasel, and weasel taking blits as a range (2026-11-01).
 - `wave` on a 7-row sign clips a letter's top or bottom row at each step, since the font leaves no spare rows; it reads cleanly from 9 rows up.
 - `swarm` on a message about as wide as the sign fills it with in-flight dots, so the scatter reads as a haze rather than separate dots.
 - Compose's store (`lab/compose/store.ts`, `attach`/`seek`/`setRate`) and the effects preview (`lab/effects/preview.ts`) each carry a sign's rate, hold and position over to the sign that replaces it, in two copies that can drift. One helper both build on would fold them; the store keeps its copy in `import.meta.hot.data`, which the helper has to survive (2026-11-01).

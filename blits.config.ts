@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 const at = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 /**
- * bree runs on a blits checkout beside it where there is one, and on the published package where
+ * blinken runs on a blits checkout beside it where there is one, and on the published package where
  * there is not, or with BLITS=npm.
  */
 export const blitsAlias: Record<string, string> =

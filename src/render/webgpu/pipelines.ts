@@ -114,7 +114,7 @@ export function createPainter(
     const buf = device.createBuffer({
       size: Math.max(16, data.byteLength),
       usage: BUFFER.STORAGE | BUFFER.COPY_DST,
-      label: `bree ${label}`,
+      label: `blinken ${label}`,
     });
     if (data.byteLength > 0) device.queue.writeBuffer(buf, 0, data as Float32Array<ArrayBuffer>);
     return buf;

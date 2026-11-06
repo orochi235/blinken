@@ -21,7 +21,7 @@ const PALETTE = shader({
         .map((n) => `params.${n}`)
         .join(', ')})`,
   ).join(', ')});
-let k = min(params.n - 1.0, floor(bree_unit(${f32(SAW)}, ph + ${RANK} * params.phase - 0.5) * params.n));
+let k = min(params.n - 1.0, floor(blinken_unit(${f32(SAW)}, ph + ${RANK} * params.phase - 0.5) * params.n));
 let c = swatches[i32(k)];
 out.tint = array<f32, 4>(0.0, 0.0, 0.0, 0.0);
 if (subject.cell < 0.5) { out.tint = array<f32, 4>(c.x, c.y, c.z, 1.0); }`,
@@ -95,7 +95,7 @@ const blend = (a: readonly number[], b: readonly number[], k: number) =>
 
 const TWO = shader({
   params: ['aL', 'aa', 'ab', 'bL', 'ba', 'bb', 'depth', 'phase', 'by', 'cols'],
-  wgsl: `let k = bree_unit(0.0, ph + ${RANK} * params.phase) * params.depth;
+  wgsl: `let k = blinken_unit(0.0, ph + ${RANK} * params.phase) * params.depth;
 out.tint = array<f32, 4>(0.0, 0.0, 0.0, 0.0);
 if (subject.cell < 0.5) {
   out.tint = array<f32, 4>(params.aL + (params.bL - params.aL) * k, params.aa + (params.ba - params.aa) * k, params.ab + (params.bb - params.ab) * k, 1.0);

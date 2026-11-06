@@ -44,7 +44,7 @@ export interface Move<P extends Params = Params> {
   /** Writes `lit` only; its duration is one pass, before any order's delay. */
   patch(at: Placed, p: Values<P>, joins?: Joins): Patch<Led, Pose>;
   /**
-   * `patch` as a shader patch on every dot and cell, for the gpu engine; null where the blits bree
+   * `patch` as a shader patch on every dot and cell, for the gpu engine; null where the blits blinken
    * runs on cannot make one.
    */
   shader?(at: Placed, p: Values<P>, joins?: Joins): MoveShader | null;

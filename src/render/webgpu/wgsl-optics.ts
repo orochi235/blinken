@@ -132,7 +132,7 @@ fn settle_main(@builtin(global_invocation_id) id: vec3u) {
   let rate = bitcast<f32>(f.z);
   if (rate > 0.0) {
     let k = i32(floor(o.t_hi * rate + o.t_lo * rate));
-    if (bree_hash_u32(i32(i), k, ${FLICKER_SEED}) >= f.w) { v = 0.0; }
+    if (blinken_hash_u32(i32(i), k, ${FLICKER_SEED}) >= f.w) { v = 0.0; }
   }
   let goal = max(v, bitcast<f32>(f.y));
   let was = shown[i];

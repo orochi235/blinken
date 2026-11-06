@@ -47,7 +47,7 @@ const family = {
 const doubled = faceOf('standard');
 
 /**
- * bree's 5 × 7 letters on the triangle tiling, each dot of a glyph lighting the two triangles at
+ * blinken's 5 × 7 letters on the triangle tiling, each dot of a glyph lighting the two triangles at
  * its place, and a blank dot after it.
  */
 export const triangles: DisplayType = {

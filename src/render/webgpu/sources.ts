@@ -37,7 +37,7 @@ export function createSources(device: GPUDevice, b: Board): Sources {
   const dots = b.dots.length;
   const n = dots + b.bulbs.length;
   const buffer = (bytes: number, usage: number, label: string) =>
-    device.createBuffer({ size: Math.max(16, bytes), usage, label: `bree ${label}` });
+    device.createBuffer({ size: Math.max(16, bytes), usage, label: `blinken ${label}` });
   const pose = buffer(n * POSE * 4, BUFFER.STORAGE | BUFFER.COPY_SRC, 'pose');
   const cpu = buffer(n * POSE * 4, STORAGE_IN, 'columns');
   const staging = new Float32Array(n * POSE);

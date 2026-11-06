@@ -79,7 +79,7 @@ for (var j = 0.0; j < params.drops; j += 1.0) {
   if (behind == 0.0) {
     l = 1.0;
   } else if (behind > 0.0 && behind <= params.tail) {
-    let h = bree_hash_u32(i32(subject.x), i32(subject.y), i32(floor(phase * params.churn)));
+    let h = blinken_hash_u32(i32(subject.x), i32(subject.y), i32(floor(phase * params.churn)));
     l = max(l, (1.0 - behind / (params.tail + 1.0)) * select(0.3, 1.0, h < ${hashThreshold(BRIGHT)}u));
   }
 }

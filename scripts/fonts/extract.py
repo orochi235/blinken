@@ -1,4 +1,4 @@
-"""Turns candidate pixel fonts into bree-style glyph rows and draws a specimen sheet in LED dots.
+"""Turns candidate pixel fonts into blinken-style glyph rows and draws a specimen sheet in LED dots.
 
 usage: extract.py <fonts dir> <out json> <out png> [name,name…]
 """
@@ -165,7 +165,7 @@ def gfx_grid(path, cap):
 
 
 def face_rows(glyphs, cap):
-    """bree rows: the charset's inked rows, descenders cut first past MAX_ROWS, centered in MAX_ROWS."""
+    """blinken rows: the charset's inked rows, descenders cut first past MAX_ROWS, centered in MAX_ROWS."""
     ys = [y for g in glyphs.values() for (_, y) in g]
     hi, lo = max(ys), min(ys)
     if hi - lo + 1 > MAX_ROWS:

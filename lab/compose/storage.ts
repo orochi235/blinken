@@ -3,9 +3,9 @@ import { decode, defaultState, encode } from './share.js';
 import type { ComposeState } from './state.js';
 
 /** The browser-storage key the current draft is kept under. */
-export const DRAFT = 'bree-compose-draft';
+export const DRAFT = 'blinken-compose-draft';
 /** Where the drafts links replaced are kept, newest first, so opening a link never loses one. */
-export const PREVIOUS = 'bree-compose-draft-previous';
+export const PREVIOUS = 'blinken-compose-draft-previous';
 /** How many displaced drafts are kept. */
 export const KEPT = 5;
 
@@ -90,7 +90,7 @@ export function restorePrevious(): ComposeState | null {
 }
 
 /** The browser-storage key the sign's chosen backend is kept under. */
-export const BACKEND = 'bree-compose-backend';
+export const BACKEND = 'blinken-compose-backend';
 
 /** The backend the sign was last asked to draw with, auto when none was kept. */
 export function loadChoice(): Choice {

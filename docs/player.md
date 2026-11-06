@@ -1,18 +1,18 @@
 # The player element
 
-**Built** (2026-11-04). For anyone putting a bree sign on a page, and whoever works on the player.
+**Built** (2026-11-04). For anyone putting a blinken sign on a page, and whoever works on the player.
 It answers: how a composition gets onto a page that has no build step, and what decides what it
 plays and how its sign is built.
 
 ## On a page
 
-`npm run compile` writes `dist-player/bree-player.js`: one classic script, about 550 KB minified
+`npm run compile` writes `dist-player/blinken-player.js`: one classic script, about 550 KB minified
 and 195 KB gzipped, with blits, the fonts and the shaders inlined and nothing fetched. Loading it
-defines `<bree-player>`.
+defines `<blinken-player>`.
 
 ```html
-<script src="bree-player.js"></script>
-<bree-player program="…" cols="40" rows="7" grid="hex"></bree-player>
+<script src="blinken-player.js"></script>
+<blinken-player program="…" cols="40" rows="7" grid="hex"></blinken-player>
 ```
 
 The compose page's **copy embed** button writes exactly that for what is on screen: the
@@ -29,13 +29,13 @@ A program can also sit inside the element, as a composition file with an optiona
 beside it, which is easier to write by hand than a share string:
 
 ```html
-<bree-player>
+<blinken-player>
   <script type="application/json">
-    { "bree": "composition", "format": 2, "effects": {},
+    { "blinken": "composition", "format": 2, "effects": {},
       "program": [{ "effect": "scroll", "text": "OPEN LATE", "hex": 16756736 }],
       "hardware": { "size": { "cols": 60 } } }
   </script>
-</bree-player>
+</blinken-player>
 ```
 
 ## What wins
@@ -67,7 +67,7 @@ the registries are built.
 The element draws in its shadow root, filling its width at the sign's own aspect ratio. Players
 share one WebGPU device and one frame clock; without WebGPU they fall back to WebGL, then 2D. A
 player off screen stops drawing until it scrolls back, and one removed from the page lets go of
-its canvas. Without WebGPU, bree gives a page 12 WebGL contexts, one per sign on it, and signs
+its canvas. Without WebGPU, blinken gives a page 12 WebGL contexts, one per sign on it, and signs
 past the twelfth draw in 2D.
 
 The element is `player/element.ts`; what it reads from where is `player/config.ts`, which the

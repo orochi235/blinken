@@ -55,7 +55,7 @@ const FIRE = shader({
 out.tint = array<f32, 4>(0.0, 0.0, 0.0, 0.0);
 if (subject.cell < 0.5) {
   let y = (subject.y + ph * ${f32(RISE)}) / ${f32(CELL)};
-  let n = 0.65 * bree_noise(subject.x / 2.5, y, ${PERIOD}) + 0.35 * bree_noise(subject.x / 1.2 + 31.0, y * 2.0, ${PERIOD * 2});
+  let n = 0.65 * blinken_noise(subject.x / 2.5, y, ${PERIOD}) + 0.35 * blinken_noise(subject.x / 1.2 + 31.0, y * 2.0, ${PERIOD * 2});
   let up = 1.0 - subject.y / params.rows;
   let ragged = 0.55 + 0.45 * up;
   out.gain = 1.0 - params.intensity * ragged * pow(1.0 - n, 1.6);

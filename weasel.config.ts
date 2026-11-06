@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 
 /**
- * The lab serves `@weasel-js/*` from the built `dist` of a weasel checkout beside bree where there
+ * The lab serves `@weasel-js/*` from the built `dist` of a weasel checkout beside blinken where there
  * is one, and from the published packages where there is not, or with WEASEL=npm. Each import
  * resolves from the checkout's root, so its workspace links answer it and every package's
  * `exports` and subpaths still apply.
@@ -31,7 +31,7 @@ const editedSince = (src: string, ms: number): boolean =>
     (f) => !TEST.test(f) && statSync(join(src, f)).mtimeMs > ms,
   );
 
-/** The `@weasel-js` packages bree depends on whose checkout `dist` is older than their `src`. */
+/** The `@weasel-js` packages blinken depends on whose checkout `dist` is older than their `src`. */
 function staleBuilds(root: string): string[] {
   const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
   return Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })
@@ -46,7 +46,7 @@ if (WEASEL) {
   const stale = staleBuilds(WEASEL);
   if (stale.length)
     console.warn(
-      `bree: serving ${stale.join(', ')} from ${WEASEL}, whose dist is older than its src. Rebuild weasel, or set WEASEL=npm.`,
+      `blinken: serving ${stale.join(', ')} from ${WEASEL}, whose dist is older than its src. Rebuild weasel, or set WEASEL=npm.`,
     );
 }
 
@@ -57,7 +57,7 @@ const BUILD_QUIET_MS = 1500;
 
 export function weaselCheckout(): Plugin {
   return {
-    name: 'bree-weasel-checkout',
+    name: 'blinken-weasel-checkout',
     enforce: 'pre',
     config() {
       if (!WEASEL) return;

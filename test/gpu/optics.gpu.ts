@@ -195,7 +195,7 @@ test('optics: the WGSL hash gives the TS hash’s bits', async (gd) => {
 @group(0) @binding(1) var<storage, read_write> out: array<vec2u>;
 @compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id: vec3u) {
   let p = xyz[id.x];
-  out[id.x] = vec2u(bree_hash_u32(p.x, p.y, p.z), bitcast<u32>(bree_hash(p.x, p.y, p.z)));
+  out[id.x] = vec2u(blinken_hash_u32(p.x, p.y, p.z), bitcast<u32>(blinken_hash(p.x, p.y, p.z)));
 }`;
   const pipe = device.createComputePipeline({
     layout: 'auto',

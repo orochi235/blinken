@@ -2,7 +2,7 @@ import type { Surface, SurfaceOptions } from './api.js';
 import type { Box, Canvas } from './placement.js';
 import { createSurface } from './surface.js';
 
-const STYLE = `.bree-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; }`;
+const STYLE = `.blinken-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; }`;
 const styled = new WeakSet<Document>();
 
 /** Adds the overlay's stylesheet to `doc` once. */
@@ -63,7 +63,7 @@ export function createOverlay(
   const parent = opts.parent ?? document.body;
   style(parent.ownerDocument);
   const canvas = parent.ownerDocument.createElement('canvas');
-  canvas.className = 'bree-overlay';
+  canvas.className = 'blinken-overlay';
   parent.append(canvas);
   const surface = createSurface(canvas, opts, VIEWPORT, (o) => {
     const el = o.follow;

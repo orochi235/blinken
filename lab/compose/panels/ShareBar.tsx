@@ -63,7 +63,7 @@ export function ShareBar() {
       </Button>
       <Button
         size="sm"
-        tooltip="HTML that plays this composition on any page, on this sign's hardware, through the bree-player script (npm run compile)."
+        tooltip="HTML that plays this composition on any page, on this sign's hardware, through the blinken-player script (npm run compile)."
         onClick={() => show('embed copied', embedOf(compose.get(), hardware), true)}
       >
         copy embed

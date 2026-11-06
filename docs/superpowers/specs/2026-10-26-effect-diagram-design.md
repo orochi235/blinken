@@ -60,7 +60,7 @@ Each lands as its own step, in this order:
 weasel `6d941e1db` (unpushed, unreleased) carries what steps 3–5 need from `@weasel-js/diagram`: a
 palette drop (`onDropItem`, `canDropItem`, `dragItemProps`), refusals with a reason (`DropVerdict`,
 which `canConnect` and `canReparent` return, so a refused step-3 move shows why), and member reorder
-in a container (`DataContainer.reorder`). bree uses it through the local weasel checkout until a
+in a container (`DataContainer.reorder`). blinken uses it through the local weasel checkout until a
 weasel release; its site demo is `#diagram-drop`. Two limits as of 2026-10-26: the canvas draws no
 ghost of a carried palette item, and a member of a `reorder` container can't be dragged out of it,
 which step 3 needs for a piece leaving a step.

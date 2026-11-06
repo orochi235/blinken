@@ -107,7 +107,7 @@ export function stagePiece(
     return { voice, writes: writesOf(piece), warnings: [] };
   }
   const move = MOVES[piece.move];
-  if (move.slot !== slot) throw new Error(`bree: ${piece.move} is an ${move.slot} move`);
+  if (move.slot !== slot) throw new Error(`blinken: ${piece.move} is an ${move.slot} move`);
   const p = settingsOf(move, piece, slot, hold);
   const order = piece.order ?? TOGETHER;
   const delay = delayOf(order, at);

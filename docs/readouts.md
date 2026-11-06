@@ -1,12 +1,12 @@
 # Segment readouts
 
-How bree draws segment displays: 7-segment digits, 14- and 16-segment alphanumerics, Nixie tubes,
+How blinken draws segment displays: 7-segment digits, 14- and 16-segment alphanumerics, Nixie tubes,
 and stranger notations that spell numbers or letters with bars and dots. For someone changing the
-readout code or adding a display type. It assumes bree's sign pipeline: the mix folds a `Pose` per
+readout code or adding a display type. It assumes blinken's sign pipeline: the mix folds a `Pose` per
 subject, the optics turn poses into what each light shows, and a backend (2D, WebGL 2, WebGPU)
 draws the lights. Usage is in the README's "Readouts" section.
 
-For now a readout is a plain readout: given a value, it shows it. Segments are built as bree
+For now a readout is a plain readout: given a value, it shows it. Segments are built as blinken
 lights so the effects stack can reach them, but nothing exposes effects on a readout yet
 (2026-11-04).
 
@@ -21,7 +21,7 @@ lights.
 | `seven`, `eight`, `nine`                 | text           | `.` and `:` after a character light that cell's dp, colon  |
 | `half`                                   | `1`, `-`, `-1` | the ½ digit of a 3½-digit meter; `half: true` on a readout |
 | `fourteen`, `sixteen`, `twentytwo`       | text           | `fourteen` has the pinball display's comma                 |
-| `matrix`                                 | text           | bree's own 5 × 7 standard face                             |
+| `matrix`                                 | text           | blinken's own 5 × 7 standard face                          |
 | `nixie`                                  | digits         | ten polyline cathodes, back to front 1 6 2 7 5 0 4 9 8 3   |
 | `cistercian`                             | 0–9999 a cell  | four places in one glyph                                   |
 | `maya`, `kaktovik`                       | numbers        | base 20, most significant cell first                       |

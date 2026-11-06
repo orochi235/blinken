@@ -56,17 +56,17 @@ out.invert = 0.0;
 let seed = i32(params.seed);
 let f = i32(floor(ph * ${f32(FRAMES)}));
 let slot = f / ${SLOT};
-let len = 1 + i32(floor(bree_hash(slot, seed, 2) * 3.0));
-let first = i32(floor(bree_hash(slot, seed, 3) * f32(${SLOT} - len + 1)));
+let len = 1 + i32(floor(blinken_hash(slot, seed, 2) * 3.0));
+let first = i32(floor(blinken_hash(slot, seed, 3) * f32(${SLOT} - len + 1)));
 let k = f - slot * ${SLOT} - first;
-let tall = 1 + i32(floor(bree_hash(f, seed, 4) * 3.0));
-let band = i32(floor(f32(i32(subject.y) + i32(floor(bree_hash(f, seed, 5) * f32(tall)))) / f32(tall)));
-let start = bree_hash(band, f, seed + 11) * params.cols * 0.7;
-if (subject.cell < 0.5 && bree_hash(slot, seed, 1) < params.chance && k >= 0 && k < len
-    && bree_hash(band, f, seed + 10) < 0.3 + 0.5 * params.strength
-    && !(subject.x < start || subject.x > start + params.cols * (0.3 + 0.7 * bree_hash(band, f, seed + 12)))) {
-  out.hue = select(1.0, -1.0, bree_hash(band, f, seed + 13) < 0.5) * (50.0 + 130.0 * params.strength);
-  let mode = bree_hash(band, f, seed + 14);
+let tall = 1 + i32(floor(blinken_hash(f, seed, 4) * 3.0));
+let band = i32(floor(f32(i32(subject.y) + i32(floor(blinken_hash(f, seed, 5) * f32(tall)))) / f32(tall)));
+let start = blinken_hash(band, f, seed + 11) * params.cols * 0.7;
+if (subject.cell < 0.5 && blinken_hash(slot, seed, 1) < params.chance && k >= 0 && k < len
+    && blinken_hash(band, f, seed + 10) < 0.3 + 0.5 * params.strength
+    && !(subject.x < start || subject.x > start + params.cols * (0.3 + 0.7 * blinken_hash(band, f, seed + 12)))) {
+  out.hue = select(1.0, -1.0, blinken_hash(band, f, seed + 13) < 0.5) * (50.0 + 130.0 * params.strength);
+  let mode = blinken_hash(band, f, seed + 14);
   out.gain = select(1.0, 0.0, mode < 0.3 * params.strength);
   out.invert = select(0.0, 1.0, mode >= 0.3 * params.strength && mode < 0.6 * params.strength);
 }`,
