@@ -13,7 +13,7 @@ export function linkExports(base: string) {
   return defineMdastPlugin({
     name: 'link-exports',
     link(node, ctx) {
-      if (!NAMED.test(node.url)) return;
+      if (!NAMED.test(node.url) || /\.html?$/.test(node.url)) return;
       const hit = target(node.url);
       if (!hit) throw new Error(`a link targets \`${node.url}\`, which names no export or member`);
       ctx.setProperty(node, 'url', `${base}${hit.entry.word}/#${hit.anchor}`);

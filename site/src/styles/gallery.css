@@ -1,0 +1,55 @@
+/* The gallery's cards: a thumbnail sign over each built-in's name, what it does, and its settings. */
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1.5rem 1.25rem;
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+}
+
+.card h3 {
+  margin: 0.6rem 0 0.2rem;
+  font-size: 1rem;
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.card-sign {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 36 / 11;
+  background: #0e0b0a;
+  border-radius: 4px;
+}
+
+.card details {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.card summary {
+  cursor: pointer;
+  font: 500 0.82rem var(--label);
+  color: var(--ink-soft);
+}
+
+.card dl {
+  margin: 0.4rem 0 0;
+}
+
+.card dt span {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.card dd {
+  margin: 0 0 0.4rem;
+  color: var(--ink-soft);
+}

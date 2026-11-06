@@ -1,0 +1,64 @@
+---
+import Page from '../layouts/Page.astro';
+import { CARDS, type CardKind, rangeOf } from '../gallery';
+
+const GROUPS: { kind: CardKind; title: string; lede: string; href: string }[] = [
+  { kind: 'effect', title: 'Effects', lede: 'What a scene names as its `effect`.', href: 'effect/' },
+  { kind: 'layer', title: 'Layers', lede: 'What `layers` turns on, under the whole sign or one scene.', href: 'layers/' },
+  { kind: 'move', title: 'Moves', lede: 'Pieces that place the message, each written for one slot.', href: 'pieces/' },
+  { kind: 'modulator', title: 'Modulators', lede: 'Pieces that change how the lit dots look while they play.', href: 'pieces/' },
+];
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const code = (s: string) => s.replace(/`([^`]+)`/g, '<code>$1</code>');
+---
+<Page title="Gallery" description="Every built-in effect, layer, move and modulator, playing, with the settings each one takes.">
+  <h1>Gallery</h1>
+  <p class="lede">Every built-in, playing on a small sign. Each one plays while it is on screen.</p>
+  {GROUPS.map((g) => (
+    <section class="gallery-group wide" id={g.kind}>
+      <h2>{g.title}</h2>
+      <p><Fragment set:html={code(g.lede)} /> More on <a href={`${base}${g.href}`}>its page</a>.</p>
+      <ul class="gallery">
+        {CARDS[g.kind].map((c) => (
+          <li class="card" id={`${g.kind}-${c.name}`}>
+            <div class="card-sign" data-kind={g.kind} data-name={c.name}><canvas aria-hidden="true"></canvas></div>
+            <h3><code>{c.name}</code></h3>
+            <p>{c.about}</p>
+            {Object.keys(c.params).length > 0 && (
+              <details>
+                <summary>Settings</summary>
+                <dl>
+                  {Object.entries(c.params).map(([key, p]) => (
+                    <>
+                      <dt><code>{key}</code> <span>{rangeOf(p)}</span></dt>
+                      <dd>{p.about}</dd>
+                    </>
+                  ))}
+                </dl>
+              </details>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</Page>
+
+<script>
+  import { createThumbnail } from '@msb235/blinken';
+  import { type CardKind, STILL, specOf } from '../gallery';
+
+  for (const box of document.querySelectorAll<HTMLElement>('.card-sign')) {
+    const canvas = box.querySelector('canvas');
+    const kind = box.dataset.kind as CardKind;
+    const name = box.dataset.name ?? '';
+    if (!canvas) continue;
+    const thumb = createThumbnail(canvas, {
+      effect: specOf(kind, name),
+      effects: { still: STILL },
+      text: kind === 'layer' ? 'BLINKEN' : 'OPEN',
+      backend: '2d',
+    });
+    if (kind === 'layer') thumb.marquee.setLayer(name, true);
+  }
+</script>

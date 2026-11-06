@@ -1,0 +1,23 @@
+---
+layout: ../layouts/Page.astro
+title: blinken
+description: An old-fashioned LED sign on a canvas, playing a program of messages through effects made of plain data.
+---
+import Live from '../components/Live';
+
+<h1 class="unseen">blinken</h1>
+
+<p class="lede">An old-fashioned LED sign on a canvas: a grid of dots under a border of chasing bulbs, playing a program of messages. Every effect is plain data, and every dot is lit by one <a href="https://michaelbaker.tech/blits/">blits</a> mix. No three.js, no assets.</p>
+
+<Live client:only="react" of="home.ts" />
+
+<p class="start-links"><a href="start/">Get started</a> <button type="button" data-copy title="Copy"><code>npm install @msb235/blinken</code></button></p>
+
+Or put one on any page with no build step:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@msb235/blinken@0.1.0"></script>
+<blinken-player program="…" cols="40" rows="7"></blinken-player>
+```
+
+The [lab](compose.html) composes a program and gives you those two lines for it.

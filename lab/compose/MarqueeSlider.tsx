@@ -1,100 +1,38 @@
 import { type ControlRenderer, PropertyRow } from '@weasel-js/labkit';
 import { Slider } from '@weasel-js/ui';
-import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useRef } from 'react';
 import {
   AMBER,
-  createThumbnail,
+  createOverlay,
   FACES,
   marginOf,
   type NumberParam,
+  type Readout,
   rasterize,
-  type Thumbnail,
+  type Surface,
 } from '@/index.js';
 import { SMALL_SIGNS } from '../backend.js';
 import './MarqueeSlider.css';
 import { times } from './schema.js';
-import { STILL } from './Thumbnail.js';
 
-/** The face a readout's numbers are set in: the sign's own 5 × 7, the clearest digits it has. */
+/** The face a readout's numbers are sized by: the sign's own 5 × 7, the clearest digits it has. */
 const FACE = 'standard';
 /** Fixed pitch, so a character is a run of columns and a space is a digit's width. */
 const STYLE = { monospace: true } as const;
 const ROWS = FACES[FACE].rows;
 
 /**
- * A number as a small sign shows it, the sign kept for the life of the row: a new value is a new
- * program on the same sign, so the readout changes without being rebuilt.
+ * The one overlay every slider's readout draws on, made with the first and kept across a hot
+ * reload. It idles while nothing changes, so a page of sliders costs nothing per frame but
+ * following their boxes.
  */
-function Readout({
-  text,
-  cols,
-  marked = null,
-  children,
-}: {
-  text: string;
-  cols: number;
-  /** Characters of `text` to draw swapped, `from` up to `to`; with the two equal, a caret before `from`. */
-  marked?: { from: number; to: number } | null;
-  children?: ReactNode;
-}) {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const sign = useRef<Thumbnail | null>(null);
-  const shown = useRef(text);
-  shown.current = text;
-  useEffect(() => {
-    if (!canvas.current) return;
-    const t = createThumbnail(canvas.current, {
-      effect: STILL,
-      effects: {},
-      text: shown.current,
-      face: FACE,
-      style: STYLE,
-      cols,
-      rows: ROWS,
-      still: 100,
-      backend: SMALL_SIGNS,
-    });
-    sign.current = t;
-    return () => {
-      sign.current = null;
-      t.destroy();
-    };
-  }, [cols]);
-  useEffect(() => {
-    const t = sign.current;
-    if (!t) return;
-    t.marquee.setProgram([{ effect: STILL, text, face: FACE, style: STYLE, hex: AMBER }]);
-    t.marquee.restart();
-    t.play(false, 100);
-  }, [text]);
-  // The sign's size in dots is all that varies by readout; the pitch is the stylesheet's.
-  const margin = marginOf(false);
-  const size = { '--cols': cols + 2 * margin, '--rows': ROWS + 2 * margin } as CSSProperties;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a selection is the same while its ends are.
-  useEffect(() => {
-    const t = sign.current;
-    if (!t) return;
-    if (!marked) {
-      t.marquee.setHighlight(null);
-      return;
-    }
-    const advance = FACES[FACE].width + 1;
-    const left = Math.floor((cols - rasterize(text, { face: FACE, style: STYLE }).cols) / 2);
-    const from = left + marked.from * advance;
-    const to = left + marked.to * advance - 1;
-    // A selection inverts a column of padding either side of its digits.
-    t.marquee.setHighlight(
-      marked.from === marked.to
-        ? (dot) => dot.x === Math.max(0, from - 1)
-        : (dot) => dot.x >= from - 1 && dot.x <= to,
-    );
-  }, [marked?.from, marked?.to, text, cols]);
-  return (
-    <span className="marquee-readout" style={size}>
-      <canvas ref={canvas} />
-      {children}
-    </span>
-  );
+let shared: Surface | null = import.meta.hot?.data.readouts ?? null;
+function overlay(): Surface {
+  if (!shared) {
+    shared = createOverlay({ backend: SMALL_SIGNS });
+    if (import.meta.hot) import.meta.hot.data.readouts = shared;
+  }
+  return shared;
 }
 
 /** A value `typed` asks for, held to the range and on a step from `min`; null for no number. */
@@ -106,9 +44,9 @@ function typedValue(typed: string, min: number, max: number, step: number): numb
 }
 
 /**
- * A readout that edits: a see-through field over the sign, so what is typed shows on its dots.
- * Enter or leaving commits, held to the range and its step; Escape puts the value back; ↑ and ↓
- * step it, ten at a time with Shift.
+ * A number on a small dot-matrix readout that edits: click it and type, and what is typed shows on
+ * its dots. Enter or leaving commits, held to the range and its step; Escape puts the value back;
+ * ↑ and ↓ step it, ten at a time with Shift.
  */
 function ReadoutField({
   label,
@@ -133,59 +71,77 @@ function ReadoutField({
   disabled?: boolean;
   onCommit: (v: number) => void;
 }) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const [selection, setSelection] = useState<{ from: number; to: number } | null>(null);
-  const typed = draft ?? text.trim();
-  // The field holds the bare value; the sign shows it padded on the left, so selections shift.
-  const pad = chars - Math.min(chars, typed.length);
-  const track = (el: HTMLInputElement) =>
-    setSelection({ from: (el.selectionStart ?? 0) + pad, to: (el.selectionEnd ?? 0) + pad });
-  const commit = () => {
-    if (draft === null) return;
-    const v = typedValue(draft, min, max, step);
-    setDraft(null);
-    if (v !== null && v !== value) onCommit(v);
-  };
-  const shown = (draft ?? text).slice(-chars).padStart(chars);
-  return (
-    <Readout text={shown} cols={cols} marked={selection}>
-      <input
-        className="marquee-readout-field"
-        type="text"
-        inputMode="decimal"
-        role="spinbutton"
-        aria-label={label}
-        aria-valuemin={min}
-        aria-valuemax={max}
-        aria-valuenow={value}
-        disabled={disabled}
-        value={typed}
-        maxLength={chars}
-        onFocus={(e) => {
-          e.currentTarget.select();
-          track(e.currentTarget);
-        }}
-        onSelect={(e) => track(e.currentTarget)}
-        onChange={(e) => setDraft(e.currentTarget.value.replace(/[^0-9.-]/g, ''))}
-        onBlur={() => {
-          setSelection(null);
-          commit();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') commit();
-          else if (e.key === 'Escape') setDraft(null);
-          else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-            const by = (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 10 : 1) * step;
-            const from = typedValue(draft ?? String(value), min, max, step) ?? value;
-            const v = typedValue(String(from + by), min, max, step);
-            setDraft(null);
-            if (v !== null) onCommit(v);
-          } else return;
-          e.preventDefault();
-        }}
-      />
-    </Readout>
-  );
+  const slot = useRef<HTMLSpanElement>(null);
+  const readout = useRef<Readout | null>(null);
+  /** What is typed and not yet committed, or null. */
+  const draft = useRef<string | null>(null);
+  const latest = useRef({ value, text, onCommit });
+  latest.current = { value, text, onCommit };
+
+  useEffect(() => {
+    if (!slot.current) return;
+    const shown = () => latest.current.text.trim();
+    const settle = () => {
+      draft.current = null;
+      readout.current?.set(shown());
+    };
+    const commit = () => {
+      if (draft.current === null) return;
+      const v = typedValue(draft.current, min, max, step);
+      settle();
+      if (v !== null && v !== latest.current.value) latest.current.onCommit(v);
+    };
+    const r = overlay().readout({
+      type: 'matrix',
+      cells: chars,
+      align: 'right',
+      color: AMBER,
+      follow: slot.current,
+      value: shown(),
+      label,
+      edit: !disabled,
+      field: {
+        role: 'spinbutton',
+        inputmode: 'decimal',
+        'aria-valuemin': String(min),
+        'aria-valuemax': String(max),
+        'aria-valuenow': String(latest.current.value),
+      },
+      onInput(typed) {
+        const clean = typed.replace(/[^0-9.-]/g, '');
+        draft.current = clean;
+        if (clean !== typed) r.set(clean);
+      },
+      onKeyDown(e) {
+        if (e.key === 'Enter') commit();
+        else if (e.key === 'Escape') settle();
+        else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          const by = (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 10 : 1) * step;
+          const from = typedValue(draft.current ?? String(latest.current.value), min, max, step);
+          const v = typedValue(String((from ?? latest.current.value) + by), min, max, step);
+          settle();
+          if (v !== null) latest.current.onCommit(v);
+        } else return;
+        e.preventDefault();
+      },
+      onBlur: commit,
+    });
+    readout.current = r;
+    return () => {
+      readout.current = null;
+      r.destroy();
+    };
+  }, [chars, min, max, step, label, disabled]);
+
+  useEffect(() => {
+    if (draft.current === null) readout.current?.set(text.trim());
+    readout.current?.setField({ 'aria-valuenow': String(value) });
+  }, [text, value]);
+
+  // The readout's size in dots is all that varies by slider; the pitch is the stylesheet's.
+  const margin = marginOf(false);
+  const size = { '--cols': cols + 2 * margin, '--rows': ROWS + 2 * margin } as CSSProperties;
+  return <span ref={slot} className="marquee-readout" style={size} />;
 }
 
 /** How a NumberParam's shown value reads on a readout: its step's decimals, and its unit. */
@@ -196,8 +152,8 @@ const textOf = (p: NumberParam, shown: number) => {
 };
 
 /**
- * A NumberParam's row with a small sign for its readout: the kit's slider over the param's range,
- * as the panel shows it (scaled), its value set on the sign beside it, which can be typed into.
+ * A NumberParam's row with a small dot-matrix readout: the kit's slider over the param's range,
+ * as the panel shows it (scaled), its value on the readout beside it, which can be typed into.
  */
 export function marqueeSlider(p: NumberParam): ControlRenderer {
   const k = p.scale ?? 1;
@@ -205,7 +161,7 @@ export function marqueeSlider(p: NumberParam): ControlRenderer {
   const max = times(p.max, k);
   const step = times(p.step, k);
   // Wide enough for the widest value the param can hold, so the readout never resizes; a
-  // shorter one is padded on the left. Two columns a side leave a dark one beyond a selection's padding.
+  // shorter one aligns right.
   const chars = Math.max(...[min, max].map((v) => textOf(p, v).length));
   const cols = rasterize('0'.repeat(chars), { face: FACE, style: STYLE }).cols + 4;
   return Object.assign(
@@ -232,7 +188,7 @@ export function marqueeSlider(p: NumberParam): ControlRenderer {
             <ReadoutField
               label={`${pref.name ?? p.label}, typed`}
               value={v}
-              text={textOf(p, v).padStart(chars)}
+              text={textOf(p, v)}
               chars={chars}
               cols={cols}
               min={min}

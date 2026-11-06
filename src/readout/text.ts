@@ -76,7 +76,15 @@ export interface TextLayer {
    * An editable one also gets a hidden field that takes the keyboard.
    */
   build(
-    readouts: readonly ({ spot: Spot; block: boolean; edit: boolean; label?: string } | null)[],
+    readouts: readonly ({
+      spot: Spot;
+      block: boolean;
+      edit: boolean;
+      label?: string;
+      field?: Readonly<Record<string, string>>;
+      onKeyDown?: (e: KeyboardEvent) => void;
+      onBlur?: () => void;
+    } | null)[],
   ): void;
   /**
    * Sets readout `i`'s cells' characters, a cell's '' for a blank; an editable one's value as typed,
@@ -93,6 +101,8 @@ export interface TextLayer {
       carets: readonly (number | null)[];
     },
   ): void;
+  /** Sets attributes on editable readout `i`'s field. */
+  field(i: number, attributes: Readonly<Record<string, string>>): void;
   /** Moves every box to where its readout is drawn now. */
   place(fits: readonly (Fit | null)[]): void;
   destroy(): void;
@@ -324,6 +334,7 @@ export function createTextLayer(
   };
   /** Cmd or Ctrl+A in a readout selects all of it, rather than leaving it to the page. */
   const selectAll = (r: One) => (k: KeyboardEvent) => {
+    if (k.defaultPrevented) return;
     if (k.key.toLowerCase() !== 'a' || !(k.metaKey || k.ctrlKey) || k.altKey || k.shiftKey) return;
     k.preventDefault();
     if (r.input) r.input.select();
@@ -482,8 +493,16 @@ export function createTextLayer(
             }
             report();
           });
+          for (const [name, v] of Object.entries(one.field ?? {})) input.setAttribute(name, v);
+          // The page's own keys come first, and a key it takes is not the readout's.
+          const onKey = one.onKeyDown;
+          if (onKey) input.addEventListener('keydown', (k) => onKey(k as KeyboardEvent));
+          const onBlur = one.onBlur;
+          if (onBlur) input.addEventListener('blur', () => onBlur());
           if (input instanceof HTMLTextAreaElement)
-            input.addEventListener('keydown', (k) => rowKey(made, input, k));
+            input.addEventListener('keydown', (k) => {
+              if (!k.defaultPrevented) rowKey(made, input, k);
+            });
           for (const name of ['keyup', 'select', 'selectionchange', 'focus', 'blur'])
             input.addEventListener(name, report);
         }
@@ -502,6 +521,10 @@ export function createTextLayer(
       anchor = null;
       shown = '';
       report();
+    },
+    field(i, attributes) {
+      const input = readouts[i]?.input;
+      if (input) for (const [name, v] of Object.entries(attributes)) input.setAttribute(name, v);
     },
     write(i, chars, typed) {
       const r = readouts[i];

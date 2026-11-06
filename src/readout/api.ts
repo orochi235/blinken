@@ -53,6 +53,15 @@ export interface ReadoutOptions {
   /** Called with its value as typed, each time it changes. */
   readonly onInput?: (value: string) => void;
   /**
+   * An editable one's keys, before its own handling of them; `preventDefault` keeps them from it.
+   * Enter, Escape or ↑ ↓ to step a number go here.
+   */
+  readonly onKeyDown?: (e: KeyboardEvent) => void;
+  /** Called when an editable one's field loses the focus. */
+  readonly onBlur?: () => void;
+  /** Attributes for an editable one's field, such as `role`, `inputmode` or `aria-valuenow`. */
+  readonly field?: Readonly<Record<string, string>>;
+  /**
    * How many rows of cells it has, for a type that spells; a `\n` in its value starts a row. Not
    * with a ½ digit. Default 1.
    */
@@ -74,6 +83,8 @@ export interface Readout {
   /** Moves it, on a panel. */
   moveTo(at: { readonly x: number; readonly y: number }, height?: number): void;
   setDefects(defects: readonly ReadoutDefect[]): void;
+  /** Sets attributes on an editable one's field, as `field` does. */
+  setField(attributes: Readonly<Record<string, string>>): void;
   /** Changes how its selected cells show; undefined goes back to its own. */
   setSelection(look: Selection | undefined): void;
   destroy(): void;

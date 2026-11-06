@@ -12,36 +12,8 @@
 .live-stage {
   min-height: 8rem;
   padding-top: var(--stage-control-room);
-  background: var(--panel);
   border-radius: 6px;
   overflow: hidden;
-}
-
-.live-stage canvas {
-  display: block;
-  width: 100%;
-}
-
-.live .dots {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1.25rem;
-  height: 10rem;
-}
-
-.live .dot {
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: var(--voice-1);
-  cursor: pointer;
-}
-
-.live-stage:has(canvas) {
-  color: var(--voice-1);
 }
 
 /* Pause and Run again side by side, where a lone stage control sits. */
@@ -56,4 +28,47 @@
 
 .stage-controls .stage-control {
   position: static;
+}
+
+/* A sign's box, shaped like the sign so it fills it, and never taller than a window can show. */
+.sign-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, calc(24rem * var(--aspect)));
+  aspect-ratio: var(--aspect);
+  margin: 0 auto;
+}
+
+.live-stage {
+  padding-bottom: 0.9rem;
+  background: #0e0b0a;
+}
+
+.sign-box canvas {
+  display: block;
+}
+
+/* Controls a demo draws under its sign. */
+.live-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  justify-content: center;
+  padding: 0.75rem 1rem 0;
+  font: 500 0.85rem var(--label);
+  color: #d8cfc6;
+}
+
+.live-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.live-controls input[type='text'] {
+  font: inherit;
+  padding: 0.2rem 0.4rem;
+  width: 14rem;
+  max-width: 100%;
 }

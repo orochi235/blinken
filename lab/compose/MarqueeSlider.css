@@ -13,42 +13,11 @@
   min-width: 0;
 }
 
-/* The canvas sizes itself to this box, which is its dots at one pitch. It also holds the field
-   laid over it, so it is that field's containing block. */
+/* The overlay fits the readout inside this box, which is its dots at one pitch. */
 .marquee-readout {
   --pitch: 2px;
-  position: relative;
   display: flex;
   flex: none;
   width: calc(var(--cols) * var(--pitch));
   height: calc(var(--rows) * var(--pitch));
-}
-
-.marquee-readout canvas {
-  display: block;
-  border-radius: 3px;
-}
-
-/* The field is there to type into; the sign under it shows what is typed. */
-.marquee-readout-field {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 3px;
-  background: transparent;
-  color: transparent;
-  caret-color: transparent;
-  font: inherit;
-  cursor: text;
-}
-
-.marquee-readout-field:focus {
-  outline: none;
-}
-
-.marquee-readout-field::selection {
-  background: transparent;
 }

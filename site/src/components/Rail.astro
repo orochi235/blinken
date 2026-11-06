@@ -1,23 +1,23 @@
 ---
 import pkg from '../../../package.json';
 import { extra, start, under, words } from '../nav';
-import { still } from '../live/sign';
+import { FRAME, still } from '../live/logo';
 import Search from './Search.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const here = Astro.url.pathname;
 const link = (slug: string) => `${base}${slug ? `${slug}/` : ''}`;
 const current = (slug: string) => (here === link(slug) ? 'page' : undefined);
+const aspect = `${FRAME.across} / ${FRAME.down}`;
 ---
 <nav class="rail" aria-label="Pages">
-  <a class="mark" href={link('')} aria-label="blits">
-    <span class="still panel"><Fragment set:html={still(true)} /></span>
-    <span class="still bare"><Fragment set:html={still(false)} /></span>
+  <a class="mark" href={link('')} aria-label="blinken">
+    <span class="still"><Fragment set:html={still()} /></span>
     <canvas aria-hidden="true"></canvas>
   </a>
   <p class="meta">
     <a href={link('changelog')}>v{pkg.version}</a>
-    <a href="https://github.com/orochi235/blits">GitHub</a>
+    <a href="https://github.com/orochi235/blinken">GitHub</a>
     <a href={`https://www.npmjs.com/package/${pkg.name}`}>npm</a>
   </p>
   <Search />
@@ -42,7 +42,7 @@ const current = (slug: string) => (here === link(slug) ? 'page' : undefined);
   </ol>
   <ul class="group">
     {extra.map((w) => (
-      <li><a href={link(w.slug)} aria-current={current(w.slug)}>{w.title}</a></li>
+      <li><a href={w.href ? `${base}${w.href}` : link(w.slug)} aria-current={current(w.slug)}>{w.title}</a></li>
     ))}
   </ul>
 </nav>
@@ -63,7 +63,7 @@ const current = (slug: string) => (here === link(slug) ? 'page' : undefined);
   }
 </script>
 
-<style>
+<style define:vars={{ aspect }}>
   .rail {
     padding: 2rem 1.25rem;
     font: 500 0.95rem / 1.4 var(--label);
@@ -112,106 +112,33 @@ const current = (slug: string) => (here === link(slug) ? 'page' : undefined);
     border-top: 1px solid var(--rule);
   }
 
-  /*
-   * The sign is 24 x 27 pitches, and its dots of the word span 3.14 to 20.86 across and 5.14 to
-   * 11.86 down: the rows above the word reach the top of the page, and the 13 below run on behind
-   * the links and the search box, fading out. In light mode its housing fills the rail; in dark,
-   * with no housing, the word does. Only the 14 rows down to the word's foot take space or clicks.
-   */
+  /* The logo is a sign of its own, shaped by `--aspect`, with the still standing in until it lights. */
   .mark {
-    --fill: 100%;
-    /* One dot pitch: the empty frame bree keeps round the dots, lifted past the top of the page. */
-    --pitch: calc(var(--fill) / 24);
-    display: block;
-    position: relative;
-    width: var(--fill);
-    aspect-ratio: 24 / 27;
-    margin-top: calc(-2rem - var(--pitch));
-    margin-bottom: calc(0.9rem - 13 * var(--pitch));
-    pointer-events: none;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: var(--aspect);
+    margin: 0 0 0.9rem;
   }
 
-  .mark::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto;
-    aspect-ratio: 24 / 14;
-    pointer-events: auto;
-  }
-
-  .meta,
-  .rail :global(.search) {
-    position: relative;
-    z-index: 1;
+  .still,
+  .mark canvas {
+    grid-area: 1 / 1;
   }
 
   .still {
-    position: absolute;
-    inset: 0 0 auto;
-    aspect-ratio: 24 / 14;
-  }
-
-  .mark canvas {
-    position: absolute;
-    inset: 0;
     width: 100%;
     height: 100%;
-    /* The light housing fades out before the links under it, which would not read on it. */
-    mask-image: linear-gradient(to bottom, #000 calc(12.5 / 27 * 100%), transparent 55%);
   }
 
   .still :global(svg) {
+    display: block;
     width: 100%;
     height: 100%;
   }
 
-  /*
-   * The still is only a fallback: shown at once when the live sign fails, and otherwise only if
-   * the sign has not lit 1.5 s in, as without scripts or when its module never loads.
-   */
-  .still,
-  .mark canvas {
+  .mark.lit .still {
     visibility: hidden;
-  }
-
-  .mark:not(.lit) .still {
-    animation: fallback 0s 1.5s forwards;
-  }
-
-  .mark.failed .still {
-    animation: none;
-    visibility: visible;
-  }
-
-  @keyframes fallback {
-    to {
-      visibility: visible;
-    }
-  }
-
-  .bare {
-    display: none;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .mark canvas {
-      mask-image: linear-gradient(to bottom, #000 calc(12.5 / 27 * 100%), transparent);
-    }
-    .mark {
-      --pitch: calc(var(--fill) / 17.72);
-      width: calc(var(--fill) * 24 / 17.72);
-      translate: calc(-3.14 / 24 * 100%) 0;
-    }
-    .panel {
-      display: none;
-    }
-    .bare {
-      display: block;
-    }
-  }
-
-  .mark.lit canvas {
-    visibility: visible;
   }
 
   .meta {
@@ -251,8 +178,7 @@ const current = (slug: string) => (here === link(slug) ? 'page' : undefined);
       display: none;
     }
     .mark {
-      --fill: 9.5rem;
-      margin-top: calc(-1rem - var(--pitch));
+      width: 12rem;
     }
   }
 </style>

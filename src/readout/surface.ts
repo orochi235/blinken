@@ -32,6 +32,8 @@ interface Entry extends Placed {
   caret: number | null;
   /** How its selected cells show, where `setSelection` changed it. */
   selection: Selection | undefined;
+  /** Its field's attributes, as given and as `setField` changed them. */
+  field: Record<string, string>;
 }
 
 /** How a readout's selected cells show. */
@@ -281,6 +283,9 @@ export function createSurface(
               block: selectionOf(e) === 'block',
               edit: editable(e),
               label: e.opts.label,
+              field: e.field,
+              onKeyDown: e.opts.onKeyDown,
+              onBlur: e.opts.onBlur,
             }
           : null,
       ),
@@ -411,6 +416,7 @@ export function createSurface(
         picked: [],
         caret: null,
         selection: undefined,
+        field: { ...o.field },
         box: boxOf(o, canvas),
       };
       entries.push(e);
@@ -433,6 +439,11 @@ export function createSurface(
         setDefects(defects) {
           e.defects = defects;
           shaped = true;
+        },
+        setField(attributes) {
+          Object.assign(e.field, attributes);
+          const i = entries.indexOf(e);
+          if (i >= 0) text?.field(i, attributes);
         },
         setSelection(look) {
           e.selection = look;
