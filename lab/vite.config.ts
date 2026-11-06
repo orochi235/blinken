@@ -24,6 +24,7 @@ export default defineConfig({
         bench: page('bench.html'),
         digits: page('digits.html'),
         readouts: page('readouts.html'),
+        inputs: page('inputs.html'),
       },
     },
   },

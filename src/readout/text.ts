@@ -13,6 +13,10 @@ const STYLE = `
 }
 .blinken-text-cell::selection { color: transparent; background: transparent; }
 .blinken-text-block .blinken-text-cell::selection { background: color-mix(in srgb, Highlight 45%, transparent); }
+.blinken-text-input {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0;
+  opacity: 0; pointer-events: none;
+}
 `;
 const styled = new WeakSet<Document>();
 
@@ -31,10 +35,20 @@ function style(doc: Document): void {
  * the selection as a block over each cell.
  */
 export interface TextLayer {
-  /** Makes boxes for each readout's cells, by readout order; `null` for one that can't be selected. */
-  build(readouts: readonly ({ spot: Spot; block: boolean } | null)[]): void;
-  /** Sets readout `i`'s cells' characters, a cell's '' for a blank. */
-  write(i: number, cells: readonly string[]): void;
+  /**
+   * Makes boxes for each readout's cells, by readout order; `null` for one that can't be selected.
+   * An editable one also gets a hidden field that takes the keyboard.
+   */
+  build(readouts: readonly ({ spot: Spot; block: boolean; edit: boolean } | null)[]): void;
+  /**
+   * Sets readout `i`'s cells' characters, a cell's '' for a blank; an editable one's value as typed,
+   * and where each of its characters shows, as its type's `places` gives.
+   */
+  write(
+    i: number,
+    cells: readonly string[],
+    typed?: { value: string; places: readonly number[]; right: boolean },
+  ): void;
   /** Moves every box to where its readout is drawn now. */
   place(fits: readonly (Fit | null)[]): void;
   destroy(): void;
@@ -48,14 +62,22 @@ function covers(range: Range, node: Text): boolean {
   return true;
 }
 
+/** What of a readout is picked: the cells a selection takes in, and the cell a caret stands at. */
+export interface Picked {
+  readonly cells: readonly boolean[];
+  readonly caret: number | null;
+}
+
 /**
  * A text layer beside `canvas`: over its box, or fixed over the viewport for an overlay's. Tells
- * `selected` which cells of each readout the page's selection takes in whenever that changes.
+ * `selected` what of each readout is picked whenever that changes, and `edited` each value typed
+ * into an editable one, which gives false to refuse it.
  */
 export function createTextLayer(
   canvas: HTMLCanvasElement,
   fixed: boolean,
-  selected: (cells: readonly (readonly boolean[] | null)[]) => void,
+  selected: (picked: readonly (Picked | null)[]) => void,
+  edited: (i: number, value: string) => boolean,
 ): TextLayer {
   const doc = canvas.ownerDocument;
   style(doc);
@@ -69,8 +91,30 @@ export function createTextLayer(
     cells: HTMLElement[];
     /** Its fit when last placed, so an unmoved readout isn't restyled. */
     at: string;
+    /** An editable one's field, its value and where each of its characters shows. */
+    input: HTMLInputElement | null;
+    places: readonly number[];
+    /** Whether an editable one's value aligns right, so an empty one's caret stands at its end. */
+    right: boolean;
   } | null)[] = [];
   let shown = '';
+  /** What of editable `r` its field's caret or selection picks, while it has the focus. */
+  const typedPick = (r: One, input: HTMLInputElement): Picked => {
+    const n = r.cells.length;
+    const none = new Array<boolean>(n).fill(false);
+    if (doc.activeElement !== input) return { cells: none, caret: null };
+    const s = input.selectionStart ?? 0;
+    const e = input.selectionEnd ?? s;
+    if (e > s) {
+      const cells = [...none];
+      for (let k = s; k < e; k++) {
+        const at = r.places[k] ?? -1;
+        if (at >= 0) cells[at] = true;
+      }
+      return { cells, caret: null };
+    }
+    return { cells: none, caret: caretCell(r, s) };
+  };
   const report = () => {
     const sel = doc.getSelection();
     const ranges =
@@ -78,7 +122,11 @@ export function createTextLayer(
         ? Array.from({ length: sel.rangeCount }, (_, k) => sel.getRangeAt(k))
         : [];
     const now = readouts.map((r) =>
-      r ? r.texts.map((t) => ranges.some((range) => covers(range, t))) : null,
+      r
+        ? r.input
+          ? typedPick(r, r.input)
+          : { cells: r.texts.map((t) => ranges.some((range) => covers(range, t))), caret: null }
+        : null,
     );
     const key = JSON.stringify(now);
     if (key === shown) return;
@@ -88,6 +136,27 @@ export function createTextLayer(
   doc.addEventListener('selectionchange', report);
 
   type One = NonNullable<(typeof readouts)[number]>;
+  /**
+   * The cell a caret before character `at` stands under: that character's, else the one after the
+   * last character, else the last cell, as a calculator's cursor sits under its last digit.
+   */
+  const caretCell = (r: One, at: number): number | null => {
+    const n = r.cells.length;
+    if (n === 0) return null;
+    const here = r.places[at];
+    if (here !== undefined && here >= 0) return here;
+    let last: number | undefined;
+    for (const p of r.places) if (p >= 0) last = p;
+    if (last === undefined) return r.places.length > 0 ? null : r.right ? n - 1 : 0;
+    return Math.min(last + 1, n - 1);
+  };
+  /** Where in an editable readout's value a press on cell `k` puts the caret, `after` its middle or not. */
+  const posAt = (r: One, k: number, after: boolean): number => {
+    const ks = r.places.flatMap((p, i) => (p === k ? [i] : []));
+    if (ks.length > 0) return after ? (ks.at(-1) as number) + 1 : (ks[0] as number);
+    const first = r.places.findIndex((p) => p >= 0);
+    return first >= 0 && k < (r.places[first] as number) ? first : r.places.length;
+  };
   /** Selects cells `a` to `b` of `r`, either order, as the page's selection. */
   const choose = (r: One, a: number, b: number) => {
     const lo = r.texts[Math.min(a, b)];
@@ -119,9 +188,58 @@ export function createTextLayer(
   const blank = (t: Text | undefined) => !t || t.data.trim() === '';
   // The browser selects nothing reliably across separately placed cells, so a press is read here,
   // a whole cell at a time: drag, double-click for a run between blanks, triple-click for it all.
+  /** A press on an editable readout: the same gestures, moving its field's caret or selection. */
+  const pressTyped = (r: One, input: HTMLInputElement, e: MouseEvent) => {
+    input.focus();
+    const posOf = (x: number) => {
+      const k = cellAt(r, x);
+      const b = r.cells[k]?.getBoundingClientRect();
+      return posAt(r, k, b ? x > (b.left + b.right) / 2 : false);
+    };
+    const at = posOf(e.clientX);
+    if (e.detail >= 3) {
+      input.select();
+      report();
+      return;
+    }
+    if (e.detail === 2) {
+      const v = input.value;
+      const word = (i: number) => i >= 0 && i < v.length && v[i]?.trim() !== '';
+      let a = Math.min(at, Math.max(0, v.length - 1));
+      if (!word(a)) return;
+      let b = a + 1;
+      while (word(a - 1)) a--;
+      while (word(b)) b++;
+      input.setSelectionRange(a, b);
+      report();
+      return;
+    }
+    const from = e.shiftKey ? (input.selectionStart ?? at) : at;
+    input.setSelectionRange(Math.min(from, at), Math.max(from, at));
+    report();
+    const move = (m: MouseEvent) => {
+      const to = posOf(m.clientX);
+      input.setSelectionRange(
+        Math.min(from, to),
+        Math.max(from, to),
+        to < from ? 'backward' : 'forward',
+      );
+      report();
+    };
+    const up = () => {
+      doc.removeEventListener('mousemove', move);
+      doc.removeEventListener('mouseup', up);
+    };
+    doc.addEventListener('mousemove', move);
+    doc.addEventListener('mouseup', up);
+  };
   const press = (r: One) => (e: MouseEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
+    if (r.input) {
+      pressTyped(r, r.input, e);
+      return;
+    }
     const k = cellAt(r, e.clientX);
     if (e.detail >= 3) {
       choose(r, 0, r.cells.length - 1);
@@ -187,7 +305,41 @@ export function createTextLayer(
           texts.push(text);
         }
         layer.append(group);
-        const made = { spot, group, texts, cells, at: '' };
+        const made: One = {
+          spot,
+          group,
+          texts,
+          cells,
+          at: '',
+          input: null,
+          places: [],
+          right: false,
+        };
+        if (one.edit) {
+          const input = doc.createElement('input');
+          input.className = 'blinken-text-input';
+          input.type = 'text';
+          input.spellcheck = false;
+          input.autocomplete = 'off';
+          group.append(input);
+          made.input = input;
+          let last = '';
+          input.addEventListener('focus', () => {
+            last = input.value;
+          });
+          input.addEventListener('input', () => {
+            const i = readouts.indexOf(made);
+            if (edited(i, input.value)) last = input.value;
+            else {
+              const at = Math.max(0, (input.selectionStart ?? 1) - 1);
+              input.value = last;
+              input.setSelectionRange(at, at);
+            }
+            report();
+          });
+          for (const name of ['keyup', 'select', 'selectionchange', 'focus', 'blur'])
+            input.addEventListener(name, report);
+        }
         group.addEventListener('mousedown', press(made));
         return made;
       });
@@ -195,13 +347,20 @@ export function createTextLayer(
       shown = '';
       report();
     },
-    write(i, chars) {
+    write(i, chars, typed) {
       const r = readouts[i];
       if (!r) return;
-      for (const [k, t] of r.texts.entries()) {
-        const next = chars[k] ?? '';
-        if (t.data !== next) t.data = next;
-      }
+      if (r.input) {
+        if (typed) {
+          r.places = typed.places;
+          r.right = typed.right;
+          if (r.input.value !== typed.value) r.input.value = typed.value;
+        }
+      } else
+        for (const [k, t] of r.texts.entries()) {
+          const next = chars[k] ?? '';
+          if (t.data !== next) t.data = next;
+        }
       report();
     },
     place(fits) {

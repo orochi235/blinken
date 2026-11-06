@@ -84,6 +84,11 @@ export interface DisplayType {
    */
   text?(value: string | number, cells: number, align: Align): string[];
   /**
+   * Where `text` puts each character of `value`: the cell it shows in, or -1 where the readout
+   * cuts it off. Given wherever `text` is.
+   */
+  places?(value: string | number, cells: number, align: Align): number[];
+  /**
    * How a selected cell shows by default. `invert` reads on a grid of dots; on segments it lights
    * every segment the character leaves dark. Default `'glow'`.
    */
@@ -137,7 +142,7 @@ function tokens(value: string | number, mark: Record<string, string | undefined>
 export function textCoding(
   table: Readonly<Record<string, string>>,
   marks: Marks = {},
-): Pick<DisplayType, 'encode' | 'text'> {
+): Pick<DisplayType, 'encode' | 'text' | 'places'> {
   const mark = markOf(marks);
   return {
     encode: (value, cells, align) =>
@@ -156,7 +161,20 @@ export function textCoding(
         new Set<string>(),
       ),
     text: (value, cells, align) => fitCells(tokens(value, mark), cells, align, ''),
+    places: (value, cells, align) => placesOf(tokens(value, mark), cells, align),
   };
+}
+
+/** Where `fitCells` puts each character of `toks`, a token a cell: its cell, or -1 where it's cut. */
+function placesOf(toks: readonly string[], cells: number, align: Align): number[] {
+  const kept = Math.min(toks.length, Math.max(0, cells));
+  // Numbers keep their last tokens, right of any padding; text its first, from cell 0.
+  const first = align === 'right' ? toks.length - kept : 0;
+  const shift = align === 'right' ? cells - kept : 0;
+  return toks.flatMap((tok, t) => {
+    const at = t >= first && t < first + kept ? t - first + shift : -1;
+    return [...tok].map(() => at);
+  });
 }
 
 /** `textCoding`'s encoder alone, for a type whose characters aren't text to copy. */
@@ -168,3 +186,7 @@ export const textEncoder = (
 /** Each character a cell, as a type that spells with no marks shows it. */
 export const charText: NonNullable<DisplayType['text']> = (value, cells, align) =>
   fitCells([...String(value)], cells, align, '');
+
+/** Where `charText` puts each character. */
+export const charPlaces: NonNullable<DisplayType['places']> = (value, cells, align) =>
+  placesOf([...String(value)], cells, align);

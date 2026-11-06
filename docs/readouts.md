@@ -87,6 +87,11 @@ a line inside one box only, so each readout's box reads the mouse itself, a cell
 double-click for the run between blanks, triple-click for the whole readout, Shift+click to extend.
 Each sets a real range on the page's selection, which copying and `selectionchange` read.
 
+An `edit: true` readout also holds a hidden `<input>` with its value, which takes the keyboard
+(typing, arrows, copy and paste, undo). The same gestures move its caret and selection, through the
+type's `places`, which says the cell each character lands in; the caret is the cell's underline,
+blinking. Text that would run past the cells is refused; a number keeps its last cells.
+
 How a selected cell shows is the readout's `selection`, else its type's: `invert` swaps its lights
 through the sign's highlight (the default for `matrix` and the triangle types, as compose's size
 readouts do); `glow` (every other type's default) pales its lit lights and lights its unlit ones

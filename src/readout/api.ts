@@ -43,6 +43,13 @@ export interface ReadoutOptions {
   readonly select?: boolean;
   /** How a selected cell shows, in place of its type's way. */
   readonly selection?: Selection;
+  /**
+   * Whether it can be typed into, for a type that spells and no ½ digit: click it, and what is
+   * typed shows on its cells, a blinking bar under the cell the caret stands at. Default false.
+   */
+  readonly edit?: boolean;
+  /** Called with its value as typed, each time it changes. */
+  readonly onInput?: (value: string) => void;
 }
 
 /** A readout on a surface. */

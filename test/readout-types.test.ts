@@ -181,3 +181,15 @@ describe('cell text', () => {
     );
   });
 });
+
+describe('cell places', () => {
+  it('puts each character in the cell its text shows it in, a mark on its cell', () => {
+    expect(TYPES.seven.places?.('12.5', 5, 'right')).toEqual([2, 3, 3, 4]);
+    expect(TYPES.fourteen.places?.('HI', 4, 'left')).toEqual([0, 1]);
+  });
+
+  it('gives -1 to a character the readout cuts off', () => {
+    expect(TYPES.seven.places?.('12345', 3, 'right')).toEqual([-1, -1, 0, 1, 2]);
+    expect(TYPES.matrix.places?.('HELLO', 3, 'left')).toEqual([0, 1, 2, -1, -1]);
+  });
+});

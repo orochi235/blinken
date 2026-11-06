@@ -1,0 +1,33 @@
+main.pane {
+  flex: 1;
+}
+
+.inputs-panel canvas {
+  height: calc(var(--rows) * var(--row));
+}
+
+#rows {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-auto-rows: var(--row);
+  pointer-events: none;
+}
+
+.input-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 2px 12px;
+  color: #9c8f89;
+  font-size: 11px;
+  user-select: none;
+}
+
+.input-value {
+  min-width: 24ch;
+  text-align: end;
+  font-family: ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+}

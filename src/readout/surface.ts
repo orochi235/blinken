@@ -11,7 +11,7 @@ import { awayGaps, createTicker } from '../ticker.js';
 import type { Readout, ReadoutDefect, ReadoutOptions, Surface, SurfaceOptions } from './api.js';
 import { type Layout, layOutReadouts } from './layout.js';
 import { type Box, type Canvas, type Placed, surfacePlacement } from './placement.js';
-import { createTextLayer } from './text.js';
+import { createTextLayer, type Picked } from './text.js';
 import type { Selection } from './type.js';
 import { TYPES } from './types/index.js';
 import { half as HALF } from './types/segments.js';
@@ -26,6 +26,8 @@ interface Entry extends Placed {
   defects: readonly ReadoutDefect[];
   /** Which of its cells the page's selection takes in. */
   picked: readonly boolean[];
+  /** The cell an editable one's caret stands at, while it has the focus. */
+  caret: number | null;
 }
 
 /** How a readout's selected cells show. */
@@ -56,10 +58,16 @@ function splitHalf(value: string | number, cells: number): [string, string | num
   return [`${minus ? '-' : ''}${one ? '1' : ''}`, one ? body.slice(1) : body];
 }
 
-/** Board rows a readout's band spans: its type's slots, or its ½ digit's where that has more, and an underline's. */
+/** Board rows a readout's cells' lights take: its type's slots, or its ½ digit's where that has more. */
 const slotsOf = (e: Entry) =>
-  Math.max(TYPES[e.opts.type].cell.lights.length, e.opts.half ? HALF.cell.lights.length : 0) +
-  (e.spot.underline === null ? 0 : 1);
+  Math.max(TYPES[e.opts.type].cell.lights.length, e.opts.half ? HALF.cell.lights.length : 0);
+
+/** Whether a readout can be typed into: asked to be, of a type that spells, with no ½ digit. */
+const editable = (e: Entry) =>
+  (e.opts.edit ?? false) && !e.opts.half && TYPES[e.opts.type].places !== undefined;
+
+/** How long a caret shows, then hides, ms. */
+const BLINK_MS = 530;
 
 /** Whether a readout's characters can be selected: its type spells, and it wasn't asked not to. */
 const selectable = (e: Entry) => (e.opts.select ?? true) && TYPES[e.opts.type].text !== undefined;
@@ -115,14 +123,23 @@ export function createSurface(
   let valued = true;
   /** The lights of the cells the page's selection takes in, or null with none. */
   let marked: Uint8Array | null = null;
-  const mark = (picked: readonly (readonly boolean[] | null)[]) => {
+  /** Whether a caret shows this half of its blink. */
+  let blinkOn = true;
+  const mark = (picked: readonly (Picked | null)[]) => {
     const b = layout.board;
     const mask = new Uint8Array(b.dots.length);
     let any = false;
     for (const [i, e] of entries.entries()) {
-      const cells = picked[i] ?? [];
+      const cells = picked[i]?.cells ?? [];
+      const caret = picked[i]?.caret ?? null;
       const was = e.picked;
       e.picked = cells;
+      if (caret !== e.caret) {
+        e.caret = caret;
+        blinkOn = true;
+        caretAt = performance.now();
+        valued = true;
+      }
       if (selectionOf(e) !== 'invert') {
         if (cells.some((on, k) => on !== (was[k] ?? false))) valued = true;
         continue;
@@ -138,8 +155,22 @@ export function createSurface(
   };
   const text =
     sign && typeof document !== 'undefined'
-      ? createTextLayer(canvas, sizing.fixed ?? false, mark)
+      ? createTextLayer(canvas, sizing.fixed ?? false, mark, (i, value) => {
+          const e = entries[i];
+          if (!e) return false;
+          const type = TYPES[e.opts.type];
+          const align = e.opts.align ?? type.align;
+          // Text that runs past its cells is refused; a number keeps its last cells, as shown.
+          if (align === 'left' && type.places?.(value, e.opts.cells, align).includes(-1))
+            return false;
+          e.value = value;
+          valued = true;
+          e.opts.onInput?.(value);
+          return true;
+        })
       : null;
+  /** When the caret last moved, so it shows at once and blinks from there. */
+  let caretAt = 0;
 
   const reshape = () => {
     layout = layOutReadouts(
@@ -149,7 +180,7 @@ export function createSurface(
         face: e.opts.face ?? 'plate',
         ends: e.opts.ends,
         half: e.opts.half,
-        underline: selectable(e) && selectionOf(e) === 'underline',
+        underline: selectable(e) && (selectionOf(e) === 'underline' || editable(e)),
       })),
     );
     for (const [i, e] of entries.entries()) e.spot = layout.spots[i] as Layout['spots'][number];
@@ -166,7 +197,9 @@ export function createSurface(
     placement.refit();
     text?.build(
       entries.map((e) =>
-        selectable(e) ? { spot: e.spot, block: selectionOf(e) === 'block' } : null,
+        selectable(e)
+          ? { spot: e.spot, block: selectionOf(e) === 'block', edit: editable(e) }
+          : null,
       ),
     );
   };
@@ -193,7 +226,8 @@ export function createSurface(
       const dimUnlit = how === 'glow' && type.socket === 'segment';
       for (const [c, { s, lights }] of shown.entries()) {
         const picked = e.picked[c] ?? false;
-        if (picked && how === 'underline' && e.spot.underline !== null) {
+        const caret = e.caret === c && blinkOn;
+        if ((caret || (picked && how === 'underline')) && e.spot.underline !== null) {
           const i = (e.spot.base + e.spot.underline) * b.cols + c;
           on[i] = 1;
           tint.set(color, i * 4);
@@ -206,7 +240,24 @@ export function createSurface(
         }
       }
     }
-    if (text) for (const [i, e] of entries.entries()) if (selectable(e)) text.write(i, textOf(e));
+    if (text)
+      for (const [i, e] of entries.entries()) {
+        if (!selectable(e)) continue;
+        const type = TYPES[e.opts.type];
+        const align = e.opts.align ?? type.align;
+        const value = String(e.value);
+        text.write(
+          i,
+          textOf(e),
+          editable(e)
+            ? {
+                value,
+                places: type.places?.(value, e.opts.cells, align) ?? [],
+                right: align === 'right',
+              }
+            : undefined,
+        );
+      }
     voice?.fade({ over: 0 });
     voice = m.cue({ name: 'values', patch: valueVoice(b, on, tint), subjects: b.dots, loop: true });
   };
@@ -224,6 +275,13 @@ export function createSurface(
       shaped = false;
       valued = true;
       reshape();
+    }
+    if (entries.some((e) => e.caret !== null)) {
+      const on = Math.floor((now - caretAt) / BLINK_MS) % 2 === 0;
+      if (on !== blinkOn) {
+        blinkOn = on;
+        valued = true;
+      }
     }
     if (valued) {
       valued = false;
@@ -259,6 +317,7 @@ export function createSurface(
         slant: o.slant ?? 0,
         spot: { base: 0, first: 0, width: 1, height: 1, cells: [], underline: null },
         picked: [],
+        caret: null,
         box: boxOf(o, canvas),
       };
       entries.push(e);

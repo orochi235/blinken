@@ -6,4 +6,5 @@ export const PAGES: NonNullable<LabShellProps['pages']> = [
   { href: 'effects.html', label: 'effects' },
   { href: 'paint.html', label: 'paint' },
   { href: 'readouts.html', label: 'readouts' },
+  { href: 'inputs.html', label: 'inputs' },
 ];

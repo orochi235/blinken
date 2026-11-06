@@ -1,6 +1,6 @@
 import { type Face, faceOf } from '../../faces.js';
 import { triangleAt } from '../../grid.js';
-import { charText, type DisplayType, fitCells, type SegLight } from '../type.js';
+import { charPlaces, charText, type DisplayType, fitCells, type SegLight } from '../type.js';
 
 /** A cell of `cols` × `rows` triangles of the tiling, each a light named `k,r`. */
 function cellOf(cols: number, rows: number): DisplayType['cell'] {
@@ -60,6 +60,7 @@ export const triangles: DisplayType = {
     glyph: (ch) => doubled.glyph(ch)?.map((r) => [...r].map((c) => c + c).join('')),
   }),
   text: charText,
+  places: charPlaces,
 };
 
 /** Letters drawn at triangle resolution from 16-segment strokes, as the `strokes` face draws them. */
@@ -69,4 +70,5 @@ export const trianglesFine: DisplayType = {
   ...family,
   encode: glyphEncoder(faceOf('strokes')),
   text: charText,
+  places: charPlaces,
 };

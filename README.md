@@ -197,7 +197,9 @@ A readout whose type spells letters or numbers (the segment types, `matrix`, `ni
 triangle types) can be selected and copied like text: dragging across its cells selects the
 characters they show, `1.` or `2:` with their mark, and double- and triple-click take a word or the
 whole readout. `selection` picks how a selected cell shows: `glow`, `recolor`, `underline`, `invert`
-(a dot-grid type's default) or the browser's `block`. `select: false` turns this off, which an
+(a dot-grid type's default) or the browser's `block`. `edit: true` makes one typed into: click it
+and type, a blinking bar under the cell the caret stands at; `onInput` hears each change. The lab's
+`inputs` page tries it at four sizes. `select: false` turns this off, which an
 overlay readout over something clickable wants, since its cells take the pointer.
 
 ## Pieces, effects and programs

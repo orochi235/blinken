@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>blinken inputs</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div id="root">
+      <header class="bar">
+        <span class="title">inputs</span>
+        <label>backend <select id="backend"></select></label>
+        <label>type <select id="type"></select></label>
+        <label>cells <input id="cells" type="number" min="1" max="24" value="8" /></label>
+        <label>slant <input id="slant" type="range" min="0" max="0.3" step="0.02" value="0" /></label>
+        <label>align <select id="align"><option>own</option><option>left</option><option>right</option></select></label>
+        <label>face <select id="face"><option>plate</option><option>none</option></select></label>
+        <label>selection <select id="selection"></select></label>
+        <label>color <select id="color"></select></label>
+        <input id="custom" type="color" value="#ffb020" aria-label="custom color" disabled />
+        <span id="got" class="got"></span>
+      </header>
+      <main class="pane">
+        <div class="panel"><canvas id="panel"></canvas><div id="rows"></div></div>
+      </main>
+    </div>
+    <script type="module" src="./inputs.ts"></script>
+  </body>
+</html>
