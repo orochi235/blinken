@@ -13,6 +13,7 @@ import {
 } from '@/index.js';
 import { CHOICES, type Choice, drawWith } from './backend.js';
 import { labGpu } from './gpu.js';
+import { PALETTE } from './palette.js';
 
 const params = new URLSearchParams(location.search);
 const choice = (params.get('backend') ?? 'auto') as Choice;
@@ -66,6 +67,16 @@ async function run() {
     location.search = params.toString();
   };
   const faceSelect = $<HTMLSelectElement>('face');
+  const colorSelect = $<HTMLSelectElement>('color');
+  const custom = $<HTMLInputElement>('custom');
+  for (const name of ['own', ...Object.keys(PALETTE), 'custom']) colorSelect.add(new Option(name));
+  /** The color every readout is built in; undefined leaves each its type's own. */
+  const picked = (): number | undefined => {
+    const name = colorSelect.value;
+    if (name === 'own') return undefined;
+    if (name === 'custom') return Number.parseInt(custom.value.slice(1), 16);
+    return PALETTE[name as keyof typeof PALETTE];
+  };
   const text = $<HTMLInputElement>('text');
   const panelCanvas = $<HTMLCanvasElement>('panel');
   const panelBox = panelCanvas.parentElement as HTMLElement;
@@ -98,6 +109,7 @@ async function run() {
   const build = () => {
     for (const s of surfaces) s.destroy();
     const face = faceSelect.value as 'plate' | 'none';
+    const color = picked();
     const panel = createPanel(panelCanvas, draw);
     const overlay = createOverlay(draw);
     surfaces = [panel, overlay];
@@ -108,6 +120,7 @@ async function run() {
           type: s.type,
           cells: s.cells,
           face,
+          color,
           half: s.half,
           at: { x: (i % 2) * width + 12, y: Math.floor(i / 2) * ROW + 18 },
           height: HEIGHT,
@@ -118,13 +131,24 @@ async function run() {
         const type = CARD_TYPES[i % CARD_TYPES.length] as TypeName;
         const feed: Feed = type === 'fourteen' ? () => `CARD${i + 1}` : ({ n }) => n + i * 37;
         const cells = type === 'cistercian' ? 1 : type === 'fourteen' ? 6 : 4;
-        return { r: overlay.readout({ type, cells, face, follow: slot }), feed };
+        return { r: overlay.readout({ type, cells, face, color, follow: slot }), feed };
       }),
     ];
     $('got').textContent = `${panel.backend} · ${Object.keys(TYPES).length} types`;
   };
   build();
   faceSelect.onchange = build;
+  // A color recolors the readouts in place; going back to their own builds them afresh.
+  const recolor = () => {
+    const hex = picked();
+    if (hex === undefined) build();
+    else for (const { r } of shown) r.color(hex);
+  };
+  colorSelect.onchange = () => {
+    custom.disabled = colorSelect.value !== 'custom';
+    recolor();
+  };
+  custom.oninput = recolor;
   let n = 0;
   const tick = () => {
     const at = { now: new Date(), n, text: text.value };
