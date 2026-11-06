@@ -102,7 +102,10 @@ a:hover {
   max-width: 40rem;
 }
 
+/* A block table scrolls within itself where a long name can't wrap, so it never widens the page. */
 .page > table {
+  display: block;
+  overflow-x: auto;
   max-width: 48rem;
 }
 

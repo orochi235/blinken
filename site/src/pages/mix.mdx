@@ -21,7 +21,7 @@ Every sign is a [blits](https://michaelbaker.tech/blits/) mix underneath, and `s
 | `KIT` | The pose they fold to: `lit` by `max`, `gain` by `mul`, `tint` by color, `hue` as an angle that adds and wraps, and `chroma` and `glow` by `mul`. |
 | `play(mix, board, scenes, effects?)` | Cues one pass of a program. |
 | `cueLayer` | Cues a layer, looping. |
-| `createSign(canvas, board, leds)` | Draws the columns a mix was read into, with the sign's faults, fade and ghosting. |
+| `createSign(canvas, board, leds)` | Draws the columns a mix was read into, with the sign's faults, fade, and ghosting. |
 | `paintBulbs` | Gives the border's bulbs their cells' poses. |
 
 Read the mix's columns every frame and hand them to `createSign`, or read them and draw them some other way.
