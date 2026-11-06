@@ -20,6 +20,11 @@ import { PALETTE } from './palette.js';
 const params = new URLSearchParams(location.search);
 const choice = (params.get('backend') ?? 'auto') as Choice;
 const HEIGHTS = [24, 40, 64, 96];
+/**
+ * The most cells the bar offers; the library has no limit. Past this, the 96 px readout's canvas
+ * on a 2× display runs over WebGPU's default 8192-pixel texture.
+ */
+const MOST_CELLS = 64;
 /** Room above each readout for its caption. */
 const CAPTION = 18;
 const SPELLING = (Object.keys(TYPES) as TypeName[]).filter((t) => TYPES[t].spell && t !== 'half');
@@ -98,6 +103,7 @@ async function run() {
     box.style.setProperty('--row', `${HEIGHTS.reduce((n, h) => n + rowAt(h), 0)}px`);
     rows.style.gridTemplateRows = HEIGHTS.map((h) => `${rowAt(h)}px`).join(' ');
     readouts = [];
+    const cells = Math.max(1, Math.min(MOST_CELLS, Number(cellsInput.value) || 1));
     let y = 0;
     for (const [i, h] of HEIGHTS.entries()) {
       const show = (v: string) => {
@@ -107,7 +113,7 @@ async function run() {
       show(values[i] ?? '');
       const r = panel.readout({
         type,
-        cells: Math.max(1, Math.min(24, Number(cellsInput.value) || 1)),
+        cells,
         slant: Number(slantInput.value),
         align: alignSelect.value === 'own' ? undefined : (alignSelect.value as Align),
         face: faceSelect.value as 'plate' | 'none',
@@ -124,6 +130,20 @@ async function run() {
       readouts.push(r);
       y += rowAt(h);
     }
+    // As wide as the widest readout once it's drawn, so a long one scrolls the pane rather than
+    // being cut off at its edge.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const left = box.getBoundingClientRect().left;
+        const right = Math.max(
+          0,
+          ...[...box.querySelectorAll<HTMLElement>('.blinken-text-readout')].map(
+            (g) => g.getBoundingClientRect().right - left,
+          ),
+        );
+        box.style.setProperty('--width', `${Math.ceil(right + 12)}px`);
+      }),
+    );
     $('got').textContent = `${panel.backend} · ${type}`;
   };
   build();
