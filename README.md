@@ -60,8 +60,9 @@ can name from the next pass. `sign.mix` is the mix itself, for cueing voices of 
 `destroy` takes it off their list.
 
 `housing` is what shows round the lights: `'dark'`, the default, paints a dark housing with a
-socket for every dot; `'clear'` leaves the housing see-through, the sockets still showing over the
-page; `'none'` draws neither, so only lit light shows and an unlit dot is simply absent. Ghosting
+socket for every dot; `'clear'` leaves the housing see-through and draws each socket as a faint
+gray veil, standing out from a white page as much as from a black one and as much as from the
+dark housing, so one sign reads alike on either (a page of middle gray hides it); `'none'` draws neither, so only lit light shows and an unlit dot is simply absent. Ghosting
 is light, so it still shows under `'none'`. `createThumbnail` takes it too.
 
 `pass()` says where the pass playing now stands: `at` ms into it, its `length`, and each scene it

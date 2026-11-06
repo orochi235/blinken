@@ -23,7 +23,13 @@ composition as a share string and the sign's hardware.
 | `program`              | The composition: a share link, the part after its `#`, or a composition file's JSON                |
 | `cols`, `rows`, `grid` | The sign's size and grid, as the hardware panel's size card                                        |
 | `bulbs`                | `none`, `unlit`, `lit` or `chase`                                                                  |
+| `housing`              | `dark` (the default), `clear` or `none`, as `createMarquee`'s `housing`; see below                 |
 | `hardware`             | Any of the hardware panel's settings as JSON, by card: `{"fade":{"fall":400},"ghost":{"row":0.1}}` |
+
+On a light page, `housing="clear"` draws each unlit dot as a faint gray veil, as faint on white as
+on black, and `none` draws only lit dots. Neither paints a backing, so a page wanting one gives the
+element a CSS `background`; blending it with the page, as with any element, is the page's CSS
+(`mix-blend-mode`), not an attribute.
 
 A program can also sit inside the element, as a composition file with an optional `hardware`
 beside it, which is easier to write by hand than a share string:

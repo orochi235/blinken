@@ -43,6 +43,11 @@ describe('the player', () => {
     expect(hardware.ghost.row).toBe(0.1);
   });
 
+  it('reads the housing as an attribute, and keeps one it does not know to dark', () => {
+    expect(resolve([attrs({ housing: 'clear' })]).hardware.case.housing).toBe('clear');
+    expect(resolve([attrs({ housing: 'glass' })]).hardware.case.housing).toBe('dark');
+  });
+
   it('keeps hardware it cannot use to the defaults', () => {
     const { hardware } = resolve([attrs({ cols: 'wide', grid: 'spiral', hardware: '{oops' })]);
     expect(hardware).toEqual(HARDWARE);
@@ -58,5 +63,9 @@ describe('the compose page embed', () => {
     expect(html).toContain('cols="40" rows="7" grid="hex"');
     expect(html).toContain('hardware="{&quot;fade&quot;:{&quot;fall&quot;:500}}"');
     expect(embedOf(state, HARDWARE)).not.toContain('hardware=');
+    expect(embedOf(state, HARDWARE)).not.toContain('housing=');
+    const clear = embedOf(state, { ...HARDWARE, case: { housing: 'clear' } });
+    expect(clear).toContain('housing="clear"');
+    expect(clear).not.toContain('hardware=');
   });
 });

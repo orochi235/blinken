@@ -68,8 +68,9 @@ export interface MarqueeOptions {
    */
   readonly follow?: Follow;
   /**
-   * What shows round the lights: `dark` a dark housing with a socket for every dot, `clear` the
-   * sockets over the page, `none` only lit light, so an unlit dot is absent. Default `dark`.
+   * What shows round the lights: `dark` a dark housing with a socket for every dot, `clear` each
+   * socket as a faint veil over the page, as faint on white as on black, `none` only lit light, so
+   * an unlit dot is absent. Default `dark`.
    */
   readonly housing?: Housing;
   /** The color of a lit dot nothing has tinted. Default amber. */

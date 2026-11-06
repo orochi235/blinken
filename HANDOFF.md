@@ -46,6 +46,9 @@ What a session picking up blinken needs that the code and `TODO.md` don't alread
 - Three backends, WebGPU, WebGL 2 and 2D; the GPU ones may look better than 2D (2026-11-03).
 - The WebGPU device is created once and passed to each sign, not found by each sign
   (2026-11-03).
+- A sign on a light page uses `housing: 'clear'`: unlit sockets are a gray veil standing out from
+  white and black by the same L*, and lights go over it. No `light` housing and no blend-mode
+  attribute; a backing or a blend is the page's CSS (2026-11-05).
 - GPU work is done by the `excelsior` rule: as fast and functional as it reasonably can be, then
   stop (2026-11-03).
 

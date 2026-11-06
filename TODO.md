@@ -29,6 +29,8 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 
 ## Known gaps
 
+- Over a white page, a lit dot's pale core and its glow read as pastel rather than as the saturated light it shows over black: the core is white light, which a white page can't show. The unlit sockets were made to read alike on both (`veil` in `src/render/housing.ts`); the lit dots weren't (2026-11-05).
+
 - `npm run smoke`'s `stretched` page (a 320 × 63 sign) lights 0 pixels, at about 3 fps with an 87 ms mix, while the other four pass. Until the lit count was read from a screenshot (`scripts/lit.mjs`), the smoke crashed on its first page, since a WebGL or WebGPU canvas has no 2D context, so this went unseen; it isn't known whether the sign is dark or just hasn't reached its first message in 2.2 s at that rate (2026-11-04).
 - `dim` and `desaturate` change once and stay changed, so looped they snap back at each repeat; every other looping effect closes its loop, which `test/loop-seams.test.ts` holds at each setting's least and most. Making these two seamless means changing what they are: going there and back, or holding the end instead of repeating (2026-11-05).
 - `<blinken-player>` carries the whole runtime, about 195 KB gzipped, whatever its program uses (`docs/player.md`) (2026-11-04).

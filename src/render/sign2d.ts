@@ -1,15 +1,8 @@
 import { cssOf } from '../color.js';
 import type { Lamps, Shape, Sign } from '../draw.js';
 import type { Fade, Ghost } from '../optics.js';
-import {
-  BLOOM,
-  BULB_COLOR,
-  DOT_COLOR,
-  PLATE_COLOR,
-  SEGMENT_COLOR,
-  WIRE_COLOR,
-} from './bloom-params.js';
-import { type Housing, housingPaint } from './housing.js';
+import { BLOOM } from './bloom-params.js';
+import { cssOfRgba, type Housing, housingPaint } from './housing.js';
 import { LAMP_SIZE, LED } from './lights.js';
 import { createOpticsFrame, type Lit, lit } from './optics-frame.js';
 import { paintTraced, traceOwn, tracePrim } from './paint2d.js';
@@ -19,15 +12,6 @@ import type { SignLights } from './sign-lights.js';
 
 /** An unlit wire's width as a share of a lit one's. */
 export const WIRE_SHARE = 0.15;
-
-/** Each socket's color, by `SOCKET` value; a wire's is drawn thin. */
-export const SOCKET_COLORS: Readonly<Record<number, number>> = {
-  [SOCKET.dot]: DOT_COLOR,
-  [SOCKET.bulb]: BULB_COLOR,
-  [SOCKET.segment]: SEGMENT_COLOR,
-  [SOCKET.wire]: WIRE_COLOR,
-  [SOCKET.plate]: PLATE_COLOR,
-};
 
 /** How far a light of radius `r` blooms: its radius times `glow`, nothing at 0. */
 export function haloRadius(r: number, glow: number): number {
@@ -46,6 +30,7 @@ export function createSign2d(
   housing: Housing = 'dark',
 ): Sign {
   const paint = housingPaint(housing);
+  const socketCss = paint.sockets?.map(cssOfRgba) ?? [];
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   const layer = () => {
     const c = document.createElement('canvas');
@@ -95,13 +80,13 @@ export function createSign2d(
       h.fillStyle = cssOf(paint.backing);
       h.fillRect(0, 0, house.c.width, house.c.height);
     }
-    if (!paint.sockets) return;
+    if (socketCss.length === 0) return;
     const lamp = lamps.size ?? LAMP_SIZE;
     const { prims } = shape;
     perView(h, (k, scale) => {
       const socket = prims.socket[k] as number;
       if (socket === SOCKET.none) return;
-      const css = cssOf(SOCKET_COLORS[socket] ?? DOT_COLOR);
+      const css = socketCss[socket] as string;
       if (socket === SOCKET.wire) {
         const r = Math.max(radiusOfPrim(prims, k, lamp) * WIRE_SHARE, 0.5 / scale);
         paintTraced(h, tracePrim(h, prims, k, r), css);
@@ -173,15 +158,21 @@ export function createSign2d(
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
       ctx.filter = 'none';
+      const over = paint.lights === 'over';
       // A housing with no backing covers nothing, so the last frame's glow is cleared first.
       if (paint.backing === null) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (!paint.blank) ctx.drawImage(house.c, 0, 0);
+      if (!over && !paint.blank) ctx.drawImage(house.c, 0, 0);
       ctx.globalCompositeOperation = 'lighter';
       if (placement.blur)
         ctx.filter = `blur(${(placement.pitch * BLOOM.spread * spread).toFixed(1)}px)`;
       ctx.drawImage(glow.c, 0, 0);
       ctx.filter = 'none';
       ctx.drawImage(body.c, 0, 0);
+      // Lights add onto a dark housing; a see-through one goes under them once they have added up.
+      if (over && !paint.blank) {
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.drawImage(house.c, 0, 0);
+      }
       ctx.globalCompositeOperation = 'source-over';
     },
     setDefects(defects) {

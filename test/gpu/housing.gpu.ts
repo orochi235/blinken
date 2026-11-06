@@ -77,8 +77,9 @@ for (const kind of BACKENDS) {
     if (none.gap.some((v) => v !== 0)) throw new Error(`none: the gap shows ${none.gap}`);
     if (lit.some((p) => (p[0] as number) < 200 || (p[3] as number) < 200))
       throw new Error(`none: a lit dot shows ${lit.find((p) => (p[0] as number) < 200)}`);
-    if (unlit(clear).some((p) => (p[3] as number) < 250))
-      throw new Error(`clear: an unlit dot has no socket (${unlit(clear)[0]})`);
+    // A clear socket is a faint veil: there, but far from opaque.
+    if (unlit(clear).some((p) => (p[3] as number) < 8 || (p[3] as number) > 128))
+      throw new Error(`clear: an unlit dot's socket isn't a veil (${unlit(clear)[0]})`);
     if ((clear.gap[3] as number) !== 0) throw new Error(`clear: the gap shows ${clear.gap}`);
     if ((dark.gap[3] as number) < 250) throw new Error(`dark: the gap shows ${dark.gap}`);
   });

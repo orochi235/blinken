@@ -13,8 +13,16 @@ export interface Source {
   hardware?: unknown;
 }
 
-/** The attributes a player reads; `cols`, `rows`, `grid` and `bulbs` are short for `hardware` entries. */
-export const ATTRIBUTES = ['program', 'hardware', 'cols', 'rows', 'grid', 'bulbs'] as const;
+/** The attributes a player reads; `cols`, `rows`, `grid`, `bulbs` and `housing` are short for `hardware` entries. */
+export const ATTRIBUTES = [
+  'program',
+  'hardware',
+  'cols',
+  'rows',
+  'grid',
+  'bulbs',
+  'housing',
+] as const;
 
 /** A program from a link, the part after a link's `#`, or a composition file's text. */
 export function programOf(text: string): Decoded {
@@ -51,6 +59,7 @@ export function attributeSource(get: (name: string) => string | null): Source {
   const short = {
     size: { cols: num('cols'), rows: num('rows'), grid: get('grid') ?? undefined },
     border: { bulbs: get('bulbs') ?? undefined },
+    case: { housing: get('housing') ?? undefined },
   };
   return { program: get('program'), hardware: [json(get('hardware')), short] };
 }

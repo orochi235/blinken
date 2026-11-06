@@ -94,7 +94,7 @@ export const HOUSING_WGSL = `${INSTANCE}
 @fragment fn fs(v: V) -> @location(0) vec4f {
   if (clipped(v)) { discard; }
   let cover = 1.0 - smoothstep(-0.5, 0.5, dist(v));
-  return vec4f(u.sockets[v.socket].rgb, 1.0) * cover;
+  return u.sockets[v.socket] * cover;
 }`;
 
 /** A primitive's glow before the blur, as `GLOW_VS` and `GLOW_FS` paint it. */

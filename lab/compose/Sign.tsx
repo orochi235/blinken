@@ -3,6 +3,7 @@ import {
   createMarquee,
   type EffectSpec,
   type GridName,
+  type Housing,
   type Marquee,
   type Scene,
 } from '@/index.js';
@@ -13,7 +14,7 @@ import './Sign.css';
 
 /**
  * A sign built from `hardware` playing `program`, handed to `onSign` as it is made and as null as
- * it goes. A new size, border or backend builds a new sign; carrying the pass over to it is
+ * it goes. A new size, border, housing or backend builds a new sign; carrying the pass over to it is
  * `onSign`'s job. None is built until the page's WebGPU request settles.
  */
 export function Sign({
@@ -39,6 +40,7 @@ export function Sign({
   const { cols, rows, grid } = hardware.size;
   // A border coming or going changes the sign's margin, so it builds a new sign as a size does.
   const bordered = hardware.border.bulbs !== 'none';
+  const housing = hardware.case.housing as Housing;
 
   useEffect(() => {
     if (!canvas.current || handle === undefined) return;
@@ -48,6 +50,7 @@ export function Sign({
       rows,
       grid: grid as GridName,
       border: bordered && borderOf(h),
+      housing,
       program: p,
       effects: e(),
       ...drawWith(choice, handle),
@@ -60,7 +63,7 @@ export function Sign({
       sign.current = null;
       m.destroy();
     };
-  }, [cols, rows, grid, bordered, choice, handle]);
+  }, [cols, rows, grid, bordered, housing, choice, handle]);
 
   useEffect(() => {
     if (sign.current) equip(sign.current, hardware);

@@ -7,6 +7,7 @@ import {
   type GridName,
   gpu,
   gridOf,
+  type Housing,
   type Marquee,
   type Ticker,
 } from '@/index.js';
@@ -147,6 +148,7 @@ export function definePlayer(tag = 'blinken-player', baked: Source = {}): void {
             rows,
             grid,
             border: bordered && borderOf(hardware),
+            housing: hardware.case.housing as Housing,
             program: decoded.state.program,
             effects: decoded.state.effects,
             gpu: handle,

@@ -6,22 +6,24 @@ const attr = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
 /**
  * HTML that plays `state` on a page through the `<blinken-player>` script (`npm run compile`): the
- * size and grid as attributes, and only the hardware that differs from the defaults.
+ * size, grid and a housing other than the default as attributes, and only the hardware that differs from the defaults.
  */
 export function embedOf(state: ComposeState, hardware: Hardware): string {
   const { cols, rows, grid } = hardware.size;
+  const { housing } = hardware.case;
   const rest: Record<string, Record<string, unknown>> = {};
   for (const [g, group] of Object.entries(hardware) as [
     keyof Hardware,
     Record<string, unknown>,
   ][]) {
-    if (g === 'size') continue;
+    if (g === 'size' || g === 'case') continue;
     const base = HARDWARE[g] as Record<string, unknown>;
     for (const [k, v] of Object.entries(group)) if (v !== base[k]) rest[g] = { ...rest[g], [k]: v };
   }
+  const look = housing === HARDWARE.case.housing ? '' : ` housing="${housing}"`;
   const extra = Object.keys(rest).length ? ` hardware="${attr(JSON.stringify(rest))}"` : '';
   return [
     '<script src="blinken-player.js"></script>',
-    `<blinken-player program="${encode(playable(state))}" cols="${cols}" rows="${rows}" grid="${grid}"${extra}></blinken-player>`,
+    `<blinken-player program="${encode(playable(state))}" cols="${cols}" rows="${rows}" grid="${grid}"${look}${extra}></blinken-player>`,
   ].join('\n');
 }

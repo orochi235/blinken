@@ -6,11 +6,11 @@ import type { Fade, Ghost } from '../../optics.js';
 import { webglSlot } from '../backend.js';
 import { BLOOM } from '../bloom-params.js';
 import { gaussian } from '../blur.js';
-import { backingRgba, type Housing, housingPaint } from '../housing.js';
+import { backingRgba, type Housing, housingPaint, socketFloats } from '../housing.js';
 import { LAMP_SIZE, LED } from '../lights.js';
 import { createOpticsFrame, lit } from '../optics-frame.js';
 import { boardLights, type SignLights } from '../sign-lights.js';
-import { SOCKET_COLORS, WIRE_SHARE } from '../sign2d.js';
+import { WIRE_SHARE } from '../sign2d.js';
 import { dark, reclaim, shed, shedContext } from './context.js';
 import {
   bind,
@@ -48,6 +48,8 @@ export function createWebGlSignOf(
   housing: Housing,
 ): (Sign & { readonly backend: 'webgl' }) | null {
   const paint = housingPaint(housing);
+  const sockets = socketFloats(paint);
+  const over = paint.lights === 'over';
   const release = webglSlot();
   if (!release) return shed.has(canvas) ? dark() : null;
   const made = canvas.getContext('webgl2', {
@@ -134,7 +136,7 @@ export function createWebGlSignOf(
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     run(r.housing, r);
     gl.uniform1f(r.housing.u.u_wire ?? null, WIRE_SHARE);
-    gl.uniform3fv(r.housing.u.u_sockets ?? null, SOCKET_RGB);
+    gl.uniform4fv(r.housing.u.u_sockets ?? null, sockets);
     instances(r);
   }
 
@@ -174,12 +176,12 @@ export function createWebGlSignOf(
     }
     into(null);
     gl.disable(gl.BLEND);
-    if (paint.blank) {
+    if (paint.blank || over) {
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
     } else full(r, r.copy, t.house);
     gl.enable(gl.BLEND);
-    // As in 2D, glow and bodies both add onto the housing.
+    // As in 2D, lights add onto a dark housing; a see-through one goes under them once they have added up.
     gl.blendFunc(gl.ONE, gl.ONE);
     if (glows) full(r, r.copy, sigma > 0 ? t.blurred : t.splat, r.half ? 1 : 2);
     run(r.body, r);
@@ -187,6 +189,10 @@ export function createWebGlSignOf(
     gl.uniform3f(r.body.u.u_coreTint ?? null, ...rgb(LED.coreTint));
     gl.uniform1f(r.body.u.u_coreAlpha ?? null, LED.coreAlpha);
     instances(r);
+    if (over && !paint.blank) {
+      gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+      full(r, r.copy, t.house);
+    }
   }
 
   function sized(): void {
@@ -279,11 +285,6 @@ export function createWebGlSignOf(
     },
   };
 }
-
-/** Each socket's color as GLSL reads `u_sockets`, by `SOCKET` value. */
-const SOCKET_RGB = new Float32Array(
-  Array.from({ length: 6 }, (_, s) => rgb(SOCKET_COLORS[s] ?? 0)).flat(),
-);
 
 /** Uploads the views, each its transform then its clip, as two texels. */
 function uploadViews(gl: WebGL2RenderingContext, d: Data, views: Float32Array): void {

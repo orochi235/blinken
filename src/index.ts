@@ -126,7 +126,7 @@ export type { Align, DisplayType, Ends, SegLight, SegShape, TypeName } from './r
 export { TYPES } from './readout/types/index.js';
 export type { Backend } from './render/backend.js';
 export { type Gpu, gpu } from './render/gpu.js';
-export type { Housing } from './render/housing.js';
+export { HOUSINGS, type Housing } from './render/housing.js';
 export { createThumbnail, type Thumbnail, type ThumbnailOptions } from './thumbnail.js';
 export { createTicker, type Ticker } from './ticker.js';
 export {

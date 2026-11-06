@@ -1,11 +1,11 @@
 import { rgb } from '../../color.js';
 import { BLOOM } from '../bloom-params.js';
 import { gaussian, TAPS } from '../blur.js';
-import { backingRgba, type HousingPaint } from '../housing.js';
+import { backingRgba, type HousingPaint, socketFloats } from '../housing.js';
 import { LED } from '../lights.js';
 import { VIEW } from '../placement.js';
 import { GEOM, type Prims } from '../prims.js';
-import { SOCKET_COLORS, WIRE_SHARE } from '../sign2d.js';
+import { WIRE_SHARE } from '../sign2d.js';
 import { BUFFER, STAGE, TEXTURE } from './usage.js';
 import {
   BLUR_WGSL,
@@ -45,6 +45,11 @@ const HOUSE = 'rgba8unorm';
 const ADD: GPUBlendState = {
   color: { srcFactor: 'one', dstFactor: 'one' },
   alpha: { srcFactor: 'one', dstFactor: 'one' },
+};
+/** What is drawn goes under what is there. */
+const UNDER: GPUBlendState = {
+  color: { srcFactor: 'one-minus-dst-alpha', dstFactor: 'one' },
+  alpha: { srcFactor: 'one-minus-dst-alpha', dstFactor: 'one' },
 };
 const OVER: GPUBlendState = {
   color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
@@ -109,6 +114,7 @@ export function createPainter(
   const blur = pipe(BLUR_WGSL, blurLayout, GLOW, undefined, false);
   const copy = pipe(COPY_WGSL, copyLayout, format, undefined, false);
   const copyAdd = pipe(COPY_WGSL, copyLayout, format, ADD, false);
+  const copyUnder = pipe(COPY_WGSL, copyLayout, format, UNDER, false);
 
   const storage = (data: Float32Array | Uint32Array, label: string) => {
     const buf = device.createBuffer({
@@ -144,11 +150,11 @@ export function createPainter(
   const lightData = new Float32Array(LOOK_FLOATS);
   lightData.set([LED.core, LED.coreAlpha, WIRE_SHARE], 4);
   lightData.set([...rgb(LED.coreTint), 1], 12);
-  for (let k = 0; k < 6; k++) lightData.set([...rgb(SOCKET_COLORS[k] ?? 0), 1], 16 + k * 4);
 
   let canvas = { w: 0, h: 0 };
   let half = { w: 1, h: 1 };
   let blank = false;
+  let over = false;
   let targets: { house: Target; splat: Target; across: Target; blurred: Target } | null = null;
   let groups: {
     house: GPUBindGroup;
@@ -237,6 +243,8 @@ export function createPainter(
       writeLook(look);
       const enc = device.createCommandEncoder();
       blank = paint.blank;
+      over = paint.lights === 'over';
+      lightData.set(socketFloats(paint), 16);
       const pass = into(enc, t.house.view, backingRgba(paint));
       if (paint.sockets) instances(pass, housing);
       pass.end();
@@ -265,10 +273,11 @@ export function createPainter(
         blurred.end();
       }
       const out = into(enc, view);
-      if (!blank) full(out, copy, g.house);
-      // As in 2D, glow and bodies both add onto the housing.
+      if (!blank && !over) full(out, copy, g.house);
+      // As in 2D, lights add onto a dark housing; a see-through one goes under them once they have added up.
       if (glows) full(out, copyAdd, sigma > 0 ? g.blurred : g.splat);
       instances(out, body);
+      if (!blank && over) full(out, copyUnder, g.house);
       out.end();
     },
     destroy() {

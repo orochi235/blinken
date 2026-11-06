@@ -84,11 +84,11 @@ void main() {
 }`;
 
 export const HOUSING_FS = `${fragment}
-uniform vec3 u_sockets[6];
+uniform vec4 u_sockets[6];
 flat in int v_socket;
 void main() {
   float cover = 1.0 - smoothstep(-0.5, 0.5, dist());
-  color = vec4(u_sockets[v_socket], 1.0) * cover;
+  color = u_sockets[v_socket] * cover;
 }`;
 
 /**

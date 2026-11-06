@@ -4,6 +4,7 @@ import {
   FADE,
   fits,
   GRIDS,
+  HOUSINGS,
   type Marquee,
   MODULATORS,
   type NumberParam,
@@ -59,6 +60,15 @@ export const GROUPS = {
       value: 'square',
       about:
         'How the dots are set out: square rows and columns; a hex grid where each row sits half a dot left of the one above, which leans the text like italics; or triangles, hexagons each cut into six, two to a dot of the text. The strokes face draws a triangle to a dot instead, on 14 or more rows.',
+    } satisfies ChoiceParam,
+  },
+  case: {
+    housing: {
+      label: 'housing',
+      choices: [...HOUSINGS],
+      value: 'dark',
+      about:
+        'What shows round the lights: a dark housing with a socket for every dot; clear, where the page shows through and each socket is a faint veil, as faint on white as on black; or none, where only lit dots show.',
     } satisfies ChoiceParam,
   },
   border: {
