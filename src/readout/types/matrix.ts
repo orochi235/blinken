@@ -4,9 +4,11 @@ import { disc, light } from './kit.js';
 
 const COLS = 5;
 const ROWS = 7;
+/** A glyph's columns and the blank one after it, so the grid runs on unbroken from cell to cell. */
+const PITCH = COLS + 1;
 
-const lights = Array.from({ length: COLS * ROWS }, (_, i) => {
-  const [x, y] = [i % COLS, Math.floor(i / COLS)];
+const lights = Array.from({ length: PITCH * ROWS }, (_, i) => {
+  const [x, y] = [i % PITCH, Math.floor(i / PITCH)];
   return light(`${x},${y}`, disc(1 + x * 2, 1 + y * 2, 0.8));
 });
 
@@ -20,11 +22,11 @@ const table = Object.fromEntries(
   ]),
 );
 
-/** A 5 × 7 dot matrix per character, in blinken's standard face. */
+/** A 5 × 7 dot matrix per character, in blinken's standard face, a blank column between characters. */
 export const matrix: DisplayType = {
   name: 'matrix',
-  cell: { width: COLS * 2, height: ROWS * 2, lights },
-  gap: 1,
+  cell: { width: PITCH * 2, height: ROWS * 2, lights },
+  gap: 0,
   ends: 'round',
   socket: 'segment',
   glow: 1,
