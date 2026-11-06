@@ -15,7 +15,7 @@ import {
 } from '@/index.js';
 import { CHOICES, type Choice, drawWith } from './backend.js';
 import { labGpu } from './gpu.js';
-import { PALETTE } from './palette.js';
+import { colorPicker } from './palette.js';
 
 const params = new URLSearchParams(location.search);
 const choice = (params.get('backend') ?? 'auto') as Choice;
@@ -52,13 +52,12 @@ async function run() {
   for (const name of ['own', ...SELECTIONS]) selectionSelect.add(new Option(name));
   const colorSelect = $<HTMLSelectElement>('color');
   const custom = $<HTMLInputElement>('custom');
-  for (const name of ['own', ...Object.keys(PALETTE), 'custom']) colorSelect.add(new Option(name));
-  const color = (): number | undefined => {
-    const name = colorSelect.value;
-    if (name === 'own') return undefined;
-    if (name === 'custom') return Number.parseInt(custom.value.slice(1), 16);
-    return PALETTE[name as keyof typeof PALETTE];
-  };
+  // A color recolors the readouts in place; going back to their own builds them afresh.
+  const color = colorPicker(colorSelect, custom, () => {
+    const hex = color();
+    if (hex === undefined) build();
+    else for (const r of readouts) r.color(hex);
+  });
 
   const canvas = $<HTMLCanvasElement>('panel');
   const box = canvas.parentElement as HTMLElement;
@@ -174,11 +173,6 @@ async function run() {
   selectionSelect.addEventListener('change', () => {
     for (const r of readouts) r.setSelection(look());
   });
-  colorSelect.onchange = () => {
-    custom.disabled = colorSelect.value !== 'custom';
-    build();
-  };
-  custom.addEventListener('change', build);
 }
 
 run().catch((e) => console.error(e));

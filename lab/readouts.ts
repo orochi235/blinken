@@ -15,7 +15,7 @@ import {
 } from '@/index.js';
 import { CHOICES, type Choice, drawWith } from './backend.js';
 import { labGpu } from './gpu.js';
-import { PALETTE } from './palette.js';
+import { colorPicker } from './palette.js';
 
 const params = new URLSearchParams(location.search);
 const choice = (params.get('backend') ?? 'auto') as Choice;
@@ -71,16 +71,10 @@ async function run() {
   const faceSelect = $<HTMLSelectElement>('face');
   const selectionSelect = $<HTMLSelectElement>('selection');
   for (const name of ['own', ...SELECTIONS]) selectionSelect.add(new Option(name));
-  const colorSelect = $<HTMLSelectElement>('color');
-  const custom = $<HTMLInputElement>('custom');
-  for (const name of ['own', ...Object.keys(PALETTE), 'custom']) colorSelect.add(new Option(name));
   /** The color every readout is built in; undefined leaves each its type's own. */
-  const picked = (): number | undefined => {
-    const name = colorSelect.value;
-    if (name === 'own') return undefined;
-    if (name === 'custom') return Number.parseInt(custom.value.slice(1), 16);
-    return PALETTE[name as keyof typeof PALETTE];
-  };
+  const picked = colorPicker($<HTMLSelectElement>('color'), $<HTMLInputElement>('custom'), () =>
+    recolor(),
+  );
   const text = $<HTMLInputElement>('text');
   const panelCanvas = $<HTMLCanvasElement>('panel');
   const panelBox = panelCanvas.parentElement as HTMLElement;
@@ -153,11 +147,6 @@ async function run() {
     if (hex === undefined) build();
     else for (const { r } of shown) r.color(hex);
   };
-  colorSelect.onchange = () => {
-    custom.disabled = colorSelect.value !== 'custom';
-    recolor();
-  };
-  custom.oninput = recolor;
   let n = 0;
   const tick = () => {
     const at = { now: new Date(), n, text: text.value };

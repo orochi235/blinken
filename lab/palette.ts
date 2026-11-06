@@ -17,3 +17,27 @@ export const PALETTE = {
   warm: 0xffd8a0,
   white: 0xffffff,
 } as const;
+
+/**
+ * A color menu (each readout's own, the palette by name, or custom) with its swatch: picking in the
+ * swatch switches the menu to custom. Calls `changed` on each pick, the swatch's as it's
+ * dragged; gives the color picked, undefined for each readout's own.
+ */
+export function colorPicker(
+  menu: HTMLSelectElement,
+  swatch: HTMLInputElement,
+  changed: () => void,
+): () => number | undefined {
+  for (const name of ['own', ...Object.keys(PALETTE), 'custom']) menu.add(new Option(name));
+  menu.addEventListener('change', changed);
+  swatch.addEventListener('input', () => {
+    menu.value = 'custom';
+    changed();
+  });
+  return () => {
+    const name = menu.value;
+    if (name === 'own') return undefined;
+    if (name === 'custom') return Number.parseInt(swatch.value.slice(1), 16);
+    return PALETTE[name as keyof typeof PALETTE];
+  };
+}
