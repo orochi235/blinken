@@ -1,26 +1,17 @@
 # Handoff
 
 What a session picking up blinken needs that the code and `TODO.md` don't already say. Written
-2026-10-24, updated 2026-11-04.
+2026-10-24, updated 2026-11-05.
 
 ## State
 
 - Dependencies are on weasel `1.16.1`, blits `^1.0.0`, blits-panel `0.9.0` and vitest 5 (2026-11-04).
   CI and Pages install those from npm; the lab and tests use the sibling checkouts where present.
-- An audit on 2026-11-01 fixed what it found; what it left is in `TODO.md`. `main` is ahead of
-  `origin` and unpushed.
-- The GPU renderers (WebGPU, WebGL 2, 2D) are built on branch `gpu-renderers` in the worktree
-  `~/src/blinken-gpu`, unmerged (2026-11-04). Everything it needs from blits shipped in 1.0.0.
-- Segment readouts are built on the same branch (2026-11-04): 21 display types on a shared panel
-  or a page overlay, every backend drawing primitives through placed views. How in
-  `docs/readouts.md`, what's left in `TODO.md`. The lab's `readouts` page shows them all;
-  `node scripts/readouts.mjs` screenshots it on each backend.
+- The GPU renderers and segment readouts are merged to `main`. How they work and what they
+  measured is in `docs/gpu-renderers.md` and `docs/readouts.md`; what's left is in `TODO.md`.
 - A fleet node's stale `../blits` sibling can fail move-shader tests that pass on npm blits 1.0
   (seen 2026-11-04 on a node other than msb-uai, which passed); pin `--node` when a GPU run
   must match.
-  What's left is in `TODO.md`, how it works and what it measured in `docs/gpu-renderers.md`, how
-  to use it in the README's GPU section. After round 2 on blits phase 3, WebGPU's frame is all on
-  the GPU for effects with a shader form; see `docs/gpu-renderers.md`.
 
 ## How the lab runs
 
