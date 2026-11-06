@@ -9,7 +9,7 @@ import ApiEntries from '../components/ApiEntries.astro';
 
 # Readouts
 
-A readout is a display showing a value: 7-, 8-, 9-, 14-, 16- and 22-segment displays, Nixie tubes, the 5 × 7 matrix, and notations like Cistercian and Maya numerals, Braille, Morse and semaphore. `TYPES` lists them all. Many readouts share one canvas and one sign:
+A readout is a display showing a value: 7-, 8-, 9-, 14-, 16- and 22-segment displays, Nixie tubes, the 5 × 7 matrix, and notations like Cistercian and Maya numerals, Braille, Morse and semaphore. `TYPES` lists them all. Many readouts share one canvas and one sign. This submersible's console is one overlay, each instrument a readout following its bezel:
 
 <Live client:only="react" of="readouts.ts" />
 
@@ -28,5 +28,11 @@ A `:` or `.` after a digit lights that cell's colon or point. `face: 'none'` dro
 ## Selecting and typing
 
 A readout whose type spells letters or numbers can be selected and copied like text: dragging across its cells selects the characters they show, and double- and triple-click take a word or the whole readout. `selection` picks how a selected cell shows. `edit: true` makes one you can type into, with `onInput` hearing each change, and `lines` stacks rows of cells. `select: false` turns this off, which an overlay readout over something clickable wants, since its cells take the pointer.
+
+These are overlay readouts, each following a slot in an ordinary form. Click one and type; ↑ and ↓ step the frequency, through `onKeyDown`:
+
+<Live client:only="react" of="inputs.ts" />
+
+<Listing of="live/inputs.ts" />
 
 <ApiEntries word="readouts" />

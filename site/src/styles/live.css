@@ -97,3 +97,130 @@
   margin: 0 auto;
   padding: 0 1rem;
 }
+
+/* The readouts demo: an olive console, each instrument in a dark bezel over an engraved label. */
+.console {
+  --screw: radial-gradient(circle, #9a9c8c 0 2px, #3a3c31 2.5px 3.5px, transparent 4px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem 0.9rem;
+  width: min(100% - 2rem, 40rem);
+  margin: 0 auto;
+  padding: 1.6rem 1.4rem 1.2rem;
+  border-radius: 10px;
+  background:
+    var(--screw) top 8px left 8px / 12px 12px no-repeat,
+    var(--screw) top 8px right 8px / 12px 12px no-repeat,
+    var(--screw) bottom 8px left 8px / 12px 12px no-repeat,
+    var(--screw) bottom 8px right 8px / 12px 12px no-repeat,
+    linear-gradient(#646955, #4f5343);
+  box-shadow:
+    inset 0 1px 0 #7d826b,
+    inset 0 -2px 0 #3c3f33,
+    0 6px 18px #0008;
+}
+
+.console figure {
+  grid-column: span var(--span);
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.console figure {
+  min-width: 0;
+}
+
+/* The bezel hugs its readout, which is as tall as fits and as wide as its cells make it. */
+.console figure > div {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 0.35rem 0.5rem;
+  background: #0d0e0b;
+  border-radius: 5px;
+  box-shadow:
+    inset 0 2px 4px #000,
+    0 0 0 3px #2f3228,
+    0 1px 0 4px #767b65;
+}
+
+.console figure > div > div {
+  height: 2.6rem;
+  max-width: 100%;
+  aspect-ratio: var(--aspect);
+}
+
+.console figcaption,
+.console-orders button {
+  font: 700 0.68rem var(--label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #e9e6d4;
+  text-shadow: 0 -1px 0 #2c2e25;
+}
+
+.console-orders {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+  padding-top: 0.3rem;
+}
+
+.console-orders button {
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  border-radius: 4px;
+  background: linear-gradient(#3b3e33, #2a2c24);
+  box-shadow:
+    0 3px 0 #1b1c17,
+    inset 0 1px 0 #55594a;
+  cursor: pointer;
+}
+
+.console-orders button[aria-pressed="true"] {
+  color: #ffb020;
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 #1b1c17,
+    inset 0 1px 0 #55594a;
+}
+
+@media (max-width: 520px) {
+  .console {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .console figure {
+    grid-column: span min(var(--span), 2);
+  }
+}
+
+/* The input demo: labels beside slots, each slot shaped for its readout's cells. */
+.inputs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.9rem 1rem;
+  width: fit-content;
+  max-width: calc(100% - 2rem);
+  margin: 0 auto;
+  font: 700 0.8rem var(--label);
+  letter-spacing: 0.06em;
+  color: #d8cfc6;
+}
+
+.inputs-slot {
+  height: calc(var(--rows) * 2.6rem);
+  aspect-ratio: calc(var(--cells) * 0.62) / var(--rows);
+  max-width: 100%;
+}
+
+.inputs-echo {
+  display: block;
+  min-height: 1.4em;
+  margin: 0.9rem 1rem 0;
+  text-align: center;
+  font: 0.82rem var(--mono);
+  color: #d8cfc6;
+}

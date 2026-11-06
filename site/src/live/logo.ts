@@ -8,12 +8,23 @@ export const LOGO = { cols: rasterize(WORD).cols + 2, rows: 7 } as const;
 /** The sign's shape in dot pitches, border and frame included. */
 export const FRAME = frameOf(board(LOGO.cols, LOGO.rows));
 
-/** How far in the word's first lit dot starts, as a share of the sign's width; a dot is 0.72 pitch wide. */
+/**
+ * How far in the word's ink starts from the sign's left edge and ends from its right, as shares of
+ * its width; a dot is 0.72 pitch wide.
+ */
 export const INSET = (() => {
   const text = rasterize(WORD);
-  let x = 0;
-  while (x < text.cols && ![...Array(LOGO.rows).keys()].some((y) => text.lit(x, y))) x++;
-  return (1 + x - FRAME.left - 0.36) / FRAME.across;
+  const inked = (x: number) => [...Array(LOGO.rows).keys()].some((y) => text.lit(x, y));
+  let first = 0;
+  while (first < text.cols && !inked(first)) first++;
+  let last = text.cols - 1;
+  while (last > first && !inked(last)) last--;
+  // Column x's center is x + 1 (the blank column) less the frame's corner.
+  const center = (x: number) => x + 1 - FRAME.left;
+  return {
+    left: (center(first) - 0.36) / FRAME.across,
+    right: (FRAME.across - center(last) - 0.36) / FRAME.across,
+  };
 })();
 
 const EFFECTS = ['hold', 'flip', 'fall', 'swarm', 'roll', 'matris', 'tile'] as const;

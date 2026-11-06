@@ -5,6 +5,7 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 import { blitsAlias } from '../blits.config.ts';
+import { pinVersion } from './src/api/pin.ts';
 import { linkExports } from './src/api/prose.ts';
 
 const base = process.env.BLINKEN_SITE_BASE ?? '/';
@@ -17,7 +18,7 @@ export default defineConfig({
   integrations: [react(), mdx(), sitemap()],
   outDir: process.env.BLINKEN_SITE_OUT ?? './dist',
   markdown: {
-    processor: satteri({ mdastPlugins: [linkExports(base.replace(/\/?$/, '/'))] }),
+    processor: satteri({ mdastPlugins: [pinVersion(), linkExports(base.replace(/\/?$/, '/'))] }),
     shikiConfig: { themes: { light: 'github-light', dark: 'github-dark' }, defaultColor: 'light' },
   },
   server: { host: '::', port: 4886 },

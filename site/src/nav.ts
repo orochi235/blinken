@@ -9,7 +9,6 @@ const marquee = [
   { slug: 'defects', title: 'Defects' },
   { slug: 'thumbnails', title: 'Thumbnails' },
   { slug: 'mix', title: 'On your own mix' },
-  { slug: 'player', title: 'Player' },
 ] as const;
 
 const readouts = [{ slug: 'readouts', title: 'Readouts' }] as const;
@@ -28,6 +27,7 @@ export type Word = (typeof words)[number]['slug'];
 /** The pages for someone starting out, above the concepts. */
 export const start = [
   { slug: 'start', title: 'Get started' },
+  { slug: 'embedding', title: 'Embedding' },
   { slug: 'gallery', title: 'Gallery' },
 ] as const;
 

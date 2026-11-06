@@ -10,7 +10,7 @@ every effect is a blits patch you can cue on a mix of your own. No three.js, no 
 lab's compose page on any page without a build step. The package ships it, so a CDN serves it:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@msb235/blinken@0.1.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@msb235/blinken@0.2.0"></script>
 <blinken-player program="…" cols="40" rows="7"></blinken-player>
 ```
 

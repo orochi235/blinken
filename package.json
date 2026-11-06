@@ -69,7 +69,8 @@
     "shots": "npm run lab:build && node scripts/shots.mjs",
     "test:gpu": "node test/gpu/run.mjs",
     "bench": "node scripts/bench.mjs",
-    "bench:readouts": "node scripts/bench.mjs --page digits --ways shared,readouts --digits 100,500,1000 --stack ''"
+    "bench:readouts": "node scripts/bench.mjs --page digits --ways shared,readouts --digits 100,500,1000 --stack ''",
+    "version": "node scripts/pin-version.mjs && git add README.md"
   },
   "dependencies": {
     "@msb235/blits": "^1.0.0"

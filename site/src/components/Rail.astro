@@ -9,7 +9,8 @@ const here = Astro.url.pathname;
 const link = (slug: string) => `${base}${slug ? `${slug}/` : ''}`;
 const current = (slug: string) => (here === link(slug) ? 'page' : undefined);
 const aspect = `${FRAME.across} / ${FRAME.down}`;
-const inset = INSET;
+const inset = INSET.left;
+const word = 1 - INSET.left - INSET.right;
 ---
 <nav class="rail" aria-label="Pages">
   <a class="mark" href={link('')} aria-label="blinken">
@@ -71,7 +72,7 @@ const inset = INSET;
   }
 </script>
 
-<style define:vars={{ aspect, inset }}>
+<style define:vars={{ aspect, inset, word }}>
   .rail {
     padding: 2rem 1.25rem;
     font: 500 0.95rem / 1.4 var(--label);
@@ -123,14 +124,14 @@ const inset = INSET;
   }
 
   /* The logo is a sign of its own, shaped by `--aspect`, with the still standing in until it lights. */
-  /* Widened and pulled left by the word's inset, so the word lines up with the rail's text. */
+  /* Sized so the word's ink spans the rail's text column exactly, its border hanging past both sides. */
   .mark {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    width: calc(100% / (1 - var(--inset)));
+    width: calc(100% / var(--word));
     aspect-ratio: var(--aspect);
-    margin: 0 0 0.9rem calc(-100% * var(--inset) / (1 - var(--inset)));
+    margin: 0 0 0.9rem calc(-100% * var(--inset) / var(--word));
   }
 
   .still,
@@ -206,8 +207,8 @@ const inset = INSET;
       display: none;
     }
     .mark {
-      width: 12rem;
-      margin-left: calc(-12rem * var(--inset));
+      width: calc(12rem / var(--word));
+      margin-left: calc(-12rem * var(--inset) / var(--word));
     }
   }
 </style>
