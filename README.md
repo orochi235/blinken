@@ -6,13 +6,15 @@ every effect is a blits patch you can cue on a mix of your own. No three.js, no 
 
 ## On any page
 
-`npm run compile` builds `<blinken-player>`, one script with everything inlined, which plays a
-composition from the lab's compose page on any page without a build step:
+`<blinken-player>` is one script with everything inlined, which plays a composition from the
+lab's compose page on any page without a build step. The package ships it, so a CDN serves it:
 
 ```html
-<script src="blinken-player.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blinken@0.1.0"></script>
 <blinken-player program="…" cols="40" rows="7"></blinken-player>
 ```
+
+A bundler can import it as `blinken/player`, and `npm run compile` builds it from a checkout.
 
 Compose's **copy embed** gives those two lines for the composition and sign on screen. Giving
 `compile` a link or a composition file compiles that program in, for a sign in one file. Everything

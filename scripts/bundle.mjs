@@ -10,6 +10,8 @@ export const bundle = (options) =>
     bundle: true,
     write: false,
     alias: blitsAlias,
+    // esbuild resolves through tsconfig.json's `paths`, which list ../blits first, alias or not.
+    ...(Object.keys(blitsAlias).length ? {} : { tsconfigRaw: { compilerOptions: { paths: {} } } }),
     logLevel: 'error',
     ...options,
     plugins: [

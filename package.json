@@ -21,22 +21,28 @@
     "blits"
   ],
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist-player/blinken-player.js"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./player": "./dist-player/blinken-player.js",
     "./package.json": "./package.json"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist-player/blinken-player.js",
+  "jsdelivr": "./dist-player/blinken-player.js",
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",
     "src/glyphs/fonts/spleen.LICENSE",
     "src/glyphs/fonts/OFL.txt",
     "src/glyphs/fonts/CREDITS.md",
+    "dist-player/blinken-player.js",
     "LICENSE"
   ],
   "engines": {
@@ -44,6 +50,7 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "npm run build && BLITS=npm node scripts/compile.mjs",
     "dev": "vite lab",
     "lab:build": "vite build lab",
     "compile": "node scripts/compile.mjs",
