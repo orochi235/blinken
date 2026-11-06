@@ -4,6 +4,7 @@ import { AMBER } from '../color.js';
 import type { Defect } from '../defects.js';
 import { signColumns } from '../draw.js';
 import { GRIDS } from '../grid.js';
+import { FADE } from '../optics.js';
 import { attach, pullChannels } from '../render/attach.js';
 import { swapMarked } from '../render/highlight.js';
 import type { SignLights } from '../render/sign-lights.js';
@@ -229,8 +230,12 @@ export function createSurface(
         for (let s = 0; s < lightsAt(e, k); s++) mask[dotOf(e.spot, b.cols, k, s)] = 1;
       }
     }
-    marked = any ? mask : null;
+    const next = any ? mask : null;
+    const same = next === marked || (next && marked && next.every((v, i) => v === marked?.[i]));
+    marked = next;
     drawing.webgpu?.setHighlight(marked);
+    // An idle surface draws again for a new highlight.
+    if (!same) valued = true;
   };
   const text =
     sign && typeof document !== 'undefined'
@@ -271,7 +276,12 @@ export function createSurface(
     text?.build(
       entries.map((e) =>
         selectable(e)
-          ? { spot: e.spot, block: selectionOf(e) === 'block', edit: editable(e) }
+          ? {
+              spot: e.spot,
+              block: selectionOf(e) === 'block',
+              edit: editable(e),
+              label: e.opts.label,
+            }
           : null,
       ),
     );
@@ -323,6 +333,11 @@ export function createSurface(
 
   let last = performance.now();
   const away = awayGaps();
+  /** Until when the lights may still be settling from the last change, ms. */
+  let settling = 0;
+  /** How long after a change its lights take to settle: several of their slowest fade. */
+  const settleMs = () =>
+    6 * Math.max(opts.fade?.rise ?? FADE.rise, opts.fade?.fall ?? FADE.fall) + 50;
   const frame = (now: number) => {
     let gap = now - last;
     last = now;
@@ -345,7 +360,16 @@ export function createSurface(
     if (valued) {
       valued = false;
       play();
+      settling = now + settleMs();
     }
+    // With nothing changing, the last frame stands: no sync, no pull, no draw.
+    const moved = placement.poll();
+    if (moved) settling = Math.max(settling, now + settleMs());
+    const busy =
+      now < settling ||
+      entries.some((e) => e.caret !== null || e.defects.length > 0) ||
+      m.voices().length > 1;
+    if (!busy) return;
     const t0 = performance.now();
     m.sync(now);
     pullChannels(m, layout.board, cols, cells, drawing.cpuChannels());

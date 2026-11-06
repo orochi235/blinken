@@ -75,7 +75,9 @@ export interface TextLayer {
    * Makes boxes for each readout's cells, by readout order; `null` for one that can't be selected.
    * An editable one also gets a hidden field that takes the keyboard.
    */
-  build(readouts: readonly ({ spot: Spot; block: boolean; edit: boolean } | null)[]): void;
+  build(
+    readouts: readonly ({ spot: Spot; block: boolean; edit: boolean; label?: string } | null)[],
+  ): void;
   /**
    * Sets readout `i`'s cells' characters, a cell's '' for a blank; an editable one's value as typed,
    * and where each of its characters shows, as its type's `places` gives.
@@ -484,6 +486,13 @@ export function createTextLayer(
             input.addEventListener('keydown', (k) => rowKey(made, input, k));
           for (const name of ['keyup', 'select', 'selectionchange', 'focus', 'blur'])
             input.addEventListener(name, report);
+        }
+        if (one.label) {
+          if (made.input) made.input.setAttribute('aria-label', one.label);
+          else {
+            group.setAttribute('role', 'group');
+            group.setAttribute('aria-label', one.label);
+          }
         }
         group.addEventListener('mousedown', press(made));
         group.addEventListener('keydown', selectAll(made));

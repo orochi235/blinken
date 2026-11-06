@@ -98,3 +98,30 @@ describe('a panel of readouts', () => {
     s.destroy();
   });
 });
+
+describe('an idle surface', () => {
+  it('draws while its lights settle from a change, then stops until the next', () => {
+    const ticker = manual();
+    let frames = 0;
+    // Sized, as a real canvas is: a fit from no size is NaN, which reads as moving every frame.
+    const canvas = { clientWidth: 400, clientHeight: 200 } as HTMLCanvasElement;
+    const s = createPanel(canvas, {
+      draw: false,
+      ticker,
+      onFrame: () => {
+        frames++;
+      },
+    });
+    const r = s.readout({ type: 'seven', cells: 2, value: 12 });
+    for (let k = 0; k < 200; k++) ticker.step(16);
+    const settled = frames;
+    expect(settled).toBeGreaterThan(10);
+    expect(settled).toBeLessThan(80);
+    for (let k = 0; k < 100; k++) ticker.step(16);
+    expect(frames).toBe(settled);
+    r.set(34);
+    for (let k = 0; k < 100; k++) ticker.step(16);
+    expect(frames).toBeGreaterThan(settled);
+    s.destroy();
+  });
+});

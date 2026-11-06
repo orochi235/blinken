@@ -1,0 +1,258 @@
+---
+import pkg from '../../../package.json';
+import { extra, start, under, words } from '../nav';
+import { still } from '../live/sign';
+import Search from './Search.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const here = Astro.url.pathname;
+const link = (slug: string) => `${base}${slug ? `${slug}/` : ''}`;
+const current = (slug: string) => (here === link(slug) ? 'page' : undefined);
+---
+<nav class="rail" aria-label="Pages">
+  <a class="mark" href={link('')} aria-label="blits">
+    <span class="still panel"><Fragment set:html={still(true)} /></span>
+    <span class="still bare"><Fragment set:html={still(false)} /></span>
+    <canvas aria-hidden="true"></canvas>
+  </a>
+  <p class="meta">
+    <a href={link('changelog')}>v{pkg.version}</a>
+    <a href="https://github.com/orochi235/blits">GitHub</a>
+    <a href={`https://www.npmjs.com/package/${pkg.name}`}>npm</a>
+  </p>
+  <Search />
+  <ul class="group">
+    {start.map((p) => (
+      <li>
+        <a href={link(p.slug)} aria-current={current(p.slug)}>{p.title}</a>
+        {under[p.slug] && here.startsWith(link(p.slug)) && (
+          <ul class="sub">
+            {under[p.slug].map((g) => (
+              <li><a href={link(`${p.slug}/${g.slug}`)} aria-current={current(`${p.slug}/${g.slug}`)}>{g.title}</a></li>
+            ))}
+          </ul>
+        )}
+      </li>
+    ))}
+  </ul>
+  <ol class="group">
+    {words.map((w) => (
+      <li><a href={link(w.slug)} aria-current={current(w.slug)}>{w.title}</a></li>
+    ))}
+  </ol>
+  <ul class="group">
+    {extra.map((w) => (
+      <li><a href={link(w.slug)} aria-current={current(w.slug)}>{w.title}</a></li>
+    ))}
+  </ul>
+</nav>
+
+<script>
+  import { playLogo } from '../live/logo';
+
+  const mark = document.querySelector<HTMLElement>('.rail .mark');
+  const canvas = mark?.querySelector('canvas');
+  if (mark && canvas) {
+    try {
+      playLogo(canvas);
+      mark.classList.add('lit');
+    } catch (e) {
+      mark.classList.add('failed');
+      throw e;
+    }
+  }
+</script>
+
+<style>
+  .rail {
+    padding: 2rem 1.25rem;
+    font: 500 0.95rem / 1.4 var(--label);
+    font-stretch: 87.5%;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    /* The dark-mode mark's blank margins hang past the rail. */
+    overflow-x: hidden;
+  }
+
+  ol,
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li a {
+    display: block;
+    padding: 0.3rem 0;
+    text-decoration: none;
+    color: var(--ink-soft);
+  }
+
+  li a:hover,
+  li a[aria-current='page'] {
+    color: var(--ink);
+  }
+
+  li a[aria-current='page'] {
+    box-shadow: inset 3px 0 0 var(--voice-1);
+    padding-left: 0.6rem;
+  }
+
+  .sub {
+    margin: 0 0 0.3rem 0.75rem;
+    font-size: 0.88rem;
+  }
+
+  .group + .group {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  /*
+   * The sign is 24 x 27 pitches, and its dots of the word span 3.14 to 20.86 across and 5.14 to
+   * 11.86 down: the rows above the word reach the top of the page, and the 13 below run on behind
+   * the links and the search box, fading out. In light mode its housing fills the rail; in dark,
+   * with no housing, the word does. Only the 14 rows down to the word's foot take space or clicks.
+   */
+  .mark {
+    --fill: 100%;
+    /* One dot pitch: the empty frame bree keeps round the dots, lifted past the top of the page. */
+    --pitch: calc(var(--fill) / 24);
+    display: block;
+    position: relative;
+    width: var(--fill);
+    aspect-ratio: 24 / 27;
+    margin-top: calc(-2rem - var(--pitch));
+    margin-bottom: calc(0.9rem - 13 * var(--pitch));
+    pointer-events: none;
+  }
+
+  .mark::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    aspect-ratio: 24 / 14;
+    pointer-events: auto;
+  }
+
+  .meta,
+  .rail :global(.search) {
+    position: relative;
+    z-index: 1;
+  }
+
+  .still {
+    position: absolute;
+    inset: 0 0 auto;
+    aspect-ratio: 24 / 14;
+  }
+
+  .mark canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* The light housing fades out before the links under it, which would not read on it. */
+    mask-image: linear-gradient(to bottom, #000 calc(12.5 / 27 * 100%), transparent 55%);
+  }
+
+  .still :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  /*
+   * The still is only a fallback: shown at once when the live sign fails, and otherwise only if
+   * the sign has not lit 1.5 s in, as without scripts or when its module never loads.
+   */
+  .still,
+  .mark canvas {
+    visibility: hidden;
+  }
+
+  .mark:not(.lit) .still {
+    animation: fallback 0s 1.5s forwards;
+  }
+
+  .mark.failed .still {
+    animation: none;
+    visibility: visible;
+  }
+
+  @keyframes fallback {
+    to {
+      visibility: visible;
+    }
+  }
+
+  .bare {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .mark canvas {
+      mask-image: linear-gradient(to bottom, #000 calc(12.5 / 27 * 100%), transparent);
+    }
+    .mark {
+      --pitch: calc(var(--fill) / 17.72);
+      width: calc(var(--fill) * 24 / 17.72);
+      translate: calc(-3.14 / 24 * 100%) 0;
+    }
+    .panel {
+      display: none;
+    }
+    .bare {
+      display: block;
+    }
+  }
+
+  .mark.lit canvas {
+    visibility: visible;
+  }
+
+  .meta {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0 0 1rem;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .meta a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .meta a:hover {
+    color: var(--ink);
+  }
+
+  @media (max-width: 760px) {
+    .rail {
+      position: static;
+      height: auto;
+      border-bottom: 1px solid var(--rule);
+      padding: 1rem;
+    }
+    .group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 1rem;
+    }
+    .group + .group {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+    }
+    .sub {
+      display: none;
+    }
+    .mark {
+      --fill: 9.5rem;
+      margin-top: calc(-1rem - var(--pitch));
+    }
+  }
+</style>

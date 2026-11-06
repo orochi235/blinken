@@ -62,6 +62,11 @@ in size, so each primitive blooms by its own view's pitch instead: on the GPU th
 folded into each primitive's Gaussian, and 2D casts each halo's shadow blurred that far. 2D and
 the GPU agree within 19/255 at a segment's middle (`test/gpu/readouts.gpu.ts`).
 
+**A surface idles.** It draws while something changes (a value, a selection, its views moving,
+a caret, defects, or a voice cued besides its values), and for six of its slowest fades after, then
+skips sync, pull and draw until the next change, so a page of still readouts costs nothing per
+frame but reading their boxes (2026-11-06).
+
 **Values go through the mix.** One looping shader patch over the surface's dots
 (`src/readout/voice.ts`) reads each dot's `lit` and `tint` from two tables, which `set` and
 `color` rewrite; changes in a frame are cued once, at its start. On WebGPU `lit` stays on the GPU.

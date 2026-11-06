@@ -1,0 +1,282 @@
+:root {
+  --paper: #edeff2;
+  --panel: #e3e6ea;
+  --ink: #1d2430;
+  --ink-soft: #566070;
+  --rule: #c8cdd5;
+  --voice-1: #2f66d8;
+  --voice-2: #b97f06;
+  --voice-3: #c23d7a;
+  --voice-4: #2c8a57;
+  --voice-5: #7a52c7;
+  /* A lit lamp that is no one voice's: a folded value. */
+  --light: #f2a516;
+  --code-bg: #e3e6ea;
+  --focus: #2f66d8;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --label: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #171b22;
+    --panel: #1f242d;
+    --ink: #e3e7ed;
+    --ink-soft: #9aa3b1;
+    --rule: #333a46;
+    --voice-1: #6f9bf2;
+    --voice-2: #e6b545;
+    --voice-3: #e0739f;
+    --voice-4: #5cc98a;
+    --voice-5: #a98bf0;
+    --light: #ffc94d;
+    --code-bg: #1f242d;
+    --focus: #6f9bf2;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  margin: 0;
+  font: 400 1.0625rem / 1.65 var(--serif);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+a {
+  color: inherit;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.skip {
+  position: absolute;
+  left: -999px;
+}
+
+.skip:focus {
+  left: 1rem;
+  top: 1rem;
+  background: var(--paper);
+  padding: 0.25rem 0.5rem;
+}
+
+.frame {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.page {
+  padding: 3rem 2.5rem 6rem;
+  border-left: 1px solid var(--rule);
+  min-height: 100vh;
+}
+
+.page > .explainer,
+.page > .wide,
+.page > .api {
+  max-width: 62rem;
+}
+
+.page > * {
+  max-width: 40rem;
+}
+
+.page > table {
+  max-width: 48rem;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--label);
+  font-stretch: 87.5%;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 2.6rem;
+  margin: 0 0 1.25rem;
+}
+
+h2 {
+  font-size: 1.55rem;
+  margin: 3rem 0 0.75rem;
+}
+
+h3 {
+  font-size: 1.15rem;
+  margin: 2rem 0 0.5rem;
+}
+
+.lede {
+  font-size: 1.25rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  font-variant-ligatures: none;
+}
+
+pre.astro-code {
+  background-color: var(--code-bg) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .astro-code,
+  .astro-code span {
+    color: var(--shiki-dark) !important;
+  }
+}
+
+:not(pre) > code {
+  background: var(--code-bg);
+  padding: 0.08em 0.3em;
+  border-radius: 3px;
+}
+
+pre {
+  background: var(--code-bg);
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+pre code {
+  background: none;
+}
+
+.page table {
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  margin: 1.5rem 0;
+}
+
+.page th,
+.page td {
+  text-align: left;
+  padding: 0.35rem 0.9rem 0.35rem 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+/* A name in a table's first column is read as one word, so it never breaks at a hyphen. */
+.page td:first-child code {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .frame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .page {
+    padding: 1.5rem 1rem 4rem;
+    border-left: none;
+  }
+  h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
+  }
+}
+
+.start-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.start-links a {
+  font: 700 1rem var(--label);
+  padding: 0.45rem 1rem;
+  color: var(--paper);
+  background: var(--voice-1);
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.listing-more {
+  margin: 0.5rem 0 1.5rem;
+  border-left: 2px solid var(--rule);
+  padding-left: 0.9rem;
+}
+
+.listing-more summary {
+  cursor: pointer;
+  font: 500 0.9rem var(--label);
+  color: var(--ink-soft);
+}
+
+/* Play, Pause or Run again, over the top left corner of a demo's stage, in a strip the stage keeps
+   clear for it so it covers nothing the demo draws. */
+:root {
+  --stage-control-room: 2.6rem;
+}
+
+.stage-control {
+  position: absolute;
+  top: 0.45rem;
+  left: 0.6rem;
+  z-index: 1;
+  min-width: 5.5rem;
+  padding: 0.3rem 0.9rem;
+  font: 600 0.85rem var(--label);
+  color: var(--paper);
+  background: var(--ink);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+  cursor: pointer;
+}
+
+.stage-control:hover {
+  background: var(--focus);
+}
+
+.stage-control:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Read by assistive tech but not drawn: a page title the logo already shows. */
+.unseen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

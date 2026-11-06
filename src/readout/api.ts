@@ -48,6 +48,8 @@ export interface ReadoutOptions {
    * typed shows on its cells, a blinking bar under the cell the caret stands at. Default false.
    */
   readonly edit?: boolean;
+  /** What a screen reader calls it: an editable one's field's name, else its group's. */
+  readonly label?: string;
   /** Called with its value as typed, each time it changes. */
   readonly onInput?: (value: string) => void;
   /**

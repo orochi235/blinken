@@ -1,0 +1,17 @@
+---
+import { entriesFor } from '../api';
+import ApiEntries from '../components/ApiEntries.astro';
+import ApiIndex from '../components/ApiIndex.astro';
+import Page from '../layouts/Page.astro';
+import { words } from '../nav';
+---
+<Page title="Reference" description="Every blinken export, filed under the concept it belongs to.">
+  <div class="ref">
+    <ApiIndex />
+    <div class="ref-body">
+      <h1>Reference</h1>
+      <p class="lede">Every export, filed under the concept it belongs to. Each concept has a page that shows the same entries under live signs.</p>
+      {words.map((w) => <ApiEntries list={entriesFor(w.slug)} heading={w.title} here="reference" />)}
+    </div>
+  </div>
+</Page>

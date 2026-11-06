@@ -66,7 +66,11 @@ export function fitOf(r: Placed): Fit | null {
 }
 
 /** A surface's placement, which also keeps each readout's fit from its last fill. */
-export type SurfacePlacement = Placement & { readonly fits: readonly (Fit | null)[] };
+export type SurfacePlacement = Placement & {
+  readonly fits: readonly (Fit | null)[];
+  /** Fills the views now, outside a render: whether they just moved, which the next `update` reports too. */
+  poll(): boolean;
+};
 
 /** One view per readout, each fitted in its box with its aspect kept, centered, and clipped. */
 export function surfacePlacement(
@@ -133,6 +137,11 @@ export function surfacePlacement(
     update() {
       const moved = fill() || stale;
       stale = false;
+      return moved;
+    },
+    poll() {
+      const moved = fill();
+      if (moved) stale = true;
       return moved;
     },
     refit() {

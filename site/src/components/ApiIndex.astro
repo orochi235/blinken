@@ -1,0 +1,118 @@
+---
+/** Every export by word, beside the reference: a filter box over it and a link to each entry. */
+import { entriesFor } from '../api';
+import { words } from '../nav';
+import Badge from './Badge.astro';
+---
+<nav class="api-index" aria-label="Exports">
+  <input type="search" class="api-filter" placeholder="Filter  /" aria-label="Filter the exports" />
+  <div class="api-order" role="group" aria-label="Order">
+    <button type="button" data-order="word" aria-pressed="true">By concept</button>
+    <button type="button" data-order="az" aria-pressed="false">A–Z</button>
+  </div>
+  {words.map((w) => (
+    <div class="api-index-group" data-word={w.slug}>
+      <h2>{w.title}</h2>
+      <ul>
+        {entriesFor(w.slug).map((e) => (
+          <li data-name={e.name.toLowerCase()}>
+            <a href={`#api-${e.name}`}><Badge kind={e.kind} />{e.name}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+  <p class="api-none" hidden>No export matches.</p>
+</nav>
+
+<script>
+  const index = document.querySelector<HTMLElement>('.api-index');
+  const filter = index?.querySelector<HTMLInputElement>('.api-filter');
+
+  function apply(q: string) {
+    const needle = q.trim().toLowerCase();
+    const shown = (el: Element) => !needle || (el as HTMLElement).dataset.name?.includes(needle);
+    for (const el of document.querySelectorAll<HTMLElement>('.api-index li, .api-entry')) el.hidden = !shown(el);
+    for (const group of document.querySelectorAll<HTMLElement>('.api-index-group, .page .api')) {
+      group.hidden = !group.querySelector('li:not([hidden]), .api-entry:not([hidden])');
+    }
+    const none = index?.querySelector<HTMLElement>('.api-none');
+    if (none) none.hidden = !!index?.querySelector('li:not([hidden])');
+  }
+
+  filter?.addEventListener('input', () => apply(filter.value));
+  document.addEventListener('keydown', (ev) => {
+    const typing = ev.target instanceof HTMLInputElement || ev.target instanceof HTMLTextAreaElement;
+    if (ev.key === '/' && !typing) {
+      ev.preventDefault();
+      filter?.focus();
+    } else if (ev.key === 'Escape' && ev.target === filter && filter) {
+      filter.value = '';
+      apply('');
+    }
+  });
+
+  // A–Z moves every entry, in the index and the body, into one list sorted by name, and By concept
+  // puts each back where the page rendered it.
+  const byName = (a: HTMLElement, b: HTMLElement) =>
+    (a.dataset.name ?? '').localeCompare(b.dataset.name ?? '');
+  const homes = new Map<HTMLElement, HTMLElement>();
+  for (const el of document.querySelectorAll<HTMLElement>('.api-index li, .api-entry'))
+    homes.set(el, el.parentElement as HTMLElement);
+  const rendered = [...homes.keys()];
+  const flatIndex = document.createElement('div');
+  flatIndex.className = 'api-index-group';
+  flatIndex.innerHTML = '<h2>A–Z</h2><ul></ul>';
+  const flatBody = document.createElement('section');
+  flatBody.className = 'api';
+  flatBody.innerHTML = '<h2>A–Z</h2>';
+  const buttons = [...(index?.querySelectorAll<HTMLButtonElement>('.api-order button') ?? [])];
+
+  function order(by: string) {
+    const az = by === 'az';
+    for (const b of buttons) b.ariaPressed = String(b.dataset.order === by);
+    if (az) {
+      const items = rendered.filter((el) => el.tagName === 'LI').sort(byName);
+      flatIndex.querySelector('ul')?.append(...items);
+      flatBody.append(...rendered.filter((el) => el.tagName !== 'LI').sort(byName));
+      index?.querySelector('.api-none')?.before(flatIndex);
+      document.querySelector('.page .api')?.before(flatBody);
+    } else {
+      for (const el of rendered) homes.get(el)?.append(el);
+      flatIndex.remove();
+      flatBody.remove();
+    }
+    all = [...document.querySelectorAll<HTMLElement>('.api-entry')];
+    apply(filter?.value ?? '');
+    try {
+      localStorage.setItem('blinken-ref-order', by);
+    } catch {}
+  }
+  for (const b of buttons) b.addEventListener('click', () => order(b.dataset.order ?? 'word'));
+
+  const links = new Map<string, HTMLAnchorElement>();
+  for (const a of index?.querySelectorAll<HTMLAnchorElement>('a') ?? []) links.set(a.hash.slice(1), a);
+  let all = [...document.querySelectorAll<HTMLElement>('.api-entry')];
+  let current: HTMLAnchorElement | undefined;
+  let queued = false;
+  function mark() {
+    queued = false;
+    const top = all.findLast((el) => !el.hidden && el.getBoundingClientRect().top <= 80) ?? all[0];
+    const link = top && links.get(top.id);
+    if (!link || link === current) return;
+    current?.removeAttribute('aria-current');
+    link.setAttribute('aria-current', 'location');
+    current = link;
+    const box = index?.getBoundingClientRect();
+    const at = link.getBoundingClientRect();
+    if (index && box && (at.top < box.top || at.bottom > box.bottom)) index.scrollTop += at.top - box.top - box.height / 2;
+  }
+  addEventListener('scroll', () => {
+    if (!queued) requestAnimationFrame(mark);
+    queued = true;
+  }, { passive: true });
+  try {
+    if (localStorage.getItem('blinken-ref-order') === 'az') order('az');
+  } catch {}
+  mark();
+</script>

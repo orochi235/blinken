@@ -1,0 +1,30 @@
+{
+  "name": "@blinken/site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api": "typedoc --options typedoc.json --json .generated/api.json --tsconfig tsconfig.api.json ../src/index.ts --excludePrivate --excludeInternal --sort source-order --logLevel Warn --treatValidationWarningsAsErrors",
+    "dev": "npm run api && astro dev --host :: --port 4886",
+    "build": "npm run api && astro build && pagefind --site ${BLINKEN_SITE_OUT:-dist}",
+    "smoke": "npm run build && node scripts/smoke.mjs",
+    "typecheck": "npm run api && astro sync && tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@astrojs/markdown-satteri": "^0.4.2",
+    "@astrojs/mdx": "^8.0.2",
+    "@astrojs/react": "^7.0.0",
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.3.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "satteri": "^0.10.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "pagefind": "^1.5.2",
+    "playwright": "1.64.1",
+    "typedoc": "^0.28.20",
+    "typescript": "~6.0.0"
+  }
+}

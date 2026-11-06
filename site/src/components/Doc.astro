@@ -1,0 +1,21 @@
+---
+/** A doc comment, every paragraph of it. */
+import type { Doc } from '../api';
+import Parts from './Parts.astro';
+
+interface Props {
+  doc: Doc;
+  here: string;
+  self?: string;
+}
+const { doc, here, self } = Astro.props;
+const fence = (para: Doc[number]) => para.length === 1 && para[0]?.kind === 'code' && para[0].text.startsWith('```');
+const code = (text: string) => text.replace(/^```\w*\n?|\n?```$/g, '');
+---
+{doc.length > 0 && (
+  <div class="api-doc">
+    {doc.map((para) =>
+      fence(para) ? <pre><code>{code(para[0]?.text ?? '')}</code></pre> : <p><Parts parts={para} here={here} self={self} /></p>,
+    )}
+  </div>
+)}

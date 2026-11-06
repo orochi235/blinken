@@ -1,0 +1,58 @@
+---
+import '../styles/site.css';
+import '../styles/api.css';
+import '../styles/live.css';
+import '../styles/gallery.css';
+import CopyCode from '../components/CopyCode.astro';
+import DebugPanel from '../components/DebugPanel.astro';
+import Pager from '../components/Pager.astro';
+import Rail from '../components/Rail.astro';
+
+interface Props {
+  frontmatter?: { title?: string; description?: string };
+  title?: string;
+  description?: string;
+}
+const fm = Astro.props.frontmatter ?? {};
+const title = Astro.props.title ?? fm.title ?? 'blinken';
+const description = Astro.props.description ?? fm.description;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const full = title === 'blinken' ? 'blinken' : `blinken: ${title}`;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{full}</title>
+    {description && <meta name="description" content={description} />}
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="blinken" />
+    <meta property="og:title" content={full} />
+    {description && <meta property="og:description" content={description} />}
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <link rel="sitemap" href={`${base}sitemap-index.xml`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@87.5,500;87.5,700&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the page</a>
+    <div class="frame">
+      <Rail />
+      <main id="main" class="page" data-pagefind-body>
+        <slot />
+        <Pager />
+      </main>
+    </div>
+    <CopyCode />
+    <DebugPanel />
+  </body>
+</html>
