@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { embedOf } from '../embed.js';
 import { useHardware } from '../hardware.js';
 import { encode, playable, toCode } from '../share.js';
-import { hasPrevious, restorePrevious } from '../storage.js';
-import { compose, opened } from '../store.js';
+import { useComposeStore } from '../store.js';
 import { FileButtons } from './FileButtons.js';
 import './ShareBar.css';
 
@@ -16,6 +15,8 @@ type Shown = { title: string; text: string; code: boolean } | null;
 
 /** Export in the lab's top bar: the composition as a file, a link, or a `createMarquee` call. */
 export function ShareBar() {
+  const compose = useComposeStore();
+  const { opened } = compose;
   const [shown, setShown] = useState<Shown>(null);
   const [hardware] = useHardware();
   const show = (title: string, text: string, code: boolean) => {
@@ -68,13 +69,11 @@ export function ShareBar() {
       >
         copy embed
       </Button>
-      {hasPrevious() && (
+      {compose.hasPrevious() && (
         <Button
           size="sm"
           tooltip="swap in the last draft a link replaced, keeping this one at the back; press again to step further back through the last five"
-          onClick={() => {
-            if (restorePrevious()) location.reload();
-          }}
+          onClick={compose.restorePrevious}
         >
           restore previous draft
         </Button>

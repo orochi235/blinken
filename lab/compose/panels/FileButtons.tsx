@@ -2,10 +2,10 @@ import { Button } from '@weasel-js/labkit';
 import { useRef, useState } from 'react';
 import { download } from '../../download.js';
 import { fromJson, toJson } from '../share.js';
-import { compose } from '../store.js';
+import { type ComposeStore, useComposeStore } from '../store.js';
 
 /** A file name from the first scene's text: `tonight.json`, or `composition.json` without one. */
-const fileName = () => {
+const fileName = (compose: ComposeStore) => {
   const text = compose.get().program[0]?.text ?? '';
   const slug = text
     .toLowerCase()
@@ -15,10 +15,10 @@ const fileName = () => {
   return `${slug || 'composition'}.json`;
 };
 
-const save = () => download(fileName(), toJson(compose.get()));
-
 /** Saves the composition as a JSON file, and loads one back in place of it, as one undoable edit. */
 export function FileButtons() {
+  const compose = useComposeStore();
+  const save = () => download(fileName(compose), toJson(compose.get()));
   const picker = useRef<HTMLInputElement>(null);
   const [said, setSaid] = useState<string | null>(null);
   const load = async (file: File) => {

@@ -19,7 +19,9 @@ import { SceneEditor } from './panels/SceneEditor.js';
 import { ShareBar } from './panels/ShareBar.js';
 import { type SceneLook, Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
-import { compose, playing, useChoice, useCompose } from './store.js';
+import { pageStore, useChoice, useCompose } from './store.js';
+
+const compose = pageStore();
 
 const undoable = {
   canUndo: () => compose.history.canUndo(),
@@ -84,7 +86,7 @@ function Compose() {
     <div className="compose">
       <Sign
         hardware={hardware}
-        program={playing}
+        program={compose.playing}
         effects={() => compose.get().effects}
         onSign={compose.attach}
         choice={choice}

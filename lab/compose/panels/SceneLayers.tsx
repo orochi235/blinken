@@ -3,7 +3,7 @@ import { LAYERS, type LayerName, MODULATORS, type ParamValue, values } from '@/i
 import { RENDERERS } from '../ColorsRow.js';
 import { DENSITY, fieldsOf, schemaFor, shownValues, storedValue } from '../schema.js';
 import { sceneLayerOf, withLayer } from '../state.js';
-import { compose, pickedOf, useCompose } from '../store.js';
+import { pickedOf, useCompose, useComposeStore } from '../store.js';
 import '../Row.css';
 import './SceneLayers.css';
 
@@ -12,6 +12,7 @@ const schemaOf = (name: LayerName) =>
 
 /** The picked scene's layers, a row each: on or off, and an on layer's settings beneath it. */
 export function SceneLayers() {
+  const compose = useComposeStore();
   const state = useCompose();
   const at = pickedOf(state);
   const scene = state.program[at];

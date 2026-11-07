@@ -2,19 +2,29 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Marquee } from '@/index.js';
 
 type Store = typeof import('../lab/compose/store.js');
-let compose: Store['compose'];
+let compose: ReturnType<Store['pageStore']>;
+let createComposeStore: Store['createComposeStore'];
+const writes: string[] = [];
 
 beforeAll(async () => {
   const kept = new Map<string, string>();
   vi.stubGlobal('localStorage', {
     getItem: (k: string) => kept.get(k) ?? null,
-    setItem: (k: string, v: string) => void kept.set(k, v),
+    setItem: (k: string, v: string) => {
+      writes.push(k);
+      kept.set(k, v);
+    },
     removeItem: (k: string) => void kept.delete(k),
   });
   vi.stubGlobal('location', { hash: '', pathname: '/compose', search: '' });
   vi.stubGlobal('history', { replaceState: () => {} });
   vi.stubGlobal('addEventListener', () => {});
-  ({ compose } = await import('../lab/compose/store.js'));
+  vi.stubGlobal('document', { activeElement: null });
+  vi.stubGlobal('HTMLInputElement', class {});
+  vi.stubGlobal('HTMLTextAreaElement', class {});
+  const store = await import('../lab/compose/store.js');
+  compose = store.pageStore();
+  createComposeStore = store.createComposeStore;
 });
 
 /** A sign that records the seeks made on it, standing at `at`. */
@@ -60,5 +70,23 @@ describe('the compose store across a resize', () => {
     compose.seek(1200, true);
     compose.restart();
     expect(resize(old).seeks).toEqual([[1200, false]]);
+  });
+});
+
+describe('a store that does not persist', () => {
+  it('opens on the composition it is given and writes nothing to browser storage', () => {
+    const before = writes.length;
+    const program = [{ effect: 'hold', text: 'MINE', hex: 0xffffff }];
+    const store = createComposeStore({ opened: { state: { effects: {}, program, editing: {} } } });
+    store.edit((s) => {
+      s.program = [{ ...program[0], text: 'EDITED' } as (typeof s.program)[number]];
+    });
+    store.setBackend('2d');
+    store.undo();
+    expect(store.get().program[0]?.text).toBe('MINE');
+    expect(store.backend()).toBe('2d');
+    expect(store.hasPrevious()).toBe(false);
+    expect(writes.length).toBe(before);
+    expect(compose.get().program[0]?.text).not.toBe('EDITED');
   });
 });

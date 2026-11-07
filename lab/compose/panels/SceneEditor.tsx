@@ -6,7 +6,7 @@ import { RENDERERS } from '../ColorsRow.js';
 import { Panel } from '../Panel.js';
 import { DENSITY, effectTitle, numberField, numOf } from '../schema.js';
 import { HOLD, withLook } from '../state.js';
-import { compose, pickedOf, playEffect, useCompose, useEffects } from '../store.js';
+import { pickedOf, useCompose, useComposeStore, useEffects } from '../store.js';
 import { SceneLayers } from './SceneLayers.js';
 import { SceneTuning } from './SceneTuning.js';
 import './SceneEditor.css';
@@ -20,6 +20,7 @@ const tintOf = (hex: number) =>
 
 /** The picked scene's own panel: its message and how it plays, and its layers; its face is the font panel's. */
 export function SceneEditor() {
+  const compose = useComposeStore();
   const state = useCompose();
   const at = pickedOf(state);
   const scene = state.program[at];
@@ -84,7 +85,7 @@ export function SceneEditor() {
 
   const set = (path: string, v: unknown) => {
     if (path === 'effect') {
-      playEffect(String(v));
+      compose.playEffect(String(v));
       return;
     }
     compose.edit(
