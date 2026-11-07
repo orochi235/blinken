@@ -3,7 +3,7 @@ import { PlainSelect } from '../PlainSelect.js';
 import { addPiece, removePiece, setPiece } from '../state.js';
 import { editEffect, pieceOf, pieceOptions } from './edit.js';
 import { idOf } from './graph.js';
-import { designer, useDesk } from './open.js';
+import { useDesk } from './open.js';
 import { PieceCard } from './PieceCard.js';
 import { usePickedBox } from './picking.js';
 
@@ -17,7 +17,7 @@ export function SlotBox({
   slot: Slot;
   warnings: readonly string[];
 }) {
-  useDesk();
+  const designer = useDesk();
   const step = idOf({ kind: 'step', slot });
   const box = usePickedBox<HTMLElement>(designer.picked() === step);
   return (
@@ -36,12 +36,12 @@ export function SlotBox({
           piece={piece}
           // Every write reads the slot as it stands now, not the `spec` this card drew from.
           onEdit={(fn) =>
-            editEffect((e) => {
+            editEffect(designer, (e) => {
               const now = piecesOf(e[slot])[i];
               return now ? setPiece(e, slot, i, fn(now)) : e;
             })
           }
-          onRemove={() => editEffect((e) => removePiece(e, slot, i))}
+          onRemove={() => editEffect(designer, (e) => removePiece(e, slot, i))}
           picked={designer.picked() === idOf({ kind: 'piece', slot, index: i })}
           onPick={() => designer.setPicked(idOf({ kind: 'piece', slot, index: i }))}
         />
@@ -52,7 +52,7 @@ export function SlotBox({
         options={pieceOptions(slot)}
         selectedKey={null}
         onSelectionChange={(key) => {
-          if (key) editEffect((e) => addPiece(e, slot, pieceOf(key)));
+          if (key) editEffect(designer, (e) => addPiece(e, slot, pieceOf(key)));
         }}
       />
       {warnings.map((w) => (

@@ -6,7 +6,7 @@ import { shelved, useLibrary } from '../library.js';
 import { Panel } from '../Panel.js';
 import { builtinOf } from './edit.js';
 import { graphOf, partOf, VIEWS, type View, viewFor } from './graph.js';
-import { designer, useDesk } from './open.js';
+import { useDesk } from './open.js';
 import { useStaged } from './staged.js';
 import './EffectDiagram.css';
 
@@ -24,7 +24,7 @@ const TIPS: Record<View, string> = {
  * moves to the view that suits it. Mounted per open effect, so each starts in `both`.
  */
 export function EffectDiagram() {
-  useDesk();
+  const designer = useDesk();
   const shelf = useLibrary();
   const name = designer.open();
   const spec = name === undefined ? undefined : (shelved(shelf, name) ?? builtinOf(name));
