@@ -9,8 +9,7 @@
   <body>
     <div id="root">
       <header class="bar">
-        <span class="title">readouts</span>
-        <label>backend <select id="backend"></select></label>
+        <label data-no-undo>backend <select id="backend"></select></label>
         <label>face <select id="face"><option>plate</option><option>none</option></select></label>
         <label>color <select id="color"></select></label>
         <input id="custom" type="color" value="#ffb020" aria-label="custom color" />
@@ -18,12 +17,12 @@
         <label>text <input id="text" value="Blinken lab 1.0" maxlength="24" /></label>
         <span id="got" class="got"></span>
       </header>
-      <main class="split">
+      <div class="split">
         <section class="pane">
           <div class="panel"><canvas id="panel"></canvas><div id="labels"></div></div>
         </section>
         <section class="pane cards" id="cards"></section>
-      </main>
+      </div>
     </div>
     <script type="module" src="./readouts.ts"></script>
   </body>

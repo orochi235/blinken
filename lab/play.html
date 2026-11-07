@@ -7,7 +7,7 @@
     <link rel="icon" href="data:," />
   </head>
   <body>
-    <main id="root">
+    <div id="root">
       <div class="sign"><canvas id="sign"></canvas></div>
       <div class="controls">
         <label class="message">message <input id="message" type="text" maxlength="60" value="HELLO FROM BLITS" /></label>
@@ -32,7 +32,7 @@
         <label><input id="shimmer" type="checkbox" /> shimmer</label>
         <label><input id="aurora" type="checkbox" /> aurora</label>
         <label><input id="gradient" type="checkbox" /> gradient</label>
-        <form id="size" class="size">
+        <form id="size" class="size" data-no-undo>
           <label>size <input id="cols" type="number" min="1" max="4000" /></label>
           <label>× <input id="rows" type="number" min="1" max="2000" /></label>
           <button type="submit">resize</button>
@@ -46,7 +46,7 @@
         their own, and a dot shows the brightest of them. Rainbow writes only color, so it recolors
         whatever is lit.
       </p>
-    </main>
+    </div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

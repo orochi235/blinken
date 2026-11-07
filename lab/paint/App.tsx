@@ -1,9 +1,9 @@
-import { Button, LabShell, useUndoKeys } from '@weasel-js/labkit';
+import { Button, LabShell } from '@weasel-js/labkit';
 import { useEffect, useRef, useState } from 'react';
 import { GRIDS, type GridName } from '@/index.js';
-import { IconButton } from '../compose/IconButton.js';
 import { numOf } from '../compose/schema.js';
 import { PAGES } from '../pages.js';
+import { UndoBar } from '../shell/UndoBar.js';
 import { FileButtons } from './FileButtons.js';
 import { LampsBar } from './LampsBar.js';
 import {
@@ -32,7 +32,6 @@ export function App() {
   const [shape, setShape] = useState<Shape>('round');
   const [size, setSize] = useState(1);
   const [level, setLevel] = useState(1);
-  useUndoKeys(paint);
 
   const hex = swatch === 'custom' ? numOf(custom) : PALETTE[swatch];
   const brush = useRef<Brush>({ tool, hex, level, size, shape });
@@ -62,8 +61,7 @@ export function App() {
               if (editing) paint.editPicked({ hex: numOf(css) });
             }}
           />
-          <IconButton glyph="undo" label="undo" disabled={!paint.canUndo()} onClick={paint.undo} />
-          <IconButton glyph="redo" label="redo" disabled={!paint.canRedo()} onClick={paint.redo} />
+          <UndoBar target={paint} />
           <Button
             size="sm"
             tooltip="Turn every dot off. Undo brings them back."

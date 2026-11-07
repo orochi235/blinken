@@ -7,6 +7,7 @@ import {
 } from '@weasel-js/labkit';
 import { useSyncExternalStore } from 'react';
 import { PAGES } from '../pages.js';
+import { UndoBar } from '../shell/UndoBar.js';
 import './App.css';
 import { SIGN_RECORDS, useHardware } from './hardware.js';
 import { FontPanel } from './panels/FontPanel.js';
@@ -16,10 +17,17 @@ import { PlaybackPanel } from './panels/PlaybackPanel.js';
 import { ProgramPanel } from './panels/ProgramPanel.js';
 import { SceneEditor } from './panels/SceneEditor.js';
 import { ShareBar } from './panels/ShareBar.js';
-import { UndoBar } from './panels/UndoBar.js';
 import { type SceneLook, Scrubber } from './Scrubber.js';
 import { Sign } from './Sign.js';
 import { compose, playing, useChoice, useCompose } from './store.js';
+
+const undoable = {
+  canUndo: () => compose.history.canUndo(),
+  canRedo: () => compose.history.canRedo(),
+  undo: compose.undo,
+  redo: compose.redo,
+  subscribe: (fn: () => void) => compose.history.subscribe(fn),
+};
 
 /** The side columns' widths, px, until they are dragged. */
 const PANES = { left: 300, right: 320 };
@@ -134,7 +142,7 @@ export function App() {
         pages={PAGES}
         header={
           <>
-            <UndoBar />
+            <UndoBar target={undoable} />
             <ShareBar />
           </>
         }

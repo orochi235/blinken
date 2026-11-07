@@ -9,8 +9,7 @@
   <body>
     <div id="root">
       <header class="bar">
-        <span class="title">inputs</span>
-        <label>backend <select id="backend"></select></label>
+        <label data-no-undo>backend <select id="backend"></select></label>
         <label>type <select id="type"></select></label>
         <label>cells <input id="cells" type="number" min="1" max="64" value="8" /></label>
         <label>lines <input id="lines" type="number" min="1" max="6" value="1" /></label>
@@ -24,9 +23,9 @@
         <input id="custom" type="color" value="#ffb020" aria-label="custom color" />
         <span id="got" class="got"></span>
       </header>
-      <main class="pane">
+      <div class="pane">
         <div class="panel"><canvas id="panel"></canvas><div id="rows"></div></div>
-      </main>
+      </div>
     </div>
     <script type="module" src="./inputs.ts"></script>
   </body>

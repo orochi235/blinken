@@ -16,6 +16,9 @@ import {
 import { CHOICES, type Choice, drawWith } from './backend.js';
 import { labGpu } from './gpu.js';
 import { colorPicker } from './palette.js';
+import { adoptShell } from './shell/adopt.js';
+
+adoptShell('blinken readouts');
 
 const params = new URLSearchParams(location.search);
 const choice = (params.get('backend') ?? 'auto') as Choice;

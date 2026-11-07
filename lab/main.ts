@@ -14,6 +14,9 @@ import {
 import { decode } from './compose/share.js';
 import { demo } from './demo.js';
 import { labGpu } from './gpu.js';
+import { adoptShell } from './shell/adopt.js';
+
+adoptShell('blinken play');
 
 function el<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
