@@ -348,6 +348,14 @@ export function createSurface(
     voice = m.cue({ name: 'values', patch: valueVoice(b, on, tint), subjects: b.dots, loop: true });
   };
 
+  /** Lays the readouts out if one was added or changed shape since, as a transition must see them. */
+  const shapeNow = () => {
+    if (!shaped) return;
+    shaped = false;
+    valued = true;
+    reshape();
+  };
+
   let last = performance.now();
   const away = awayGaps();
   /** Until when the lights may still be settling from the last change, ms. */
@@ -362,11 +370,7 @@ export function createSurface(
       m.rebase();
       gap = 0;
     }
-    if (shaped) {
-      shaped = false;
-      valued = true;
-      reshape();
-    }
+    shapeNow();
     if (entries.some((e) => e.caret !== null)) {
       const on = Math.floor((now - caretAt) / BLINK_MS) % 2 === 0;
       if (on !== blinkOn) {
@@ -442,15 +446,18 @@ export function createSurface(
         },
         set(value) {
           if (value === e.value) return;
-          const from = shownOf(e).cells;
           const fromValue = e.value;
-          e.value = value;
-          valued = true;
           const ms = o.transitionMs ?? e.transition.ms;
           if (ms <= 0 || e.transition.name === 'cut') {
+            e.value = value;
+            valued = true;
             e.moving = null;
             return;
           }
+          shapeNow();
+          const from = shownOf(e).cells;
+          e.value = value;
+          valued = true;
           let seed = 0x9e3779b9;
           const frame = e.transition.start({
             from,

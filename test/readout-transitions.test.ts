@@ -126,3 +126,27 @@ describe('a readout with a transition', () => {
     s.destroy();
   });
 });
+
+describe('a readout set before its surface has drawn', () => {
+  it('starts its transition with every cell', () => {
+    const ticker = manual();
+    const s = createPanel({} as HTMLCanvasElement, { draw: false, ticker });
+    let seen: Change | undefined;
+    const r = s.readout({
+      type: 'sixteen',
+      cells: 8,
+      transition: {
+        name: 'spy',
+        ms: 100,
+        start(c) {
+          seen = c;
+          return () => c.to.map(() => () => 0);
+        },
+      },
+    });
+    r.set('ARRIVALS');
+    expect(seen?.from.length).toBe(8);
+    expect(seen?.to.map((c) => c.text).join('')).toBe('ARRIVALS');
+    s.destroy();
+  });
+});
