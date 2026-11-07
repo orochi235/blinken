@@ -10,6 +10,7 @@ import {
 } from '@/index.js';
 import { IconButton } from '../compose/IconButton.js';
 import type { Stage as StageSettings } from './store.js';
+import './Stage.css';
 
 /** The moments the filmstrip holds, from the old value to the new. */
 const FRAMES = Array.from({ length: 11 }, (_, i) => i / 10);

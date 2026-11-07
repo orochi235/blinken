@@ -2,7 +2,10 @@ import { Button } from '@weasel-js/labkit';
 import { useState } from 'react';
 import { STEP_SEQUENCE, type TransitionRecipe } from '@/index.js';
 import { codeOf } from './code.js';
-import { EASINGS, MOVES, ORDERS, transitions } from './store.js';
+import { useTransitionsStore } from './context.js';
+import { EASINGS, MOVES, ORDERS } from './store.js';
+import './controls.css';
+import './Editor.css';
 
 const MOVE_NOTES: Record<TransitionRecipe['move'], string> = {
   cut: 'Each cell changes as its turn starts.',
@@ -14,6 +17,7 @@ const MOVE_NOTES: Record<TransitionRecipe['move'], string> = {
 
 /** The open transition's settings, and the code that makes it. */
 export function Editor({ recipe }: { recipe: TransitionRecipe }) {
+  const transitions = useTransitionsStore();
   const [copied, setCopied] = useState(false);
   const builtIn = transitions.isBuiltIn(recipe.name);
   const edit = (change: Partial<TransitionRecipe>, run?: string) => transitions.edit(change, run);

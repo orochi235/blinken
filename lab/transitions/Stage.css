@@ -1,0 +1,49 @@
+.tr-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tr-big {
+  width: min(100%, calc(140px * var(--aspect)));
+  aspect-ratio: var(--aspect);
+}
+
+.tr-transport {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tr-scrub {
+  flex: 1;
+}
+
+.tr-at {
+  min-width: 7ch;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.tr-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px 14px;
+}
+
+.tr-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tr-frame-t {
+  color: var(--wzl-fg-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tr-frame-slot {
+  width: 100%;
+  aspect-ratio: var(--aspect);
+}

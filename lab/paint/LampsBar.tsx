@@ -1,9 +1,10 @@
+import { usePaintStore } from './context.js';
 import type { LampSettings } from './model.js';
 import { Slider } from './Slider.js';
-import { paint } from './store.js';
 
 /** Every light's size, spacing, brightness and glow at once. */
 export function LampsBar({ lamps }: { lamps: LampSettings }) {
+  const paint = usePaintStore();
   const set = (change: Partial<LampSettings>) => paint.setLamps({ ...lamps, ...change });
   return (
     <div className="paint-row">

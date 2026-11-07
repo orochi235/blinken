@@ -1,8 +1,12 @@
 import { Button } from '@weasel-js/labkit';
-import { BUILT_INS, transitions, useTransitions } from './store.js';
+import { useTransitions, useTransitionsStore } from './context.js';
+import { BUILT_INS } from './store.js';
+import './controls.css';
+import './Library.css';
 
 /** The built-in transitions and the ones made here; picking one opens it. */
 export function Library() {
+  const transitions = useTransitionsStore();
   const { saved, open } = useTransitions();
   const item = (name: string) => (
     <li key={name}>

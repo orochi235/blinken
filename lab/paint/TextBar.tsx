@@ -1,9 +1,9 @@
 import { Button } from '@weasel-js/labkit';
 import { useState } from 'react';
 import { FACE_NAMES, type FaceName } from '@/index.js';
+import { usePaintStore } from './context.js';
 import type { Layout, Stamp } from './model.js';
 import { stampDots } from './stamps.js';
-import { paint } from './store.js';
 
 /**
  * The text tool's controls. With a stamp picked up they edit it; otherwise they set up the next one,
@@ -20,6 +20,7 @@ export function TextBar({
   hex: number;
   level: number;
 }) {
+  const paint = usePaintStore();
   const [draft, setDraft] = useState({ text: 'HELLO', face: 'standard' as FaceName });
   const text = picked?.text ?? draft.text;
   const face = picked?.face ?? draft.face;

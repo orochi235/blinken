@@ -4,6 +4,7 @@ import { GRIDS, type GridName } from '@/index.js';
 import { numOf } from '../compose/schema.js';
 import { PAGES } from '../pages.js';
 import { UndoBar } from '../shell/UndoBar.js';
+import { usePaint, usePaintStore } from './context.js';
 import { FileButtons } from './FileButtons.js';
 import { LampsBar } from './LampsBar.js';
 import {
@@ -18,13 +19,13 @@ import {
 } from './model.js';
 import { PALETTE, Palette, type Swatch } from './Palette.js';
 import { createPainter, type Painter } from './painter.js';
-import { paint, usePaint } from './store.js';
 import { TextBar } from './TextBar.js';
 import { Tools } from './Tools.js';
 import './App.css';
 
 /** The paint page: a board of LEDs to light dot by dot, MS Paint style. */
 export function App() {
+  const paint = usePaintStore();
   const { layout, lamps, stamps, picked } = usePaint();
   const [swatch, setSwatch] = useState<Swatch>('red');
   const [custom, setCustom] = useState('#40e0d0');
@@ -107,6 +108,7 @@ function Board({
   const overlay = useRef<HTMLCanvasElement>(null);
   const preview = useRef<HTMLCanvasElement>(null);
   const painter = useRef<Painter | null>(null);
+  const paint = usePaintStore();
   const { cols, rows, grid } = layout;
 
   useEffect(() => {
@@ -132,7 +134,7 @@ function Board({
       p.destroy();
       painter.current = null;
     };
-  }, [cols, rows, grid, brush]);
+  }, [cols, rows, grid, brush, paint]);
 
   useEffect(() => painter.current?.setLamps(lampsOf(lamps)), [lamps]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the outline follows the tool, read through the brush ref.
@@ -155,6 +157,7 @@ function Board({
 
 /** The board's shape: its grid and how many dots across and down. */
 function LayoutBar({ layout }: { layout: Layout }) {
+  const paint = usePaintStore();
   const number = (key: 'cols' | 'rows', label: string, max: number) => (
     <label className="paint-field">
       {label}
