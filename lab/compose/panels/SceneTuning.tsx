@@ -2,10 +2,11 @@ import { ControlPanel, isAuto } from '@weasel-js/labkit';
 import { effectOf, type ParamValue, tuningOf } from '@/index.js';
 import { RENDERERS } from '../ColorsRow.js';
 import { autoFieldOf, DENSITY, schemaFor, shownValues, storedValue } from '../schema.js';
-import { compose, pickedOf, useCompose, useEffects } from '../store.js';
+import { pickedOf, useCompose, useComposeStore, useEffects } from '../store.js';
 
 /** The picked scene's effect's own settings, each at the effect's value until the scene sets it. */
 export function SceneTuning() {
+  const compose = useComposeStore();
   const state = useCompose();
   const effects = useEffects();
   const at = pickedOf(state);

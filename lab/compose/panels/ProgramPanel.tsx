@@ -6,12 +6,12 @@ import { Panel } from '../Panel.js';
 import { ScenePreview } from '../ScenePreview.js';
 import { effectTitle } from '../schema.js';
 import { moveScene } from '../state.js';
-import { compose, pickedOf, useCompose } from '../store.js';
+import { type ComposeStore, pickedOf, useCompose, useComposeStore } from '../store.js';
 import '../Row.css';
 import './ProgramPanel.css';
 
-/** Reshapes the list, keeping `keep` picked wherever it lands, and opens its effect. */
-const reshape = (next: Scene[], keep?: Scene) =>
+/** Reshapes `compose`'s list, keeping `keep` picked wherever it lands, and opens its effect. */
+const reshape = (compose: ComposeStore, next: Scene[], keep?: Scene) =>
   compose.edit(
     (s) => {
       const held = keep ?? s.program[pickedOf(s)];
@@ -24,6 +24,7 @@ const reshape = (next: Scene[], keep?: Scene) =>
 
 /** The program: its scenes in order, and the picked one's editor. */
 export function ProgramPanel() {
+  const compose = useComposeStore();
   const state = useCompose();
   const [thumbs, setThumbs] = useState(true);
   const [hovered, setHovered] = useState<number | null>(null);
@@ -34,7 +35,8 @@ export function ProgramPanel() {
     const { from, to } = drag;
     setDrag(null);
     const at = to > from ? to - 1 : to;
-    if (at !== from) reshape(moveScene(state.program, from, at - from), state.program[from]);
+    if (at !== from)
+      reshape(compose, moveScene(state.program, from, at - from), state.program[from]);
   };
   const picked = pickedOf(state);
   const rows = useRef<(HTMLButtonElement | null)[]>([]);
@@ -47,7 +49,10 @@ export function ProgramPanel() {
     );
   const remove = (i: number) => {
     if (state.program.length < 2) return;
-    reshape(state.program.filter((_, j) => j !== i));
+    reshape(
+      compose,
+      state.program.filter((_, j) => j !== i),
+    );
   };
 
   // The playing scene's row fills behind its content as the scene plays, read off the sign's pass.
@@ -61,7 +66,7 @@ export function ProgramPanel() {
           row?.style.setProperty('--progress', i === playing ? done.toFixed(4) : '0');
         });
       }),
-    [],
+    [compose],
   );
   return (
     <Panel
@@ -75,7 +80,11 @@ export function ProgramPanel() {
             onClick={() => {
               const fresh: Scene = { text: 'NEW', hex: AMBER, effect: 'hold' };
               const at = picked + 1;
-              reshape([...state.program.slice(0, at), fresh, ...state.program.slice(at)], fresh);
+              reshape(
+                compose,
+                [...state.program.slice(0, at), fresh, ...state.program.slice(at)],
+                fresh,
+              );
             }}
           />
           <IconButton
@@ -135,7 +144,7 @@ export function ProgramPanel() {
               onKeyDown={(e) => {
                 const by = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
                 if (e.key === 'Delete' || e.key === 'Backspace') remove(i);
-                else if (by && e.altKey) reshape(moveScene(state.program, i, by), scene);
+                else if (by && e.altKey) reshape(compose, moveScene(state.program, i, by), scene);
                 else if (by && rows.current[i + by]) pick(i + by);
                 else return;
                 e.preventDefault();
@@ -163,13 +172,13 @@ export function ProgramPanel() {
           glyph="up"
           label="move this scene up"
           disabled={picked === 0}
-          onClick={() => reshape(moveScene(state.program, picked, -1))}
+          onClick={() => reshape(compose, moveScene(state.program, picked, -1))}
         />
         <IconButton
           glyph="down"
           label="move this scene down"
           disabled={picked === state.program.length - 1}
-          onClick={() => reshape(moveScene(state.program, picked, 1))}
+          onClick={() => reshape(compose, moveScene(state.program, picked, 1))}
         />
         <IconButton
           glyph="remove"

@@ -14,7 +14,7 @@ import {
 } from '@/index.js';
 import { Panel } from '../Panel.js';
 import { withLook } from '../state.js';
-import { compose, pickedOf, useBoard, useCompose } from '../store.js';
+import { pickedOf, useBoard, useCompose, useComposeStore } from '../store.js';
 import { NO_EFFECTS, STILL, Thumbnail } from '../Thumbnail.js';
 import '../Row.css';
 import './FontPanel.css';
@@ -30,6 +30,7 @@ const TALLEST = Math.max(...BODIES);
 
 /** The picked scene's face, each one previewed on its text, and its style. */
 export function FontPanel({ setRows }: { setRows: (rows: number) => void }) {
+  const compose = useComposeStore();
   const state = useCompose();
   const [search, setSearch] = useState('');
   const [heights, setHeights] = useState<number[]>([SHORTEST, TALLEST]);

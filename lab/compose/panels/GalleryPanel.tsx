@@ -10,7 +10,7 @@ import type { FaceName } from '@/index.js';
 import { useLive } from '../live.js';
 import { Panel } from '../Panel.js';
 import { effectTitle } from '../schema.js';
-import { pickedOf, playEffect, useCompose, useEffects } from '../store.js';
+import { pickedOf, useCompose, useComposeStore, useEffects } from '../store.js';
 import { Thumbnail } from '../Thumbnail.js';
 import { type EffectTile, tilesOf } from '../tiles.js';
 import './GalleryPanel.css';
@@ -249,6 +249,7 @@ function StripTile({
   copy: boolean;
   live: boolean;
 }) {
+  const { playEffect } = useComposeStore();
   return (
     <button
       type="button"

@@ -1,239 +1,78 @@
-import { useMemo, useSyncExternalStore } from 'react';
 import {
-  type Backend,
-  type Board,
-  board,
-  type Marquee,
-  type Pass,
-  type PassScene,
-  SIZE,
-} from '@/index.js';
+  createContext,
+  createElement,
+  type ReactNode,
+  useContext,
+  useMemo,
+  useSyncExternalStore,
+} from 'react';
+import type { Backend, Board } from '@/index.js';
 import type { Choice } from '../backend.js';
-import { gestureKey } from './gesture.js';
-import { type Library, library, shelved } from './library.js';
-import { type Carried, carried, carrier } from './player.js';
+import { type ComposeStore, createComposeStore, effectsOf } from './create-store.js';
+import type { Library } from './library.js';
 import type { ComposeState } from './state.js';
-import { loadChoice, open, save, saveChoice } from './storage.js';
-import { createUndo, type Undo } from './undo.js';
 
-/** What the sign does after an edit: play again from a scene, or nothing. */
-export type After = { replay: number | 'picked' } | null;
+export {
+  type After,
+  type ComposeStore,
+  type ComposeStoreOptions,
+  createComposeStore,
+  effectsOf,
+  type LibrarySource,
+  pickedOf,
+} from './create-store.js';
 
-interface Live extends Carried {
-  opened: ReturnType<typeof open>;
-  state: ComposeState;
-  solo: boolean;
-  /** The backend the sign is asked to draw with. */
-  backend: Choice;
-  listeners: Set<() => void>;
-  undo: Undo;
-}
-
-/** The scene being edited, kept inside the program. */
-export const pickedOf = (s: ComposeState): number =>
-  Math.max(0, Math.min(s.editing.scene ?? 0, s.program.length - 1));
-
-const copy = (s: ComposeState): ComposeState => ({
-  ...s,
-  effects: { ...s.effects },
-  program: [...s.program],
-  editing: { ...s.editing },
-});
-
-/** Everything the store holds, kept across a hot reload so the sign stays attached and undo keeps its scenes. */
-const live: Live = import.meta.hot?.data.live ?? begin();
-if (import.meta.hot) import.meta.hot.data.live = live;
-
-function begin(): Live {
-  // A link wins over the draft, then is taken out of the address so a reload keeps later edits.
-  const opened = open(location.hash);
-  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-  // Undo reads the state through this object, so it is made before the history that needs it.
-  const l = {
-    ...carried(),
-    opened,
-    state: opened.state,
-    solo: false,
-    backend: loadChoice(),
-    listeners: new Set(),
-  } as Live;
-  l.undo = createUndo({
-    get: () => l.state,
-    set: (next) => {
-      l.state = next;
-    },
-  });
-  save(l.state);
-  return l;
-}
-
-export const opened = live.opened;
-const carry = carrier(live);
-
-/** Plays the whole program again from scene `from`, so the pass always spans every scene. */
-function replay(from: number): void {
-  const { sign } = live;
-  if (!sign) return;
-  sign.setEffects(live.state.effects);
-  live.held = false;
-  sign.restart(0);
-  if (live.solo || from <= 0) return;
-  const at = sign.pass()?.scenes.find((s) => s.scene >= from);
-  if (at) sign.seek(at.start);
-}
-
-const notify = () => {
-  for (const l of live.listeners) l();
-};
-
-/** Shows an undo or redo: every listener, and the program from the picked scene. */
-function stepped(): void {
-  notify();
-  replay(pickedOf(live.state));
-  save(live.state);
-}
-
-/** The program the sign plays: the whole of it, or the picked scene alone. */
-export const playing = () => {
-  const scene = live.state.program[pickedOf(live.state)];
-  return live.solo && scene ? [scene] : live.state.program;
-};
-
-/** The composition every panel edits, and what each edit tells the sign. */
-export const compose = {
-  get: () => live.state,
-  subscribe(fn: () => void) {
-    live.listeners.add(fn);
-    return () => live.listeners.delete(fn);
-  },
-  /** Applies `fn` to a copy of the state, which it may change in place, then tells the sign. */
-  edit(fn: (s: ComposeState) => void, after: After = { replay: 'picked' }) {
-    const before = live.state;
-    const next = copy(before);
-    fn(next);
-    live.state = next;
-    live.undo.record(before, gestureKey());
-    notify();
-    if (after) {
-      replay(after.replay !== 'picked' ? after.replay : pickedOf(live.state));
-    }
-    save(live.state);
-  },
-  /** The composition's undo history; selection and the sign's hardware are not in it. */
-  history: live.undo.history,
-  undo() {
-    live.undo.history.undo();
-    stepped();
-  },
-  redo() {
-    live.undo.history.redo();
-    stepped();
-  },
-  setSolo(on: boolean) {
-    live.solo = on;
-    replay(pickedOf(live.state));
-  },
-  restart: () => replay(pickedOf(live.state)),
-  /** Where the sign's pass stands, or null with no sign or nothing playing. */
-  pass: (): Pass | null => carry.pass(),
-  /** Moves the sign's pass to `ms`, held there with `hold`. */
-  seek: (ms: number, hold = false) => carry.seek(ms, hold),
-  /** The program scene a scene of the pass plays: soloed, the pass is the picked scene alone. */
-  sceneOf: (p: PassScene): number => (live.solo ? pickedOf(live.state) : p.scene),
-  /** The rate the sign plays at, which a sign built later takes too. */
-  rate: () => carry.rate(),
-  setRate(rate: number) {
-    carry.setRate(rate);
-    notify();
-  },
-  /** The backend the sign is asked to draw with, which builds it again on a fresh canvas. */
-  backend: (): Choice => live.backend ?? 'auto',
-  setBackend(choice: Choice) {
-    live.backend = choice;
-    saveChoice(choice);
-    notify();
-  },
-  /** The sign the page drew, or null while there is none. */
-  sign: () => live.sign,
-  /**
-   * Hands the store the sign the page drew, or null when it is gone. A sign built to replace one
-   * plays on from where the last one's pass stood, still held if it was.
-   */
-  attach(next: Marquee | null) {
-    carry.attach(next);
-    notify();
-  },
-};
+let page: ComposeStore | undefined;
 
 /**
- * `s` with each effect its program plays brought up to the library's, or null when none differs.
- * A composition keeps its own copy of every effect it plays, so a link carries them and an effect
- * the library loses plays on; the library's edits reach it here.
+ * The page's composition, kept in browser storage, and kept across a hot reload so the sign stays
+ * attached and undo keeps its scenes. Made on first use, so a module that only imports the panels
+ * neither reads the address nor writes a draft.
  */
-function adopted(s: ComposeState, shelf: Library): ComposeState | null {
-  const next = copy(s);
-  let changed = false;
-  for (const scene of s.program) {
-    const name = String(scene.effect);
-    const spec = shelved(shelf, name);
-    if (!spec || JSON.stringify(spec) === JSON.stringify(s.effects[name])) continue;
-    next.effects[name] = spec;
-    changed = true;
-  }
-  return changed ? next : null;
+export const pageStore = (): ComposeStore =>
+  (page ??= createComposeStore({ persist: true, keep: import.meta.hot?.data }));
+
+const Store = createContext<ComposeStore | null>(null);
+
+/** Gives the panels under it `store` in place of the page's. */
+export const ComposeProvider = ({
+  store,
+  children,
+}: {
+  store: ComposeStore;
+  children: ReactNode;
+}) => createElement(Store.Provider, { value: store }, children);
+
+/** The store the panels edit: the nearest provider's, else the page's. */
+export const useComposeStore = (): ComposeStore => useContext(Store) ?? pageStore();
+
+export function useCompose(): ComposeState {
+  const s = useComposeStore();
+  return useSyncExternalStore(s.subscribe, s.get, s.get);
 }
-
-// An edit on the effects page, in this tab or another, reaches the composition as it lands. It is
-// the library's change, not the composition's, so it stays out of the composition's undo.
-library.subscribe(() => {
-  const next = adopted(live.state, library.get());
-  if (next) {
-    live.state = next;
-    save(next);
-    notify();
-    replay(pickedOf(next));
-  } else notify();
-});
-
-/** Every effect a scene can play: the composition's own copies, then the library's others. */
-export const effectsOf = (s: ComposeState, shelf: Library): Library => ({ ...shelf, ...s.effects });
-
-/** Sets the picked scene playing `name`, taking the library's copy into the composition. */
-export function playEffect(name: string): void {
-  compose.edit((s) => {
-    const at = pickedOf(s);
-    const scene = s.program[at];
-    if (!scene) return;
-    const spec = shelved(library.get(), name);
-    if (spec) s.effects[name] = spec;
-    // Tuning belongs to the effect it was set for.
-    const { params: _, ...rest } = scene;
-    s.program[at] = scene.effect === name ? scene : { ...rest, effect: name };
-  });
-}
-
-/** The board of a sign the marquee's default size, for while none is attached. */
-const DEFAULT_BOARD = board(SIZE.cols, SIZE.rows);
-const boardNow = () => live.sign?.board ?? DEFAULT_BOARD;
 
 /** The board of the sign the page drew, which a new size replaces. */
-export const useBoard = (): Board => useSyncExternalStore(compose.subscribe, boardNow, boardNow);
+export function useBoard(): Board {
+  const s = useComposeStore();
+  return useSyncExternalStore(s.subscribe, s.board, s.board);
+}
 
 /** The backend the sign is asked to draw with. */
-export const useChoice = (): Choice =>
-  useSyncExternalStore(compose.subscribe, compose.backend, compose.backend);
+export function useChoice(): Choice {
+  const s = useComposeStore();
+  return useSyncExternalStore(s.subscribe, s.backend, s.backend);
+}
 
-const drawingNow = () => live.sign?.backend ?? null;
 /** The backend the sign actually draws with, null while there is no sign. */
-export const useDrawing = (): Backend | null =>
-  useSyncExternalStore(compose.subscribe, drawingNow, drawingNow);
-
-export const useCompose = (): ComposeState =>
-  useSyncExternalStore(compose.subscribe, compose.get, compose.get);
+export function useDrawing(): Backend | null {
+  const s = useComposeStore();
+  return useSyncExternalStore(s.subscribe, s.drawing, s.drawing);
+}
 
 /** Every effect a scene can play, as `effectsOf` gives them, kept current. */
 export function useEffects(): Library {
   const state = useCompose();
+  const { library } = useComposeStore();
   const shelf = useSyncExternalStore(library.subscribe, library.get, library.get);
   return useMemo(() => effectsOf(state, shelf), [state, shelf]);
 }
