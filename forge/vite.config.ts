@@ -27,7 +27,10 @@ export default defineConfig({
       frameConfig: 'forge/forge.frame.tsx',
     }),
   ],
-  resolve: { alias: { ...blitsAlias, '@': src }, dedupe: ['react', 'react-dom'] },
+  resolve: {
+    alias: { ...blitsAlias, '@': src, '@lab': join(root, 'lab') },
+    dedupe: ['react', 'react-dom'],
+  },
   server: {
     host: '::',
     port: 4887,
