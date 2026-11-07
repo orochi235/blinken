@@ -25,6 +25,8 @@ export default defineConfig({
       stories: ['forge/stories/**/*.stories.tsx'],
       shellConfig: 'forge/forge.shell.tsx',
       frameConfig: 'forge/forge.frame.tsx',
+      // The published forge reads `typescript.sys` for these, which TypeScript 7 has dropped.
+      ...(WEASEL ? {} : { propControls: false, api: false }),
     }),
   ],
   resolve: {
