@@ -1,21 +1,55 @@
 // ---
-import { createOverlay, type Readout, TYPES, type TypeName } from '@msb235/blinken';
+import {
+  createOverlay,
+  type Readout,
+  type TransitionName,
+  TYPES,
+  type TypeName,
+} from '@msb235/blinken';
 import { onHold } from './kit';
 
 /** Each instrument on the console: what it reads, on which type, and how many columns it spans. */
 const GAUGES = {
   depth: { label: 'Depth · m', type: 'nixie', cells: 4, color: 0xff7a2a, span: 2 },
-  status: { label: 'Status', type: 'fourteen', cells: 9, color: 0x4fd8ff, span: 2 },
+  status: {
+    label: 'Status',
+    type: 'fourteen',
+    cells: 9,
+    color: 0x4fd8ff,
+    span: 2,
+    transition: 'flap',
+  },
   heading: { label: 'Heading', type: 'seven', cells: 3, color: 0xffb020, span: 1 },
   speed: { label: 'Speed · kn', type: 'seven', cells: 3, color: 0xffb020, span: 1 },
   water: { label: 'Water · °C', type: 'seven', cells: 3, color: 0xffb020, span: 1 },
-  sonar: { label: 'Contacts', type: 'matrix', cells: 2, color: 0x6dff5a, span: 1 },
+  sonar: {
+    label: 'Contacts',
+    type: 'matrix',
+    cells: 2,
+    color: 0x6dff5a,
+    span: 1,
+    transition: 'count',
+  },
   oxygen: { label: 'O₂', type: 'bargraph', cells: 16, color: 0x6dff5a, span: 2 },
   ballast: { label: 'Ballast', type: 'bargraph', cells: 16, color: 0xffb020, span: 2 },
-  log: { label: 'Log', type: 'twentytwo', cells: 18, color: 0xe8e4dc, span: 4 },
+  log: {
+    label: 'Log',
+    type: 'twentytwo',
+    cells: 18,
+    color: 0xe8e4dc,
+    span: 4,
+    transition: 'scramble',
+  },
 } as const satisfies Record<
   string,
-  { label: string; type: TypeName; cells: number; color: number; span: number }
+  {
+    label: string;
+    type: TypeName;
+    cells: number;
+    color: number;
+    span: number;
+    transition?: TransitionName;
+  }
 >;
 
 type Gauge = keyof typeof GAUGES;
@@ -40,7 +74,13 @@ export default function run(root: HTMLElement) {
     caption.textContent = g.label;
     bezel.append(glass, caption);
     panel.append(bezel);
-    show[name] = overlay.readout({ type: g.type, cells: g.cells, color: g.color, follow: slot });
+    show[name] = overlay.readout({
+      type: g.type,
+      cells: g.cells,
+      color: g.color,
+      follow: slot,
+      transition: 'transition' in g ? g.transition : undefined,
+    });
   }
 
   const orders = document.createElement('div');

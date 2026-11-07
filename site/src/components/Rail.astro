@@ -1,7 +1,7 @@
 ---
 import pkg from '../../../package.json';
 import { FRAME, INSET, still } from '../live/logo';
-import { extra, sections, start, under } from '../nav';
+import { extra, foot, sections, start, under } from '../nav';
 import Search from './Search.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -51,6 +51,7 @@ const word = 1 - INSET.left - INSET.right;
     ))}
   </ul>
   <p class="meta out">
+    {foot.map((p) => <a href={link(p.slug)} aria-current={current(p.slug)}>{p.title}</a>)}
     <a href="https://github.com/orochi235/blinken">GitHub</a>
     <a href={`https://www.npmjs.com/package/${pkg.name}`}>npm</a>
   </p>

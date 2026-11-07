@@ -14,6 +14,7 @@ import { flow } from './flow.js';
 import { dotOf, type Laid, type Layout, layOutReadouts, linesOf } from './layout.js';
 import { type Box, type Canvas, type Placed, surfacePlacement } from './placement.js';
 import { createTextLayer, type Picked } from './text.js';
+import { type CellFrame, type Transition, transitionOf } from './transitions.js';
 import type { SegLight, Selection } from './type.js';
 import { TYPES } from './types/index.js';
 import { half as HALF } from './types/segments.js';
@@ -34,6 +35,14 @@ interface Entry extends Placed {
   selection: Selection | undefined;
   /** Its field's attributes, as given and as `setField` changed them. */
   field: Record<string, string>;
+  /** How it changes value, as given and as `setTransition` changed it. */
+  transition: Transition;
+  /** The change it is part way through: when it began, how long it runs, and its frames. */
+  moving: {
+    readonly at: number;
+    readonly ms: number;
+    readonly frame: (t: number) => readonly CellFrame[];
+  } | null;
 }
 
 /** How a readout's selected cells show. */
@@ -103,8 +112,8 @@ interface Shown {
   readonly cut: number;
 }
 
-/** How `e`'s value lays out on its cells, a ½ digit's first, row by row. */
-function shownOf(e: Entry): Shown {
+/** How `e`'s value, or `value` in its place, lays out on its cells, a ½ digit's first, row by row. */
+function shownOf(e: Entry, value: string | number = e.value): Shown {
   const type = TYPES[e.opts.type];
   const align = e.opts.align ?? type.align;
   const { perLine, first } = e.spot;
@@ -115,7 +124,7 @@ function shownOf(e: Entry): Shown {
     lit: none as ReadonlySet<string>,
     text: '',
   }));
-  const [lead, rest] = e.opts.half ? splitHalf(e.value, e.opts.cells) : ['', e.value];
+  const [lead, rest] = e.opts.half ? splitHalf(value, e.opts.cells) : ['', value];
   if (e.opts.half && cells[0]) {
     const tok = HALF.spell?.tokens(lead)[0] ?? '';
     cells[0] = { ...cells[0], lit: HALF.spell?.lights(tok) ?? none, text: tok };
@@ -126,7 +135,7 @@ function shownOf(e: Entry): Shown {
       const k = first + c;
       if (cells[k]) cells[k] = { ...cells[k], lit };
     }
-    return { cells, places: [], carets: [], cut: 0, copied: String(e.value) };
+    return { cells, places: [], carets: [], cut: 0, copied: String(value) };
   }
   // As shown, each character the one its glyph draws, where that keeps it one character.
   const asShown = (tok: string) =>
@@ -158,7 +167,7 @@ function shownOf(e: Entry): Shown {
   }
   const end = f.carets[toks.length];
   carets.push(end === null || end === undefined ? null : cellOf(end));
-  return { cells, places, carets, cut: f.cut, copied: asShown(String(e.value)) };
+  return { cells, places, carets, cut: f.cut, copied: asShown(String(value)) };
 }
 
 /**
@@ -293,7 +302,7 @@ export function createSurface(
   };
 
   /** Cues the readouts' values afresh, the last cue faded out at once. */
-  const play = () => {
+  const play = (now: number) => {
     const b = layout.board;
     const on = new Float32Array(b.cols * b.rows);
     const tint = new Float32Array(b.cols * b.rows * 4);
@@ -304,7 +313,11 @@ export function createSurface(
       const how = selectionOf(e);
       // Stacked lights, as a Nixie's cathodes are, tangle when the unlit ones glow too.
       const dimUnlit = how === 'glow' && TYPES[e.opts.type].socket === 'segment';
+      const t = e.moving ? (now - e.moving.at) / e.moving.ms : 1;
+      if (t >= 1) e.moving = null;
+      const frames = e.moving?.frame(Math.max(0, t));
       for (const [k, { lights, lit }] of shown.cells.entries()) {
+        const frame = frames?.[k];
         const picked = e.picked[k] ?? false;
         const caret = e.caret === k && blinkOn;
         if ((caret || (picked && how === 'underline')) && e.spot.underline !== null) {
@@ -314,7 +327,8 @@ export function createSurface(
         }
         for (const [slot, light] of lights.entries()) {
           const at = dotOf(e.spot, b.cols, k, slot);
-          on[at] = lit.has(light.name) ? 1 : picked && dimUnlit ? GLOW_UNLIT : 0;
+          const level = frame ? frame(light.name) : lit.has(light.name) ? 1 : 0;
+          on[at] = level > 0 ? level : picked && dimUnlit ? GLOW_UNLIT : 0;
           tint.set(picked && (how === 'recolor' || how === 'glow') ? pale : color, at * 4);
         }
       }
@@ -362,9 +376,10 @@ export function createSurface(
         valued = true;
       }
     }
+    if (entries.some((e) => e.moving)) valued = true;
     if (valued) {
       valued = false;
-      play();
+      play(now);
       settling = now + settleMs();
     }
     // With nothing changing, the last frame stands: no sync, no pull, no draw.
@@ -417,6 +432,8 @@ export function createSurface(
         caret: null,
         selection: undefined,
         field: { ...o.field },
+        transition: transitionOf(o.transition),
+        moving: null,
         box: boxOf(o, canvas),
       };
       entries.push(e);
@@ -426,8 +443,33 @@ export function createSurface(
           return e.value;
         },
         set(value) {
+          if (value === e.value) return;
+          const from = shownOf(e).cells;
+          const fromValue = e.value;
           e.value = value;
           valued = true;
+          const ms = o.transitionMs ?? e.transition.ms;
+          if (ms <= 0 || e.transition.name === 'cut') {
+            e.moving = null;
+            return;
+          }
+          let seed = 0x9e3779b9;
+          const frame = e.transition.start({
+            from,
+            to: shownOf(e).cells,
+            fromValue,
+            toValue: value,
+            spell: TYPES[o.type].spell,
+            shownOf: (v) => shownOf(e, v).cells,
+            random: () => {
+              seed = (Math.imul(seed ^ (seed >>> 15), 0x2c1b3c6d) + 0x6d2b79f5) >>> 0;
+              return seed / 2 ** 32;
+            },
+          });
+          e.moving = { at: last, ms, frame };
+        },
+        setTransition(transition) {
+          e.transition = transitionOf(transition);
         },
         color(hex) {
           e.color = hex;

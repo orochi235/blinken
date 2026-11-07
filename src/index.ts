@@ -122,6 +122,14 @@ export type {
 } from './readout/api.js';
 export { createOverlay } from './readout/overlay.js';
 export { createPanel } from './readout/panel.js';
+export {
+  type CellFrame,
+  type CellShown,
+  type Change,
+  TRANSITIONS,
+  type Transition,
+  type TransitionName,
+} from './readout/transitions.js';
 export type {
   Align,
   DisplayType,

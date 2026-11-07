@@ -105,7 +105,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem 0.9rem;
   width: min(100% - 2rem, 40rem);
-  margin: 0 auto;
+  margin: 0 1rem;
   padding: 1.6rem 1.4rem 1.2rem;
   border-radius: 10px;
   background:
@@ -223,4 +223,27 @@
   text-align: center;
   font: 0.82rem var(--mono);
   color: #d8cfc6;
+}
+
+/* The transitions demo: each transition's name beside a readout using it. */
+.transitions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem 1rem;
+  width: fit-content;
+  max-width: calc(100% - 2rem);
+  margin: 0 1rem;
+  font-size: 0.85rem;
+  color: #d8cfc6;
+}
+
+.transitions code {
+  background: none;
+}
+
+.transitions > div {
+  height: 2.2rem;
+  max-width: 100%;
+  aspect-ratio: var(--aspect);
 }

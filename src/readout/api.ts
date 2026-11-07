@@ -5,6 +5,7 @@ import type { Fade, Ghost } from '../optics.js';
 import type { Backend } from '../render/backend.js';
 import type { Gpu } from '../render/gpu.js';
 import type { Ticker } from '../ticker.js';
+import type { Transition, TransitionName } from './transitions.js';
 import type { Align, Ends, Selection, TypeName } from './type.js';
 
 /** A fault in one segment of a readout: its cell, and its slot in the type's cell. */
@@ -73,6 +74,13 @@ export interface ReadoutOptions {
    * (an uppercase-only type gives capitals), or as in its `value`. Default `'shown'`.
    */
   readonly copy?: 'shown' | 'value';
+  /**
+   * How `set` moves it to a new value: a name from `TRANSITIONS`, such as `fade`, `scramble`,
+   * `count`, `flap` or `roll`, or a `Transition` of your own. Typing into it doesn't. Default `cut`.
+   */
+  readonly transition?: TransitionName | Transition;
+  /** How long its transition runs, ms, in place of the transition's own. */
+  readonly transitionMs?: number;
 }
 
 /** A readout on a surface. */
@@ -87,6 +95,8 @@ export interface Readout {
   setField(attributes: Readonly<Record<string, string>>): void;
   /** Changes how its selected cells show; undefined goes back to its own. */
   setSelection(look: Selection | undefined): void;
+  /** Changes how `set` moves it to a new value. */
+  setTransition(transition: TransitionName | Transition): void;
   destroy(): void;
 }
 

@@ -6,6 +6,13 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 
 ## Unreleased
 
+**Added**
+
+- Readouts take a `transition` for how `set` moves them to a new value: `fade`, `scramble`,
+  `count`, `wipe`, `flap` (each cell steps through the alphabet, as a split-flap board's cards do) or
+  `roll` (each digit rolls up, as an odometer's wheels do), from `TRANSITIONS`, or a `Transition` of
+  your own; `transitionMs` sets how long, and `setTransition` changes it.
+
 **Fixed**
 
 - Lines of outlined or shadowed text no longer overlap: lines stand the rows a style adds further

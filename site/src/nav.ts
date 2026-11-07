@@ -41,12 +41,19 @@ interface Entry {
 export const extra: readonly Entry[] = [
   { slug: 'reference', title: 'Reference' },
   { slug: 'changelog', title: 'Changelog' },
-  { slug: 'credits', title: 'Credits' },
   { slug: 'lab', title: 'Lab', href: 'compose.html' },
 ];
 
 /** The pages listed under a page in `start`, each at `/<parent>/<slug>/`. */
 export const under: Record<string, readonly Entry[]> = {};
 
+/** The pages at the rail's foot, beside the links out of the site. */
+export const foot: readonly Entry[] = [{ slug: 'credits', title: 'Credits' }];
+
 /** Every page in the order prev and next walk: the rail top to bottom. */
-export const reading: readonly Entry[] = [...start, ...words, ...extra.filter((e) => !e.href)];
+export const reading: readonly Entry[] = [
+  ...start,
+  ...words,
+  ...extra.filter((e) => !e.href),
+  ...foot,
+];
