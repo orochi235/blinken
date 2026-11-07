@@ -1,14 +1,17 @@
 import { LabShell } from '@weasel-js/labkit';
 import { PAGES } from '../pages.js';
 import { UndoBar } from '../shell/UndoBar.js';
+import { useTransitions, useTransitionsStore } from './context.js';
 import { Editor } from './Editor.js';
 import { Library } from './Library.js';
 import { Stage } from './Stage.js';
-import { recipeNamed, STAGE_TYPES, transitions, useTransitions } from './store.js';
+import { recipeNamed, STAGE_TYPES } from './store.js';
+import './controls.css';
 import './App.css';
 
 /** What the stage plays on: the type, its cells, the two values and the color. */
 function StageBar() {
+  const transitions = useTransitionsStore();
   const { stage } = useTransitions();
   return (
     <div className="tr-bar">
@@ -66,6 +69,7 @@ function StageBar() {
 
 /** The transitions page: the library, the open transition playing, and its settings. */
 export function App() {
+  const transitions = useTransitionsStore();
   const { open, saved, stage } = useTransitions();
   const recipe = recipeNamed(open, saved);
   return (

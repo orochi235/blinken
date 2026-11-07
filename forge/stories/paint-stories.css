@@ -1,0 +1,15 @@
+/* The paint and transitions pages are dark; their stories show them that way. */
+.story-lab {
+  padding: 12px;
+  background: var(--wzl-surface, #14100f);
+  color: var(--wzl-fg);
+}
+
+/* The width each column has on its lab page. */
+.story-library {
+  width: 180px;
+}
+
+.story-editor {
+  width: 300px;
+}

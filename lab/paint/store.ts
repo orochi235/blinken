@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from 'react';
 import { GRIDS, type GridName } from '@/index.js';
 import {
   type Dot,
@@ -43,11 +42,25 @@ function dotOf(v: unknown): Dot | null {
   return null;
 }
 
-function load(): Saved {
-  let raw: Partial<Saved> = {};
+/** Where a store keeps its state between visits. */
+export type PaintStorage = Pick<Storage, 'getItem' | 'setItem'>;
+
+export interface PaintOptions {
+  /** Without one, nothing is kept. */
+  storage?: PaintStorage;
+  /** Fields that replace what storage holds, checked like anything read back. */
+  seed?: Partial<Omit<Saved, 'v'>>;
+}
+
+function read(storage: PaintStorage | undefined): Partial<Saved> {
   try {
-    raw = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Saved>;
-  } catch {}
+    return JSON.parse(storage?.getItem(KEY) ?? '{}') as Partial<Saved>;
+  } catch {
+    return {};
+  }
+}
+
+function load(raw: Partial<Saved>): Saved {
   const l = (raw.layout ?? {}) as Partial<Layout>;
   const old = (raw.v ?? 1) < VERSION;
   const grid: GridName = !old && l.grid && Object.hasOwn(GRIDS, l.grid) ? l.grid : 'square';
@@ -72,136 +85,154 @@ function load(): Saved {
   };
 }
 
-let state = load();
-/** The stamp the text tool has picked up; not saved, and not undone. */
-let picked: string | null = null;
-let past: Drawing[] = [];
-let future: Drawing[] = [];
-/** What the last undo step was for, so a run of edits to one thing is undone as one. */
-let lastEdit: string | undefined;
-const listeners = new Set<() => void>();
-let snapshot: Saved & { picked: string | null } = { ...state, picked };
+/** A board's layout, picture, stamps and lamps, with undo by stroke. */
+export function createPaintStore({ storage, seed }: PaintOptions = {}) {
+  let state = load(read(storage));
+  if (seed) state = load({ ...state, ...seed });
+  /** The stamp the text tool has picked up; not saved, and not undone. */
+  let picked: string | null = null;
+  let past: Drawing[] = [];
+  let future: Drawing[] = [];
+  /** What the last undo step was for, so a run of edits to one thing is undone as one. */
+  let lastEdit: string | undefined;
+  const listeners = new Set<() => void>();
+  let snapshot: Saved & { picked: string | null } = { ...state, picked };
 
-function commit(next: Saved): void {
-  state = next;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch {}
-  emit();
-}
-
-function emit(): void {
-  snapshot = { ...state, picked };
-  for (const l of listeners) l();
-}
-
-const drawing = (): Drawing => ({ picture: state.picture, stamps: state.stamps });
-
-/** Saves the drawing as an undo step, unless it continues the edit `run` names. */
-function remember(run?: string): void {
-  if (run === undefined || run !== lastEdit) {
-    past = [...past.slice(-(DEPTH - 1)), drawing()];
-    future = [];
-  }
-  lastEdit = run;
-}
-
-function restore(d: Drawing): void {
-  lastEdit = undefined;
-  if (picked && !d.stamps.some((s) => s.id === picked)) picked = null;
-  commit({ ...state, ...d });
-}
-
-/** The page's layout, picture, stamps and lamps, kept in local storage, with undo by stroke. */
-export const paint = {
-  get: () => snapshot,
-  subscribe(l: () => void) {
-    listeners.add(l);
-    return () => listeners.delete(l);
-  },
-  setLayout(layout: Layout) {
-    commit({ ...state, layout });
-  },
-  setLamps(lamps: LampSettings) {
-    commit({ ...state, lamps });
-  },
-  setPicture(picture: Picture) {
-    remember();
-    commit({ ...state, picture });
-  },
-  setStamps(stamps: Stamp[], run?: string) {
-    remember(run);
-    commit({ ...state, stamps });
-  },
-  addStamp(stamp: Omit<Stamp, 'id'>) {
-    const id = `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-    picked = id;
-    paint.setStamps([...state.stamps, { ...stamp, id }]);
-  },
-  /** Changes the picked stamp; a run of changes to it undoes as one. */
-  editPicked(change: Partial<Omit<Stamp, 'id'>>) {
-    if (!picked) return;
-    const id = picked;
-    paint.setStamps(
-      state.stamps.map((s) => (s.id === id ? { ...s, ...change } : s)),
-      `edit ${id}`,
-    );
-  },
-  removePicked() {
-    if (!picked) return;
-    const id = picked;
-    picked = null;
-    paint.setStamps(state.stamps.filter((s) => s.id !== id));
-  },
-  /** Lays the picked stamp's dots into the picture, where painting reaches them. */
-  stampDown(dots: Picture) {
-    if (!picked) return;
-    const id = picked;
-    picked = null;
-    remember();
-    commit({
-      ...state,
-      picture: { ...state.picture, ...dots },
-      stamps: state.stamps.filter((s) => s.id !== id),
-    });
-  },
-  pick(id: string | null) {
-    picked = id;
-    lastEdit = undefined;
+  function commit(next: Saved): void {
+    state = next;
+    try {
+      storage?.setItem(KEY, JSON.stringify(state));
+    } catch {}
     emit();
-  },
-  /** Replaces the board and drawing with `linked`; undo brings the drawing back. */
-  open(linked: Linked) {
-    picked = null;
-    remember();
-    commit({ ...state, ...linked });
-  },
-  clear() {
-    if (Object.keys(state.picture).length === 0 && state.stamps.length === 0) return;
-    picked = null;
-    remember();
-    commit({ ...state, picture: {}, stamps: [] });
-  },
-  canUndo: () => past.length > 0,
-  canRedo: () => future.length > 0,
-  undo() {
-    const prev = past.at(-1);
-    if (!prev) return;
-    past = past.slice(0, -1);
-    future = [...future, drawing()];
-    restore(prev);
-  },
-  redo() {
-    const next = future.at(-1);
-    if (!next) return;
-    future = future.slice(0, -1);
-    past = [...past, drawing()];
-    restore(next);
-  },
-};
+  }
 
-export const usePaint = () => useSyncExternalStore(paint.subscribe, paint.get);
+  function emit(): void {
+    snapshot = { ...state, picked };
+    for (const l of listeners) l();
+  }
 
-const linked = decode(location.hash);
-if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-if (linked) paint.open(linked);
+  const drawing = (): Drawing => ({ picture: state.picture, stamps: state.stamps });
+
+  /** Saves the drawing as an undo step, unless it continues the edit `run` names. */
+  function remember(run?: string): void {
+    if (run === undefined || run !== lastEdit) {
+      past = [...past.slice(-(DEPTH - 1)), drawing()];
+      future = [];
+    }
+    lastEdit = run;
+  }
+
+  function restore(d: Drawing): void {
+    lastEdit = undefined;
+    if (picked && !d.stamps.some((s) => s.id === picked)) picked = null;
+    commit({ ...state, ...d });
+  }
+
+  const store = {
+    get: () => snapshot,
+    subscribe(l: () => void) {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    setLayout(layout: Layout) {
+      commit({ ...state, layout });
+    },
+    setLamps(lamps: LampSettings) {
+      commit({ ...state, lamps });
+    },
+    setPicture(picture: Picture) {
+      remember();
+      commit({ ...state, picture });
+    },
+    setStamps(stamps: Stamp[], run?: string) {
+      remember(run);
+      commit({ ...state, stamps });
+    },
+    addStamp(stamp: Omit<Stamp, 'id'>) {
+      const id = `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+      picked = id;
+      store.setStamps([...state.stamps, { ...stamp, id }]);
+    },
+    /** Changes the picked stamp; a run of changes to it undoes as one. */
+    editPicked(change: Partial<Omit<Stamp, 'id'>>) {
+      if (!picked) return;
+      const id = picked;
+      store.setStamps(
+        state.stamps.map((s) => (s.id === id ? { ...s, ...change } : s)),
+        `edit ${id}`,
+      );
+    },
+    removePicked() {
+      if (!picked) return;
+      const id = picked;
+      picked = null;
+      store.setStamps(state.stamps.filter((s) => s.id !== id));
+    },
+    /** Lays the picked stamp's dots into the picture, where painting reaches them. */
+    stampDown(dots: Picture) {
+      if (!picked) return;
+      const id = picked;
+      picked = null;
+      remember();
+      commit({
+        ...state,
+        picture: { ...state.picture, ...dots },
+        stamps: state.stamps.filter((s) => s.id !== id),
+      });
+    },
+    pick(id: string | null) {
+      picked = id;
+      lastEdit = undefined;
+      emit();
+    },
+    /** Replaces the board and drawing with `linked`; undo brings the drawing back. */
+    open(linked: Linked) {
+      picked = null;
+      remember();
+      commit({ ...state, ...linked });
+    },
+    clear() {
+      if (Object.keys(state.picture).length === 0 && state.stamps.length === 0) return;
+      picked = null;
+      remember();
+      commit({ ...state, picture: {}, stamps: [] });
+    },
+    canUndo: () => past.length > 0,
+    canRedo: () => future.length > 0,
+    undo() {
+      const prev = past.at(-1);
+      if (!prev) return;
+      past = past.slice(0, -1);
+      future = [...future, drawing()];
+      restore(prev);
+    },
+    redo() {
+      const next = future.at(-1);
+      if (!next) return;
+      future = future.slice(0, -1);
+      past = [...past, drawing()];
+      restore(next);
+    },
+  };
+  return store;
+}
+
+export type PaintStore = ReturnType<typeof createPaintStore>;
+
+let page: PaintStore | null = null;
+
+/** The paint page's store, kept in local storage; made on first use, when it opens a picture the URL links to. */
+export function pagePaint(): PaintStore {
+  if (page) return page;
+  const store = createPaintStore({
+    storage: {
+      getItem: (k) => localStorage.getItem(k),
+      setItem: (k, v) => localStorage.setItem(k, v),
+    },
+  });
+  const linked = decode(location.hash);
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  if (linked) store.open(linked);
+  page = store;
+  return store;
+}

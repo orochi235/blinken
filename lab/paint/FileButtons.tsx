@@ -1,16 +1,16 @@
 import { Button } from '@weasel-js/labkit';
 import { useRef, useState } from 'react';
 import { download } from '../download.js';
+import { usePaintStore } from './context.js';
 import { encode, fromJson, toJson } from './share.js';
-import { paint } from './store.js';
-
-const drawing = () => {
-  const { layout, picture, stamps } = paint.get();
-  return { layout, picture, stamps };
-};
 
 /** Saves the picture as a JSON file, loads one back in its place, and copies a link to it. */
 export function FileButtons() {
+  const paint = usePaintStore();
+  const drawing = () => {
+    const { layout, picture, stamps } = paint.get();
+    return { layout, picture, stamps };
+  };
   const picker = useRef<HTMLInputElement>(null);
   const [said, setSaid] = useState<string | null>(null);
   const load = async (file: File) => {

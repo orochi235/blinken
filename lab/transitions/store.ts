@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from 'react';
 import {
   TRANSITIONS,
   type TransitionEasing,
@@ -71,11 +70,25 @@ function recipeOf(v: unknown): TransitionRecipe | null {
   };
 }
 
-function load(): State {
-  let raw: Partial<State> = {};
+/** Where a store keeps its state between visits. */
+export type TransitionsStorage = Pick<Storage, 'getItem' | 'setItem'>;
+
+export interface TransitionsOptions {
+  /** Without one, nothing is kept. */
+  storage?: TransitionsStorage;
+  /** Fields that replace what storage holds, checked like anything read back. */
+  seed?: Partial<State>;
+}
+
+function read(storage: TransitionsStorage | undefined): Partial<State> {
   try {
-    raw = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<State>;
-  } catch {}
+    return JSON.parse(storage?.getItem(KEY) ?? '{}') as Partial<State>;
+  } catch {
+    return {};
+  }
+}
+
+function load(raw: Partial<State>): State {
   const saved = (Array.isArray(raw.saved) ? raw.saved : []).flatMap((r) => recipeOf(r) ?? []);
   const s = (raw.stage ?? {}) as Partial<Stage>;
   const open = str(raw.open, 'flap');
@@ -92,30 +105,6 @@ function load(): State {
   };
 }
 
-let state = load();
-let past: State[] = [];
-let future: State[] = [];
-/** What the last undo step was for, so a run of edits to one field is undone as one. */
-let lastEdit: string | undefined;
-const listeners = new Set<() => void>();
-
-function commit(next: State, run?: string): void {
-  if (run === undefined || run !== lastEdit) {
-    past = [...past.slice(-(DEPTH - 1)), state];
-    future = [];
-  }
-  lastEdit = run;
-  set(next);
-}
-
-function set(next: State): void {
-  state = next;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch {}
-  for (const l of listeners) l();
-}
-
 /** A name no built-in or saved transition has, from `base`. */
 function freeName(base: string, saved: readonly TransitionRecipe[]): string {
   const taken = (n: string) => isBuiltIn(n) || saved.some((r) => r.name === n);
@@ -125,95 +114,136 @@ function freeName(base: string, saved: readonly TransitionRecipe[]): string {
 }
 
 /** The recipe a name opens: a saved one, or a built-in's. */
-export function recipeNamed(name: string, saved = state.saved): TransitionRecipe {
+export function recipeNamed(name: string, saved: readonly TransitionRecipe[]): TransitionRecipe {
   return (
     saved.find((r) => r.name === name) ??
     (isBuiltIn(name) ? TRANSITIONS[name].recipe : TRANSITIONS.fade.recipe)
   );
 }
 
-/** The transitions page's state, kept in local storage, with undo by edit. */
-export const transitions = {
-  get: () => state,
-  subscribe(l: () => void) {
-    listeners.add(l);
-    return () => listeners.delete(l);
-  },
-  isBuiltIn,
-  open(name: string) {
-    if (name !== state.open) commit({ ...state, open: name });
-  },
-  /**
-   * Changes the open recipe. A built-in can't change, so its first edit saves a copy under a new
-   * name and opens that; `run` names an edit whose steps undo as one, such as a slider's drag.
-   */
-  edit(change: Partial<TransitionRecipe>, run?: string) {
-    const was = recipeNamed(state.open);
-    if (isBuiltIn(state.open)) {
-      const name = freeName(`${state.open} copy`, state.saved);
-      const copy = { ...was, ...change, name };
-      commit({ ...state, saved: [...state.saved, copy], open: name });
-      lastEdit = run;
-      return;
-    }
-    let next = { ...was, ...change };
-    if (change.name !== undefined && change.name !== was.name) {
-      const name = change.name.trim();
-      if (name === '') return;
-      next = {
-        ...next,
-        name: freeName(
-          name,
-          state.saved.filter((r) => r.name !== was.name),
-        ),
-      };
-    }
-    commit(
-      {
-        ...state,
-        open: next.name,
-        saved: state.saved.map((r) => (r.name === was.name ? next : r)),
-      },
-      run,
-    );
-  },
-  /** Saves a copy of the open transition and opens it. */
-  duplicate() {
-    const name = freeName(`${state.open} copy`, state.saved);
-    commit({
-      ...state,
-      saved: [...state.saved, { ...recipeNamed(state.open), name }],
-      open: name,
-    });
-  },
-  /** Deletes the open transition, if it is one made here, and opens the next. */
-  remove() {
-    const at = state.saved.findIndex((r) => r.name === state.open);
-    if (at < 0) return;
-    const saved = state.saved.filter((_, i) => i !== at);
-    commit({ ...state, saved, open: saved[Math.min(at, saved.length - 1)]?.name ?? 'flap' });
-  },
-  setStage(change: Partial<Stage>, run?: string) {
-    commit({ ...state, stage: { ...state.stage, ...change } }, run);
-  },
-  canUndo: () => past.length > 0,
-  canRedo: () => future.length > 0,
-  undo() {
-    const prev = past.at(-1);
-    if (!prev) return;
-    past = past.slice(0, -1);
-    future = [...future, state];
-    lastEdit = undefined;
-    set(prev);
-  },
-  redo() {
-    const next = future.at(-1);
-    if (!next) return;
-    future = future.slice(0, -1);
-    past = [...past, state];
-    lastEdit = undefined;
-    set(next);
-  },
-};
+/** Saved transitions, the open one and the stage, with undo by edit. */
+export function createTransitionsStore({ storage, seed }: TransitionsOptions = {}) {
+  let state = load(read(storage));
+  if (seed) state = load({ ...state, ...seed });
+  let past: State[] = [];
+  let future: State[] = [];
+  /** What the last undo step was for, so a run of edits to one field is undone as one. */
+  let lastEdit: string | undefined;
+  const listeners = new Set<() => void>();
 
-export const useTransitions = () => useSyncExternalStore(transitions.subscribe, transitions.get);
+  function commit(next: State, run?: string): void {
+    if (run === undefined || run !== lastEdit) {
+      past = [...past.slice(-(DEPTH - 1)), state];
+      future = [];
+    }
+    lastEdit = run;
+    set(next);
+  }
+
+  function set(next: State): void {
+    state = next;
+    try {
+      storage?.setItem(KEY, JSON.stringify(state));
+    } catch {}
+    for (const l of listeners) l();
+  }
+
+  const store = {
+    get: () => state,
+    subscribe(l: () => void) {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    isBuiltIn,
+    open(name: string) {
+      if (name !== state.open) commit({ ...state, open: name });
+    },
+    /**
+     * Changes the open recipe. A built-in can't change, so its first edit saves a copy under a new
+     * name and opens that; `run` names an edit whose steps undo as one, such as a slider's drag.
+     */
+    edit(change: Partial<TransitionRecipe>, run?: string) {
+      const was = recipeNamed(state.open, state.saved);
+      if (isBuiltIn(state.open)) {
+        const name = freeName(`${state.open} copy`, state.saved);
+        const copy = { ...was, ...change, name };
+        commit({ ...state, saved: [...state.saved, copy], open: name });
+        lastEdit = run;
+        return;
+      }
+      let next = { ...was, ...change };
+      if (change.name !== undefined && change.name !== was.name) {
+        const name = change.name.trim();
+        if (name === '') return;
+        next = {
+          ...next,
+          name: freeName(
+            name,
+            state.saved.filter((r) => r.name !== was.name),
+          ),
+        };
+      }
+      commit(
+        {
+          ...state,
+          open: next.name,
+          saved: state.saved.map((r) => (r.name === was.name ? next : r)),
+        },
+        run,
+      );
+    },
+    /** Saves a copy of the open transition and opens it. */
+    duplicate() {
+      const name = freeName(`${state.open} copy`, state.saved);
+      commit({
+        ...state,
+        saved: [...state.saved, { ...recipeNamed(state.open, state.saved), name }],
+        open: name,
+      });
+    },
+    /** Deletes the open transition, if it is one made here, and opens the next. */
+    remove() {
+      const at = state.saved.findIndex((r) => r.name === state.open);
+      if (at < 0) return;
+      const saved = state.saved.filter((_, i) => i !== at);
+      commit({ ...state, saved, open: saved[Math.min(at, saved.length - 1)]?.name ?? 'flap' });
+    },
+    setStage(change: Partial<Stage>, run?: string) {
+      commit({ ...state, stage: { ...state.stage, ...change } }, run);
+    },
+    canUndo: () => past.length > 0,
+    canRedo: () => future.length > 0,
+    undo() {
+      const prev = past.at(-1);
+      if (!prev) return;
+      past = past.slice(0, -1);
+      future = [...future, state];
+      lastEdit = undefined;
+      set(prev);
+    },
+    redo() {
+      const next = future.at(-1);
+      if (!next) return;
+      future = future.slice(0, -1);
+      past = [...past, state];
+      lastEdit = undefined;
+      set(next);
+    },
+  };
+  return store;
+}
+
+export type TransitionsStore = ReturnType<typeof createTransitionsStore>;
+
+let page: TransitionsStore | null = null;
+
+/** The transitions page's store, kept in local storage; made on first use. */
+export function pageTransitions(): TransitionsStore {
+  page ??= createTransitionsStore({
+    storage: {
+      getItem: (k) => localStorage.getItem(k),
+      setItem: (k, v) => localStorage.setItem(k, v),
+    },
+  });
+  return page;
+}

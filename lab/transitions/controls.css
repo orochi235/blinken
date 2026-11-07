@@ -1,0 +1,26 @@
+.tr-note {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.tr-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tr-field input:not([type]) {
+  width: 14ch;
+}
+
+.tr-field input[type="number"] {
+  width: 7ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.tr-value {
+  min-width: 4ch;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
