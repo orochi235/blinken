@@ -14,6 +14,21 @@ const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 /** What a scene of the pass shows on the track: its message, in its color. */
 export type SceneLook = (s: PassScene) => { text: string; hex: number } | undefined;
 
+/** Where each scene's parts hand over to one another, as fractions of the pass. */
+function phaseLines(scenes: readonly PassScene[]): number[] {
+  const last = scenes.at(-1);
+  const length = last ? last.start + last.ms : 0;
+  if (length <= 0) return [];
+  const at = new Set<number>();
+  for (const s of scenes)
+    for (const p of Object.values(s.parts)) {
+      if (p.ms <= 0) continue;
+      for (const edge of [p.start, p.start + p.ms])
+        if (edge > s.start && edge < s.start + s.ms) at.add(edge / length);
+    }
+  return [...at].sort((a, b) => a - b);
+}
+
 /** The playhead as a screen reader says it: how far in, of how long, and in which scene. */
 function valueText(pass: Pass | null, look: SceneLook): string {
   if (!pass) return 'nothing playing';
@@ -25,9 +40,18 @@ function valueText(pass: Pass | null, look: SceneLook): string {
 
 /**
  * The pass playing now, its scenes end to end, with a playhead on the sign's own clock. A press
- * holds the sign at that moment and follows a drag; letting go plays on from there.
+ * holds the sign at that moment and follows a drag; letting go plays on from there. With `phases`,
+ * a dotted line marks where each scene's parts (enter, active, exit) meet.
  */
-export function Scrubber({ player, look }: { player: Player; look: SceneLook }) {
+export function Scrubber({
+  player,
+  look,
+  phases = false,
+}: {
+  player: Player;
+  look: SceneLook;
+  phases?: boolean;
+}) {
   const track = useRef<HTMLDivElement>(null);
   const [scenes, setScenes] = useState<readonly PassScene[]>([]);
   const held = useRef(false);
@@ -123,6 +147,16 @@ export function Scrubber({ player, look }: { player: Player; look: SceneLook }) 
           );
         })}
       </div>
+      {phases &&
+        phaseLines(scenes).map((x) => (
+          <span
+            key={x}
+            className="compose-scrubber-phase"
+            aria-hidden="true"
+            // Where the line falls is the one thing that varies.
+            style={{ '--x': x.toFixed(5) } as CSSProperties}
+          />
+        ))}
       <span className="compose-scrubber-head" aria-hidden="true" />
     </div>
   );

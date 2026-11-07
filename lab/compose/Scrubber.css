@@ -51,6 +51,16 @@
   border-inline-end-color: rgb(0 0 0 / 0.35);
 }
 
+.compose-scrubber-phase {
+  position: absolute;
+  inset-block: 0;
+  left: calc(var(--x) * 100%);
+  border-inline-start: 2px dotted #fff;
+  mix-blend-mode: difference;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
 .compose-scrubber-head {
   position: absolute;
   inset-block: -3px;

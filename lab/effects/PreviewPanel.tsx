@@ -49,7 +49,7 @@ export function PreviewPanel() {
       >
         <Sign hardware={hardware} program={program} effects={NO_EFFECTS} onSign={preview.attach} />
       </div>
-      <Scrubber player={preview} look={look} />
+      <Scrubber player={preview} look={look} phases />
       {designer.open() === undefined && (
         <p className="compose-hint">Open an effect from the library to play it here.</p>
       )}
