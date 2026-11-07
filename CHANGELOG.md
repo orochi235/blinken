@@ -18,6 +18,9 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   `count`, `wipe`, `flap` (each cell steps through the alphabet, as a split-flap board's cards do) or
   `roll` (each digit rolls up, as an odometer's wheels do), from `TRANSITIONS`, or a `Transition` of
   your own; `transitionMs` sets how long, and `setTransition` changes it.
+- `createTransition` makes a transition from its settings: a `move` for each cell (`cut`, `fade`,
+  `step` through any characters, `scramble` or `count`), an `order` the cells turn in, a `spread`
+  between their turns, and an `easing`. The built-ins are made this way and carry their `recipe`.
 
 **Fixed**
 

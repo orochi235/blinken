@@ -123,6 +123,15 @@ export type {
 export { createOverlay } from './readout/overlay.js';
 export { createPanel } from './readout/panel.js';
 export {
+  createTransition,
+  type RecipeTransition,
+  STEP_SEQUENCE,
+  type TransitionEasing,
+  type TransitionMove,
+  type TransitionOrder,
+  type TransitionRecipe,
+} from './readout/recipe.js';
+export {
   type CellFrame,
   type CellShown,
   type Change,

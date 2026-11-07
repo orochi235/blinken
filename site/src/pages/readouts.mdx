@@ -35,7 +35,9 @@ Some types copy a real display: its segment or dot layout, its character set as 
 
 ## Transitions
 
-`transition` sets how `set` moves a readout to its next value, and `transitionMs` how long that takes. Every name in `TRANSITIONS` is shown here. A type that can't spell a step, such as a bargraph under `flap`, fades instead, and so does `count` for anything that isn't a number. Typing into a readout never animates. A `Transition` of your own works the same way: given the old and new cells, it returns how brightly each light shows at each moment.
+`transition` sets how `set` moves a readout to its next value, and `transitionMs` how long that takes. Every name in `TRANSITIONS` is shown here. A type that can't spell a step, such as a bargraph under `flap`, fades instead, and so does `count` for anything that isn't a number. Typing into a readout never animates.
+
+`createTransition` makes one from its settings: what each cell does (`cut`, `fade`, `step` through a string of characters, `scramble` or `count`), which cells go first (`left`, `right`, `center`, `edges` or `random`), how far apart their turns start (`spread`, 0 to 1), and an `easing`. Every built-in is made this way and carries its `recipe`, so `createTransition({ ...TRANSITIONS.flap.recipe, through: ' 0123456789' })` is a flap of digits. For anything else, a `Transition` of your own is given the old and new cells and returns how brightly each light shows at each moment.
 
 <Live client:only="react" of="transitions.ts" />
 
