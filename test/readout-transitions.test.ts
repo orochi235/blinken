@@ -61,7 +61,10 @@ describe('readout transitions', () => {
     const values: string[] = [];
     const frames = TRANSITIONS.count.start({
       ...c,
-      shownOf: (v) => (values.push(String(v)), shown(String(v))),
+      shownOf: (v) => {
+        values.push(String(v));
+        return shown(String(v));
+      },
     });
     frames(0.5);
     expect(values[0]).toMatch(/^01\d\d$|^00\d\d$/);

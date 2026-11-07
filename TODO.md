@@ -21,6 +21,12 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - The WebGL blur's taps are `max(1, 3σ/16)` texels apart, so at a large pitch times pixel ratio (around 120 device pixels) it may band; not measured (2026-11-04).
 - Every marquee statically imports the GPU modules, so a page that never draws with WebGPU still downloads them: `src/render/webgpu` is 25.5 KB of the 544 KB minified bundle (measured with esbuild's metafile, 2026-11-05); blits's GPU engine, another 59 KB, stays either way, since the built-in effects import `shaderPatch` and a mix takes its engine when made. Splitting it off means `gpu()` loading the module, so a handle built by hand needs a loader call too, or a WebGPU sign that draws nothing until its module lands (2026-11-04).
 
+## Mechanical readouts
+
+- A fast reel shows a crisp glyph each frame, so above a few glyphs a frame it strobes rather than blurs. Motion blur means drawing several drum positions inside each frame, weighted along its travel, once the reel's speed in glyphs per frame passes about one (2026-11-06).
+- The reference documents only the main entry point, so `@msb235/blinken/mechanical`'s exports appear on the Mechanical page's prose but not in the reference; TypeDoc takes a second entry point, and `site/src/api/entries.ts` would file its exports onto that page (2026-11-06).
+- Mechanical readouts take a canvas each, placed by the page; they don't join a panel or overlay, since those draw lights (2026-11-06).
+
 ## Known gaps
 
 - `createPanel` on a canvas with no CSS size grows it without end on a 2× screen: the panel sets the canvas's pixels to its CSS box times the pixel ratio, and an unsized canvas's CSS box is its pixels, so each resize doubles it until WebGL refuses the size (`texImage2D: width or height out of range`). The docs site's readouts demo did this until its canvas was sized in CSS. The panel could refuse it, warn, or size from a box that can't follow the canvas's own pixels (2026-11-06).

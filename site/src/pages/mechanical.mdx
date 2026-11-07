@@ -1,0 +1,25 @@
+---
+layout: ../layouts/Page.astro
+title: Mechanical readouts
+description: Odometer reels and split-flap cards, turning through any glyphs you give them.
+---
+import Live from '../components/Live';
+import Listing from '../components/Listing.astro';
+
+# Mechanical readouts
+
+`@msb235/blinken/mechanical` draws displays that move rather than light. A `reel` is an odometer's drum turning in a window. A `flap` is a split-flap board's card falling over its hinge. Either one turns forward through its glyphs in order until it reaches the new value, each cell starting a little after the one before. It draws on a 2D canvas and imports nothing from the LED signs, so a page that only wants these pays only for these.
+
+<Live client:only="react" of="mechanical.ts" />
+
+<Listing of="live/mechanical.ts" />
+
+## Glyphs
+
+`glyphs` lists what a cell turns through, in order. An entry can be a character, a word, or an emoji, or a `DrawnGlyph`, which has a `name` and paints itself into its box. A value is matched against the glyph names, longest first, or can be given as an array with one name per cell. The first glyph pads cells the value leaves empty, so a reel of digits shows leading zeros and a flap that starts with a blank stays blank. A reel defaults to `0123456789`; a flap defaults to a blank, A to Z, and 0 to 9.
+
+## Styling
+
+`style` sets the look of every cell, and `each` gives single cells their own look or their own glyphs: a red tenths reel, or a colon that never turns. `setStyle(style, cell?)` changes either one later. A cell's look covers `font`, `weight`, `size`, `ink`, `face`, `housing`, `gap`, `padding`, `radius`, the flap's `split` line, `shade`, and the reel's `peek` at its neighbors. `LOOKS` holds each kind's defaults.
+
+`speed` sets how many glyphs a cell passes per second, and `stagger` how long each cell waits after the one before it. The canvas fills its CSS box, so give it a size in CSS.

@@ -247,3 +247,49 @@
   max-width: 100%;
   aspect-ratio: var(--aspect);
 }
+
+/* The mechanical demo: canvases sized here, since their pixels follow their boxes. */
+.mech-odometer,
+.mech-heading {
+  display: block;
+  height: 3.6rem;
+  margin: 0 1rem 1rem;
+}
+
+.mech-odometer {
+  width: min(100% - 2rem, 19rem);
+}
+
+.mech-heading {
+  width: min(100% - 2rem, 9rem);
+}
+
+.mech-row {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0 1rem 0.35rem;
+  max-width: calc(100% - 2rem);
+  overflow: hidden;
+}
+
+.mech-row canvas {
+  display: block;
+  flex: none;
+  height: 2.2rem;
+}
+
+.mech-city {
+  width: 14.5rem;
+}
+
+.mech-time {
+  width: 8rem;
+}
+
+.mech-gate {
+  width: 3.2rem;
+}
+
+.mech-status {
+  width: 13rem;
+}

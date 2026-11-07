@@ -11,7 +11,10 @@ const marquee = [
   { slug: 'mix', title: 'On your own mix' },
 ] as const;
 
-const readouts = [{ slug: 'readouts', title: 'Readouts' }] as const;
+const readouts = [
+  { slug: 'readouts', title: 'Readouts' },
+  { slug: 'mechanical', title: 'Mechanical' },
+] as const;
 
 /** The concepts in reading order, under the part of the package each is about. */
 export const sections = [

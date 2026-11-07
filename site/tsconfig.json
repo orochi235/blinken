@@ -5,6 +5,7 @@
     "noUncheckedIndexedAccess": true,
     "allowImportingTsExtensions": true,
     "paths": {
+      "@msb235/blinken/mechanical": ["../src/mechanical/index.ts"],
       "@msb235/blinken": ["../src/index.ts"],
       "@msb235/blits/gpu": [
         "../../blits/src/gpu.ts",

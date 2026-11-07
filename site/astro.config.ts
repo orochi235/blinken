@@ -24,7 +24,11 @@ export default defineConfig({
   server: { host: '::', port: 4886 },
   vite: {
     resolve: {
-      alias: { ...blitsAlias, '@msb235/blinken': at('../src/index.ts') },
+      alias: {
+        ...blitsAlias,
+        '@msb235/blinken/mechanical': at('../src/mechanical/index.ts'),
+        '@msb235/blinken': at('../src/index.ts'),
+      },
       dedupe: ['react', 'react-dom'],
     },
     server: { fs: { allow: [at('..'), at('../../blits')] } },

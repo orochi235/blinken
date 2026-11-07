@@ -29,6 +29,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./mechanical": {
+      "types": "./dist/mechanical/index.d.ts",
+      "default": "./dist/mechanical/index.js"
+    },
     "./player": "./dist-player/blinken-player.js",
     "./package.json": "./package.json"
   },

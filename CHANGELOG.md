@@ -8,6 +8,9 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 
 **Added**
 
+- `@msb235/blinken/mechanical`: odometer reels and split-flap cards on a 2D canvas, turning forward
+  through any glyphs you give them (characters, words, or `DrawnGlyph`s that paint themselves),
+  styled per readout and per cell with `style`, `each` and `setStyle`.
 - Readouts take a `transition` for how `set` moves them to a new value: `fade`, `scramble`,
   `count`, `wipe`, `flap` (each cell steps through the alphabet, as a split-flap board's cards do) or
   `roll` (each digit rolls up, as an odometer's wheels do), from `TRANSITIONS`, or a `Transition` of
