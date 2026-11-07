@@ -1,0 +1,14 @@
+.lab-story-wide {
+  width: min(640px, 100%);
+}
+
+.lab-story-cell {
+  width: min(280px, 100%);
+}
+
+.lab-story-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
