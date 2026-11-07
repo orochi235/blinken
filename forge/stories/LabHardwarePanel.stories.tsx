@@ -19,7 +19,7 @@ function HardwarePanelStory() {
 }
 
 const meta: Meta<typeof HardwarePanelStory> = {
-  title: 'lab/compose/panels/HardwarePanel',
+  title: 'lab/compose/HardwarePanel',
   component: HardwarePanelStory,
 };
 export default meta;

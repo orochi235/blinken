@@ -29,7 +29,9 @@ What a session picking up blinken needs that the code and `TODO.md` don't alread
 ## Decisions made in conversation
 
 - Every piece of UI made here, library or lab, gets a forge story in `forge/stories` in the same
-  change (2026-11-06).
+  change (2026-11-06). A component reading a page's store gets that store from context, so its story
+  provides one of its own that saves nothing: see `ComposeStore.tsx`, `designer-bench.tsx` and the
+  `Paint*`/`Transitions*` stories in `forge/stories`.
 - Proportional is the default and `monospace` the switch; old links and files still read as
   monospace (2026-10-24).
 - Kerned letters keep a blank from each other diagonally too, not only across (2026-10-24).

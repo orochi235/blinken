@@ -37,7 +37,7 @@ function PieceCardStory({ slot, start }: PieceCardArgs) {
 }
 
 const meta: Meta<typeof PieceCardStory> = {
-  title: 'lab/compose/designer/PieceCard',
+  title: 'lab/designer/PieceCard',
   component: PieceCardStory,
   args: { slot: 'enter', start: 'drop-in' },
   argTypes: {
