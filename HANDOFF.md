@@ -22,6 +22,10 @@ What a session picking up blinken needs that the code and `TODO.md` don't alread
 - `store.ts` keeps its state and the attached sign in `import.meta.hot.data`, so hot reloads keep
   the sign attached.
 
+- `npm run forge` serves the forge workshop (`@weasel-js/forge`) on port 4887: each piece alone, with
+  controls, from the stories in `forge/stories`. Like the lab, it serves weasel from the checkout
+  beside blinken, plugin included, so the two halves of forge always match.
+
 ## Decisions made in conversation
 
 - Proportional is the default and `monospace` the switch; old links and files still read as

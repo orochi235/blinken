@@ -74,7 +74,9 @@
     "test:gpu": "node test/gpu/run.mjs",
     "bench": "node scripts/bench.mjs",
     "bench:readouts": "node scripts/bench.mjs --page digits --ways shared,readouts --digits 100,500,1000 --stack ''",
-    "version": "node scripts/pin-version.mjs && git add README.md"
+    "version": "node scripts/pin-version.mjs && git add README.md",
+    "forge": "vite --config forge/vite.config.ts",
+    "forge:build": "vite build --config forge/vite.config.ts"
   },
   "dependencies": {
     "@msb235/blits": "^1.0.0"
@@ -90,6 +92,7 @@
     "@weasel-js/core": "1.16.1",
     "@weasel-js/diagram": "1.16.1",
     "@weasel-js/font": "1.16.1",
+    "@weasel-js/forge": "1.16.1",
     "@weasel-js/history": "1.16.1",
     "@weasel-js/labkit": "1.16.1",
     "@weasel-js/theme": "1.16.1",

@@ -1,0 +1,9 @@
+.forge-box {
+  width: min(480px, 100%);
+  aspect-ratio: var(--aspect);
+}
+
+.forge-canvas {
+  display: block;
+  width: min(640px, 100%);
+}

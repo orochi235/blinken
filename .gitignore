@@ -3,6 +3,7 @@
 node_modules/
 dist/
 dist-lab/
+dist-forge/
 shots/
 test-results/
 playwright-report/
