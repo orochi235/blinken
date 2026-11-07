@@ -25,6 +25,7 @@ export default defineConfig({
         digits: page('digits.html'),
         readouts: page('readouts.html'),
         inputs: page('inputs.html'),
+        transitions: page('transitions.html'),
       },
     },
   },
