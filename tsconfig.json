@@ -14,6 +14,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@lab/*": ["./lab/*"],
+      "@player/*": ["./player/*"],
       "@msb235/blits/gpu": ["../blits/src/gpu.ts", "./node_modules/@msb235/blits/dist/gpu.d.ts"],
       "@msb235/blits": ["../blits/src/index.ts", "./node_modules/@msb235/blits"],
       "@msb235/blits-panel": [

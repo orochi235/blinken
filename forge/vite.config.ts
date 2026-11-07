@@ -28,7 +28,7 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    alias: { ...blitsAlias, '@': src, '@lab': join(root, 'lab') },
+    alias: { ...blitsAlias, '@': src, '@lab': join(root, 'lab'), '@player': join(root, 'player') },
     dedupe: ['react', 'react-dom'],
   },
   server: {

@@ -19,3 +19,15 @@
   font-size: 12px;
   white-space: pre;
 }
+
+.forge-panel {
+  display: block;
+  width: min(420px, 100%);
+  height: 200px;
+}
+
+/* A sign fits its canvas to its parent, so the parent's size can't depend on the canvas. */
+.forge-sign {
+  width: min(640px, 100%);
+  height: 120px;
+}
