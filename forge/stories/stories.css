@@ -7,3 +7,15 @@
   display: block;
   width: min(640px, 100%);
 }
+
+.forge-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.forge-value {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  white-space: pre;
+}
