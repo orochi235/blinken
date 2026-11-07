@@ -170,9 +170,17 @@ describe('spelling', () => {
       .sort();
     expect(spelling).toEqual(
       [
+        'dl2416',
+        'dl330m',
+        'dl34',
+        'dl3416',
+        'dl3422',
         'eight',
         'fourteen',
         'half',
+        'hdsp2000',
+        'hdsp211x',
+        'hp50827415',
         'matrix',
         'nine',
         'nixie',
