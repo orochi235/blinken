@@ -8,6 +8,9 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 
 **Added**
 
+- Readout types copying real parts, segment layout, character set and color: `dl3422` (22 segments
+  with descenders), `dl2416`, `dl3416`, `hdsp2000`, `hdsp211x`, `dl330m`, `hp50827415` and `dl34`.
+  A `DisplayType` now carries its default `color`.
 - `@msb235/blinken/mechanical`: odometer reels and split-flap cards on a 2D canvas, turning forward
   through any glyphs you give them (characters, words, or `DrawnGlyph`s that paint themselves),
   styled per readout and per cell with `style`, `each` and `setStyle`.
@@ -18,6 +21,7 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 
 **Fixed**
 
+- The 22-segment `e` closes its bowl and `k`'s leg meets its stem, as the DL-3422 draws them.
 - Lines of outlined or shadowed text no longer overlap: lines stand the rows a style adds further
   apart, both in a `\n`-separated message and in one repeated down a tall board. `Bitmap.pitch` gives
   the spacing.

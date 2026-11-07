@@ -20,8 +20,6 @@ import { TYPES } from './types/index.js';
 import { half as HALF } from './types/segments.js';
 import { valueVoice } from './voice.js';
 
-const NIXIE = 0xff6a1a;
-
 interface Entry extends Placed {
   readonly opts: ReadoutOptions;
   value: string | number;
@@ -415,7 +413,7 @@ export function createSurface(
       const e: Entry = {
         opts: o,
         value: o.value ?? '',
-        color: o.color ?? (o.type === 'nixie' ? NIXIE : AMBER),
+        color: o.color ?? type.color ?? AMBER,
         defects: o.defects ?? [],
         slant: o.slant ?? 0,
         spot: {

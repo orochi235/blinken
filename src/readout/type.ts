@@ -51,7 +51,15 @@ export type TypeName =
   | 'bcd'
   | 'bargraph'
   | 'triangles'
-  | 'triangles-fine';
+  | 'triangles-fine'
+  | 'dl3422'
+  | 'dl2416'
+  | 'dl3416'
+  | 'hdsp2000'
+  | 'hdsp211x'
+  | 'dl330m'
+  | 'hp50827415'
+  | 'dl34';
 
 /**
  * How a selected cell shows: `invert` swaps its lights; `block` is the browser's selection color
@@ -88,6 +96,8 @@ export interface DisplayType {
   readonly socket: 'segment' | 'wire';
   /** How far its lights bloom, as a multiple of an LED's. */
   readonly glow: number;
+  /** The color it shows unless a readout gives one, as the real part's is. Default amber. */
+  readonly color?: number;
   readonly align: Align;
   /** The lit lights' names in each of `cells` cells. */
   encode(value: string | number, cells: number, align: Align): ReadonlySet<string>[];

@@ -19,7 +19,7 @@ export interface ReadoutOptions {
   readonly cells: number;
   /** A dark faceplate behind it, its unlit segments showing on it; or nothing, only lit segments. Default `'plate'`. */
   readonly face?: 'plate' | 'none';
-  /** Its color, as hex. Default amber, or orange for a Nixie. */
+  /** Its color, as hex. Default its type's, as the real part's is: amber, orange for a Nixie. */
   readonly color?: number;
   /** How far it leans, as x per y. Default 0. */
   readonly slant?: number;

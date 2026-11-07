@@ -1,4 +1,12 @@
-import { AMBER, board, createMarquee, frameOf, rasterize, type Scene } from '@msb235/blinken';
+import {
+  AMBER,
+  board,
+  createMarquee,
+  frameOf,
+  gridOf,
+  rasterize,
+  type Scene,
+} from '@msb235/blinken';
 
 export const WORD = 'BLINKEN';
 
@@ -60,5 +68,11 @@ export function still(): string {
       const on = text.lit(x - 1, y);
       dots.push(dot(x, y, on ? '#ff9a2e' : '#21150f'));
     }
+  // The border's bulbs, lit as the logo stands still with reduced motion.
+  const grid = gridOf();
+  for (const b of board(LOGO.cols, LOGO.rows).bulbs) {
+    const [x, y] = grid(b.x, b.y);
+    dots.push(`<circle cx="${x - left}" cy="${y - top}" r="0.42" fill="#ffe7bf"/>`);
+  }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${across} ${down}"><rect width="${across}" height="${down}" rx="0.6" fill="#0d0a08"/>${dots.join('')}</svg>`;
 }

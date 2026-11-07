@@ -25,6 +25,14 @@ score.set(1984);
 
 A `:` or `.` after a digit lights that cell's colon or point. `face: 'none'` drops the dark faceplate, leaving only lit segments over the page. A readout also takes `color`, `slant`, `align`, a leading ½ digit (`half`) and `defects` by cell and segment.
 
+## Real parts
+
+Some types copy a real display: its segment or dot layout, its character set as the datasheet prints it, and its color. Each takes the part's number as its name.
+
+<Live client:only="react" of="parts.ts" />
+
+<Listing of="live/parts.ts" />
+
 ## Transitions
 
 `transition` sets how `set` moves a readout to its next value, and `transitionMs` how long that takes. Every name in `TRANSITIONS` is shown here. A type that can't spell a step, such as a bargraph under `flap`, fades instead, and so does `count` for anything that isn't a number. Typing into a readout never animates. A `Transition` of your own works the same way: given the old and new cells, it returns how brightly each light shows at each moment.

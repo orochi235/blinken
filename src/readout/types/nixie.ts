@@ -77,6 +77,7 @@ export const nixie: DisplayType = {
   gap: 1.5,
   ends: 'round',
   socket: 'wire',
+  color: 0xff6a1a,
   glow: 2.5,
   align: 'right',
   ...textCoding(Object.fromEntries(STACK.map((d) => [d, d]))),
