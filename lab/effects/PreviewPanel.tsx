@@ -1,24 +1,26 @@
 import { Input } from '@weasel-js/ui';
+import { useCallback } from 'react';
 import type { Pass, Slot, Stretch } from '@/index.js';
-import { designer, useDesk } from '../compose/designer/open.js';
+import { useDesk } from '../compose/designer/open.js';
 import { useHardware } from '../compose/hardware.js';
 import { Panel } from '../compose/Panel.js';
 import { type Focus, Playback } from '../compose/Playback.js';
 import { type SceneLook, Scrubber } from '../compose/Scrubber.js';
 import { Sign } from '../compose/Sign.js';
-import { preview, previewScene } from './preview.js';
+import { usePreview } from './preview.js';
 import './PreviewPanel.css';
 
 const NO_EFFECTS = () => ({});
-const program = () => [previewScene()];
-const look: SceneLook = () => previewScene();
 
 /**
  * The open effect looping on the sign compose plays on, its hardware shared with compose, on text
  * typed here, and changing as the designer does.
  */
 export function PreviewPanel() {
-  useDesk();
+  const designer = useDesk();
+  const preview = usePreview();
+  const program = useCallback(() => [preview.scene()], [preview]);
+  const look = useCallback<SceneLook>(() => preview.scene(), [preview]);
   const [hardware] = useHardware();
   return (
     <Panel
@@ -75,6 +77,7 @@ function spanOf(pass: Pass, focus: string): Stretch | null {
 
 /** Playback for the preview: play and pause, step, speed, and a part of the effect to loop. */
 export function PreviewPlayback() {
+  const preview = usePreview();
   return (
     <Playback
       player={preview}

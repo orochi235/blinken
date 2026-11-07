@@ -5,7 +5,7 @@ import { Panel } from '../Panel.js';
 import './DesignerPanel.css';
 import { EffectPicker } from './EffectPicker.js';
 import { builtinOf, deleteOpen } from './edit.js';
-import { designer, useDesk } from './open.js';
+import { useDesk } from './open.js';
 import { SlotBox } from './SlotBox.js';
 import { useStaged } from './staged.js';
 import { WholeEffect } from './WholeEffect.js';
@@ -15,7 +15,7 @@ import { WholeEffect } from './WholeEffect.js';
  * warnings come from staging the open effect on the preview's text.
  */
 export function DesignerPanel() {
-  useDesk();
+  const designer = useDesk();
   const shelf = useLibrary();
   const name = designer.open();
   const text = designer.text();
@@ -35,7 +35,7 @@ export function DesignerPanel() {
             <IconButton
               glyph="remove"
               label="take this effect out of the library; a composition playing it keeps its own copy"
-              onClick={deleteOpen}
+              onClick={() => deleteOpen(designer)}
             />
           )}
           {spec?.about && <span className="compose-about">{spec.about}</span>}

@@ -4,6 +4,7 @@ import { type EffectSpec, ORDERS, type OrderBy } from '@/index.js';
 import { DENSITY, numberField, schemaFor } from '../schema.js';
 import { BLEND, HOLD, LAG } from '../state.js';
 import { editEffect, renameEffect } from './edit.js';
+import { useDesigner } from './open.js';
 
 const NONE: ReadonlySet<string> = new Set();
 const OWN_HOLD: ReadonlySet<string> = new Set(['hold']);
@@ -29,9 +30,10 @@ const schema = () =>
 
 /** The open effect as a whole: its name, its order, its hold and its blend. */
 export function WholeEffect({ name, spec }: { name: string; spec: EffectSpec }) {
+  const designer = useDesigner();
   const [refusals, setRefusals] = useState(0);
   const set = (path: string, v: unknown) =>
-    editEffect((e) => {
+    editEffect(designer, (e) => {
       if (path === 'order') {
         const { order: _, ...rest } = e;
         return v === 'none' ? rest : { ...rest, order: { ...e.order, by: v as OrderBy } };
@@ -46,7 +48,7 @@ export function WholeEffect({ name, spec }: { name: string; spec: EffectSpec }) 
     });
   const commit = (path: string, v: unknown) => {
     if (path === 'name') {
-      if (!renameEffect(name, String(v).trim())) setRefusals((n) => n + 1);
+      if (!renameEffect(designer, name, String(v).trim())) setRefusals((n) => n + 1);
     } else set(path, v);
   };
   const draft = (path: string, v: unknown) => {

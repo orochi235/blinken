@@ -1,22 +1,15 @@
 import { Button } from '@weasel-js/labkit';
 import { useRef, useState } from 'react';
-import { designer, useDesk } from '../compose/designer/open.js';
-import { library, libraryJson, parseLibrary } from '../compose/library.js';
+import { useDesk } from '../compose/designer/open.js';
+import { libraryJson, parseLibrary } from '../compose/library.js';
 import { download } from '../download.js';
 import { UndoBar } from '../shell/UndoBar.js';
 import './LibraryBar.css';
 
-const undoable = {
-  canUndo: designer.canUndo,
-  canRedo: designer.canRedo,
-  undo: designer.undo,
-  redo: designer.redo,
-  subscribe: designer.subscribe,
-};
-
 /** The effects page's bar: undo, and the library to and from a JSON file. */
 export function LibraryBar() {
-  useDesk();
+  const designer = useDesk();
+  const { library } = designer;
   const picker = useRef<HTMLInputElement>(null);
   const [said, setSaid] = useState<string | null>(null);
   const load = async (file: File) => {
@@ -40,7 +33,7 @@ export function LibraryBar() {
   };
   return (
     <div className="effects-bar">
-      <UndoBar target={undoable} />
+      <UndoBar target={designer} />
       {said && <span className="compose-warning">{said}</span>}
       <Button
         size="sm"
