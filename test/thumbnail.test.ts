@@ -1,6 +1,7 @@
 import { watched } from '@msb235/blits';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMarquee } from '@/marquee.js';
+import { FADE } from '@/optics.js';
 import { createThumbnail } from '@/thumbnail.js';
 import { createTicker } from '@/ticker.js';
 
@@ -215,6 +216,16 @@ describe('createThumbnail', () => {
     frame(632);
     expect(ticker.size).toBe(0);
     expect(t.marquee.pass()?.at).toBeCloseTo(reached, 0);
+    t.destroy();
+  });
+
+  it('fades its dots as a sign does while a still plays, and not once it holds again', () => {
+    const t = createThumbnail(fakeCanvas(), { effect: 'scroll', text: 'HI', still: 500 });
+    const fade = vi.spyOn(t.marquee, 'setFade');
+    t.play(true);
+    expect(fade).toHaveBeenLastCalledWith(FADE);
+    t.play(false);
+    expect(fade).toHaveBeenLastCalledWith({ rise: 0, fall: 0 });
     t.destroy();
   });
 

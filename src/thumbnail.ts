@@ -5,6 +5,7 @@ import { type Look, ROWS, rasterize } from './font.js';
 import { liveliest } from './liveliest.js';
 import { createMarquee } from './marquee.js';
 import type { Follow, Marquee } from './marquee-api.js';
+import { FADE } from './optics.js';
 import { rowsToShow } from './orders.js';
 import type { Backend } from './render/backend.js';
 import type { Gpu } from './render/gpu.js';
@@ -192,11 +193,10 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
         redraw?.();
       });
   } else if (opts.still !== undefined) marquee.seek(opts.still, { hold: true });
-  if (opts.still !== undefined) {
-    // One frame is all a still gets, and a frame after a long wait counts no time, so the dots'
-    // warm-up would leave them dark.
-    marquee.setFade({ rise: 0, fall: 0 });
-  }
+  // One frame is all a still gets, and a frame after a long wait counts no time, so the dots'
+  // warm-up would leave them dark. Played, it fades as any sign does.
+  const fadeFor = (still: boolean) => marquee.setFade(still ? { rise: 0, fall: 0 } : FADE);
+  if (opts.still !== undefined) fadeFor(true);
   const resized =
     opts.still === undefined || typeof ResizeObserver === 'undefined'
       ? null
@@ -220,6 +220,7 @@ export function createThumbnail(canvas: HTMLCanvasElement, opts: ThumbnailOption
     play(on, at) {
       if (on === !held && at === undefined) return;
       held = !on;
+      fadeFor(held);
       const to = at === 'still' ? rest : at;
       marquee.seek(to ?? marquee.pass()?.at ?? 0, { hold: held });
       // The callback on the ticker changes, so the old one comes off first.

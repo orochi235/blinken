@@ -38,6 +38,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 - On a message of several lines, `split-in` and `split-out` part each line through its own
   letters, and `wave` by letter bobs each line's letters whole, rather than reading every line as
   the last.
+- A still thumbnail played with `play(true)` fades its dots as a sign does, rather than keeping the
+  instant on and off it holds with.
 
 ## 0.2.0
 
