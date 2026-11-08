@@ -254,7 +254,7 @@ export function createComposeStore({
 
   // An edit on the effects page, in this tab or another, reaches the composition as it lands. It is
   // the library's change, not the composition's, so it stays out of the composition's undo.
-  library.subscribe(() => {
+  const unsubscribe = library.subscribe(() => {
     const next = adopted(live.state, library.get());
     if (next) {
       live.state = next;
@@ -264,7 +264,8 @@ export function createComposeStore({
     } else notify();
   });
 
-  return store;
+  /** Stops following the library, for a store a hot reload replaces. */
+  return Object.assign(store, { dispose: unsubscribe });
 }
 
 export type ComposeStore = ReturnType<typeof createComposeStore>;

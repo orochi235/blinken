@@ -31,6 +31,7 @@ let page: ComposeStore | undefined;
  */
 export const pageStore = (): ComposeStore =>
   (page ??= createComposeStore({ persist: true, keep: import.meta.hot?.data }));
+import.meta.hot?.dispose(() => page?.dispose());
 
 const Store = createContext<ComposeStore | null>(null);
 
