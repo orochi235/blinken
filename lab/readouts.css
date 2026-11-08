@@ -106,8 +106,20 @@ body {
   gap: 6px;
   padding: 10px;
   border-radius: 8px;
-  background: #f4efe9;
+  --card-alpha: 100%;
+  background: color-mix(in srgb, #f4efe9 var(--card-alpha), transparent);
   color: #2a201b;
+}
+
+/* Cards step through four opacities, against five card types, so each type is seen at each one. */
+.card:nth-child(4n + 2) {
+  --card-alpha: 75%;
+}
+.card:nth-child(4n + 3) {
+  --card-alpha: 50%;
+}
+.card:nth-child(4n + 4) {
+  --card-alpha: 25%;
 }
 
 .slot {
