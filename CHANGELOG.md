@@ -41,6 +41,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   fractional width had the browser squeeze a pixel or two out of it.
 - Under WebGPU, readouts keep their selection's highlight when they relay out, and a sign that
   relays out keeps the sign it follows and reads back its new poses.
+- A WebGL sign made on a canvas whose last sign was destroyed while its context was lost draws once
+  the context is restored, where it stayed dark for good.
 - On a 2D canvas, each readout's glow spreads by its lights' own `glow`, as WebGL and WebGPU spread
   it.
 
