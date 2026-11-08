@@ -13,7 +13,8 @@ import type { Readout, ReadoutDefect, ReadoutOptions, Surface, SurfaceOptions } 
 import { flow } from './flow.js';
 import { dotOf, type Laid, type Layout, layOutReadouts, linesOf } from './layout.js';
 import { type Box, type Canvas, type Placed, surfacePlacement } from './placement.js';
-import { createTextLayer, type Picked } from './text.js';
+import { createTextLayer } from './text.js';
+import type { Picked } from './text-cells.js';
 import {
   type CellFrame,
   type CellShown,
@@ -158,8 +159,9 @@ function shownOf(e: Entry, value: string | number = e.value): Shown {
   /** A flowed cell, row by row `cells` wide, as a cell of the spot, past any ½ digit. */
   const cellOf = (at: number) =>
     at < 0 ? -1 : Math.floor(at / e.opts.cells) * perLine + first + (at % e.opts.cells);
-  const places: number[] = [];
-  const carets: (number | null)[] = [];
+  // A ½ digit's characters all show in its one cell.
+  const places: number[] = [...lead].map(() => 0);
+  const carets: (number | null)[] = [...lead].map(() => 0);
   for (const [t, tok] of toks.entries()) {
     const k = cellOf(f.at[t] ?? -1);
     if (k >= 0 && cells[k]) cells[k] = { ...cells[k], lit: spell.lights(tok), text: asShown(tok) };
@@ -294,6 +296,7 @@ export function createSurface(
       entries.map((e) =>
         selectable(e)
           ? {
+              key: e,
               spot: e.spot,
               block: selectionOf(e) === 'block',
               edit: editable(e),
@@ -342,14 +345,12 @@ export function createSurface(
         text.write(
           i,
           shown.cells.map((c) => c.text),
-          editable(e)
-            ? {
-                value: String(e.value),
-                copied: shown.copied,
-                places: shown.places,
-                carets: shown.carets,
-              }
-            : undefined,
+          {
+            value: String(e.value),
+            copied: shown.copied,
+            places: shown.places,
+            carets: shown.carets,
+          },
         );
     }
     voice?.fade({ over: 0 });

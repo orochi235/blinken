@@ -1,15 +1,20 @@
 import {
-  anchor,
-  anchorOf,
-  copying,
+  boxOf,
   forget,
+  pickOf,
   type Reach,
-  reachAt,
   reachable,
-  span,
+  refresh,
+  regroup,
+  stretched,
 } from './across.js';
+import { type CopiedLine, copying } from './copy.js';
 import type { Spot } from './layout.js';
 import type { Fit } from './placement.js';
+import { cellAt, type One, type Picked, type Pressing } from './text-cells.js';
+import { placeAll } from './text-place.js';
+import { all, pressRead } from './text-press.js';
+import { addField, type FieldOptions, pressTyped, typedPick } from './text-typed.js';
 
 const STYLE = `
 .blinken-text { position: absolute; pointer-events: none; overflow: hidden; }
@@ -22,7 +27,7 @@ const STYLE = `
   font-family: ui-monospace, monospace; text-align: center; transform-origin: 0 0;
 }
 .blinken-text-cell::selection { color: transparent; background: transparent; }
-.blinken-text-block .blinken-text-cell::selection { background: color-mix(in srgb, Highlight 45%, transparent); }
+.blinken-text-block .blinken-text-on { background: color-mix(in srgb, Highlight 45%, transparent); }
 .blinken-text-input {
   position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0;
   opacity: 0; pointer-events: none; user-select: text; -webkit-user-select: text;
@@ -40,6 +45,18 @@ function style(doc: Document): void {
   doc.head.append(sheet);
 }
 
+/** A readout's characters as its value spells them, for `write`. */
+export interface Spelled {
+  /** Its value as typed. */
+  readonly value: string;
+  /** The value as it copies, a character for each of the value's. */
+  readonly copied: string;
+  /** Each character's cell, or -1 where it shows nowhere. */
+  readonly places: readonly number[];
+  /** For each caret place, the cell a caret there stands at. */
+  readonly carets: readonly (number | null)[];
+}
+
 /**
  * See-through text over a surface's readouts, a box per cell holding the characters it shows, so
  * the page's own selection, copy and screen readers reach them. A readout of a type that selects
@@ -49,34 +66,22 @@ function style(doc: Document): void {
 export interface TextLayer {
   /**
    * Makes boxes for each readout's cells, by readout order; `null` for one that can't be selected.
-   * An editable one also gets a hidden field that takes the keyboard.
+   * `key` is what the readout is known by across rebuilds, so what was picked in it comes back. An
+   * editable one also gets a hidden field that takes the keyboard.
    */
   build(
-    readouts: readonly ({
-      spot: Spot;
-      block: boolean;
-      edit: boolean;
-      label?: string;
-      field?: Readonly<Record<string, string>>;
-      onKeyDown?: (e: KeyboardEvent) => void;
-      onBlur?: () => void;
-    } | null)[],
+    readouts: readonly (
+      | (FieldOptions & {
+          key: unknown;
+          spot: Spot;
+          block: boolean;
+          edit: boolean;
+        })
+      | null
+    )[],
   ): void;
-  /**
-   * Sets readout `i`'s cells' characters, a cell's '' for a blank; an editable one's value as typed,
-   * and where each of its characters shows, as its type's `places` gives.
-   */
-  write(
-    i: number,
-    cells: readonly string[],
-    typed?: {
-      value: string;
-      /** The value as it copies, a character for each of the value's. */
-      copied: string;
-      places: readonly number[];
-      carets: readonly (number | null)[];
-    },
-  ): void;
+  /** Sets readout `i`'s cells' characters, a cell's '' for a blank, and how its value spells. */
+  write(i: number, cells: readonly string[], spelled: Spelled): void;
   /** Sets attributes on editable readout `i`'s field. */
   field(i: number, attributes: Readonly<Record<string, string>>): void;
   /** Moves every box to where its readout is drawn now. */
@@ -92,10 +97,16 @@ function covers(range: Range, node: Text): boolean {
   return true;
 }
 
-/** What of a readout is picked: the cells a selection takes in, and the cell a caret stands at. */
-export interface Picked {
-  readonly cells: readonly boolean[];
-  readonly caret: number | null;
+/** Follows the pointer on `doc` with `move` until the button comes up, giving what stops it early. */
+function track(doc: Document, move: (m: MouseEvent) => void, done: () => void): () => void {
+  const up = () => {
+    doc.removeEventListener('mousemove', move);
+    doc.removeEventListener('mouseup', up);
+    done();
+  };
+  doc.addEventListener('mousemove', move);
+  doc.addEventListener('mouseup', up);
+  return up;
 }
 
 /**
@@ -114,269 +125,89 @@ export function createTextLayer(
   const layer = doc.createElement('div');
   layer.className = fixed ? 'blinken-text blinken-text-fixed' : 'blinken-text';
   canvas.after(layer);
-  let readouts: ({
-    spot: Spot;
-    group: HTMLElement;
-    texts: Text[];
-    cells: HTMLElement[];
-    /** Its fit when last placed, so an unmoved readout isn't restyled. */
-    at: string;
-    /** An editable one's field: a text area where it has more than one row. */
-    input: HTMLInputElement | HTMLTextAreaElement | null;
-    /** Each character's cell, or -1 where it shows nowhere. */
-    places: readonly number[];
-    /** An editable one's value as it copies. */
-    copied: string;
-    /** For each caret place, the cell a caret there stands at. */
-    carets: readonly (number | null)[];
-    /** It as a drag from any readout on the page reaches it. */
-    reach: Reach;
-  } | null)[] = [];
-  const reaches = () => readouts.flatMap((r) => (r ? [r.reach] : []));
-  /** A caret or selection to put back once a rebuilt readout has its value again. */
-  let restore:
-    | { i: number; start: number; end: number; dir: 'forward' | 'backward' | 'none' }
-    | { i: number; a: number; b: number }
-    | null = null;
+  let readouts: (One | null)[] = [];
+  const reaches = () => readouts.flatMap((r) => (r && !r.input ? [r.reach] : []));
+  /** A focused field's caret or selection, put back once its rebuilt readout has its value again. */
+  let restore: {
+    key: unknown;
+    start: number;
+    end: number;
+    dir: 'forward' | 'backward' | 'none';
+  } | null = null;
+  let rebuilding = false;
   let shown = '';
-  /** What of editable `r` its field's caret or selection picks, while it has the focus. */
-  const typedPick = (r: One, input: HTMLInputElement | HTMLTextAreaElement): Picked => {
-    const n = r.cells.length;
-    const none = new Array<boolean>(n).fill(false);
-    if (doc.activeElement !== input) return { cells: none, caret: null };
-    const s = input.selectionStart ?? 0;
-    const e = input.selectionEnd ?? s;
-    if (e > s) {
-      const cells = [...none];
-      for (let k = s; k < e; k++) {
-        const at = r.places[k] ?? -1;
-        if (at >= 0) cells[at] = true;
-      }
-      return { cells, caret: null };
-    }
-    return { cells: none, caret: r.carets[s] ?? null };
-  };
+  const typing = () => readouts.find((r) => r?.input && doc.activeElement === r.input) ?? null;
   const report = () => {
     const sel = doc.getSelection();
     const ranges =
       sel && !sel.isCollapsed
         ? Array.from({ length: sel.rangeCount }, (_, k) => sel.getRangeAt(k))
         : [];
-    // An editable one's field picks while it has the focus; otherwise the page's selection does,
-    // as for any readout, so a select-all takes it in too.
-    const now = readouts.map((r) =>
-      r
-        ? r.input && doc.activeElement === r.input
-          ? typedPick(r, r.input)
-          : { cells: r.texts.map((t) => ranges.some((range) => covers(range, t))), caret: null }
-        : null,
-    );
+    const own = stretched(doc);
+    // A focused field picks in its readout; otherwise a selection made by pressing in readouts
+    // does, or the page's selection, so a select-all takes them in too.
+    const now = readouts.map((r): Picked | null => {
+      if (!r) return null;
+      if (r.input && doc.activeElement === r.input) return typedPick(r, r.input);
+      const p = own ? pickOf(doc, r.reach) : null;
+      return {
+        cells: r.texts.map((t, k) =>
+          own ? !!p && k >= p[0] && k <= p[1] : ranges.some((range) => covers(range, t)),
+        ),
+        caret: null,
+      };
+    });
     const key = JSON.stringify(now);
     if (key === shown) return;
     shown = key;
+    for (const [i, r] of readouts.entries())
+      if (r?.block)
+        for (const [k, cell] of r.cells.entries())
+          cell.classList.toggle('blinken-text-on', now[i]?.cells[k] ?? false);
     selected(now);
   };
   doc.addEventListener('selectionchange', report);
 
-  type One = NonNullable<(typeof readouts)[number]>;
-  /** Where in an editable readout's value a press on cell `k` puts the caret, `after` its middle or not. */
-  const posAt = (r: One, k: number, after: boolean): number => {
-    const ks = r.places.flatMap((p, i) => (p === k ? [i] : []));
-    if (ks.length > 0) return after ? (ks.at(-1) as number) + 1 : (ks[0] as number);
-    // A blank cell: the start of its row's characters if it's before them, else their end.
-    const row = Math.floor(k / r.spot.perLine);
-    const mine = r.places.flatMap((p, i) =>
-      p >= 0 && Math.floor(p / r.spot.perLine) === row ? [i] : [],
-    );
-    if (mine.length > 0)
-      return k < (r.places[mine[0] as number] as number)
-        ? (mine[0] as number)
-        : (mine.at(-1) as number) + 1;
-    const at = r.carets.findIndex((c) => c !== null && Math.floor(c / r.spot.perLine) === row);
-    return at >= 0 ? at : r.places.length;
+  let ending: (() => void) | null = null;
+  const pressing: Pressing = {
+    doc,
+    report,
+    drag(move) {
+      ending?.();
+      ending = track(doc, move, () => {
+        ending = null;
+      });
+    },
+    find: (key) => readouts.find((r) => r?.key === key) ?? null,
   };
-  /** Selects cells `a` to `b` of `r`, either order, as the page's selection. */
-  const choose = (r: One, a: number, b: number) => span(doc, r.reach, a, r.reach, b);
-  /** The cell of `r` nearest (`x`, `y`), in client pixels: in the nearest row, the nearest across. */
-  const cellAt = (r: One, x: number, y: number): number => {
-    let best = 0;
-    let gap = Number.POSITIVE_INFINITY;
-    for (const [k, cell] of r.cells.entries()) {
-      const b = cell.getBoundingClientRect();
-      const off = Math.max(0, Math.abs(y - (b.top + b.bottom) / 2) - b.height / 2);
-      const d = off * 1e4 + Math.abs(x - (b.left + b.right) / 2);
-      if (d < gap) {
-        gap = d;
-        best = k;
-      }
-    }
-    return best;
-  };
-  const blank = (t: Text | undefined) => !t || t.data.trim() === '';
-  // The browser selects nothing reliably across separately placed cells, so a press is read here,
-  // a whole cell at a time: drag, double-click for a run between blanks, triple-click for it all.
-  /** A press on an editable readout: the same gestures, moving its field's caret or selection. */
-  const pressTyped = (r: One, input: HTMLInputElement | HTMLTextAreaElement, e: MouseEvent) => {
-    input.focus();
-    const posOf = (m: MouseEvent) => {
-      const k = cellAt(r, m.clientX, m.clientY);
-      const b = r.cells[k]?.getBoundingClientRect();
-      return posAt(r, k, b ? m.clientX > (b.left + b.right) / 2 : false);
-    };
-    const at = posOf(e);
-    if (e.detail >= 3) {
-      input.select();
-      report();
-      return;
-    }
-    if (e.detail === 2) {
-      const v = input.value;
-      const word = (i: number) => i >= 0 && i < v.length && v[i]?.trim() !== '';
-      let a = Math.min(at, Math.max(0, v.length - 1));
-      if (!word(a)) return;
-      let b = a + 1;
-      while (word(a - 1)) a--;
-      while (word(b)) b++;
-      input.setSelectionRange(a, b);
-      report();
-      return;
-    }
-    const from = e.shiftKey ? (input.selectionStart ?? at) : at;
-    input.setSelectionRange(Math.min(from, at), Math.max(from, at));
-    report();
-    const move = (m: MouseEvent) => {
-      const to = posOf(m);
-      input.setSelectionRange(
-        Math.min(from, to),
-        Math.max(from, to),
-        to < from ? 'backward' : 'forward',
-      );
-      report();
-    };
-    const up = () => {
-      doc.removeEventListener('mousemove', move);
-      doc.removeEventListener('mouseup', up);
-    };
-    doc.addEventListener('mousemove', move);
-    doc.addEventListener('mouseup', up);
-  };
-  // A text area's own rows wrap where its hidden text does, not where the cells do, so the keys
-  // that move by row move by the readout's rows here.
-  const rowKey = (r: One, input: HTMLTextAreaElement, k: KeyboardEvent) => {
-    if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(k.key) || k.metaKey || k.ctrlKey) return;
-    const back = input.selectionDirection === 'backward';
-    const start = input.selectionStart ?? 0;
-    const end = input.selectionEnd ?? start;
-    const at = back ? start : end;
-    const cell = r.carets[at];
-    if (cell === null || cell === undefined) return;
-    k.preventDefault();
-    const per = r.spot.perLine;
-    const row = Math.floor(cell / per);
-    const col = cell % per;
-    const on = (want: number) =>
-      r.carets.flatMap((c, p) => (c !== null && Math.floor(c / per) === want ? [p] : []));
-    let to: number;
-    if (k.key === 'Home') to = on(row)[0] ?? at;
-    else if (k.key === 'End') to = on(row).at(-1) ?? at;
-    else {
-      const want = row + (k.key === 'ArrowUp' ? -1 : 1);
-      const ps = on(want);
-      if (ps.length === 0) to = k.key === 'ArrowUp' ? 0 : r.carets.length - 1;
-      else
-        to = ps.reduce((best, p) =>
-          Math.abs(((r.carets[p] as number) % per) - col) <
-          Math.abs(((r.carets[best] as number) % per) - col)
-            ? p
-            : best,
-        );
-    }
-    const from = k.shiftKey ? (back ? end : start) : to;
-    input.setSelectionRange(
-      Math.min(from, to),
-      Math.max(from, to),
-      to < from ? 'backward' : 'forward',
-    );
-    report();
-  };
+
   /** Cmd or Ctrl+A in a readout selects all of it, rather than leaving it to the page. */
   const selectAll = (r: One) => (k: KeyboardEvent) => {
     if (k.defaultPrevented) return;
     if (k.key.toLowerCase() !== 'a' || !(k.metaKey || k.ctrlKey) || k.altKey || k.shiftKey) return;
     k.preventDefault();
     if (r.input) r.input.select();
-    else choose(r, 0, r.cells.length - 1);
+    else all(pressing, r);
     report();
   };
   const press = (r: One) => (e: MouseEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
-    if (r.input) {
-      pressTyped(r, r.input, e);
-      return;
-    }
-    // Focused, so the keyboard reaches it: Cmd+A selects it, as in a field.
-    r.group.focus({ preventScroll: true });
-    const k = cellAt(r, e.clientX, e.clientY);
-    if (e.detail >= 3) {
-      choose(r, 0, r.cells.length - 1);
-      return;
-    }
-    if (e.detail === 2) {
-      if (blank(r.texts[k])) return;
-      let a = k;
-      let b = k;
-      while (a > 0 && !blank(r.texts[a - 1])) a--;
-      while (b < r.texts.length - 1 && !blank(r.texts[b + 1])) b++;
-      choose(r, a, b);
-      return;
-    }
-    // Shift+click extends from the last press, in this readout or another; a drag runs on into
-    // whichever readout the pointer reaches, as across text, and stays with the last it reached.
-    const held = anchorOf(doc);
-    const from = e.shiftKey && held ? held : { r: r.reach, k };
-    if (from === held) span(doc, from.r, from.k, r.reach, k);
-    else {
-      anchor(doc, from);
-      doc.getSelection()?.removeAllRanges();
-    }
-    let over = r.reach;
-    const x0 = e.clientX;
-    const move = (m: MouseEvent) => {
-      over = reachAt(doc, m.clientX, m.clientY) ?? over;
-      const to = over.cellAt(m.clientX, m.clientY);
-      if (over === from.r && Math.abs(m.clientX - x0) < 3 && to === from.k) return;
-      span(doc, from.r, from.k, over, to);
-    };
-    const up = () => {
-      doc.removeEventListener('mousemove', move);
-      doc.removeEventListener('mouseup', up);
-    };
-    doc.addEventListener('mousemove', move);
-    doc.addEventListener('mouseup', up);
+    if (r.input) pressTyped(pressing, r, r.input, e);
+    else pressRead(pressing, r, e);
   };
-
-  // A press on the canvas, or anywhere else that isn't text, leaves the page's selection as it was,
-  // so one outside every readout clears a selection held in this layer.
-  const outside = (e: MouseEvent) => {
-    if (e.button !== 0 || e.shiftKey) return;
-    if (e.target instanceof Node && layer.contains(e.target)) return;
-    const sel = doc.getSelection();
-    if (sel?.anchorNode && layer.contains(sel.anchorNode)) sel.removeAllRanges();
-  };
-  doc.addEventListener('mousedown', outside, true);
 
   /** What this layer copies: each readout's selected cells, row by row. */
-  const copied = (): string[] | null => {
-    const typing = readouts.find((r) => r?.input && doc.activeElement === r.input);
-    if (typing?.input) {
+  const copied = (): CopiedLine[] | null => {
+    const t = typing();
+    if (t?.input) {
       // A focused field copies its selection, in the case its readout copies in.
-      const s = typing.input.selectionStart ?? 0;
-      const e = typing.input.selectionEnd ?? s;
-      return e > s ? [typing.copied.slice(s, e)] : null;
+      const s = t.input.selectionStart ?? 0;
+      const e = t.input.selectionEnd ?? s;
+      return e > s ? [{ box: boxOf(t.reach), text: t.copied.slice(s, e) }] : null;
     }
     const picks: (Picked | null)[] = shown ? JSON.parse(shown) : [];
-    const lines: string[] = [];
+    const lines: CopiedLine[] = [];
     for (const [i, r] of readouts.entries()) {
       const cells = picks[i]?.cells;
       if (!r || !cells?.some(Boolean)) continue;
@@ -385,32 +216,30 @@ export function createTextLayer(
         const row = Math.floor(k / r.spot.perLine);
         rows[row] = (rows[row] ?? '') + (on ? (r.texts[k]?.data ?? '') : '');
       }
-      lines.push(rows.filter((row) => row !== '').join('\n'));
+      lines.push({ box: boxOf(r.reach), text: rows.filter((row) => row !== '').join('\n') });
     }
     return lines;
   };
-  const uncopy = copying(doc, { at: layer, lines: copied });
+  const uncopy = copying(doc, copied);
 
   return {
     build(list) {
-      // A rebuild replaces every box, so what was selected or typed at comes back with the value.
-      const active = readouts.findIndex((r) => r?.input && doc.activeElement === r.input);
-      const was = active >= 0 ? readouts[active]?.input : null;
-      if (was)
-        restore = {
-          i: active,
-          start: was.selectionStart ?? 0,
-          end: was.selectionEnd ?? 0,
-          dir: was.selectionDirection ?? 'none',
-        };
-      else {
-        const picks: (Picked | null)[] = shown ? JSON.parse(shown) : [];
-        const i = picks.findIndex((p) => p?.cells.some(Boolean));
-        const cells = picks[i]?.cells ?? [];
-        restore = i >= 0 ? { i, a: cells.indexOf(true), b: cells.lastIndexOf(true) } : null;
-      }
-      forget(doc, reaches());
+      // A rebuild replaces every box, so what was typed at comes back with the value; a readout
+      // keeps its reach, so a selection over it, and a drag running into it, carry on.
+      const t = typing();
+      restore = t?.input
+        ? {
+            key: t.key,
+            start: t.input.selectionStart ?? 0,
+            end: t.input.selectionEnd ?? 0,
+            dir: t.input.selectionDirection ?? 'none',
+          }
+        : null;
+      const kept = new Map(readouts.flatMap((r) => (r ? [[r.key, r.reach] as const] : [])));
+      const was = reaches();
+      rebuilding = true;
       layer.replaceChildren();
+      rebuilding = false;
       readouts = list.map((one) => {
         if (!one) return null;
         const { spot } = one;
@@ -432,69 +261,52 @@ export function createTextLayer(
           texts.push(text);
         }
         layer.append(group);
+        const reach: Reach = kept.get(one.key) ?? { group, texts, cellAt: () => 0 };
         const made: One = {
+          key: one.key,
           spot,
           group,
           texts,
           cells,
+          block: one.block,
           at: '',
           input: null,
           places: [],
           carets: [],
           copied: '',
-          reach: { texts, cellAt: (x, y) => cellAt(made, x, y) },
+          reach,
         };
-        if (one.edit) {
-          const rows = spot.cells.length > spot.perLine;
-          const input = rows ? doc.createElement('textarea') : doc.createElement('input');
-          input.className = 'blinken-text-input';
-          if (input instanceof HTMLInputElement) input.type = 'text';
-          input.spellcheck = false;
-          input.autocomplete = 'off';
-          group.append(input);
-          made.input = input;
-          let last = '';
-          input.addEventListener('focus', () => {
-            last = input.value;
-          });
-          input.addEventListener('input', () => {
-            const i = readouts.indexOf(made);
-            if (edited(i, input.value)) last = input.value;
-            else {
-              const at = Math.max(0, (input.selectionStart ?? 1) - 1);
-              input.value = last;
-              input.setSelectionRange(at, at);
-            }
-            report();
-          });
-          for (const [name, v] of Object.entries(one.field ?? {})) input.setAttribute(name, v);
-          // The page's own keys come first, and a key it takes is not the readout's.
-          const onKey = one.onKeyDown;
-          if (onKey) input.addEventListener('keydown', (k) => onKey(k as KeyboardEvent));
-          const onBlur = one.onBlur;
-          if (onBlur) input.addEventListener('blur', () => onBlur());
-          if (input instanceof HTMLTextAreaElement)
-            input.addEventListener('keydown', (k) => {
-              if (!k.defaultPrevented) rowKey(made, input, k);
-            });
-          for (const name of ['keyup', 'select', 'selectionchange', 'focus', 'blur'])
-            input.addEventListener(name, report);
-        }
-        if (one.label) {
-          if (made.input) made.input.setAttribute('aria-label', one.label);
-          else {
-            group.setAttribute('role', 'group');
-            group.setAttribute('aria-label', one.label);
-          }
+        Object.assign(reach, {
+          group,
+          texts,
+          cellAt: (x: number, y: number) => cellAt(made, x, y),
+        });
+        if (one.edit)
+          made.input = addField(
+            pressing,
+            made,
+            one,
+            (value) => edited(readouts.indexOf(made), value),
+            () => rebuilding,
+          );
+        else if (one.label) {
+          group.setAttribute('role', 'group');
+          group.setAttribute('aria-label', one.label);
         }
         group.addEventListener('mousedown', press(made));
         group.addEventListener('keydown', selectAll(made));
         if (!one.edit) {
           group.tabIndex = -1;
-          reachable(group, made.reach);
+          reachable(doc, reach, report);
+          regroup(reach);
         }
         return made;
       });
+      const now = new Set(reaches());
+      forget(
+        doc,
+        was.filter((r) => !now.has(r)),
+      );
       shown = '';
       report();
     },
@@ -502,88 +314,37 @@ export function createTextLayer(
       const input = readouts[i]?.input;
       if (input) for (const [name, v] of Object.entries(attributes)) input.setAttribute(name, v);
     },
-    write(i, chars, typed) {
+    write(i, chars, spelled) {
       const r = readouts[i];
       if (!r) return;
-      if (r.input && typed) {
-        r.places = typed.places;
-        r.copied = typed.copied;
-        r.carets = typed.carets;
-        if (r.input.value !== typed.value) r.input.value = typed.value;
-      }
+      r.places = spelled.places;
+      r.copied = spelled.copied;
+      r.carets = spelled.carets;
+      if (r.input && r.input.value !== spelled.value) r.input.value = spelled.value;
+      let changed = false;
       for (const [k, t] of r.texts.entries()) {
         const next = chars[k] ?? '';
-        if (t.data !== next) t.data = next;
+        if (t.data === next) continue;
+        t.data = next;
+        changed = true;
       }
-      if (restore?.i === i) {
-        const back = restore;
+      // New characters collapse a range over the old ones.
+      if (changed) refresh(doc, r.reach);
+      const back = restore;
+      if (back && back.key === r.key && r.input) {
         restore = null;
-        if ('start' in back && r.input) {
-          r.input.focus();
-          r.input.setSelectionRange(back.start, back.end, back.dir);
-        } else if ('a' in back) choose(r, back.a, back.b);
+        r.input.focus();
+        r.input.setSelectionRange(back.start, back.end, back.dir);
       }
       report();
     },
     place(fits) {
-      if (!fixed) {
-        const box = `${canvas.offsetLeft} ${canvas.offsetTop} ${canvas.offsetWidth} ${canvas.offsetHeight}`;
-        if (box !== layer.dataset.box) {
-          layer.dataset.box = box;
-          Object.assign(layer.style, {
-            left: `${canvas.offsetLeft}px`,
-            top: `${canvas.offsetTop}px`,
-            width: `${canvas.offsetWidth}px`,
-            height: `${canvas.offsetHeight}px`,
-          });
-        }
-      }
-      const w = layer.clientWidth;
-      const h = layer.clientHeight;
-      for (const [i, r] of readouts.entries()) {
-        if (!r) continue;
-        const f = fits[i] ?? null;
-        const at = f ? JSON.stringify([f, w, h]) : '';
-        if (at === r.at) continue;
-        r.at = at;
-        r.group.hidden = !f;
-        if (!f) continue;
-        // The group covers the readout's whole box and takes the pointer, so a drag ending between
-        // its cells lands in them rather than in whatever text the page has elsewhere.
-        const { width, height } = r.spot;
-        const gx = f.left - height * f.slant * f.scale;
-        const gy = f.top;
-        const gw = (width + height * f.slant) * f.scale;
-        const gh = height * f.scale;
-        const c = f.clip;
-        Object.assign(r.group.style, {
-          left: `${gx}px`,
-          top: `${gy}px`,
-          width: `${gw}px`,
-          height: `${gh}px`,
-          clipPath: `inset(${c.y0 - gy}px ${gx + gw - c.x1}px ${gy + gh - c.y1}px ${c.x0 - gx}px)`,
-        });
-        const skew = `skewX(${-Math.atan(f.slant)}rad)`;
-        for (const [k, cell] of r.cells.entries()) {
-          const b = r.spot.cells[k];
-          if (!b) continue;
-          const tall = b.height * f.scale;
-          Object.assign(cell.style, {
-            left: `${f.left - gx + (b.x - b.y * f.slant) * f.scale}px`,
-            top: `${b.y * f.scale}px`,
-            width: `${b.width * f.scale}px`,
-            height: `${tall}px`,
-            fontSize: `${tall * 0.8}px`,
-            lineHeight: `${tall}px`,
-            transform: f.slant ? skew : '',
-          });
-        }
-      }
+      placeAll(layer, fixed ? null : canvas, readouts, fits);
     },
     destroy() {
+      ending?.();
       doc.removeEventListener('selectionchange', report);
-      doc.removeEventListener('mousedown', outside, true);
-      forget(doc, reaches());
+      forget(doc, reaches(), report);
       uncopy();
       layer.remove();
     },

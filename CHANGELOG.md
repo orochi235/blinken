@@ -13,11 +13,13 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   A `DisplayType` now carries its default `color`.
 - `@msb235/blinken/mechanical`: odometer reels and split-flap cards on a 2D canvas, turning forward
   through any glyphs you give them (characters, words, or `DrawnGlyph`s that paint themselves),
-  styled per readout and per cell with `style`, `each` and `setStyle`.
+  styled per readout and per cell with `style`, `each` and `setStyle` (the housing, `gap` and
+  `padding` per readout only).
 - Readouts take a `transition` for how `set` moves them to a new value: `fade`, `scramble`,
   `count`, `wipe`, `flap` (each cell steps through the alphabet, as a split-flap board's cards do) or
   `roll` (each digit rolls up, as an odometer's wheels do), from `TRANSITIONS`, or a `Transition` of
-  your own; `transitionMs` sets how long, and `setTransition` changes it.
+  your own; `transitionMs` sets how long, and `setTransition` changes it. Set again mid-change, a
+  readout turns on from what it shows.
 - `createTransition` makes a transition from its settings: a `move` for each cell (`cut`, `fade`,
   `step` through any characters, `scramble` or `count`), an `order` the cells turn in, a `spread`
   between their turns, and an `easing`. The built-ins are made this way and carry their `recipe`.
@@ -29,8 +31,16 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   apart, both in a `\n`-separated message and in one repeated down a tall board. `Bitmap.pitch` gives
   the spacing.
 - A drag from one readout runs on into every readout it reaches, on the same panel or overlay or
-  another, as a drag across text does; Shift+click extends from a press in another readout, and a
-  copy writes each readout's line in page order.
+  another, as a drag across text does, taking in the readouts between in reading order on the page
+  and none of the page's other text; Shift+click extends from a press in another readout, and a
+  copy writes each readout's line in that order.
+- A selection or caret in a readout survives its surface rebuilding (`setSelection`, `setDefects`,
+  or a readout added or destroyed): a caret stays in its own readout rather than the next, a
+  selection over several readouts keeps them all, a drag carries on, and the page's `onBlur` no
+  longer fires for it. A drag no longer outlives its surface.
+- A double-click selects one word in a readout on several rows, and on either half of a character
+  in an editable one. Shift+click in an editable readout extends a backward selection from its
+  anchor, and after a press outside every readout it no longer extends from an old press.
 
 ## 0.2.0
 
