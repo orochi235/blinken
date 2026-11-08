@@ -40,6 +40,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   the last.
 - A still thumbnail played with `play(true)` fades its dots as a sign does, rather than keeping the
   instant on and off it holds with.
+- `reel-in` spins through the glyphs of the face its message is in when two custom faces share a
+  name.
 
 ## 0.2.0
 

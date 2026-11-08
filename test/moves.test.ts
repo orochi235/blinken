@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { board } from '@/board.js';
-import { FACE_NAMES, type Look, rasterize } from '@/font.js';
+import { FACE_NAMES, type Face, type Look, rasterize } from '@/font.js';
 import { MOVES, type Move, type MoveName } from '@/moves/index.js';
 import { place } from '@/orders.js';
 import { values } from '@/params.js';
@@ -161,6 +161,22 @@ describe('moves', () => {
       expect(JSON.parse(JSON.stringify(m.params))).toEqual(m.params);
     }
   });
+});
+
+it('reel-in spins through the glyphs of its own face when two faces share a name', () => {
+  const face = (dot: string): Face => ({
+    name: 'mine',
+    rows: 7,
+    width: 5,
+    glyph: () => Array.from({ length: 7 }, () => dot.repeat(5)),
+  });
+  const m = MOVES['reel-in'];
+  const spin = (f: Face) => {
+    const where = place(b, rasterize('HI', { face: f }));
+    return [0.2, 0.4, 0.6].flatMap((u) => litAt(m, u * length(m, where), where));
+  };
+  expect(spin(face('#')).some((v) => v > 0)).toBe(true);
+  expect(spin(face('.')).every((v) => v === 0)).toBe(true);
 });
 
 describe('moves over two lines', () => {

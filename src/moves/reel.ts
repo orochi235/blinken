@@ -1,18 +1,23 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
-import { type Bitmap, CHARS, rasterize, type Span } from '../font.js';
+import { type Bitmap, CHARS, type Face, rasterize, type Span } from '../font.js';
 import { hash } from '../hash.js';
 import { litAt, move, on } from './move.js';
 import { LIT, litOf, moveShader } from './shader.js';
 
-const glyphs = new Map<string, Bitmap>();
+const glyphs = new WeakMap<Face, Map<string, Bitmap>>();
 /** One letter alone in the look of `text`, which draws it where `text` draws its letters. */
 const glyph = (text: Bitmap, ch: string) => {
-  const key = `${text.face.name} ${JSON.stringify(text.style)} ${ch}`;
-  let g = glyphs.get(key);
+  let mine = glyphs.get(text.face);
+  if (mine === undefined) {
+    mine = new Map();
+    glyphs.set(text.face, mine);
+  }
+  const key = `${JSON.stringify(text.style)} ${ch}`;
+  let g = mine.get(key);
   if (g === undefined) {
     g = rasterize(ch, text);
-    glyphs.set(key, g);
+    mine.set(key, g);
   }
   return g;
 };
