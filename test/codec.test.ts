@@ -182,8 +182,13 @@ describe('packed links', () => {
     const data: ShareData = {
       effects: {},
       program: [
-        { text: 'A', effect: 'hold', layers: { shimmer: true, invert: false, rainbow: {} } },
-        { text: 'B', effect: 'hold', layers: { sparkle: { on: false } } },
+        {
+          text: 'A',
+          hex: AMBER,
+          effect: 'hold',
+          layers: { shimmer: true, invert: false, rainbow: {} },
+        },
+        { text: 'B', hex: AMBER, effect: 'hold', layers: { sparkle: { on: false } } },
       ],
     };
     expect(unpack(pack(data)).program.map((s) => s.layers)).toEqual([
