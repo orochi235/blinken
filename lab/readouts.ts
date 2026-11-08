@@ -56,6 +56,14 @@ const SHOWN: readonly { type: TypeName; cells: number; feed: Feed; half?: boolea
   { type: 'bargraph', cells: 12, feed: ({ n }) => 0.5 + 0.5 * Math.sin(n / 10) },
   { type: 'triangles', cells: 6, feed: ({ text }) => text },
   { type: 'triangles-fine', cells: 5, feed: ({ text }) => text },
+  { type: 'dl3422', cells: 4, feed: ({ text }) => text },
+  { type: 'dl2416', cells: 4, feed: ({ text }) => text.toUpperCase() },
+  { type: 'dl3416', cells: 4, feed: ({ text }) => text.toUpperCase() },
+  { type: 'hdsp2000', cells: 4, feed: ({ text }) => text },
+  { type: 'hdsp211x', cells: 8, feed: ({ text }) => text },
+  { type: 'dl330m', cells: 3, feed: ({ n }) => n % 1000 },
+  { type: 'hp50827415', cells: 5, feed: ({ n }) => n % 100000 },
+  { type: 'dl34', cells: 4, feed: ({ n }) => n % 10000 },
 ];
 
 const CARD_TYPES: readonly TypeName[] = ['seven', 'nixie', 'fourteen', 'cistercian', 'dice'];
