@@ -6,8 +6,11 @@ import { type CellStyle, LOOKS, type MechanicalKind } from './style.js';
 export type { Box, DrawnGlyph, Glyph, Glyphs } from './glyphs.js';
 export { type CellStyle, LOOKS, type MechanicalKind } from './style.js';
 
+/** What of the look the whole readout shares: the housing, and the room around and between cells. */
+type Shared = 'housing' | 'gap' | 'padding';
+
 /** One cell's own look and glyphs, over the readout's. */
-export type CellOptions = Partial<CellStyle> & { readonly glyphs?: Glyphs };
+export type CellOptions = Partial<Omit<CellStyle, Shared>> & { readonly glyphs?: Glyphs };
 
 export interface MechanicalOptions {
   /** Odometer-style drums turning in a window, or split-flap cards falling. */
@@ -37,8 +40,10 @@ export interface Mechanical {
   readonly value: string | number | readonly string[];
   /** Turns every cell forward to its glyph of `value`. */
   set(value: string | number | readonly string[]): void;
-  /** Changes the look of every cell, or of cell `cell` alone. */
-  setStyle(style: Partial<CellStyle>, cell?: number): void;
+  /** Changes the look of every cell. */
+  setStyle(style: Partial<CellStyle>): void;
+  /** Changes the look of cell `cell` alone. */
+  setStyle(style: Partial<Omit<CellStyle, Shared>>, cell: number): void;
   destroy(): void;
 }
 
@@ -47,7 +52,7 @@ const DEFAULT_GLYPHS: Record<MechanicalKind, string> = {
   flap: ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
 };
 
-/** A cell's motion: from glyph `from`, `steps` forward, starting at `at`. */
+/** A cell's motion: from glyph `from`, a fraction for a reel caught mid-turn, `steps` forward, starting at `at`. */
 interface Cell {
   glyphs: readonly Glyph[];
   names: readonly string[];
@@ -103,7 +108,8 @@ export function createMechanical(canvas: HTMLCanvasElement, opts: MechanicalOpti
     if (glyphs.length === 0) throw new Error(`blinken: cell ${k} has no glyphs to turn through`);
     return { glyphs, names: glyphs.map(nameOf), own, shown: 0, from: 0, steps: 0, at: 0 };
   });
-  const styleOf = (c: Cell): CellStyle => ({ ...LOOKS[kind], ...shared, ...c.own });
+  const look = (): CellStyle => ({ ...LOOKS[kind], ...shared });
+  const styleOf = (c: Cell): CellStyle => ({ ...look(), ...c.own });
   let value: string | number | readonly string[] = opts.value ?? '';
   let now = performance.now();
 
@@ -136,11 +142,12 @@ export function createMechanical(canvas: HTMLCanvasElement, opts: MechanicalOpti
 
   const draw = () => {
     const scale = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
-    const look = styleOf(cells[0] as Cell);
-    ctx.fillStyle = look.housing;
+    const { housing, padding, gap: between } = look();
+    ctx.fillStyle = housing;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const pad = look.padding * scale;
-    const gap = look.gap * scale;
+    if (cells.length === 0) return;
+    const pad = padding * scale;
+    const gap = between * scale;
     const w = (canvas.width - 2 * pad - gap * (cells.length - 1)) / cells.length;
     const h = canvas.height - 2 * pad;
     // Before the page lays the canvas out, there is no room to draw cells in.
@@ -175,7 +182,7 @@ export function createMechanical(canvas: HTMLCanvasElement, opts: MechanicalOpti
       draw();
       if (!moving(t)) {
         for (const c of cells) {
-          c.shown = c.from = (c.from + c.steps) % c.glyphs.length;
+          c.shown = c.from = Math.round(c.from + c.steps) % c.glyphs.length;
           c.steps = 0;
         }
         stop?.();
@@ -215,14 +222,17 @@ export function createMechanical(canvas: HTMLCanvasElement, opts: MechanicalOpti
       for (const [k, i] of targets(v).entries()) {
         const c = cells[k] as Cell;
         if (i < 0) continue;
-        const here = Math.round(at(c, t)) % c.glyphs.length;
+        const n = c.glyphs.length;
+        const here = at(c, t) % n;
+        // A reel caught between glyphs turns on from where it stands, to its glyph ahead.
+        const steps = here % 1 === 0 ? stepsFrom(here, i, n) : (((i - here) % n) + n) % n;
         c.from = here;
-        c.steps = stepsFrom(here, i, c.glyphs.length);
+        c.steps = steps;
         c.at = t + k * stagger;
       }
       run();
     },
-    setStyle(style, cell) {
+    setStyle(style: Partial<CellStyle>, cell?: number) {
       if (cell === undefined) shared = { ...shared, ...style };
       else {
         const c = cells[cell];
