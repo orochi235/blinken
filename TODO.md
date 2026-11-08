@@ -3,6 +3,12 @@
 ## Parked
 
 - Authoring an effect's params in the designer: naming a param and picking the settings it changes. Parked 2026-10-24 as more than the lab needs for now; effects declare params in code, as the built-ins do. The section as built is in e294d8a (`lab/compose/designer/ParamsBox.tsx`).
+- Editing an effect by dragging on the effects page's diagram, which today only draws and picks (`lab/compose/designer/graph.ts`, `EffectDiagram.tsx`). Planned 2026-10-26, each as its own step, through a pure `designer/graphEdits.ts` that turns a diagram edit into an `editEffect` call so undo and a built-in's copy on first change work as the cards' do:
+  - **Rewire.** A modulator that is one curve on one channel (the ease and wave families) gains a `channel` setting defaulting to its present one, so no saved effect or link changes; dragging its wire's end sets it. Choices are channels that mix the same way: `gain`, `chroma` and `glow` (`mul`) together; `lit` and `invert` (`max`) together; `hue` and `tint` alone. Modulators writing several channels or with their own logic (`sparkle`, `chase`, `glitch`) keep their wires locked (2026-10-26).
+  - **Move between steps.** A piece dropped into another step moves to that slot; a move belongs to one slot (`MOVES[name].slot`), so dropping one elsewhere is refused with the reason.
+  - **Add and remove.** Delete takes out the picked piece; a piece dropped on a step from a palette of moves and modulators is added there.
+  - **Reorder** the pieces within a step.
+  `@weasel-js/diagram` has the palette drop (`onDropItem`), refusals with a reason (`DropVerdict`) and container reorder; as of 2026-10-26 it drew no ghost of a carried palette item, and a member of a `reorder` container couldn't be dragged out of it, which moving between steps needs.
 
 ## GPU renderers
 

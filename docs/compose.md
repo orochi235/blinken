@@ -156,13 +156,13 @@ board, each placed where the scene before it ends and holding that scene's arcs.
 (2026-10-22): a span places its children itself, so it cannot hold the per-letter arcs a
 whole-effect order starts a lag apart. Every scene's hold is finite, so its length is known when
 it is staged. Under the program play any number of modulators looping as
-layers, each with a weight and its settings; the built-in layers are `sparkle`, `chase`,
+layers, each with a weight and its settings; the built-in layers are `sparkle`,
 `rainbow`, `invert`, `scanline`, `fire`, `glitch`, `neon`, `shimmer`, `aurora`, and `gradient`. `createMarquee` takes `effects` (a name
 → `EffectSpec` table added to the built-ins), so a program can name effects designed elsewhere.
 
 ## The compose lab
 
-The lab serves three pages: the composer at `/compose` (`lab/compose.html`), the effect designer at `/effects` (`lab/effects.html`), and the player at `/play` (`lab/play.html`); `/` sends a visitor on to the player. The composer's and the designer's titles switch between the two.
+Among the lab's pages (`lab/pages.ts` lists them) are the composer at `/compose` (`lab/compose.html`), the effect designer at `/effects` (`lab/effects.html`), and the player at `/play` (`lab/play.html`); `/` sends a visitor on to the player. The border's chase is the sign's hardware (`border`), not a layer. The composer's and the designer's titles switch between the two.
 - **Effect designer.** Pick an effect to edit, or start a new one. Each slot (enter, active,
   exit) lists its pieces. A move shows its order, lag and settings; a modulator shows its channel,
   curve, depth and spread. All of the controls are built from the pieces' `params` data. Add a piece to layer it. Hold and blend are
@@ -209,8 +209,7 @@ The lab serves three pages: the composer at `/compose` (`lab/compose.html`), the
 
 ## Constraints
 
-- Runs on blits `mix.arc`, unreleased. blinken uses the `../blits` checkout until blits publishes;
-  then it pins that version and restores `labelOf` (see `TODO.md`).
+- Runs on blits `mix.arc`.
 - An `'open'` hold is refused inside a span, so program scenes always have a finite hold.
 - Published source keeps relative imports; the lab and tests use the `@/` alias.
 

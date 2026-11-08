@@ -16,7 +16,9 @@ lab's compose page on any page without a build step. The package ships it, so a 
 
 A bundler can import it as `@msb235/blinken/player`, and `npm run compile` builds it from a checkout.
 
-Compose's **copy embed** gives those two lines for the composition and sign on screen. Giving
+Compose's **copy embed** gives those two lines for the composition and sign on screen, its script
+tag naming a `blinken-player.js` beside the page, as `npm run compile` builds one, since the lab's
+links can be newer than the published player reads. Giving
 `compile` a link or a composition file compiles that program in, for a sign in one file. Everything
 it takes is in [docs/player.md](docs/player.md).
 
@@ -172,7 +174,8 @@ costs only the ones on screen. `createTicker({ fps })` makes a ticker of your ow
 
 Segment displays that show a value: 7-, 8-, 9-, 14-, 16- and 22-segment, Nixie tubes, the 5 × 7
 matrix, and notations like Cistercian and Maya numerals, Braille, Morse and semaphore. `TYPES`
-lists all 23, `triangles` and `triangles-fine` drawing letters on the triangle grid. Many readouts share one canvas and one sign, on a panel or over the page:
+lists them all, with `triangles` and `triangles-fine` drawing letters on the triangle grid, and eight
+copying real LED parts, `dl3422` to `dl34`, with their layouts, character sets and colors. Many readouts share one canvas and one sign, on a panel or over the page:
 
 ```ts
 import { createOverlay, createPanel } from '@msb235/blinken';
@@ -193,6 +196,11 @@ only lit segments over the page. A readout takes `color`, `slant`, `ends`, `alig
 digit (`half`) and `defects` by `{ cell, slot }`; a surface takes `gpu`, `backend`, `lamps`,
 `fade`, `ghost` and `ticker`. How they're drawn is in `docs/readouts.md`; the lab's `readouts`
 page shows every type.
+
+`set` moves a readout to its new value by its `transition`: `fade`, `scramble`, `count`, `wipe`,
+`flap` or `roll` from `TRANSITIONS`, or one of your own from `createTransition`; `transitionMs` sets
+how long. Odometer reels and split-flap cards, which turn rather than light, are a separate entry
+point drawn on a 2D canvas of their own: `createMechanical` from `@msb235/blinken/mechanical`.
 
 A readout whose type spells letters or numbers (the segment types, `matrix`, `nixie` and the
 triangle types) can be selected and copied like text: dragging across its cells selects the
