@@ -8,7 +8,7 @@
   - **Move between steps.** A piece dropped into another step moves to that slot; a move belongs to one slot (`MOVES[name].slot`), so dropping one elsewhere is refused with the reason.
   - **Add and remove.** Delete takes out the picked piece; a piece dropped on a step from a palette of moves and modulators is added there.
   - **Reorder** the pieces within a step.
-  `@weasel-js/diagram` has the palette drop (`onDropItem`), refusals with a reason (`DropVerdict`) and container reorder; as of 2026-10-26 it drew no ghost of a carried palette item, and a member of a `reorder` container couldn't be dragged out of it, which moving between steps needs.
+  - What it needs: `@weasel-js/diagram` has the palette drop (`onDropItem`), refusals with a reason (`DropVerdict`) and container reorder; as of 2026-10-26 it drew no ghost of a carried palette item, and a member of a `reorder` container couldn't be dragged out of it, which moving between steps needs.
 
 ## GPU renderers
 
