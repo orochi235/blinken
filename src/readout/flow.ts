@@ -98,3 +98,14 @@ export function flow(
   });
   return { at, carets, cut };
 }
+
+/** The run `[a, b)` of `chars` around character `i` with no blank in it, or null on a blank. */
+export function wordAt(chars: readonly string[], i: number): readonly [number, number] | null {
+  const word = (k: number) => k >= 0 && k < chars.length && (chars[k] ?? '').trim() !== '';
+  if (!word(i)) return null;
+  let a = i;
+  let b = i + 1;
+  while (word(a - 1)) a--;
+  while (word(b)) b++;
+  return [a, b];
+}

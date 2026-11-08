@@ -150,3 +150,35 @@ describe('a readout set before its surface has drawn', () => {
     s.destroy();
   });
 });
+
+describe('a readout set again part way through a transition', () => {
+  it('starts the new one from what it shows, not from the value it was heading for', () => {
+    const ticker = manual();
+    const s = createPanel({} as HTMLCanvasElement, { draw: false, ticker });
+    const seen: Change[] = [];
+    const r = s.readout({
+      type: 'sixteen',
+      cells: 1,
+      value: 'A',
+      transition: {
+        name: 'spy',
+        ms: 1000,
+        start(c) {
+          seen.push(c);
+          // The old lights until halfway, then the new.
+          return (t) => (t < 0.5 ? c.from : c.to).map((x) => (l: string) => (x.lit.has(l) ? 1 : 0));
+        },
+      },
+    });
+    ticker.step(16);
+    r.set('B');
+    ticker.step(100);
+    r.set('C');
+    expect(seen[1]?.from.map((c) => c.text)).toEqual(['A']);
+    expect([...(seen[1]?.from[0]?.lit ?? [])].sort()).toEqual(lightsOf('A'));
+    ticker.step(1200);
+    r.set('D');
+    expect(seen[2]?.from.map((c) => c.text)).toEqual(['C']);
+    s.destroy();
+  });
+});

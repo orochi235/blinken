@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flow } from '@/readout/flow.js';
+import { flow, wordAt } from '@/readout/flow.js';
 
 const chars = (s: string) => [...s];
 
@@ -40,5 +40,14 @@ describe('flow', () => {
     expect(flow(chars('AB'), 4, 1, 'left', true).carets).toEqual([0, 1, 2]);
     expect(flow(chars('AB\n'), 4, 2, 'left', true).carets).toEqual([0, 1, 2, 4]);
     expect(flow([], 4, 1, 'right', true).carets).toEqual([3]);
+  });
+});
+
+describe('wordAt', () => {
+  it('finds the run between blanks around a character, and nothing on a blank', () => {
+    expect(wordAt(chars('HELLO WORLD'), 2)).toEqual([0, 5]);
+    expect(wordAt(chars('HELLO WORLD'), 6)).toEqual([6, 11]);
+    expect(wordAt(chars('HELLO WORLD'), 5)).toBeNull();
+    expect(wordAt(chars('AB\nCD'), 4)).toEqual([3, 5]);
   });
 });

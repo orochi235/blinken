@@ -12,9 +12,9 @@ lights so the effects stack can reach them, but nothing exposes effects on a rea
 
 ## Display types
 
-`TYPES` (`src/readout/types/`) holds 23. A type is data: one cell's lights, each a list of shapes
-(disc, bar, or polyline) in the cell's units, and an encoder from a value to the lights each cell
-lights.
+`TYPES` (`src/readout/types/`) holds them all. A type is data: one cell's lights, each a list of
+shapes (disc, bar, or polyline) in the cell's units, and an encoder from a value to the lights each
+cell lights.
 
 | type                                     | takes          | notes                                                      |
 | :--------------------------------------- | :------------- | :--------------------------------------------------------- |
@@ -30,6 +30,10 @@ lights.
 | `dice`, `tally`, `bcd`                   | numbers        | nine pips; a gate of five a cell; four lamps a digit       |
 | `bargraph`                               | 0 to 1         | one bar a cell                                             |
 | `triangles`, `triangles-fine`            | text           | letters on the triangle grid: 5 × 7 doubled, or `strokes`  |
+| `dl3422`                                 | text           | Siemens DL-3422: 22 segments, descenders for lowercase     |
+| `dl2416`, `dl3416`                       | text           | Siemens 16-segment parts; `dl3416` under bubble lenses     |
+| `hdsp2000`, `hdsp211x`                   | text           | HP 5 × 7 dot matrices, with their ROMs' 128 characters     |
+| `dl330m`, `hp50827415`, `dl34`           | text           | 7-segment parts: bubble lenses, or `dl34`'s square dots    |
 
 Numbers align right and keep their last cells when too long; text aligns left and keeps its first.
 A character a type lacks shows blank. Every cell carries every light it can ever show, which is why
@@ -83,19 +87,36 @@ readout lays the board out again at the next frame and reshapes the sign in plac
   that element's scrolling ancestors clip it. Rects are read every frame; a detached, hidden or
   scrolled-away element's readout gets scale 0 and its primitives are culled.
 
-**Selectable text** (`src/readout/text.ts`). Beside the canvas sits a layer of see-through spans,
-one per cell of each readout whose type has `text`, holding the characters that cell shows (the
-tokenizer `textCoding` shares with its encoder, so a mark rides on its cell). Each frame they're
-moved to the fit the placement used for the views (`fitOf`), skewed with the slant and clipped as
-the readout is. The browser won't carry a drag across separately placed boxes, and finds a word or
-a line inside one box only, so each readout's box reads the mouse itself, a cell at a time: drag,
-double-click for the run between blanks, triple-click for the whole readout, Shift+click to extend.
-A press also focuses the readout, and Cmd or Ctrl+A in a focused one selects all of it.
-Placed boxes copy as one run with no line breaks, so where the page's selection holds nothing but
-readouts' characters, one `copy` listener per document writes them itself, a readout to a line and
-a row to a line. Copied characters are in the case the type draws (its spelling's `shown`) unless
+**Selectable text** (`src/readout/text.ts`, with `text-press.ts` for a read-only readout's mouse,
+`text-typed.ts` for an editable one's field, `text-place.ts` for placing the boxes, `across.ts`
+and `copy.ts` for what a document's readouts share). Beside the canvas sits a layer of see-through
+spans, one per cell of each readout whose type has a `spell`, holding the characters that cell
+shows (the tokenizer `textCoding` shares with its encoder, so a mark rides on its cell). Each frame
+they're moved to the fit the placement used for the views (`fitOf`), skewed with the slant and
+clipped as the readout is. The browser won't carry a drag across separately placed boxes, and finds
+a word or a line inside one box only, so each readout's box reads the mouse itself, a cell at a
+time: drag, double-click for a word of the value (so a word wrapped at a row's end stops there),
+triple-click for the whole readout, Shift+click to extend. A press also focuses the readout, and
+Cmd or Ctrl+A in a focused one selects all of it.
+
+**Across readouts.** A drag runs on from the readout it started in into any readout it reaches, on
+any panel or overlay in the document, and takes in every readout between in reading order: rows top
+to bottom, left to right within a row, by their boxes on the page (`readingOrder`). The page's
+selection holds one range in document order, which between a panel and an overlay would take in the
+page's own text, and an overlay's readouts sit in the order they were made, so `across.ts` keeps
+the selection itself, as a press and the cell it reached, and the page's selection holds only the
+part in the readout the drag started in. A layer asks `across.ts` what of each readout is picked,
+and draws a block selection itself (`blinken-text-on`) rather than leaving it to the browser. The
+selection ends when the page's selection moves anywhere else, on a press outside every readout, or
+when an editable readout takes the focus. Each readout keeps its reach (what a drag sees of it)
+across a rebuild, by the key its surface gives it, so a selection and a drag running survive one.
+
+**Copy.** Placed boxes copy as one run with no line breaks, so one `copy` listener per document
+writes every layer's selected readouts itself, a readout to a line and a row to a line, in reading
+order across every panel and overlay. It does so where the selection is one made in readouts, or
+where the page's selection holds nothing but readouts' characters; one holding other text is left
+to the browser. Copied characters are in the case the type draws (its spelling's `shown`) unless
 the readout's `copy` is `'value'`.
-Each sets a real range on the page's selection, which copying and `selectionchange` read.
 
 **Where characters land** is one function, `flow` (`src/readout/flow.ts`): a type's `spell`
 splits a value into tokens (a character, and any mark riding on its cell), and `flow` lays them in
