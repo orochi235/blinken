@@ -33,6 +33,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   copy writes each readout's line in page order.
 - A border of all-lit bulbs (`border: { bulbs: 'lit' }`) runs on the GPU, rather than keeping the
   whole sign's `lit` and `tint` on the CPU under WebGPU.
+- The WebGPU and WebGL renderers draw signs of 125,000 lights and more, where they overflowed the
+  stack.
 
 ## 0.2.0
 

@@ -12,6 +12,7 @@ import {
   SOCKET,
   sdf,
 } from '@/render/prims.js';
+import { viewsOf } from '@/render/sign-lights.js';
 
 describe('sdf', () => {
   const b = primBuilder();
@@ -90,5 +91,14 @@ describe('boardPrims', () => {
       );
       expect(radiusOfPrim(p, i, 0.72)).toBeCloseTo((t.radius[i] as number) * 0.72, 6);
     }
+  });
+});
+
+describe('viewsOf', () => {
+  it('counts one view past the largest any primitive is placed through, at any count', () => {
+    const view = new Uint32Array(200_000);
+    view[150_000] = 3;
+    expect(viewsOf({ ...primBuilder().build(), view })).toBe(4);
+    expect(viewsOf(primBuilder().build())).toBe(1);
   });
 });

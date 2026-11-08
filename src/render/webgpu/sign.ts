@@ -5,7 +5,7 @@ import { CHANNELS, type Fade, type Ghost, type SignColumns } from '../../optics.
 import type { Gpu } from '../gpu.js';
 import { type Housing, housingPaint } from '../housing.js';
 import { LAMP_SIZE } from '../lights.js';
-import { boardLights, type SignLights } from '../sign-lights.js';
+import { boardLights, type SignLights, viewsOf } from '../sign-lights.js';
 import { createGpuOptics } from './optics.js';
 import { createPainter, type Look } from './pipelines.js';
 import { type ChannelSource, createSources, type Follow, planOf } from './sources.js';
@@ -63,7 +63,7 @@ export function createWebGpuSignOf(
   const make = (shape: Shape) => {
     const sources = createSources(device, shape.board);
     const optics = createGpuOptics(device, shape.board, shape.leds, sources.pose);
-    const views = Math.max(...shape.prims.view, 0) + 1;
+    const views = viewsOf(shape.prims);
     const painter = createPainter(device, format, shape.prims, optics.shows, views);
     return { sources, optics, painter };
   };
