@@ -1,3 +1,13 @@
+import {
+  anchor,
+  anchorOf,
+  copying,
+  forget,
+  type Reach,
+  reachAt,
+  reachable,
+  span,
+} from './across.js';
 import type { Spot } from './layout.js';
 import type { Fit } from './placement.js';
 
@@ -21,40 +31,6 @@ const STYLE = `
 
 `;
 const styled = new WeakSet<Document>();
-
-/** A layer as a copy sees it: a line per readout with something selected. */
-interface Copier {
-  /** Null leaves the copy to the browser, as a focused field does. */
-  lines(): string[] | null;
-}
-const copiers = new WeakMap<Document, Set<Copier>>();
-
-/**
- * Adds a layer to what a copy on `doc` writes, giving what takes it off. Placed boxes copy as one
- * run with no line breaks, so where the selection holds nothing but readouts' characters, one
- * listener per document writes every layer's, a line each; one holding other text is left to the
- * browser.
- */
-function copying(doc: Document, me: Copier): () => void {
-  let all = copiers.get(doc);
-  if (!all) {
-    const mine = new Set<Copier>();
-    all = mine;
-    copiers.set(doc, mine);
-    const bare = (t: string) => t.replace(/\s+/g, '').toLowerCase();
-    doc.addEventListener('copy', (e) => {
-      const got = [...mine].map((c) => c.lines());
-      if (got.includes(null) || !e.clipboardData) return;
-      const text = got.flatMap((l) => l ?? []);
-      if (text.length === 0) return;
-      if (bare(doc.getSelection()?.toString() ?? '') !== bare(text.join(''))) return;
-      e.clipboardData.setData('text/plain', text.join('\n'));
-      e.preventDefault();
-    });
-  }
-  all.add(me);
-  return () => all.delete(me);
-}
 
 function style(doc: Document): void {
   if (styled.has(doc)) return;
@@ -153,7 +129,10 @@ export function createTextLayer(
     copied: string;
     /** For each caret place, the cell a caret there stands at. */
     carets: readonly (number | null)[];
+    /** It as a drag from any readout on the page reaches it. */
+    reach: Reach;
   } | null)[] = [];
+  const reaches = () => readouts.flatMap((r) => (r ? [r.reach] : []));
   /** A caret or selection to put back once a rebuilt readout has its value again. */
   let restore:
     | { i: number; start: number; end: number; dir: 'forward' | 'backward' | 'none' }
@@ -217,17 +196,7 @@ export function createTextLayer(
     return at >= 0 ? at : r.places.length;
   };
   /** Selects cells `a` to `b` of `r`, either order, as the page's selection. */
-  const choose = (r: One, a: number, b: number) => {
-    const lo = r.texts[Math.min(a, b)];
-    const hi = r.texts[Math.max(a, b)];
-    const sel = doc.getSelection();
-    if (!lo || !hi || !sel) return;
-    const range = doc.createRange();
-    range.setStart(lo, 0);
-    range.setEnd(hi, hi.length);
-    sel.removeAllRanges();
-    sel.addRange(range);
-  };
+  const choose = (r: One, a: number, b: number) => span(doc, r.reach, a, r.reach, b);
   /** The cell of `r` nearest (`x`, `y`), in client pixels: in the nearest row, the nearest across. */
   const cellAt = (r: One, x: number, y: number): number => {
     let best = 0;
@@ -243,8 +212,6 @@ export function createTextLayer(
     }
     return best;
   };
-  /** Where the last press's selection started: its readout and cell, for a drag or a Shift+click. */
-  let anchor: { r: One; k: number } | null = null;
   const blank = (t: Text | undefined) => !t || t.data.trim() === '';
   // The browser selects nothing reliably across separately placed cells, so a press is read here,
   // a whole cell at a time: drag, double-click for a run between blanks, triple-click for it all.
@@ -364,17 +331,22 @@ export function createTextLayer(
       choose(r, a, b);
       return;
     }
-    if (e.shiftKey && anchor?.r === r) choose(r, anchor.k, k);
+    // Shift+click extends from the last press, in this readout or another; a drag runs on into
+    // whichever readout the pointer reaches, as across text, and stays with the last it reached.
+    const held = anchorOf(doc);
+    const from = e.shiftKey && held ? held : { r: r.reach, k };
+    if (from === held) span(doc, from.r, from.k, r.reach, k);
     else {
-      anchor = { r, k };
+      anchor(doc, from);
       doc.getSelection()?.removeAllRanges();
     }
-    const from = { r, k: anchor?.r === r ? anchor.k : k };
+    let over = r.reach;
     const x0 = e.clientX;
     const move = (m: MouseEvent) => {
-      const to = cellAt(r, m.clientX, m.clientY);
-      if (Math.abs(m.clientX - x0) < 3 && to === from.k) return;
-      choose(r, from.k, to);
+      over = reachAt(doc, m.clientX, m.clientY) ?? over;
+      const to = over.cellAt(m.clientX, m.clientY);
+      if (over === from.r && Math.abs(m.clientX - x0) < 3 && to === from.k) return;
+      span(doc, from.r, from.k, over, to);
     };
     const up = () => {
       doc.removeEventListener('mousemove', move);
@@ -417,7 +389,7 @@ export function createTextLayer(
     }
     return lines;
   };
-  const uncopy = copying(doc, { lines: copied });
+  const uncopy = copying(doc, { at: layer, lines: copied });
 
   return {
     build(list) {
@@ -437,6 +409,7 @@ export function createTextLayer(
         const cells = picks[i]?.cells ?? [];
         restore = i >= 0 ? { i, a: cells.indexOf(true), b: cells.lastIndexOf(true) } : null;
       }
+      forget(doc, reaches());
       layer.replaceChildren();
       readouts = list.map((one) => {
         if (!one) return null;
@@ -469,6 +442,7 @@ export function createTextLayer(
           places: [],
           carets: [],
           copied: '',
+          reach: { texts, cellAt: (x, y) => cellAt(made, x, y) },
         };
         if (one.edit) {
           const rows = spot.cells.length > spot.perLine;
@@ -515,10 +489,12 @@ export function createTextLayer(
         }
         group.addEventListener('mousedown', press(made));
         group.addEventListener('keydown', selectAll(made));
-        if (!one.edit) group.tabIndex = -1;
+        if (!one.edit) {
+          group.tabIndex = -1;
+          reachable(group, made.reach);
+        }
         return made;
       });
-      anchor = null;
       shown = '';
       report();
     },
@@ -607,6 +583,7 @@ export function createTextLayer(
     destroy() {
       doc.removeEventListener('selectionchange', report);
       doc.removeEventListener('mousedown', outside, true);
+      forget(doc, reaches());
       uncopy();
       layer.remove();
     },
