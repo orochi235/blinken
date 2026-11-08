@@ -39,6 +39,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   them unset.
 - A sign fitted to its box sizes its canvas as its CSS size times the pixel ratio, where a box of
   fractional width had the browser squeeze a pixel or two out of it.
+- On a 2D canvas, each readout's glow spreads by its lights' own `glow`, as WebGL and WebGPU spread
+  it.
 
 ## 0.2.0
 
