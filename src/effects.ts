@@ -189,7 +189,7 @@ export function stageEffect(
   const stops = groups
     .flatMap((_, g) => own.map((stop) => ({ ...stop, at: stop.at + g * lag })))
     .filter((stop) => {
-      const key = `${stop.at}${stop.release ? 'r' : ''}`;
+      const key = `${stop.at}${'release' in stop ? 'r' : ''}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
