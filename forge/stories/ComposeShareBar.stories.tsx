@@ -13,7 +13,7 @@ type Story = StoryObj<typeof ShareBar>;
 export const Default: Story = {};
 /** Opened from a link that carried something the lab could not use. */
 export const LeftOut: Story = {
-  parameters: { compose: { dropped: ['scene 3: no effect named “sparkle”'] } },
+  parameters: { compose: { dropped: ['scene TONIGHT, its effect sparkle'] } },
 };
 /** Opened from a link that could not be read at all. */
 export const Unreadable: Story = { parameters: { compose: { unreadable: true } } };
