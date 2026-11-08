@@ -180,18 +180,32 @@ function eventOn(target: EventTarget, name: string, ms = 3000): Promise<void> {
   });
 }
 
-/** Destroys a sign on a canvas, waits `between`, makes another there, and reads its first light. */
-async function reused(between: () => Promise<void> | void): Promise<Uint8Array> {
+/**
+ * Destroys a sign on a canvas, waits `between`, makes another there, and reads its first light.
+ * With `lost`, the context is lost before the first sign is destroyed, and restored as the page
+ * would restore it.
+ */
+async function reused(between: () => Promise<void> | void, lost = false): Promise<Uint8Array> {
   const { b, leds, cols } = scene();
   const canvas = canvasIn(400, 200);
   const first = createWebGlSign(canvas, b, leds, 'dark', (x, y) => [x, y]);
   if (!first) throw new Error('no WebGL sign');
+  const lose = lost
+    ? (canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context') ?? null)
+    : null;
+  if (lose) {
+    const gone = eventOn(canvas, 'webglcontextlost');
+    lose.loseContext();
+    await gone;
+  }
   first.destroy();
   await between();
   const s = createWebGlSign(canvas, b, leds, 'dark', (x, y) => [x, y]);
   if (!s) throw new Error('no second WebGL sign on the same canvas');
   s.setLamps({ pitch: PITCH });
-  await eventOn(canvas, 'webglcontextrestored');
+  const restored = eventOn(canvas, 'webglcontextrestored');
+  if (lose) setTimeout(() => lose.restoreContext(), 0);
+  await restored;
   s.render(cols, 0xff9a2e, 1000);
   const g = canvas.getContext('webgl2') as WebGL2RenderingContext;
   const t = lightTable(b, leds, (x, y) => [x, y]);
@@ -212,6 +226,11 @@ test('webgl: a sign made on a destroyed sign’s canvas in the same task draws o
 
 test('webgl: a sign made on a destroyed sign’s canvas a task later draws once restored', async () => {
   const px = await reused(() => new Promise((r) => setTimeout(r, 50)));
+  if ((px[0] as number) < 250) throw new Error(`the first light reads ${[...px]}`);
+});
+
+test('webgl: a sign made on a canvas whose sign was destroyed while lost draws once restored', async () => {
+  const px = await reused(async () => {}, true);
   if ((px[0] as number) < 250) throw new Error(`the first light reads ${[...px]}`);
 });
 

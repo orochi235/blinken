@@ -122,7 +122,8 @@ export function createSign2d(
       paintTraced(b, tracePrim(b, prims, k, r), css);
       b.globalAlpha = shine * LED.coreAlpha;
       paintTraced(b, tracePrim(b, prims, k, r * LED.core), cssOf(LED.coreTint));
-      const bloom = haloRadius(r, (out.bloom[l] as number) * spread * glowOfPrim(prims, k));
+      const wide = (out.bloom[l] as number) * spread * glowOfPrim(prims, k);
+      const bloom = haloRadius(r, wide);
       if (bloom <= 0) return;
       const m = b.getTransform();
       g.globalAlpha = shine;
@@ -133,7 +134,7 @@ export function createSign2d(
       }
       // Each view blooms by its own pitch, as the marquee's canvas blur does by its one: the halo's
       // shadow, blurred that far, cast from a copy drawn off the canvas. A shadow's blur is 2σ.
-      const sigma = scale * BLOOM.spread * spread * glowOfPrim(prims, k);
+      const sigma = scale * BLOOM.spread * wide;
       const away = canvas.width + canvas.height + sigma * 8;
       g.setTransform(m.a, m.b, m.c, m.d, m.e - away, m.f);
       g.shadowColor = css;

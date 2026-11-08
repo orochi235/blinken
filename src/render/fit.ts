@@ -21,12 +21,13 @@ export function fitCanvas(
   const box = canvas.parentElement as HTMLElement;
   const refit = () => {
     const css = want() ?? Math.min(box.clientWidth / across, box.clientHeight / down);
-    canvas.style.width = `${Math.floor(css * across)}px`;
-    canvas.style.height = `${Math.floor(css * down)}px`;
-    const pitch = css * devicePixelRatio;
-    canvas.width = Math.round(pitch * across);
-    canvas.height = Math.round(pitch * down);
-    sized(pitch);
+    const w = Math.floor(css * across);
+    const h = Math.floor(css * down);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    canvas.width = Math.round(w * devicePixelRatio);
+    canvas.height = Math.round(h * devicePixelRatio);
+    sized(Math.min(canvas.width / across, canvas.height / down));
   };
   const watch = new ResizeObserver(refit);
   watch.observe(box);

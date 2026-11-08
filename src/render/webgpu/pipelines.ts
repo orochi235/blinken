@@ -240,11 +240,11 @@ export function createPainter(
       const t = targets;
       if (!t) return;
       device.queue.writeBuffer(viewsBuf, 0, views.subarray(0, Math.max(viewCount, 1) * VIEW));
+      lightData.set(socketFloats(paint), 16);
       writeLook(look);
       const enc = device.createCommandEncoder();
       blank = paint.blank;
       over = paint.lights === 'over';
-      lightData.set(socketFloats(paint), 16);
       const pass = into(enc, t.house.view, backingRgba(paint));
       if (paint.sockets) instances(pass, housing);
       pass.end();

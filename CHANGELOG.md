@@ -31,6 +31,20 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 - A drag from one readout runs on into every readout it reaches, on the same panel or overlay or
   another, as a drag across text does; Shift+click extends from a press in another readout, and a
   copy writes each readout's line in page order.
+- A border of all-lit bulbs (`border: { bulbs: 'lit' }`) runs on the GPU, rather than keeping the
+  whole sign's `lit` and `tint` on the CPU under WebGPU.
+- The WebGPU and WebGL renderers draw signs of 125,000 lights and more, where they overflowed the
+  stack.
+- The WebGPU renderer paints the housing's sockets from its first frame, where the first paint drew
+  them unset.
+- A sign fitted to its box sizes its canvas as its CSS size times the pixel ratio, where a box of
+  fractional width had the browser squeeze a pixel or two out of it.
+- Under WebGPU, readouts keep their selection's highlight when they relay out, and a sign that
+  relays out keeps the sign it follows and reads back its new poses.
+- A WebGL sign made on a canvas whose last sign was destroyed while its context was lost draws once
+  the context is restored, where it stayed dark for good.
+- On a 2D canvas, each readout's glow spreads by its lights' own `glow`, as WebGL and WebGPU spread
+  it.
 
 ## 0.2.0
 

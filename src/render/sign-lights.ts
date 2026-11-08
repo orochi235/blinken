@@ -16,6 +16,13 @@ export interface SignLights {
   place(want: () => number | undefined): Placement;
 }
 
+/** How many views `p`'s primitives are placed through: one past the largest. */
+export function viewsOf(p: Prims): number {
+  let most = 0;
+  for (const v of p.view) if (v > most) most = v;
+  return most + 1;
+}
+
 /** A board's lights, each a disc at its place on `grid`, fitted to the canvas's parent. */
 export function boardLights(b: Board, leds: readonly Led[], grid: Grid): SignLights {
   const t = lightTable(b, leds, grid);

@@ -10,7 +10,7 @@ import { gaussian } from '../blur.js';
 import { backingRgba, type Housing, housingPaint, socketFloats } from '../housing.js';
 import { LAMP_SIZE, LED } from '../lights.js';
 import { createOpticsFrame, lit } from '../optics-frame.js';
-import { boardLights, type SignLights } from '../sign-lights.js';
+import { boardLights, type SignLights, viewsOf } from '../sign-lights.js';
 import { WIRE_SHARE } from '../sign2d.js';
 import { dark, reclaim, shed, shedContext } from './context.js';
 import {
@@ -79,7 +79,7 @@ export function createWebGlSignOf(
   let fade: Fade | undefined;
   let ghost: Ghost | undefined;
   const placement = lights.place(() => lamps.pitch);
-  const viewCount = () => Math.max(...shape.prims.view, 0) + 1;
+  const viewCount = () => viewsOf(shape.prims);
   const make = () => build(gl, shape.prims, shape.leds.length, viewCount());
   let res: Resources | null = null;
   try {

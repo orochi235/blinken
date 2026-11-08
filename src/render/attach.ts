@@ -92,7 +92,8 @@ export function attach(
   let subjects: readonly Subject[] = [...b.dots, ...b.cells];
   let mix: Mix<Subject, Pose> | null = null;
   const device = webgpu && opts.gpu ? opts.gpu.device : null;
-  const read = device && webgpu ? readback(device, webgpu.output, leds.length) : null;
+  const readOf = (n: number) => (device && webgpu ? readback(device, webgpu.output, n) : null);
+  let read = readOf(leds.length);
   let gone = false;
 
   return {
@@ -114,6 +115,8 @@ export function attach(
     reshape(next) {
       subjects = [...next.board.dots, ...next.board.cells];
       sign?.reshape(next);
+      read?.destroy();
+      read = readOf(next.leds.length);
       if (device && mix) gpuOf(mix).subjects(subjects, fieldsOf);
     },
     cpuChannels: () => webgpu?.cpuChannels() ?? EVERY,
