@@ -96,7 +96,7 @@ looping program waits again on its next pass. Layers keep playing while it waits
 
 A move is paced this way by declaring `rests(at, params)`: where in its own time it waits, and
 `release`, where it plays on from after the last wait, or null when its settings pace it by time.
-Staging turns them into the effect's `stops`, which `layOut` places in pass time.
+`stageEffect` turns them into the effect's `stops`, and the sign places those in pass time.
 
 ### Grids
 
@@ -252,8 +252,8 @@ fall: {
 { effect: 'fall', text: 'TONIGHT', hex: 0xff9a2e, params: { drop: 600, blend: 120 } },
 ```
 
-`tuningOf(effect)` lists them as number settings, defaulting to what the effect sets, and
-`tuned(effect, values)` is the effect as those values set it.
+`tuningOf(effect)` lists them as settings, each a number, a choice, or a set of colors, defaulting
+to what the effect sets, and `tuned(effect, values)` is the effect as those values set it.
 
 The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Matrix rain),
 `tile`, `type` (typed on behind a cursor and backspaced off), `swarm` (dots flying together and
@@ -261,8 +261,8 @@ apart), `bounce` (letters bouncing in), `wave` (letters riding a wave), `melt` (
 bottom), and `shear` (halves sliding in from opposite edges), in `EFFECTS`. The
 built-in layers are `sparkle`, stray dots lighting for a moment; `rainbow`, a hue running across
 the sign that recolors whatever is lit; and
-`invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when spread by
-column; `scanline`, a bright band rolling down the rows like a CRT's; `fire`, a rising flicker from
+`invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when it swings
+spread by column with a phase per step; `scanline`, a bright band rolling down the rows like a CRT's; `fire`, a rising flicker from
 deep red at the bottom to yellow at the top; `glitch`, rare bursts in which bands of rows jump color,
 drop out or flip; `neon`, letters buzzing like failing tubes, a few worse than the rest (under a
 whole sign, which has no message to go by, each six columns are a tube); `shimmer`,

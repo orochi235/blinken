@@ -45,6 +45,17 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   the context is restored, where it stayed dark for good.
 - On a 2D canvas, each readout's glow spreads by its lights' own `glow`, as WebGL and WebGPU spread
   it.
+- An effect with an `order` waits once at each rest its groups share: a lag-0 order over a message
+  typed by input takes one press a letter rather than one a letter for every group.
+- `setProgram` throws at the call on a scene whose layer names nothing or a modulator that does not
+  exist, rather than the sign going idle when the pass starts.
+- On a message of several lines, `split-in` and `split-out` part each line through its own
+  letters, and `wave` by letter bobs each line's letters whole, rather than reading every line as
+  the last.
+- A still thumbnail played with `play(true)` fades its dots as a sign does, rather than keeping the
+  instant on and off it holds with.
+- `reel-in` spins through the glyphs of the face its message is in when two custom faces share a
+  name.
 
 ## 0.2.0
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { board } from '@/board.js';
-import { FACE_NAMES, type Look, rasterize } from '@/font.js';
+import { FACE_NAMES, type Face, type Look, rasterize } from '@/font.js';
 import { MOVES, type Move, type MoveName } from '@/moves/index.js';
 import { place } from '@/orders.js';
 import { values } from '@/params.js';
@@ -159,6 +159,68 @@ describe('moves', () => {
       expect(m.name).toBe(name);
       expect(['enter', 'active', 'exit']).toContain(m.slot);
       expect(JSON.parse(JSON.stringify(m.params))).toEqual(m.params);
+    }
+  });
+});
+
+it('reel-in spins through the glyphs of its own face when two faces share a name', () => {
+  const face = (dot: string): Face => ({
+    name: 'mine',
+    rows: 7,
+    width: 5,
+    glyph: () => Array.from({ length: 7 }, () => dot.repeat(5)),
+  });
+  const m = MOVES['reel-in'];
+  const spin = (f: Face) => {
+    const where = place(b, rasterize('HI', { face: f }));
+    return [0.2, 0.4, 0.6].flatMap((u) => litAt(m, u * length(m, where), where));
+  };
+  expect(spin(face('#')).some((v) => v > 0)).toBe(true);
+  expect(spin(face('.')).every((v) => v === 0)).toBe(true);
+});
+
+describe('moves over two lines', () => {
+  const two = place(board(80, 17), rasterize('MI\nIWM'));
+  const { text } = two;
+  const yOf = (r: number) => two.board.dots.find((d) => two.rowOf(d) === r)?.y ?? Number.NaN;
+  const litOn = (frame: readonly number[], x: number, y: number) =>
+    frame[two.board.dots.findIndex((d) => d.x === x && d.y === y)] === 1;
+  const body = text.face.rows - (text.face.above ?? 0) - (text.face.below ?? 0);
+
+  it('split-in splits each line through its own letters', () => {
+    const m = MOVES['split-in'];
+    const frame = litAt(m, length(m, two) * 0.3, two);
+    for (const line of [0, 1]) {
+      const first = line * text.pitch + text.above;
+      for (let r = first; r < first + body; r++) {
+        const standing = [...Array(text.cols).keys()].filter((x) => text.lit(x, r));
+        if (standing.length === 0) continue;
+        const moved = two.board.dots
+          .filter((d) => d.y === yOf(r) && litOn(frame, d.x, d.y))
+          .map((d) => d.x - two.left);
+        // The top half comes in from the left, so it stands left of where it lands.
+        if (r < first + Math.ceil(body / 2))
+          expect(Math.min(...moved, Infinity)).toBeLessThan(standing[0] as number);
+        else expect(Math.max(...moved, -Infinity)).toBeGreaterThan(standing.at(-1) as number);
+      }
+    }
+  });
+
+  it('wave by letter bobs each letter of either line whole', () => {
+    const m = MOVES.wave;
+    const given = { length: 4, height: 1 };
+    for (const t of [300, 700, 1100, 1900]) {
+      const frame = litAt(m, t, two, given);
+      text.letters.forEach((span, k) => {
+        const dots: [number, number][] = [];
+        for (let r = 0; r < text.rows; r++)
+          for (let x = span.x; x < span.x + span.width; x++)
+            if (text.lit(x, r) && text.letterAt(x, r) === k) dots.push([x, r]);
+        const fits = [-1, 0, 1].some((dy) =>
+          dots.every(([x, r]) => litOn(frame, x + two.left, yOf(r) + dy)),
+        );
+        expect(fits, `letter ${k} at ${t} ms`).toBe(true);
+      });
     }
   });
 });

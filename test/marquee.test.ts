@@ -346,6 +346,22 @@ describe('createMarquee', () => {
     );
   });
 
+  it('setProgram refuses a scene with a layer it cannot play, at the call', async () => {
+    await withSign(
+      { program: [{ effect: 'quick', text: 'I', hex: 0 }], effects: { quick } },
+      (sign) => {
+        const scene = (layers: Scene['layers']) => [{ effect: 'quick', text: 'I', hex: 0, layers }];
+        expect(() => sign.setProgram(scene({ nope: true }))).toThrow(
+          'blinken: no layer named nope',
+        );
+        expect(() => sign.setProgram(scene({ mine: { mod: 'nope' as never } }))).toThrow(
+          'blinken: no modulator named nope',
+        );
+        expect(() => sign.setProgram(scene({ nope: false }))).not.toThrow();
+      },
+    );
+  });
+
   it('a pass that fails to start is logged, and the sign plays on', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     let passes = 0;

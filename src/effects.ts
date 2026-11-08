@@ -184,8 +184,16 @@ export function stageEffect(
         : [],
     ),
   );
+  // Groups sharing a moment, as every group does at a lag of 0, share its stop.
+  const seen = new Set<string>();
   const stops = groups
     .flatMap((_, g) => own.map((stop) => ({ ...stop, at: stop.at + g * lag })))
+    .filter((stop) => {
+      const key = `${stop.at}${'release' in stop ? 'r' : ''}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .sort((a, b) => a.at - b.at);
   return { arcs, ms, parts, warnings, stops };
 }

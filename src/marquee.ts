@@ -10,7 +10,7 @@ import { cueLayers } from './layers.js';
 import type { Marquee, MarqueeOptions } from './marquee-api.js';
 import { onGpu } from './modulators/shader.js';
 import { layOut, PassClock, type PassScene } from './pass.js';
-import { cueProgram, effectOf, type StagedScene, stageProgram } from './program.js';
+import { cueProgram, effectOf, layerOf, type StagedScene, stageProgram } from './program.js';
 import { attach, pullChannels, readChannels, register } from './render/attach.js';
 import { createOverlay } from './render/overlay.js';
 import { awayGaps, createTicker } from './ticker.js';
@@ -119,14 +119,15 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   };
 
   /**
-   * Throws on a scene naming no effect or face; a program given as a function is checked as each
-   * pass starts.
+   * Throws on a scene naming no effect, face, or layer; a program given as a function is checked as
+   * each pass starts.
    */
   const check = (p: typeof program, e: typeof effects) => {
     if (typeof p !== 'function')
       for (const scene of p) {
         effectOf(scene, e);
         faceOf(scene.face);
+        for (const [name, layer] of Object.entries(scene.layers ?? {})) layerOf(name, layer);
       }
   };
 

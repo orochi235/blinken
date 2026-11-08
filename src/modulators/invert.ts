@@ -24,7 +24,8 @@ out.invert = select(params.depth * swing, 0.0, subject.cell > 0.5);`,
 
 /**
  * `invert` swinging between 0 and `depth`, or held at `depth` when steady: lit dots go dark and
- * dark dots light. Spread by column, a wave sweeps the swap across the sign.
+ * dark dots light. Swinging, spread by column with a phase per step, a wave sweeps the swap across
+ * the sign; held steady, or at the default phase of 0, a spread changes nothing.
  */
 export const invert = modulator({
   name: 'invert',

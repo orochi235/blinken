@@ -1,52 +1,88 @@
 import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
-import { LOOSE, move, movedAt, on } from './move.js';
-import { type Lookup, MOVED, movedOf, moveShader, ROUND } from './shader.js';
+import { LOOSE, lineAt, linesOf, move, movedAt, on } from './move.js';
+import {
+  boundLines,
+  LINE_AT,
+  type Lookup,
+  linesParams,
+  MOVED,
+  movedOf,
+  moveShader,
+  ROUND,
+  ROWS,
+} from './shader.js';
 
 /** How long the wave takes to swell from still, or settle back to it, at most. */
 const SWELL = 600;
 const smooth = (u: number) => u * u * (3 - 2 * u);
 
 /**
- * How many waves a pass holds, what share of it the wave swells over, and the column the wave is
- * read at for column `x` of the text.
+ * How many waves a pass holds, what share of it the wave swells over, the text's lines, and the
+ * column the wave is read at for column `x` of line `n` of the text.
  */
 function shape(at: Placed, p: { ms: number; period: number; by: string }) {
   const { text } = at;
   // A whole number of waves per pass, so a loose one loops without a seam.
   const waves = Math.max(1, Math.round(p.ms / p.period));
   const swell = Math.min(SWELL, p.ms / 4) / p.ms;
-  const middles = text.letters.map((s) => s.x + (s.width - 1) / 2);
+  const lines = linesOf(text);
   const anchor =
     p.by === 'letter'
-      ? (x: number) => {
-          const k = text.letterAt(x);
-          return k >= 0 ? (middles[k] as number) : x;
+      ? (x: number, n: number) => {
+          const s = text.letters
+            .filter((s) => s.y === n * text.pitch && x >= s.x && x < s.x + s.width)
+            .at(-1);
+          return s ? s.x + (s.width - 1) / 2 : x;
         }
       : (x: number) => x;
-  return { waves, swell, anchor };
+  return { waves, swell, lines, anchor };
 }
 
-/** The wave, reading the column it is read at for each column of the text from `anchor`. */
+/**
+ * The wave, reading the column it is read at for each column of each line of the text from
+ * `anchor`. Each line moves by its own letters, so a dot shows whichever line's row reaches it.
+ */
 const WAVE = moveShader({
-  params: ['left', 'cols', 'height', 'length', 'waves', 'swell', 'from', 'to'],
+  params: [
+    'left',
+    'cols',
+    'height',
+    'length',
+    'waves',
+    'swell',
+    'from',
+    'to',
+    'lines',
+    'pitch',
+    'middle',
+  ],
   wgsl: `let env = select(1.0, blinken_smooth(min(1.0, phase / params.swell)), params.from > 0.5)
   * select(1.0, blinken_smooth(min(1.0, (1.0 - phase) / params.swell)), params.to > 0.5);
 let x = subject.x - params.left;
-let a = select(x, table_anchor(x, 0.0), x >= 0.0 && x < params.cols);
-let turns = a / params.length - params.waves * phase;
-let dy = ${ROUND('params.height * env * sin(6.283185307179586 * (turns - floor(turns)))')};
-lit = ${MOVED('params.left', 'dy')};`,
+for (var n = 0.0; n < params.lines; n = n + 1.0) {
+  let a = select(x, table_anchor(x, n), x >= 0.0 && x < params.cols);
+  let turns = a / params.length - params.waves * phase;
+  let dy = ${ROUND('params.height * env * sin(6.283185307179586 * (turns - floor(turns)))')};
+  let shown = ${ROWS('subject.y - dy')} - 1.0;
+  lit = max(lit, select(0.0, ${MOVED('params.left', 'dy')}, ${LINE_AT('shown')} == n));
+}`,
   at(phase, d, p, t) {
     const envelope =
       (p.from ? smooth(Math.min(1, phase / (p.swell as number))) : 1) *
       (p.to ? smooth(Math.min(1, (1 - phase) / (p.swell as number))) : 1);
     const x = d.x - (p.left as number);
-    const a = x >= 0 && x < (p.cols as number) ? (t.anchor as Lookup)(x, 0) : x;
-    const angle = 2 * Math.PI * (a / (p.length as number) - (p.waves as number) * phase);
-    const dy = Math.round((p.height as number) * envelope * Math.sin(angle));
-    return movedOf(t, d, p.left as number, dy);
+    const lines = boundLines(p);
+    let lit = 0;
+    for (let n = 0; n < lines.count; n++) {
+      const a = x >= 0 && x < (p.cols as number) ? (t.anchor as Lookup)(x, n) : x;
+      const angle = 2 * Math.PI * (a / (p.length as number) - (p.waves as number) * phase);
+      const dy = Math.round((p.height as number) * envelope * Math.sin(angle));
+      const shown = (t.rows as Lookup)(0, d.y - dy) - 1;
+      if (lineAt(lines, shown) === n) lit = Math.max(lit, movedOf(t, d, p.left as number, dy));
+    }
+    return lit;
   },
 });
 
@@ -103,7 +139,7 @@ export const wave = move({
     },
   },
   patch(at, p, joins = LOOSE) {
-    const { waves, swell, anchor } = shape(at, p);
+    const { waves, swell, lines, anchor } = shape(at, p);
     return patch<Led, Pose>(
       p.ms,
       (phase, led) => {
@@ -111,17 +147,25 @@ export const wave = move({
           (joins.from ? smooth(Math.min(1, phase / swell)) : 1) *
           (joins.to ? smooth(Math.min(1, (1 - phase) / swell)) : 1);
         const x = led.x - at.left;
-        const angle = 2 * Math.PI * (anchor(x) / p.length - waves * phase);
-        const dy = Math.round(p.height * envelope * Math.sin(angle));
-        return on(movedAt(at, led, dy));
+        let lit = 0;
+        for (let n = 0; n < lines.count; n++) {
+          const angle = 2 * Math.PI * (anchor(x, n) / p.length - waves * phase);
+          const dy = Math.round(p.height * envelope * Math.sin(angle));
+          const shown = at.rowOf({ kind: 'dot', x: led.x, y: led.y - dy });
+          if (lineAt(lines, shown) === n) lit = Math.max(lit, movedAt(at, led, dy));
+        }
+        return on(lit);
       },
       { writes: ['lit'] },
     );
   },
   shader(at, p, joins = LOOSE) {
-    const { waves, swell, anchor } = shape(at, p);
+    const { waves, swell, lines, anchor } = shape(at, p);
     const cols = at.text.cols;
-    const anchors = Array.from({ length: Math.max(1, cols) }, (_, x) => anchor(x));
+    const width = Math.max(1, cols);
+    const anchors = Array.from({ length: width * lines.count }, (_, i) =>
+      anchor(i % width, Math.floor(i / width)),
+    );
     return WAVE(
       at,
       p.ms,
@@ -134,8 +178,9 @@ export const wave = move({
         swell,
         from: joins.from ? 1 : 0,
         to: joins.to ? 1 : 0,
+        ...linesParams(lines),
       },
-      { anchor: { width: anchors.length, height: 1, data: anchors } },
+      { anchor: { width, height: lines.count, data: anchors } },
     );
   },
 });

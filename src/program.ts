@@ -3,7 +3,7 @@ import { type Board, everyOf, type Pose, type Subject } from './board.js';
 import { EFFECTS, LAYERS, type LayerSpec } from './builtins.js';
 import { cueEffect, type EffectSpec, type StagedEffect, stageEffect } from './effects.js';
 import { type Look, rasterize } from './font.js';
-import { MODULATORS } from './modulators/index.js';
+import { MODULATORS, type Modulator, type ModulatorName } from './modulators/index.js';
 import { onGpu, ranked, stretch } from './modulators/shader.js';
 import { type Placed, place, placeText, rankOf } from './orders.js';
 import { type ParamValue, values } from './params.js';
@@ -31,13 +31,23 @@ export interface Scene extends Look {
   readonly layers?: Readonly<Record<string, SceneLayer>>;
 }
 
-/** A scene's layer as a spec to play, or null when it is off; throws on a name with no spec. */
+/** The modulator named `name`; throws when there is none. */
+function modulatorOf(name: string): Modulator {
+  if (!Object.hasOwn(MODULATORS, name)) throw new Error(`blinken: no modulator named ${name}`);
+  return MODULATORS[name as ModulatorName];
+}
+
+/**
+ * A scene's layer as a spec to play, or null when it is off; throws on a name with no spec or a
+ * modulator that does not exist.
+ */
 export function layerOf(name: string, layer: SceneLayer): LayerSpec | null {
   if (layer === false || (typeof layer === 'object' && layer.on === false)) return null;
   const base = Object.hasOwn(LAYERS, name) ? LAYERS[name as keyof typeof LAYERS] : undefined;
   const given = typeof layer === 'object' ? layer : {};
   const mod = given.mod ?? base?.mod;
   if (!mod) throw new Error(`blinken: no layer named ${name}`);
+  modulatorOf(mod);
   return {
     ...base,
     ...given,
@@ -144,7 +154,7 @@ function layerPatch(
   at: Placed,
   gpu: boolean,
 ): { patch: Patch<Subject, Pose>; subjects: readonly Subject[] } {
-  const mod = MODULATORS[layer.mod];
+  const mod = modulatorOf(layer.mod);
   const p = values(mod, layer.params as never);
   const order = layer.spread ?? TOGETHER;
   const shaded = gpu ? mod.shader?.(at, p, ranked(order, b)) : null;

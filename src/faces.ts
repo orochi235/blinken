@@ -97,7 +97,7 @@ export function widened(face: Face): Face {
 }
 /** The built-in faces, by name. */
 export const FACES: Readonly<Record<FaceName, Face>> = faces;
-/** Every character the built-in faces draw something for. */
+/** Every character all the built-in faces draw something for: the standard face's, space aside. */
 export const CHARS: readonly string[] = Object.keys(STANDARD).filter((ch) => ch !== ' ');
 /** Every built-in face's name. */
 export const FACE_NAMES = Object.keys(faces) as readonly FaceName[];
