@@ -33,6 +33,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   copy writes each readout's line in page order.
 - An effect with an `order` waits once at each rest its groups share: a lag-0 order over a message
   typed by input takes one press a letter rather than one a letter for every group.
+- `setProgram` throws at the call on a scene whose layer names nothing or a modulator that does not
+  exist, rather than the sign going idle when the pass starts.
 
 ## 0.2.0
 
