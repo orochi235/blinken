@@ -35,6 +35,9 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   typed by input takes one press a letter rather than one a letter for every group.
 - `setProgram` throws at the call on a scene whose layer names nothing or a modulator that does not
   exist, rather than the sign going idle when the pass starts.
+- On a message of several lines, `split-in` and `split-out` part each line through its own
+  letters, and `wave` by letter bobs each line's letters whole, rather than reading every line as
+  the last.
 
 ## 0.2.0
 

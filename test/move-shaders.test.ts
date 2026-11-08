@@ -11,6 +11,7 @@ const setting = {} as never;
 const b = board(60, 7);
 const narrow = placeText(b, 'HI');
 const wide = placeText(b, 'A MESSAGE FAR WIDER THAN THE BOARD');
+const lines = placeText(board(60, 17), 'MI\nIWM');
 const names = Object.keys(MOVES) as MoveName[];
 const JOINS: Joins[] = [
   LOOSE,
@@ -58,7 +59,7 @@ describe('move shaders', () => {
     it(`${name}: the shader's at gives what patch does on every dot, and 0 on cells`, () => {
       const m = MOVES[name];
       let checked = 0;
-      for (const at of [narrow, wide])
+      for (const at of [narrow, wide, lines])
         for (const given of [{}, ...(more[name] ?? [])])
           for (const joins of m.slot === 'active' ? JOINS : [LOOSE]) {
             const p = values(m, given as never) as never;
@@ -68,12 +69,12 @@ describe('move shaders', () => {
             const plain = m.patch(at, p, joins);
             expect(sp.duration).toBe(plain.duration);
             for (const phase of PHASES) {
-              for (const d of b.dots)
+              for (const d of at.board.dots)
                 expect(sp.at(phase, d, setting).lit).toBeCloseTo(
                   plain.at(phase, d, setting).lit ?? 0,
                   6,
                 );
-              for (const c of b.cells) expect(sp.at(phase, c, setting)).toEqual({ lit: 0 });
+              for (const c of at.board.cells) expect(sp.at(phase, c, setting)).toEqual({ lit: 0 });
             }
           }
       expect(checked).toBeGreaterThan(0);

@@ -2,8 +2,17 @@ import { patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
 import type { Placed } from '../orders.js';
 import type { Values } from '../params.js';
-import { litAt, move, on } from './move.js';
-import { LIT, type Lookup, litOf, moveShader, ROUND } from './shader.js';
+import { type Lines, lineAt, linesOf, litAt, move, on } from './move.js';
+import {
+  boundLines,
+  LINE_AT,
+  LIT,
+  type Lookup,
+  linesParams,
+  litOf,
+  moveShader,
+  ROUND,
+} from './shader.js';
 
 const SPLIT_PARAMS = {
   ms: {
@@ -29,16 +38,17 @@ const easeOut = (u: number) => 1 - (1 - u) ** 3;
 
 /** `halves` at `away`, eased in as split-in plays it or, with `out`, out as split-out does. */
 const SPLIT = moveShader({
-  params: ['left', 'middle', 'fromLeft', 'fromRight', 'topLeft', 'out'],
+  params: ['left', 'lines', 'pitch', 'middle', 'fromLeft', 'fromRight', 'topLeft', 'out'],
   wgsl: `let u = select(phase, 1.0 - phase, params.out > 0.5);
 let away = (1.0 - u) * (1.0 - u) * (1.0 - u);
-let goesLeft = (row < params.middle) == (params.topLeft > 0.5);
+let top = row < ${LINE_AT('row')} * params.pitch + params.middle;
+let goesLeft = top == (params.topLeft > 0.5);
 let dx = select(${ROUND('params.fromRight * away')}, -${ROUND('params.fromLeft * away')}, goesLeft);
 lit = ${LIT('params.left + dx')};`,
   at(phase, d, p, t) {
     const away = 1 - easeOut(p.out ? 1 - phase : phase);
     const row = (t.rows as Lookup)(0, d.y) - 1;
-    const goesLeft = row < (p.middle as number) === (p.topLeft as number) > 0.5;
+    const goesLeft = inTop(boundLines(p), row) === (p.topLeft as number) > 0.5;
     const dx = goesLeft
       ? -Math.round((p.fromLeft as number) * away)
       : Math.round((p.fromRight as number) * away);
@@ -46,28 +56,30 @@ lit = ${LIT('params.left + dx')};`,
   },
 });
 
+/** Whether text row `r` is in the top half of its line. */
+const inTop = (l: Lines, r: number) => r < lineAt(l, r) * l.pitch + l.middle;
+
 /**
  * The message's top half `away` of the way off one edge and its bottom half as far off the other,
- * 0 standing and 1 gone; the halves meet at the middle of the letters' body.
+ * 0 standing and 1 gone; on each line the halves meet at the middle of the letters' body.
  */
 function halves(at: Placed, p: Split) {
   const { text } = at;
-  const middle = text.above + Math.ceil((text.rows - text.above - text.below) / 2);
+  const lines = linesOf(text);
   const fromLeft = at.left + text.cols;
   const fromRight = at.board.cols - at.left;
   /** The halves as a shader patch, coming in or, with `out`, going out. */
   const shader = (out: boolean) =>
     SPLIT(at, p.ms, {
       left: at.left,
-      middle,
+      ...linesParams(lines),
       fromLeft,
       fromRight,
       topLeft: p.direction === 'left' ? 1 : 0,
       out: out ? 1 : 0,
     });
   const draw = (away: number, led: Led) => {
-    const top = at.rowOf(led) < middle;
-    const left = top === (p.direction === 'left');
+    const left = inTop(lines, at.rowOf(led)) === (p.direction === 'left');
     const dx = left ? -Math.round(fromLeft * away) : Math.round(fromRight * away);
     return on(litAt(at, led, dx));
   };

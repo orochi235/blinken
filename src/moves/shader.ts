@@ -2,6 +2,7 @@ import type { ShaderPatch } from '@msb235/blits/gpu';
 import type { Pose, Subject } from '../board.js';
 import { type Bound, type Given, kernels, type Tables } from '../modulators/shader.js';
 import type { Placed } from '../orders.js';
+import type { Lines } from './move.js';
 
 /** A move's pass as a shader patch, writing `lit` on every dot and 0 on every cell. */
 export type MoveShader = ShaderPatch<Subject, Pose, Bound>;
@@ -53,7 +54,7 @@ export function bitmapTables(at: Placed): BitmapTables {
 }
 
 /** WGSL for the rows table at dot row `y`: the text row it shows plus 1, or 0. */
-const ROWS = (y: string) => `table_rows(0.0, (${y}) + params.lead)`;
+export const ROWS = (y: string) => `table_rows(0.0, (${y}) + params.lead)`;
 
 /**
  * WGSL for `litAt`: how brightly the message, its left edge at column `x0` and moved `dy` rows
@@ -83,6 +84,20 @@ export function litOf(t: Tables, d: { x: number; y: number }, x0: number, dy = 0
 
 /** WGSL for `Math.round`, which rounds halves up where WGSL's `round` rounds them to even. */
 export const ROUND = (x: string) => `floor((${x}) + 0.5)`;
+
+/** The `Lines` params `LINE_AT` reads, by name. */
+export const linesParams = (l: Lines) => ({ lines: l.count, pitch: l.pitch, middle: l.middle });
+
+/** `linesParams` read back from a shader's bound numbers. */
+export const boundLines = (p: Bound): Lines => ({
+  count: p.lines as number,
+  pitch: p.pitch as number,
+  middle: p.middle as number,
+});
+
+/** WGSL for `lineAt` on text row `r`, reading `params.lines`, `params.pitch` and `params.middle`. */
+export const LINE_AT = (r: string) =>
+  `clamp(${ROUND(`((${r}) - params.middle) / params.pitch`)}, 0.0, params.lines - 1.0)`;
 
 /** What `moveShader` takes: a move's pass for one dot, written twice. */
 export interface MoveSpec {

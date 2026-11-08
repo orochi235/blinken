@@ -1,5 +1,6 @@
 import type { Patch } from '@msb235/blits';
 import type { Led, Pose } from '../board.js';
+import type { Bitmap } from '../font.js';
 import type { Placed } from '../orders.js';
 import type { Params, Values } from '../params.js';
 import type { MoveShader } from './shader.js';
@@ -55,6 +56,25 @@ export const move = <P extends Params>(m: Omit<Move<P>, 'kind'>): Move<P> => ({
   kind: 'move',
   ...m,
 });
+
+/** Where a text's lines stand: how many, how many rows apart, and the row of the first's middle. */
+export interface Lines {
+  readonly count: number;
+  readonly pitch: number;
+  readonly middle: number;
+}
+
+/** `text`'s lines, each middle where its letters' body is halved. */
+export function linesOf(text: Bitmap): Lines {
+  const { face } = text;
+  const body = face.rows - (face.above ?? 0) - (face.below ?? 0);
+  const count = Math.round((text.rows - text.above - text.below - body) / text.pitch) + 1;
+  return { count: Math.max(1, count), pitch: text.pitch, middle: text.above + Math.ceil(body / 2) };
+}
+
+/** The line whose middle is nearest text row `r`. */
+export const lineAt = (l: Lines, r: number) =>
+  Math.min(l.count - 1, Math.max(0, Math.round((r - l.middle) / l.pitch)));
 
 /** How brightly the message, shifted `dx` dots right of where it stands, lights this dot. */
 export const litAt = (at: Placed, led: Led, dx = 0, dy = 0) => {
