@@ -71,6 +71,8 @@ export function createWebGpuSignOf(
   let lamps: Lamps = {};
   let fade: Fade | undefined;
   let ghost: Ghost | undefined;
+  let highlight: Uint8Array | null = null;
+  let follow: Follow | null = null;
   const placement = lights.place(() => lamps.pitch);
   const lost = watchLost(handle);
   let off = false;
@@ -142,9 +144,11 @@ export function createWebGpuSignOf(
       placement.refit();
     },
     setHighlight(mask) {
+      highlight = mask;
       guard(() => parts.sources.setHighlight(mask));
     },
     setFollow(from) {
+      follow = from;
       guard(() => parts.sources.setFollow(from));
     },
     reshape(next) {
@@ -153,6 +157,8 @@ export function createWebGpuSignOf(
         parts = make(next);
         if (fade) parts.optics.setFade(fade);
         if (ghost) parts.optics.setGhost(ghost);
+        if (highlight) parts.sources.setHighlight(highlight);
+        if (follow) parts.sources.setFollow(follow);
       });
       sized();
     },

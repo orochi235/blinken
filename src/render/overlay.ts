@@ -45,8 +45,8 @@ export function createOverlay(
   const followed = opts ? opts.planes.flatMap((plane) => PLANES[plane]) : [];
   let from: { source: Marquee; map: Uint32Array } | null = null;
   let mode: 'gpu' | 'poses' | 'columns' | null = null;
-  /** The source the WebGPU sign is following on the GPU. */
-  let bound: Marquee | null = null;
+  /** The output the WebGPU sign is following on the GPU, which a source's reshape replaces. */
+  let bound: GPUBuffer | null = null;
 
   let marked: Uint8Array | null = null;
   /** The invert each marked dot had from the mix, so marking it again doesn't swap it back. */
@@ -68,13 +68,10 @@ export function createOverlay(
       else mode = theirs?.webgpu ? 'poses' : 'columns';
       if (source && from?.source !== source) from = { source, map: mapOf(b, source.board) };
       if (mode === 'gpu' && from && theirs?.webgpu) {
-        if (bound !== source)
-          mine.webgpu?.setFollow({
-            lit: theirs.webgpu.output,
-            map: from.map,
-            planes: opts?.planes ?? [],
-          });
-        bound = source;
+        const lit = theirs.webgpu.output;
+        if (bound !== lit)
+          mine.webgpu?.setFollow({ lit, map: from.map, planes: opts?.planes ?? [] });
+        bound = lit;
       } else if (bound) {
         mine.webgpu?.setFollow(null);
         bound = null;
