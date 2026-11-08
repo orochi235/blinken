@@ -94,7 +94,7 @@ looping program waits again on its next pass. Layers keep playing while it waits
 
 A move is paced this way by declaring `rests(at, params)`: where in its own time it waits, and
 `release`, where it plays on from after the last wait, or null when its settings pace it by time.
-Staging turns them into the effect's `stops`, which `layOut` places in pass time.
+`stageEffect` turns them into the effect's `stops`, and the sign places those in pass time.
 
 ### Grids
 
@@ -244,8 +244,8 @@ fall: {
 { effect: 'fall', text: 'TONIGHT', hex: 0xff9a2e, params: { drop: 600, blend: 120 } },
 ```
 
-`tuningOf(effect)` lists them as number settings, defaulting to what the effect sets, and
-`tuned(effect, values)` is the effect as those values set it.
+`tuningOf(effect)` lists them as settings, each a number, a choice, or a set of colors, defaulting
+to what the effect sets, and `tuned(effect, values)` is the effect as those values set it.
 
 The built-in effects are `hold`, `scroll`, `flip`, `roll`, `fall`, `matris` (Matrix rain),
 `tile`, `type` (typed on behind a cursor and backspaced off), `swarm` (dots flying together and

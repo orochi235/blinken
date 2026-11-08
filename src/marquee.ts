@@ -119,7 +119,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   };
 
   /**
-   * Throws on a scene naming no effect, face or layer; a program given as a function is checked as
+   * Throws on a scene naming no effect, face, or layer; a program given as a function is checked as
    * each pass starts.
    */
   const check = (p: typeof program, e: typeof effects) => {
