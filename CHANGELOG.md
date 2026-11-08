@@ -28,6 +28,9 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 - Lines of outlined or shadowed text no longer overlap: lines stand the rows a style adds further
   apart, both in a `\n`-separated message and in one repeated down a tall board. `Bitmap.pitch` gives
   the spacing.
+- A drag from one readout runs on into every readout it reaches, on the same panel or overlay or
+  another, as a drag across text does; Shift+click extends from a press in another readout, and a
+  copy writes each readout's line in page order.
 
 ## 0.2.0
 
