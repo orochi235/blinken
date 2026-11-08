@@ -19,6 +19,7 @@ import {
   type Piece,
   piecesOf,
   type Scene,
+  type SceneLayer,
   SLOTS,
   type Slot,
   tuningOf,
@@ -188,7 +189,7 @@ function writeScene(w: BitWriter, scene: Scene, effects: ShareData['effects']): 
   const tracking = scene.style?.tracking;
   w.flag(tracking !== undefined && tracking !== 0);
   if (tracking !== undefined && tracking !== 0) writeNumber(w, LOOK.params.tracking, tracking);
-  writeLayers(w, (scene.layers ?? {}) as Record<string, LinkLayer>);
+  writeLayers(w, scene.layers ?? {});
   const tuning = tuningOf(effectOf(scene, effects));
   writeParams(w, tuning, scene.params, defaultsOf(tuning));
 }
@@ -255,14 +256,15 @@ const layerParams = (name: string) => {
 };
 
 /** Each built-in layer: whether it is there, and if so whether it is on and what it changed. */
-function writeLayers(w: BitWriter, layers: Record<string, LinkLayer>): void {
+function writeLayers(w: BitWriter, layers: Readonly<Record<string, SceneLayer>>): void {
   for (const name of LAYER_NAMES) {
     const layer = layers[name];
     w.flag(layer !== undefined);
-    if (!layer) continue;
-    w.flag(layer.on);
+    if (layer === undefined) continue;
+    const given = typeof layer === 'object' ? layer : {};
+    w.flag(typeof layer === 'object' ? layer.on !== false : layer);
     const { params, base } = layerParams(name);
-    writeParams(w, params, layer.params, base);
+    writeParams(w, params, given.params, base);
   }
 }
 

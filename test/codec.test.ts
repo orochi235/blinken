@@ -178,6 +178,20 @@ describe('packed links', () => {
     }
   });
 
+  it('packs a layer given as true, false or an object without `on` as the scene plays it', () => {
+    const data: ShareData = {
+      effects: {},
+      program: [
+        { text: 'A', effect: 'hold', layers: { shimmer: true, invert: false, rainbow: {} } },
+        { text: 'B', effect: 'hold', layers: { sparkle: { on: false } } },
+      ],
+    };
+    expect(unpack(pack(data)).program.map((s) => s.layers)).toEqual([
+      { shimmer: { on: true }, invert: { on: false }, rainbow: { on: true } },
+      { sparkle: { on: false } },
+    ]);
+  });
+
   it('reads a link of another version, or a cut-off one, as unread', () => {
     const bytes = pack(shareOf(copies()));
     const other = Uint8Array.from(bytes);
