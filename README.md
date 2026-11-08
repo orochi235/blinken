@@ -253,8 +253,8 @@ apart), `bounce` (letters bouncing in), `wave` (letters riding a wave), `melt` (
 bottom), and `shear` (halves sliding in from opposite edges), in `EFFECTS`. The
 built-in layers are `sparkle`, stray dots lighting for a moment; `rainbow`, a hue running across
 the sign that recolors whatever is lit; and
-`invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when spread by
-column; `scanline`, a bright band rolling down the rows like a CRT's; `fire`, a rising flicker from
+`invert`, which swaps lit and dark dots, held or swinging, and swept across the sign when it swings
+spread by column with a phase per step; `scanline`, a bright band rolling down the rows like a CRT's; `fire`, a rising flicker from
 deep red at the bottom to yellow at the top; `glitch`, rare bursts in which bands of rows jump color,
 drop out or flip; `neon`, letters buzzing like failing tubes, a few worse than the rest (under a
 whole sign, which has no message to go by, each six columns are a tube); `shimmer`,
