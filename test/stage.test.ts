@@ -298,6 +298,17 @@ describe('stops', () => {
     expect(staged.stops).toEqual(want);
   });
 
+  it('keeps one of each stop the groups share, so a press never waits again at the same moment', () => {
+    const together = { ...typed, exit: undefined, order: { by: 'column', lag: 0 } } as const;
+    const staged = stageEffect(together, at, HEX);
+    const on = restsOf('type-on', { pace: 'input' });
+    expect(groupsOf(together.order, at).length).toBeGreaterThan(1);
+    expect(staged.stops).toEqual([
+      ...on.at.map((t) => ({ at: t })),
+      { at: on.release, release: true },
+    ]);
+  });
+
   it('puts off a piece’s rests by each delay its own order gives its dots', () => {
     const own = {
       ...typed,

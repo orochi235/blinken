@@ -31,6 +31,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 - A drag from one readout runs on into every readout it reaches, on the same panel or overlay or
   another, as a drag across text does; Shift+click extends from a press in another readout, and a
   copy writes each readout's line in page order.
+- An effect with an `order` waits once at each rest its groups share: a lag-0 order over a message
+  typed by input takes one press a letter rather than one a letter for every group.
 
 ## 0.2.0
 
