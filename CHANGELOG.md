@@ -35,6 +35,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   whole sign's `lit` and `tint` on the CPU under WebGPU.
 - The WebGPU and WebGL renderers draw signs of 125,000 lights and more, where they overflowed the
   stack.
+- The WebGPU renderer paints the housing's sockets from its first frame, where the first paint drew
+  them unset.
 
 ## 0.2.0
 
