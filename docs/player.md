@@ -61,7 +61,7 @@ know plays the rest and logs a warning naming them. Old share links read as the 
 
 `npm run compile -- <link or file.json> --out sign.js --tag shop-sign` compiles a program in, so
 the file alone plays it: `<script src="sign.js"></script><shop-sign></shop-sign>`. `--cols`,
-`--rows`, `--grid`, `--bulbs` and `--hardware` compile hardware in the same way. The program is
+`--rows`, `--grid`, `--bulbs`, `--housing` and `--hardware` compile hardware in the same way. The program is
 read while compiling, so one that can't be read fails then rather than on the page. A page can
 still override anything with attributes. Two compiled signs on one page need different tags; a
 tag already defined is left as it was.

@@ -21,6 +21,7 @@ const { values, positionals } = parseArgs({
     rows: { type: 'string' },
     grid: { type: 'string' },
     bulbs: { type: 'string' },
+    housing: { type: 'string' },
   },
 });
 
@@ -52,6 +53,7 @@ const baked = {
     {
       size: { cols: num(values.cols), rows: num(values.rows), grid: values.grid },
       border: { bulbs: values.bulbs },
+      case: { housing: values.housing },
     },
   ],
 };

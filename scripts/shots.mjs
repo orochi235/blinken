@@ -23,6 +23,7 @@ const effectViews = [
   { name: 'flip', query: '?show=flip' },
   { name: 'roll', query: '?show=roll' },
   { name: 'fall', query: '?show=fall' },
+  { name: 'matris', query: '?show=matris' },
   { name: 'tile', query: '?show=tile&cols=120&rows=40' },
   { name: 'type', query: '?show=type' },
   { name: 'swarm', query: '?show=swarm' },
