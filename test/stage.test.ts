@@ -203,8 +203,8 @@ describe('what an effect draws', () => {
     const m = cued(effect, 0);
     const done = m.marks(0, 10_000).find((k) => k.mark === 'in' && k.name === 'f');
     expect(done?.timestamp).toBe(flare);
-    // With its default sweep of half the pass, every dot peaks a quarter of the way in.
-    m.sync(flare / 4);
+    // With no spread there is nothing for the sweep to stagger, so every dot peaks halfway in.
+    m.sync(flare / 2);
     expect(m.probe(b.dots[0] as Subject).glow).toBeCloseTo(2);
   });
 

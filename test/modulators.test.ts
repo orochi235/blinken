@@ -84,6 +84,13 @@ describe('modulators', () => {
     expect(g(999.999)).toBeCloseTo(0.5, 3);
   });
 
+  it('one-shots with no spread take their whole length, whatever the sweep', () => {
+    const given = { ms: 1000, depth: 0.5, easing: 'linear', sweep: 0.5 };
+    const g = (t: number) => poseAt('dim', t, undefined, given).gain;
+    expect(g(500)).toBeCloseTo(0.75);
+    expect(g(999)).toBeCloseTo(0.5, 2);
+  });
+
   it('one-shots sweep their starts over the pass and all end by phase 1', () => {
     for (const name of ['dim', 'desaturate', 'flare'] as const) {
       const m = MODULATORS[name];

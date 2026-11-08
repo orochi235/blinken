@@ -64,6 +64,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   the last.
 - A still thumbnail played with `play(true)` fades its dots as a sign does, rather than keeping the
   instant on and off it holds with.
+- `dim`, `desaturate` and `flare` take their whole `ms` when nothing spreads them, where the
+  default sweep finished the change in half of it.
 - `reel-in` spins through the glyphs of the face its message is in when two custom faces share a
   name.
 

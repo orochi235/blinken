@@ -44,7 +44,7 @@ interface Spec {
   depthAbout: string;
 }
 
-/** Plays its channel once along an easing: rank spreads the starts over `sweep` of the pass, every subject done by its end. */
+/** Plays its channel once along an easing over the pass: a spread staggers the starts over `sweep` of it, every subject done by its end. */
 const eased = (s: Spec): Modulator =>
   modulator({
     name: s.name,
@@ -64,11 +64,12 @@ const eased = (s: Spec): Modulator =>
         return a.value + (b.value - a.value) * ease((u - a.at) / (b.at - a.at));
       };
       const maxRank = at.board.dots.reduce((m, d) => Math.max(m, rank(d)), 0);
+      const sweep = maxRank > 0 ? p.sweep : 0;
       return patch<Subject, Pose>(
         p.ms,
         (phase, subject) => {
-          const start = maxRank > 0 ? (rank(subject) / maxRank) * p.sweep : 0;
-          const u = Math.min(1, Math.max(0, (phase - start) / (1 - p.sweep)));
+          const start = maxRank > 0 ? (rank(subject) / maxRank) * sweep : 0;
+          const u = Math.min(1, Math.max(0, (phase - start) / (1 - sweep)));
           return { [s.channel]: valueAt(u) } as Partial<Pose>;
         },
         { writes: [s.channel] },
