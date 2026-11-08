@@ -74,6 +74,8 @@ const boxes = (Object.keys(LAYERS) as LayerName[]).map((name) => ({
 }));
 // A link's layers play in its scenes; the sign's own start off.
 if (composition) for (const { box } of boxes) box.checked = false;
+const chase = el<HTMLInputElement>('chase');
+const bulbs = () => ({ bulbs: chase.checked ? 'chase' : 'unlit' }) as const;
 
 let frames = 0;
 let shownAt = performance.now();
@@ -86,6 +88,7 @@ const sign = createMarquee(canvas, {
   program,
   effects: composition?.effects,
   layers: Object.fromEntries(boxes.map(({ name, box }) => [name, box.checked])),
+  border: bulbs(),
   color: userHex(),
   draw: !params.has('nodraw'),
   onFrame({ mixMs, drawMs }) {
@@ -112,6 +115,7 @@ sizeForm.addEventListener('submit', (event) => {
 });
 for (const { name, box } of boxes)
   box.addEventListener('change', () => sign.setLayer(name, box.checked));
+chase.addEventListener('change', () => sign.setBorder(bulbs()));
 // The visitor's message first plays at the program's second scene, so a change replays from there.
 const replay = () => sign.restart(only === null ? 1 : 0);
 message.addEventListener('change', replay);
