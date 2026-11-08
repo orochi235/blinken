@@ -37,4 +37,28 @@ describe('boardPlacement', () => {
     expect(p.blur).toBe(true);
     stop();
   });
+
+  it('sizes the canvas in device pixels as its CSS size times the pixel ratio', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    vi.stubGlobal('devicePixelRatio', 2);
+    const style: Record<string, string> = {};
+    const canvas = {
+      parentElement: { clientWidth: 72.9, clientHeight: 145.8 },
+      style,
+      width: 0,
+      height: 0,
+    } as never as HTMLCanvasElement;
+    const p = boardPlacement(1, 2, () => undefined);
+    const stop = p.start(canvas, () => {});
+    expect([style.width, style.height]).toEqual(['72px', '145px']);
+    expect([canvas.width, canvas.height]).toEqual([144, 290]);
+    expect(p.pitch).toBe(144);
+    stop();
+  });
 });

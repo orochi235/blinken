@@ -37,6 +37,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   stack.
 - The WebGPU renderer paints the housing's sockets from its first frame, where the first paint drew
   them unset.
+- A sign fitted to its box sizes its canvas as its CSS size times the pixel ratio, where a box of
+  fractional width had the browser squeeze a pixel or two out of it.
 
 ## 0.2.0
 
