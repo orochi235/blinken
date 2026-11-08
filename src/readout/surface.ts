@@ -14,7 +14,13 @@ import { flow } from './flow.js';
 import { dotOf, type Laid, type Layout, layOutReadouts, linesOf } from './layout.js';
 import { type Box, type Canvas, type Placed, surfacePlacement } from './placement.js';
 import { createTextLayer, type Picked } from './text.js';
-import { type CellFrame, type Transition, transitionOf } from './transitions.js';
+import {
+  type CellFrame,
+  type CellShown,
+  shownAt,
+  type Transition,
+  transitionOf,
+} from './transitions.js';
 import type { SegLight, Selection } from './type.js';
 import { TYPES } from './types/index.js';
 import { half as HALF } from './types/segments.js';
@@ -35,10 +41,12 @@ interface Entry extends Placed {
   field: Record<string, string>;
   /** How it changes value, as given and as `setTransition` changed it. */
   transition: Transition;
-  /** The change it is part way through: when it began, how long it runs, and its frames. */
+  /** The change it is part way through: when it began, how long it runs, its ends and frames. */
   moving: {
     readonly at: number;
     readonly ms: number;
+    readonly from: readonly CellShown[];
+    readonly to: readonly CellShown[];
     readonly frame: (t: number) => readonly CellFrame[];
   } | null;
 }
@@ -455,13 +463,27 @@ export function createSurface(
             return;
           }
           shapeNow();
-          const from = shownOf(e).cells;
+          const was = shownOf(e).cells;
+          const mid = e.moving;
+          const t = mid ? (last - mid.at) / mid.ms : 1;
+          // Set again mid-change, it starts from what it shows, not the value it was heading for.
+          const from =
+            mid && t < 1
+              ? shownAt(
+                  mid.frame(Math.max(0, t)),
+                  was.map((c) => c.lights),
+                  mid.from,
+                  mid.to,
+                  TYPES[o.type].spell,
+                )
+              : was;
           e.value = value;
           valued = true;
           let seed = 0x9e3779b9;
+          const to = shownOf(e).cells;
           const frame = e.transition.start({
             from,
-            to: shownOf(e).cells,
+            to,
             fromValue,
             toValue: value,
             spell: TYPES[o.type].spell,
@@ -471,7 +493,7 @@ export function createSurface(
               return seed / 2 ** 32;
             },
           });
-          e.moving = { at: last, ms, frame };
+          e.moving = { at: last, ms, from, to, frame };
         },
         setTransition(transition) {
           e.transition = transitionOf(transition);

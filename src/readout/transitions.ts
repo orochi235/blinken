@@ -65,6 +65,32 @@ export const TRANSITIONS = {
 
 export type TransitionName = keyof typeof TRANSITIONS;
 
+/**
+ * What each cell shows at a frame of a change from `from` to `to`, for a change started part way
+ * through it: the lights at half or more, and the character they are, where it can be told.
+ */
+export function shownAt(
+  frames: readonly CellFrame[],
+  lights: readonly (readonly { readonly name: string }[])[],
+  from: readonly CellShown[],
+  to: readonly CellShown[],
+  spell?: Spelling,
+): CellShown[] {
+  const same = (a: ReadonlySet<string>, b: ReadonlySet<string>) =>
+    a.size === b.size && [...a].every((l) => b.has(l));
+  return lights.map((names, k) => {
+    const frame = frames[k];
+    const lit = new Set(names.flatMap(({ name }) => ((frame?.(name) ?? 0) >= 0.5 ? [name] : [])));
+    const known = [from[k], to[k]].find((s) => s && same(s.lit, lit));
+    const ch = known
+      ? known.text
+      : spell
+        ? ([...STEP_SEQUENCE].find((c) => c !== ' ' && same(spell.lights(c), lit)) ?? '')
+        : '';
+    return { lit, text: ch };
+  });
+}
+
 /** The transition a readout's option names or gives. */
 export const transitionOf = (t: TransitionName | Transition | undefined): Transition =>
   t === undefined ? TRANSITIONS.cut : typeof t === 'string' ? TRANSITIONS[t] : t;
