@@ -66,6 +66,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   instant on and off it holds with.
 - `dim`, `desaturate` and `flare` take their whole `ms` when nothing spreads them, where the
   default sweep finished the change in half of it.
+- On the `triangles` grid, tracking spaces letters across its whole range, where 3 to 6 all spaced
+  them alike. A `Face` takes `spread`, the places one of its columns stands for.
 - `reel-in` spins through the glyphs of the face its message is in when two custom faces share a
   name.
 

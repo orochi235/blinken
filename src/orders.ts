@@ -106,11 +106,7 @@ export const placeText = (board: Board, text: string, look?: Look): Placed => ({
 export function lookOn(board: Pick<Board, 'grid'>, look: Look = {}): Look {
   const face = faceOf(look.face);
   if (board.grid !== 'triangles' || face.name === 'strokes') return look;
-  const tracking = look.style?.tracking ?? 0;
-  return {
-    face: widened(face),
-    style: { ...look.style, tracking: Math.min(6, tracking * 2 + 1) },
-  };
+  return { ...look, face: widened(face) };
 }
 
 const shuffle = (cols: number, seed: number): readonly number[] => {

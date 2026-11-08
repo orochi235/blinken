@@ -21,6 +21,8 @@ export interface Face {
   readonly below?: number;
   /** How many dots wide its widest glyph is; a fixed-pitch letter takes this and a blank. */
   readonly width: number;
+  /** How many places one of its columns stands for, which the gap between letters is counted in. Default 1. */
+  readonly spread?: number;
   glyph(ch: string): readonly string[] | undefined;
 }
 
@@ -82,6 +84,7 @@ export function widened(face: Face): Face {
       ...face,
       name: `${face.name} doubled`,
       width: face.width * 2,
+      spread: (face.spread ?? 1) * 2,
       glyph(ch) {
         if (!cache.has(ch))
           cache.set(

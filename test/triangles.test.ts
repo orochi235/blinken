@@ -81,6 +81,18 @@ describe('a sign on the triangle tiling', () => {
         for (const d of [0, 1]) expect(shown.lit(x * 2 + d, y)).toBe(plain.lit(x, y));
   });
 
+  it('spaces letters by tracking in dots, across its whole range', () => {
+    const b = board(200, 7, false, 'triangles');
+    for (let tracking = -1; tracking <= 6; tracking++) {
+      const look = { style: { tracking } };
+      const plain = rasterize('TT', look);
+      const shown = placeText(b, 'TT', look).text;
+      expect(shown.cols).toBe(plain.cols * 2 - 1);
+      for (let x = 0; x < plain.cols; x++)
+        for (const d of [0, 1]) expect(shown.lit(x * 2 + d, 1)).toBe(plain.lit(x, 1));
+    }
+  });
+
   it('spins reel-in through letters doubled as its own are', () => {
     const b = board(40, 7, false, 'triangles');
     const at = placeText(b, 'TT');
