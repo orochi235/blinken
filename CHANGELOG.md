@@ -31,6 +31,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 - A drag from one readout runs on into every readout it reaches, on the same panel or overlay or
   another, as a drag across text does; Shift+click extends from a press in another readout, and a
   copy writes each readout's line in page order.
+- A border of all-lit bulbs (`border: { bulbs: 'lit' }`) runs on the GPU, rather than keeping the
+  whole sign's `lit` and `tint` on the CPU under WebGPU.
 
 ## 0.2.0
 

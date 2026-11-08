@@ -3,8 +3,9 @@ import type { Pose, Subject } from '../board.js';
 import { modulator } from './modulator.js';
 import { f32, shader } from './shader.js';
 
-const BULB = oklab(0xffe2b0);
-const NONE = [0, 0, 0, 0];
+/** The border bulbs' warm white. */
+export const BULB = oklab(0xffe2b0);
+export const NONE = [0, 0, 0, 0];
 
 /** A cell's pose on beat `beat` of three: lit every third, the rest at `dim`; a dot is left at rest. */
 const poseOf = (s: Subject, beat: number, dim: number): Partial<Pose> =>
