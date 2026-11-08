@@ -32,12 +32,14 @@ export interface FrameCost {
 }
 
 export interface MarqueeOptions {
-  /** Dots across and down. Default 80 × 7, one line of text. */
+  /** Dots across and down. Default 80 × 7, one line of text; 160 across on `triangles`. */
   readonly cols?: number;
   readonly rows?: number;
   /**
-   * How the dots are set out: `square`, `hex`, or a grid of your own placing each column and row.
-   * Only the drawing reads it; text and effects still count dots by column and row. Default square.
+   * How the dots are set out: `square`, `hex`, `triangles`, or a grid of your own placing each
+   * column and row. Text and effects still count dots by column and row, so only the drawing reads
+   * a grid, except `triangles`: it lays each dot of a face across two places, doubling the default
+   * width and widening the face and its tracking to match. Default square.
    */
   readonly grid?: GridName | Grid;
   /**
