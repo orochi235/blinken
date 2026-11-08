@@ -21,12 +21,13 @@ What a scene shows, meaning colors, brightness, timing and layout, is the same o
 | :------ | :-------------------------------------------------- | :----------------------------------------------------- |
 | WebGPU  | on blits's `gpu` engine, where every voice allows   | from the GPU buffers the fold wrote; the rest uploaded |
 | WebGL 2 | on the CPU (stock mixer); columns upload each frame | instanced lights, separable blur                       |
-| 2D      | on the CPU                                          | `src/draw.ts`, refactored; output unchanged            |
+| 2D      | on the CPU                                          | `src/render/sign2d.ts`                                 |
 
-- **A light is a shape plus a place.** Every light is an instance that points into a table of
-  shapes (`SHAPES` in `src/render/lights.ts`: the round dot and the border bulb). New displays add
-  shapes and layouts there rather than renderers. How a light glows is its `Material`; `LED` is the
-  only one, behind a seam a VFD or LCD material can plug into.
+- **A light is drawn as primitives.** Every backend draws the same primitives
+  (`src/render/prims.ts`: discs, bars, polygons, triangles and faceplates), each placed through a
+  view and, but for a faceplate, owned by a light; a board's dots and bulbs are lamp-scaled discs.
+  New displays build primitives rather than renderers. How a light glows is its `Material`; `LED`
+  is the only one, behind a seam a VFD or LCD material can plug into.
 - **Post-mix optics run on the GPU on WebGPU only**: fades (`settle`), ghosting (`ghosts`),
   defects (`afflict`), `follow`, and the highlight. WebGL runs them on the CPU
   (`src/render/optics-frame.ts`) and uploads the result.
@@ -145,9 +146,9 @@ Separate signs pay per sign on the CPU (each runs its own mix, encodes and submi
 work, and presents its own canvas), so their cost grows with the count of signs rather than of
 lights. Many displays on one page should share one sign and one surface.
 
-Segment readouts do (`docs/superpowers/specs/2026-11-04-segment-readouts-design.md`). The
-`readouts` way lays the digits out as one-cell 7-segment readouts on one panel, 9 lights a digit,
-and is measured here against the shared sign with no layers, since readouts take none yet
+Segment readouts do (`docs/readouts.md`). The `readouts` way lays the digits out as one-cell
+7-segment readouts on one panel, 9 lights a digit, and is measured here against the shared sign
+with no layers, since readouts take none yet
 (`npm run bench:readouts`, label `readouts-1`, teitou, one run per row):
 
 | digits | way      |    fps | p50 ms | p95 ms | mix ms | draw ms |
