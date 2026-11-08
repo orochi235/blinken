@@ -5,7 +5,7 @@ What a session picking up blinken needs that the code and `TODO.md` don't alread
 
 ## State
 
-- Dependencies are on weasel `1.17.3`, blits `^1.1.0`, blits-panel `1.1.1` and vitest 5 (2026-11-07).
+- Dependencies are on weasel `1.18.0` (2026-11-08), blits `^1.1.0`, blits-panel `1.1.1` and vitest 5 (2026-11-07).
   CI and Pages install those from npm; the lab and tests use the sibling checkouts where present.
 - The GPU renderers and segment readouts are merged to `main`. How they work and what they
   measured is in `docs/gpu-renderers.md` and `docs/readouts.md`; what's left is in `TODO.md`.
