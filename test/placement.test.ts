@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { surfacePlacement } from '@/readout/placement.js';
 import { boardPlacement, toDevice, VIEW } from '@/render/placement.js';
 
 describe('toDevice', () => {
@@ -59,6 +60,33 @@ describe('boardPlacement', () => {
     expect([style.width, style.height]).toEqual(['72px', '145px']);
     expect([canvas.width, canvas.height]).toEqual([144, 290]);
     expect(p.pitch).toBe(144);
+    stop();
+  });
+});
+
+describe('surfacePlacement', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('keeps a canvas with no CSS size from growing with its own pixels', () => {
+    vi.stubGlobal('devicePixelRatio', 2);
+    let resized = () => {};
+    const style: Record<string, string> = {};
+    const canvas = { style, width: 300, height: 150 } as never as HTMLCanvasElement;
+    // An unsized canvas's CSS box is its pixels, until the page gives it one.
+    const box = (side: 'width' | 'height') =>
+      style[side] ? Number.parseFloat(style[side]) : canvas[side];
+    const p = surfacePlacement(() => [], {
+      size: () => ({ width: box('width'), height: box('height') }),
+      watch(_, r) {
+        resized = r;
+        return () => {};
+      },
+    });
+    const stop = p.start(canvas, () => {});
+    resized();
+    resized();
+    expect([style.width, style.height]).toEqual(['300px', '150px']);
+    expect([canvas.width, canvas.height]).toEqual([600, 300]);
     stop();
   });
 });

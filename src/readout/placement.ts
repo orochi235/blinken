@@ -65,6 +65,17 @@ export function fitOf(r: Placed): Fit | null {
   };
 }
 
+/**
+ * A canvas with no CSS size takes its pixels as its CSS box, so setting its pixels to that box times
+ * the pixel ratio grows it on every resize. Where the box moved with the pixels, it keeps the size it
+ * had before.
+ */
+function pinIfFollowing(canvas: HTMLCanvasElement, sizing: Canvas, width: number, height: number) {
+  const after = sizing.size(canvas);
+  if (Math.abs(after.width - width) > 1) canvas.style.width = `${width}px`;
+  if (Math.abs(after.height - height) > 1) canvas.style.height = `${height}px`;
+}
+
 /** A surface's placement, which also keeps each readout's fit from its last fill. */
 export type SurfacePlacement = Placement & {
   readonly fits: readonly (Fit | null)[];
@@ -124,6 +135,7 @@ export function surfacePlacement(
         const { width, height } = sizing.size(canvas);
         canvas.width = Math.round(width * dpr);
         canvas.height = Math.round(height * dpr);
+        pinIfFollowing(canvas, sizing, width, height);
         fill();
         changed();
       };

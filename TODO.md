@@ -35,11 +35,8 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 
 ## Known gaps
 
-- `createPanel` on a canvas with no CSS size grows it without end on a 2× screen: the panel sets the canvas's pixels to its CSS box times the pixel ratio, and an unsized canvas's CSS box is its pixels, so each resize doubles it until WebGL refuses the size (`texImage2D: width or height out of range`). The docs site's readouts demo did this until its canvas was sized in CSS. The panel could refuse it, warn, or size from a box that can't follow the canvas's own pixels (2026-11-06).
-
 - Over a white page, a lit dot's pale core and its glow read as pastel rather than as the saturated light it shows over black: the core is white light, which a white page can't show. The unlit sockets were made to read alike on both (`veil` in `src/render/housing.ts`); the lit dots weren't (2026-11-05).
 
-- `test/gpu/readouts.gpu.ts`'s "a faceplate is dark" fails on all three backends: readout surfaces draw with `housing: 'clear'`, which since fffdb50 makes the faceplate a veil (alpha 7/255) like every other socket, and `test/housing.test.ts` asserts that. `ReadoutOptions.face` still documents `'plate'` as "a dark faceplate". Either the plate stays opaque on a clear housing or the doc and GPU test change (2026-11-05).
 - An overlay's text layer is placed once, after its canvas at the end of `<body>`, so an element the page adds later (a followed card, say) stacks above it and takes presses meant for the readout over it; select and edit then miss. `test/gpu/text.gpu.ts` makes its boxes before the overlay to stay clear of it (2026-11-07).
 - `npm run smoke`'s `stretched` page (a 320 × 63 sign, 20,550 lights) draws at 2–3 fps headless on studio, though its mix and draw report about 54 ms a frame together; where the rest of each frame goes isn't measured (2026-11-05).
 - `dim` and `desaturate` change once and stay changed, so looped they snap back at each repeat; every other looping effect closes its loop, which `test/loop-seams.test.ts` holds at each setting's least and most. Making these two seamless means changing what they are: going there and back, or holding the end instead of repeating (2026-11-05).
