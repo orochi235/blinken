@@ -111,7 +111,7 @@ export {
   type Warning,
   writesOf,
 } from './pieces.js';
-export { type Channel, PLANES, type Plane, planeOf } from './planes.js';
+export { ALIKE, alikeOf, type Channel, PLANES, type Plane, planeOf } from './planes.js';
 export { cueLayer, effectOf, layerOf, play, type Scene, type SceneLayer } from './program.js';
 export type {
   Readout,

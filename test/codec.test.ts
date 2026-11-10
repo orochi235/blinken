@@ -418,6 +418,50 @@ describe('packed links', () => {
     ]);
   });
 
+  it('opens a version 13 link by the settings its modulators had then, before channel', () => {
+    const w = new BitWriter();
+    const mods = Object.keys(MODULATORS);
+    w.uint(13, 8);
+    w.count(1);
+    w.text('mine');
+    w.uint(0, 2);
+    w.flag(false);
+    w.count(0);
+    w.count(1);
+    w.flag(true);
+    w.uint(mods.indexOf('dim'), widthOf(mods.length));
+    w.flag(false);
+    // Dim had a length, an easing, a depth and a sweep in version 13, and no channel.
+    w.flag(false);
+    w.flag(false);
+    w.flag(false);
+    w.flag(true);
+    w.uint(4, widthOf(21));
+    w.count(0);
+    w.flag(false);
+    w.flag(false);
+    w.count(0);
+    w.count(1);
+    w.text('A');
+    w.flag(false);
+    w.flag(true);
+    w.uint(0, widthOf(1));
+    for (let k = 0; k < 6; k++) w.flag(false);
+    for (const _ of Object.keys(LAYERS)) w.flag(false);
+    for (const _ of Object.keys(tuningOf({ name: 'mine' }))) w.flag(false);
+    const { state, read } = decode(Buffer.from(w.done()).toString('base64url'));
+    expect(read).toBe(true);
+    expect(state.effects.mine?.active).toEqual([{ mod: 'dim', params: { sweep: 0.2 } }]);
+  });
+
+  it('round-trips a modulator on another channel', () => {
+    const data = {
+      effects: { mine: { name: 'mine', active: [{ mod: 'dim', params: { channel: 'chroma' } }] } },
+      program: [{ text: 'A', hex: AMBER, effect: 'mine' }],
+    } as ShareData;
+    expect(unpack(pack(data))).toEqual(data);
+  });
+
   it('round-trips outline, shadow and tracking', () => {
     const data = {
       effects: {},
@@ -504,7 +548,7 @@ describe('packed links', () => {
     });
     const digest = createHash('sha256').update(layout).digest('hex').slice(0, 12);
     // A change here changes what existing links decode to: bump VERSION, then update the digest.
-    expect({ VERSION, digest }).toEqual({ VERSION: 13, digest: '796b62375dbb' });
+    expect({ VERSION, digest }).toEqual({ VERSION: 14, digest: '01c3bed9a8a4' });
   });
 });
 

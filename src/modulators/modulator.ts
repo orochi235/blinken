@@ -1,8 +1,8 @@
 import { type Patch, type WaveShape, waveAt } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { Placed } from '../orders.js';
-import type { NumberParam, Params, Values } from '../params.js';
-import type { Channel } from '../planes.js';
+import type { ChoiceParam, NumberParam, Params, Values } from '../params.js';
+import { alikeOf, type Channel } from '../planes.js';
 import type { ModShader, Ranked } from './shader.js';
 
 /** One channel of the sign driven along a curve over time, phased over the sign by an order. */
@@ -11,7 +11,7 @@ export interface Modulator<P extends Params = Params> {
   readonly name: string;
   readonly about: string;
   readonly params: P;
-  /** The channels `patch` writes, and no others. */
+  /** The channels `patch` writes, and no others, unless a `channel` setting (`channelParam`) names another. */
   readonly writes: readonly Channel[];
   /** What it plays on: the dots of the sign, or the three cells of the border. */
   readonly on: 'dots' | 'cells';
@@ -29,6 +29,33 @@ export const modulator = <P extends Params>(m: Omit<Modulator<P>, 'kind'>): Modu
   kind: 'modulator',
   ...m,
 });
+
+const WORDS: Readonly<Record<Channel, string>> = {
+  lit: 'whether a dot is on',
+  gain: 'brightness',
+  tint: 'color',
+  hue: 'hue',
+  chroma: 'how strong the color is',
+  glow: 'the halo',
+  invert: 'how far lit and dark dots swap',
+};
+
+/**
+ * The `channel` setting of a modulator that drives the one channel `channel`, choosing among the
+ * channels that mix as it does; undefined where none other does.
+ */
+export function channelParam(channel: Channel): ChoiceParam | undefined {
+  const choices = alikeOf(channel);
+  if (choices.length < 2) return undefined;
+  const named = choices.map((c) => `${c} (${WORDS[c]})`);
+  const list = `${named.slice(0, -1).join(', ')}${named.length > 2 ? ',' : ''} or ${named.at(-1)}`;
+  return {
+    label: 'channel',
+    about: `The channel the curve drives: ${list}.`,
+    choices,
+    value: channel,
+  };
+}
 
 /** Cycles per second of a looping modulator. */
 export const RATE: NumberParam = {

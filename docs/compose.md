@@ -171,7 +171,13 @@ Among the lab's pages (`lab/pages.ts` lists them) are the composer at `/compose`
   playback controls: play and pause, a frame at a time, speed, a scrubber, and a focus that loops
   its enter, active, or exit alone. Above the cards, a diagram draws the open effect as signal
   flow (each piece into the channels it drives), as time (enter, active, and exit in order), or
-  both; picking a node marks its card, and picking a card marks its node.
+  both; picking a node marks its card, and picking a card marks its node. The diagram edits too,
+  each edit one undo step that copies a built-in first, as a card's do: drag a one-curve
+  modulator's wire onto another channel that mixes alike (the channels it could take are drawn
+  unwired); in `both`, drag a piece to another place in its step or into another step; drop a
+  move or modulator from the palette beside the diagram onto a step, or click one to add it; and
+  press Delete to take out the picked piece. A move dropped in a step it does not belong to is
+  refused with the reason.
 - **Program.** Scenes as a list: text, color, which effect, an optional hold. Add, remove,
   reorder. Layers are modulators under the program, with on/off and their own sliders; this needs
   `setLayer(name, on, params)` on `createMarquee`.

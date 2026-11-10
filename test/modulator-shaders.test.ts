@@ -5,6 +5,7 @@ import { MODULATORS, type ModulatorName } from '@/modulators/index.js';
 import { ranked, recent } from '@/modulators/shader.js';
 import { ORDERS, place, rankOf } from '@/orders.js';
 import { values } from '@/params.js';
+import { writesOf } from '@/pieces.js';
 
 const setting = {} as never;
 const b = board(80, 7);
@@ -44,7 +45,8 @@ describe('modulator shaders', () => {
   /** Settings past the defaults that take another branch of a shader. */
   const more: Partial<Record<ModulatorName, Record<string, unknown>[]>> = {
     sparkle: [{ share: 0.05 }, { share: 0 }],
-    pulse: [{ shape: 'square' }, { shape: 'triangle' }],
+    pulse: [{ shape: 'square' }, { shape: 'triangle' }, { channel: 'chroma' }],
+    bloom: [{ channel: 'gain' }],
     flash: [
       { flashes: 3, from: 0.2, to: 0.8, depth: 0.7 },
       { from: 0.5, to: 0.5 },
@@ -60,10 +62,11 @@ describe('modulator shaders', () => {
   for (const name of names.filter((n) => MODULATORS[n].shader))
     it(`${name}: the shader's at gives what patch does where it plays, and rests elsewhere`, () => {
       const m = MODULATORS[name];
-      const rest = Object.fromEntries(m.writes.map((c) => [c, KIT[c].rest]));
       let checked = 0;
       for (const given of [{}, ...(more[name] ?? [])])
         for (const by of orders) {
+          const writes = writesOf({ mod: name, params: given as never });
+          const rest = Object.fromEntries(writes.map((c) => [c, KIT[c].rest]));
           const p = values(m, given as never) as never;
           const sp = m.shader?.(at, p, ranked({ by }, at));
           if (!sp) continue;

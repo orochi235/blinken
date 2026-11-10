@@ -37,6 +37,7 @@ import { HEX } from './readers.js';
 import {
   EFFECT_NAMES,
   LAYER_NAMES,
+  MOD_ADDED,
   MOD_NAMES,
   MOVE_ADDED,
   movesIn,
@@ -57,7 +58,7 @@ import { BLEND, HOLD } from './state.js';
  * only ever grows at its end; adding to one bumps VERSION too, and records in LENGTHS how long
  * each was before, so an older link reads against the registries it was written with.
  */
-export const VERSION = 13;
+export const VERSION = 14;
 
 /** A layer as a link carries it: on, and the settings it changed. */
 type LinkLayer = { on: boolean; params?: Record<string, ParamValue> };
@@ -92,7 +93,7 @@ function readPiece(r: BitReader, slot: Slot, reg: Registries, version: number): 
   if (r.flag()) {
     const mod = reg.mods[r.index(reg.mods.length)] as keyof typeof MODULATORS;
     const spread = readOrder(r);
-    const params = readParams(r, MODULATORS[mod].params);
+    const params = readParams(r, paramsAt(MODULATORS[mod].params, mod, version, MOD_ADDED));
     return { mod, ...(spread && { spread }), ...(params && { params }) };
   }
   const move = reg.movesIn[slot][r.index(reg.movesIn[slot].length)] as keyof typeof MOVES;

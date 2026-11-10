@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EffectSpec } from '@/index.js';
-import { graphOf, idOf, partOf, viewFor } from '../lab/compose/designer/graph.js';
+import { graphOf, idOf, partOf } from '../lab/compose/designer/graph.js';
 
 const fall: EffectSpec = {
   name: 'fall',
@@ -37,6 +37,8 @@ describe('the effect graph', () => {
       'piece:exit:0',
       'channel:lit',
       'channel:glow',
+      'channel:gain',
+      'channel:chroma',
       'sign',
     ]);
     expect(g.edges.map((e) => `${e.from}>${e.to}`)).toEqual([
@@ -48,6 +50,17 @@ describe('the effect graph', () => {
       'channel:glow>sign',
     ]);
     expect(g.nodes[0]?.lines).toEqual(['drop-in', 'enter']);
+  });
+
+  it('draws the channels a wire could be dragged to, muted and joined to nothing', () => {
+    const g = graphOf(fall, 'both', parts);
+    expect(g.nodes.filter((n) => n.style === 'muted').map((n) => n.id)).toEqual([
+      'channel:gain',
+      'channel:chroma',
+    ]);
+    expect(g.edges.some((e) => e.to === 'channel:gain' || e.from === 'channel:gain')).toBe(false);
+    const still: EffectSpec = { name: 'still', active: { move: 'stand' } };
+    expect(graphOf(still, 'signal', null).nodes.some((n) => n.style === 'muted')).toBe(false);
   });
 
   it('draws time flow: steps in sequence with their lengths, each with its pieces', () => {
@@ -76,12 +89,5 @@ describe('the effect graph', () => {
   it('leaves lengths off when staging failed', () => {
     const g = graphOf(fall, 'time', null);
     expect(g.nodes.find((n) => n.id === 'step:enter')?.lines).toEqual(['enter']);
-  });
-
-  it('says which view suits a pick', () => {
-    expect(viewFor('piece:active:1', fall)).toBe('signal');
-    expect(viewFor('channel:glow', fall)).toBe('signal');
-    expect(viewFor('step:active', fall)).toBe('time');
-    expect(viewFor('piece:enter:0', fall)).toBeNull();
   });
 });

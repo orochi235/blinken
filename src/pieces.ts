@@ -5,7 +5,7 @@ import { ranked } from './modulators/shader.js';
 import { type Joins, LOOSE, MOVES, type MoveName, type Rests, type Slot } from './moves/index.js';
 import type { MoveShader } from './moves/shader.js';
 import { delayOf, type Order, type Placed, rankOf, spanOf } from './orders.js';
-import { type Params, type ParamValue, values } from './params.js';
+import { fits, type Params, type ParamValue, values } from './params.js';
 import type { Channel } from './planes.js';
 
 /** A move played in an order. */
@@ -56,9 +56,16 @@ export const TOGETHER: Order = { by: 'together' };
 export const piecesOf = (p: SlotPieces | undefined): readonly Piece[] =>
   p === undefined ? [] : Array.isArray(p) ? (p as readonly Piece[]) : [p as Piece];
 
-/** The channels a piece writes: a move draws the message on `lit`; a modulator writes what it names. */
-export const writesOf = (piece: Piece): readonly Channel[] =>
-  'mod' in piece ? MODULATORS[piece.mod].writes : ['lit'];
+/**
+ * The channels a piece writes: a move draws the message on `lit`; a modulator writes what it names,
+ * or what its `channel` setting picks.
+ */
+export function writesOf(piece: Piece): readonly Channel[] {
+  if (!('mod' in piece)) return ['lit'];
+  const { params, writes } = MODULATORS[piece.mod];
+  const picked = piece.params?.channel;
+  return params.channel && fits(params.channel, picked) ? [picked as Channel] : writes;
+}
 
 /** A piece's settings; in `active` with a hold, an `ms` it leaves unset is one pass over the hold. */
 function settingsOf(

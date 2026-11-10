@@ -7,10 +7,15 @@ import { createMemoryAdapter, Persistence } from '@weasel-js/labkit';
 import { type ReactNode, useState } from 'react';
 import { EFFECTS } from '@/index.js';
 
-/** A library of two effects, so a story has something of its own to open and list. */
+/** A library of a few effects, so a story has something of its own to open, list, and edit. */
 export const SAMPLE: Library = {
   'my fall': { ...EFFECTS.fall, name: 'my fall', about: 'The built-in fall, kept in the library.' },
   'neon bounce': { ...EFFECTS.bounce, name: 'neon bounce', active: [{ mod: 'neon' }] },
+  'flaring fall': {
+    ...EFFECTS.fall,
+    name: 'flaring fall',
+    active: [{ move: 'stand' }, { mod: 'flare' }, { mod: 'sparkle' }],
+  },
 };
 
 export interface BenchArgs {

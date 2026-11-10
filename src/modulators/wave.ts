@@ -3,6 +3,7 @@ import type { Pose, Subject } from '../board.js';
 import type { ChoiceParam, NumberParam, Params } from '../params.js';
 import type { Channel } from '../planes.js';
 import {
+  channelParam,
   cycleMs,
   depth,
   type Modulator,
@@ -44,28 +45,36 @@ const swing = (s: Spec): Modulator => {
   const choices = typeof s.shape === 'string' ? undefined : s.shape;
   const shapeOf = (p: { shape?: string }) =>
     (typeof s.shape === 'string' ? s.shape : p.shape) as WaveShape;
-  const cycle = shader({
-    params: ['shape', 'amount', 'phase', 'start'],
-    ranked: true,
-    wgsl: `let u = blinken_unit(params.shape, ph + ${RANK} * params.phase + params.start);
+  const cycleOn = (c: Channel) =>
+    shader({
+      params: ['shape', 'amount', 'phase', 'start'],
+      ranked: true,
+      wgsl: `let u = blinken_unit(params.shape, ph + ${RANK} * params.phase + params.start);
 let a = params.amount;
-out.${s.channel} = select(${s.wgsl}, ${f32(s.rest)}, subject.cell > 0.5);`,
-    at: (ph, subject, p) => {
-      if (subject.kind === 'cell') return { [s.channel]: s.rest };
-      const u = unitOf(
-        p.shape as number,
-        ph + rankAt(p, subject) * (p.phase as number) + (p.start as number),
-      );
-      return { [s.channel]: s.of(u, p.amount as number) };
-    },
-    writes: [s.channel],
-  });
+out.${c} = select(${s.wgsl}, ${f32(s.rest)}, subject.cell > 0.5);`,
+      at: (ph, subject, p) => {
+        if (subject.kind === 'cell') return { [c]: s.rest };
+        const u = unitOf(
+          p.shape as number,
+          ph + rankAt(p, subject) * (p.phase as number) + (p.start as number),
+        );
+        return { [c]: s.of(u, p.amount as number) };
+      },
+      writes: [c],
+    });
+  const channel = channelParam(s.channel);
+  const cycles = new Map((channel?.choices ?? [s.channel]).map((c) => [c, cycleOn(c as Channel)]));
   const params = {
     ...(choices ? { shape: shapeParam(choices, choices[0] as string) } : {}),
     rate: RATE,
     [s.amount.key]: s.amount.param,
     phase: phasePerStep(s.phase),
+    ...(channel && { channel }),
   };
+  type Given = { rate: number; phase: number; shape?: string; channel?: Channel } & Record<
+    string,
+    number
+  >;
   return modulator<Params>({
     name: s.name,
     about: s.about,
@@ -73,20 +82,23 @@ out.${s.channel} = select(${s.wgsl}, ${f32(s.rest)}, subject.cell > 0.5);`,
     writes: [s.channel],
     on: 'dots',
     patch: (_at, v, rank) => {
-      const p = v as { rate: number; phase: number; shape?: string } & Record<string, number>;
+      const p = v as Given;
+      const out = p.channel ?? s.channel;
       const shape = shapeOf(p);
       const start = s.start ?? 0;
       return patch<Subject, Pose>(
         cycleMs(p.rate),
         (phase, subject) => {
           const u = unitAt(shape, phase + rank(subject) * p.phase + start);
-          return { [s.channel]: s.of(u, p[s.amount.key] as number) } as Partial<Pose>;
+          return { [out]: s.of(u, p[s.amount.key] as number) } as Partial<Pose>;
         },
-        { writes: [s.channel] },
+        { writes: [out] },
       );
     },
     shader: (_at, v, rank) => {
-      const p = v as { rate: number; phase: number; shape?: string } & Record<string, number>;
+      const p = v as Given;
+      const cycle = cycles.get(p.channel ?? s.channel);
+      if (!cycle) return null;
       return cycle(cycleMs(p.rate), {
         shape: SHAPES.indexOf(shapeOf(p)),
         amount: p[s.amount.key] as number,

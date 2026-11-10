@@ -3,12 +3,6 @@
 ## Parked
 
 - Authoring an effect's params in the designer: naming a param and picking the settings it changes. Parked 2026-10-24 as more than the lab needs for now; effects declare params in code, as the built-ins do. The section as built is in e294d8a (`lab/compose/designer/ParamsBox.tsx`).
-- Editing an effect by dragging on the effects page's diagram, which today only draws and picks (`lab/compose/designer/graph.ts`, `EffectDiagram.tsx`). Planned 2026-10-26, each as its own step, through a pure `designer/graphEdits.ts` that turns a diagram edit into an `editEffect` call so undo and a built-in's copy on first change work as the cards' do:
-  - **Rewire.** A modulator that is one curve on one channel (the ease and wave families) gains a `channel` setting defaulting to its present one, so no saved effect or link changes; dragging its wire's end sets it. Choices are channels that mix the same way: `gain`, `chroma` and `glow` (`mul`) together; `lit` and `invert` (`max`) together; `hue` and `tint` alone. Modulators writing several channels or with their own logic (`sparkle`, `chase`, `glitch`) keep their wires locked (2026-10-26).
-  - **Move between steps.** A piece dropped into another step moves to that slot; a move belongs to one slot (`MOVES[name].slot`), so dropping one elsewhere is refused with the reason.
-  - **Add and remove.** Delete takes out the picked piece; a piece dropped on a step from a palette of moves and modulators is added there.
-  - **Reorder** the pieces within a step.
-  - What it needs: `@weasel-js/diagram` has the palette drop (`onDropItem`), refusals with a reason (`DropVerdict`) and container reorder; since 1.18 (2026-11-08) a `ToolPalette` carries a ghost (`carryGhost`, `StencilGhost`) and a member of a `reorder` container can be dragged out of it (`ReorderOptions.region`, reported by `onMove`), which moving between steps needs.
 
 ## GPU renderers
 
@@ -31,6 +25,8 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - Mechanical readouts take a canvas each, placed by the page; they don't join a panel or overlay, since those draw lights (2026-11-06).
 
 ## Known gaps
+
+- Dragging a piece within its step on the effects page's diagram shows no insertion bar or slide while it is carried, and Alt with an arrow key doesn't step the picked piece, though `@weasel-js/diagram`'s container reorder does both: with `onMove` set, as moving a piece between steps needs, a press on a container's member starts a plain move, never the reorder, so `onReorder` never fires (seen on 1.18.0, 2026-11-10). `lab/compose/designer/editingProps.ts` works out the new place from where the piece is dropped instead. Wants the reorder to take a press inside the container's box and hand off to the move only once the drag leaves it, which `ReorderOptions.region` describes.
 
 - Over a white page, a lit dot's pale core and its glow read as pastel rather than as the saturated light it shows over black: the core is white light, which a white page can't show. The unlit sockets were made to read alike on both (`veil` in `src/render/housing.ts`); the lit dots weren't (2026-11-05).
 

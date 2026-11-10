@@ -2,7 +2,7 @@ import { EffectDiagram } from '@lab/compose/designer/EffectDiagram.js';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Bench, type BenchArgs, benchArgTypes } from './designer-bench.js';
 
-/** The open effect as a diagram. */
+/** The open effect as a diagram, edited by dragging on it. */
 function Story(args: BenchArgs) {
   return (
     <Bench {...args}>
@@ -22,4 +22,6 @@ type Obj = StoryObj<typeof Story>;
 
 export const Open: Obj = {};
 export const Modulated: Obj = { args: { open: 'neon bounce' } };
+/** Flare's wire can be dragged to gain or chroma, drawn unwired, and any piece to another place or step; sparkle's wire stays put. */
+export const Editable: Obj = { args: { open: 'flaring fall' } };
 export const NothingOpen: Obj = { args: { open: '' } };

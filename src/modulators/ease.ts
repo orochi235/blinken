@@ -2,7 +2,7 @@ import { curve, type Easing, patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import type { ChoiceParam, NumberParam } from '../params.js';
 import type { Channel } from '../planes.js';
-import { depth, type Modulator, modulator } from './modulator.js';
+import { channelParam, depth, type Modulator, modulator } from './modulator.js';
 
 const MS: NumberParam = {
   label: 'length',
@@ -45,15 +45,29 @@ interface Spec {
 }
 
 /** Plays its channel once along an easing over the pass: a spread staggers the starts over `sweep` of it, every subject done by its end. */
-const eased = (s: Spec): Modulator =>
-  modulator({
+const eased = (s: Spec): Modulator => {
+  const channel = channelParam(s.channel);
+  return modulator({
     name: s.name,
     about: s.about,
-    params: { ms: MS, easing: EASE, depth: depth(s.depth, s.depthAbout), sweep: SWEEP },
+    params: {
+      ms: MS,
+      easing: EASE,
+      depth: depth(s.depth, s.depthAbout),
+      sweep: SWEEP,
+      ...(channel && { channel }),
+    },
     writes: [s.channel],
     on: 'dots',
     patch: (at, v, rank) => {
-      const p = v as { ms: number; easing: string; depth: number; sweep: number };
+      const p = v as {
+        ms: number;
+        easing: string;
+        depth: number;
+        sweep: number;
+        channel?: Channel;
+      };
+      const out = p.channel ?? s.channel;
       const ease = curve(p.easing as Easing);
       const stops = s.stops(p.depth);
       const valueAt = (u: number): number => {
@@ -70,12 +84,13 @@ const eased = (s: Spec): Modulator =>
         (phase, subject) => {
           const start = maxRank > 0 ? (rank(subject) / maxRank) * sweep : 0;
           const u = Math.min(1, Math.max(0, (phase - start) / (1 - sweep)));
-          return { [s.channel]: valueAt(u) } as Partial<Pose>;
+          return { [out]: valueAt(u) } as Partial<Pose>;
         },
-        { writes: [s.channel] },
+        { writes: [out] },
       );
     },
   });
+};
 
 /** Gain falling once from full to `1 - depth`. */
 export const dim = eased({

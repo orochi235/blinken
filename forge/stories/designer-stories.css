@@ -1,0 +1,5 @@
+/* As tall as the diagram the palette stands beside on the effects page. */
+.designer-story-palette {
+  display: flex;
+  height: 320px;
+}
