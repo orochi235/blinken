@@ -1,7 +1,7 @@
 import type { DropRefusal, DropVerdict } from '@weasel-js/diagram';
 import { type Channel, type EffectSpec, MOVES, type Piece, piecesOf, writesOf } from '@/index.js';
 import { shelved } from '../library.js';
-import { movePiece, type PieceAt, setPiece } from '../state.js';
+import { addPiece, movePiece, type PieceAt, removePiece, setPiece } from '../state.js';
 import { builtinOf, editEffect } from './edit.js';
 import { idOf, partOf, wireChoices } from './graph.js';
 import type { Designer } from './open.js';
@@ -14,7 +14,9 @@ import type { Designer } from './open.js';
 /** An edit the diagram asks for. A move's `to.index` counts the pieces once it is out. */
 export type GraphEdit =
   | { kind: 'rewire'; at: PieceAt; channel: Channel }
-  | { kind: 'move'; from: PieceAt; to: PieceAt };
+  | { kind: 'move'; from: PieceAt; to: PieceAt }
+  | { kind: 'add'; piece: Piece; to: PieceAt }
+  | { kind: 'remove'; at: PieceAt };
 
 const nameOf = (p: Piece) => ('mod' in p ? p.mod : p.move);
 export const refuse = (reason: string): DropRefusal => ({ refuse: reason });
@@ -34,56 +36,86 @@ export function slotVerdict(piece: Piece, slot: PieceAt['slot']): DropVerdict {
   return own === slot ? true : refuse(`${piece.move} is an ${own} move`);
 }
 
+/** Whether a one-curve modulator's wire may move to `channel`. */
+function rewireVerdict(piece: Piece, channel: Channel): DropVerdict {
+  const choices = wireChoices(piece);
+  const name = nameOf(piece);
+  if (choices)
+    return choices.includes(channel)
+      ? true
+      : refuse(`${name} can drive ${choices.join(', ')}, which mix alike`);
+  const writes = writesOf(piece);
+  return refuse(
+    'move' in piece
+      ? `${name} is a move, which draws on lit`
+      : `${name}’s wire${writes.length > 1 ? 's are' : ' is'} fixed`,
+  );
+}
+
+const heldAt = (spec: EffectSpec, at: PieceAt) => pieceAt(spec, idOf({ kind: 'piece', ...at }));
+const fits = (spec: EffectSpec, to: PieceAt, out = 0) =>
+  to.index >= 0 && to.index <= piecesOf(spec[to.slot]).length - out;
+
 /** Whether `spec` allows `edit`: true, or a refusal saying why not. */
 export function verdictOf(spec: EffectSpec, edit: GraphEdit): DropVerdict {
-  if (edit.kind === 'move') {
-    const held = pieceAt(spec, idOf({ kind: 'piece', ...edit.from }));
-    const room = piecesOf(spec[edit.to.slot]).length - (edit.to.slot === edit.from.slot ? 1 : 0);
-    if (!held || edit.to.index < 0 || edit.to.index > room) return false;
-    return slotVerdict(held.piece, edit.to.slot);
+  switch (edit.kind) {
+    case 'rewire': {
+      const held = heldAt(spec, edit.at);
+      return held ? rewireVerdict(held.piece, edit.channel) : false;
+    }
+    case 'move': {
+      const held = heldAt(spec, edit.from);
+      const out = edit.to.slot === edit.from.slot ? 1 : 0;
+      return held && fits(spec, edit.to, out) ? slotVerdict(held.piece, edit.to.slot) : false;
+    }
+    case 'add':
+      return fits(spec, edit.to) ? slotVerdict(edit.piece, edit.to.slot) : false;
+    case 'remove':
+      return heldAt(spec, edit.at) !== null;
   }
-  const held = pieceAt(spec, idOf({ kind: 'piece', ...edit.at }));
-  if (!held) return false;
-  const choices = wireChoices(held.piece);
-  const name = nameOf(held.piece);
-  if (!choices) {
-    const writes = writesOf(held.piece);
-    return refuse(
-      'move' in held.piece
-        ? `${name} is a move, which draws on lit`
-        : `${name}’s wire${writes.length > 1 ? 's are' : ' is'} fixed`,
-    );
-  }
-  return choices.includes(edit.channel)
-    ? true
-    : refuse(`${name} can drive ${choices.join(', ')}, which mix alike`);
 }
 
-/** `spec` with `edit` made, or as it was where `edit` is refused. */
+/** `spec` with `edit` made, or as it was where `edit` is refused or changes nothing. */
 export function applied(spec: EffectSpec, edit: GraphEdit): EffectSpec {
   if (verdictOf(spec, edit) !== true) return spec;
-  if (edit.kind === 'move') {
-    const { from, to } = edit;
-    return from.slot === to.slot && from.index === to.index ? spec : movePiece(spec, from, to);
+  switch (edit.kind) {
+    case 'rewire': {
+      const { slot, index } = edit.at;
+      const piece = piecesOf(spec[slot])[index] as Piece;
+      if (writesOf(piece)[0] === edit.channel) return spec;
+      return setPiece(spec, slot, index, {
+        ...piece,
+        params: { ...piece.params, channel: edit.channel },
+      });
+    }
+    case 'move': {
+      const { from, to } = edit;
+      return from.slot === to.slot && from.index === to.index ? spec : movePiece(spec, from, to);
+    }
+    case 'add':
+      return addPiece(spec, edit.to.slot, edit.piece, edit.to.index);
+    case 'remove':
+      return removePiece(spec, edit.at.slot, edit.at.index);
   }
-  const { slot, index } = edit.at;
-  const piece = piecesOf(spec[slot])[index] as Piece;
-  if (writesOf(piece)[0] === edit.channel) return spec;
-  return setPiece(spec, slot, index, {
-    ...piece,
-    params: { ...piece.params, channel: edit.channel },
-  });
 }
 
-/** The graph id the edited piece has once `edit` is made. */
-export const pickAfter = (edit: GraphEdit): string =>
-  idOf({ kind: 'piece', ...(edit.kind === 'move' ? edit.to : edit.at) });
+/** The graph id the edited piece has once `edit` is made; none for one taken out. */
+export function pickAfter(edit: GraphEdit): string | undefined {
+  if (edit.kind === 'remove') return undefined;
+  return idOf({ kind: 'piece', ...(edit.kind === 'rewire' ? edit.at : edit.to) });
+}
+
+/** The designer's open effect, from its library or the built-ins. */
+export function openSpec(designer: Designer): EffectSpec | undefined {
+  const name = designer.open();
+  return name === undefined
+    ? undefined
+    : (shelved(designer.library.get(), name) ?? builtinOf(name));
+}
 
 /** Makes `edit` on the designer's open effect, as one undo step, and picks the piece it edited. */
 export function commitEdit(designer: Designer, edit: GraphEdit): void {
-  const name = designer.open();
-  const spec =
-    name === undefined ? undefined : (shelved(designer.library.get(), name) ?? builtinOf(name));
+  const spec = openSpec(designer);
   // An edit that changes nothing would still copy a built-in and take an undo step.
   if (!spec || applied(spec, edit) === spec) return;
   editEffect(designer, (e) => applied(e, edit));

@@ -1,9 +1,13 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { EffectSpec } from '@/index.js';
+import { EFFECTS, type EffectSpec } from '@/index.js';
 import { applied, commitEdit, verdictOf } from '../lab/compose/designer/graphEdits.js';
 import {
+  editOfDelete,
+  editOfDrop,
   editOfMove,
   editOfReconnect,
+  itemVerdict,
+  pieceOfItem,
   stepVerdict,
   wireVerdict,
 } from '../lab/compose/designer/graphEvents.js';
@@ -127,5 +131,73 @@ describe('moving a piece between steps', () => {
     expect(desk.library.get().mine?.exit).toEqual([{ move: 'drop-out' }, { mod: 'flare' }]);
     desk.undo();
     expect(desk.library.get().mine).toEqual(mine);
+  });
+});
+
+describe('adding and removing pieces on the diagram', () => {
+  const at = { x: 0, y: 0 };
+  it('adds a palette item dropped in a step at the place marked there', () => {
+    const drop = {
+      item: { mod: 'dim' },
+      target: 'step:active',
+      container: 'step:active',
+      index: 1,
+      at,
+    };
+    const edit = editOfDrop(mine, drop);
+    expect(edit).toEqual({ kind: 'add', piece: { mod: 'dim' }, to: { slot: 'active', index: 1 } });
+    expect(applied(mine, edit as never).active).toEqual([
+      { move: 'stand' },
+      { mod: 'dim' },
+      { mod: 'flare' },
+      { mod: 'sparkle' },
+      { mod: 'hue-cycle' },
+    ]);
+  });
+
+  it('adds an item dropped on a step node last, and on a piece before it', () => {
+    const onStep = { target: 'step:exit', container: null, index: null, at };
+    expect(editOfDrop(mine, { item: { mod: 'dim' }, ...onStep })).toMatchObject({
+      to: { slot: 'exit', index: 1 },
+    });
+    const onPiece = { target: 'piece:active:2', container: null, index: null, at };
+    expect(editOfDrop(mine, { item: { mod: 'dim' }, ...onPiece })).toMatchObject({
+      to: { slot: 'active', index: 2 },
+    });
+  });
+
+  it('refuses a move dropped in another step, and ignores the canvas and stray items', () => {
+    const target = { target: 'step:exit', container: 'step:exit', index: 0, at };
+    expect(itemVerdict(mine, { move: 'drop-in' }, target)).toEqual({
+      refuse: 'drop-in is an enter move',
+    });
+    expect(itemVerdict(mine, { move: 'drop-out' }, target)).toBe(true);
+    const bare = { target: null, container: null, index: null, at };
+    expect(itemVerdict(mine, { mod: 'dim' }, bare)).toBe(false);
+    expect(pieceOfItem({ mod: 'nonsense' })).toBeNull();
+    expect(pieceOfItem('dim')).toBeNull();
+  });
+
+  it('takes out a picked piece on Delete, and never a step or a channel', () => {
+    expect(editOfDelete(mine, { nodes: ['piece:active:1'], edges: [] })).toEqual({
+      kind: 'remove',
+      at: flare,
+    });
+    const step = { nodes: ['step:active', 'piece:active:0', 'piece:active:1'], edges: [] };
+    expect(editOfDelete(mine, step)).toBeNull();
+    expect(editOfDelete(mine, { nodes: ['channel:glow'], edges: [] })).toBeNull();
+  });
+
+  it('commits a removal as one undo step, copying a built-in first, and picks nothing', () => {
+    const desk = createDesigner({ library: createLibrary({ effects: {} }), open: 'fall' });
+    desk.setPicked('piece:enter:0');
+    commitEdit(desk, { kind: 'remove', at: { slot: 'enter', index: 0 } });
+    expect(desk.open()).toBe('fall copy');
+    expect(desk.library.get()['fall copy']?.enter).toBeUndefined();
+    expect(desk.picked()).toBeUndefined();
+    desk.undo();
+    expect(desk.library.get()).toEqual({});
+    expect(desk.open()).toBe('fall');
+    expect(EFFECTS.fall.enter).toBeDefined();
   });
 });

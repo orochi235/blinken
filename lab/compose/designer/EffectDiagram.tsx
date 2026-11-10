@@ -8,6 +8,7 @@ import { builtinOf } from './edit.js';
 import { editingProps } from './editingProps.js';
 import { graphOf, partOf, VIEWS, type View, viewFor } from './graph.js';
 import { useDesk } from './open.js';
+import { PiecePalette } from './PiecePalette.js';
 import { useStaged } from './staged.js';
 import './EffectDiagram.css';
 
@@ -74,26 +75,29 @@ export function EffectDiagram() {
       }
     >
       {specs && spec ? (
-        <div className="effects-diagram-canvas">
-          <DiagramView
-            key={`${layout} ${places}`}
-            ref={api}
-            specs={specs}
-            selected={shown ? picked : wire}
-            onSelect={(id) => {
-              setWire(id && !partOf(id) ? id : null);
-              designer.setPicked(id && partOf(id) ? id : undefined);
-              const suits = id && !chosen ? viewFor(id, spec) : null;
-              if (suits) setView(suits);
-            }}
-            anchor="start"
-            {...editingProps(
-              designer,
-              spec,
-              () => api.current,
-              () => setLayout((n) => n + 1),
-            )}
-          />
+        <div className="effects-diagram-body">
+          <PiecePalette />
+          <div className="effects-diagram-canvas">
+            <DiagramView
+              key={`${layout} ${places}`}
+              ref={api}
+              specs={specs}
+              selected={shown ? picked : wire}
+              onSelect={(id) => {
+                setWire(id && !partOf(id) ? id : null);
+                designer.setPicked(id && partOf(id) ? id : undefined);
+                const suits = id && !chosen ? viewFor(id, spec) : null;
+                if (suits) setView(suits);
+              }}
+              anchor="start"
+              {...editingProps(
+                designer,
+                spec,
+                () => api.current,
+                () => setLayout((n) => n + 1),
+              )}
+            />
+          </div>
         </div>
       ) : (
         <p className="compose-hint">Open an effect from the library to see it here.</p>

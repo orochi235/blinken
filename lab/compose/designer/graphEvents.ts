@@ -1,5 +1,13 @@
-import type { DropRefusal, DropVerdict, NodeMove, ReconnectChange } from '@weasel-js/diagram';
-import type { Channel, EffectSpec } from '@/index.js';
+import type {
+  DeleteReport,
+  DropRefusal,
+  DropVerdict,
+  ItemDrop,
+  ItemDropTarget,
+  NodeMove,
+  ReconnectChange,
+} from '@weasel-js/diagram';
+import { type Channel, type EffectSpec, MODULATORS, MOVES, type Piece, piecesOf } from '@/index.js';
 import { partOf } from './graph.js';
 import { type GraphEdit, pieceAt, refuse, slotVerdict, verdictOf } from './graphEdits.js';
 
@@ -81,4 +89,56 @@ export function editOfMove(spec: EffectSpec, move: NodeMove, index: number): Gra
   if (!held || !slot || slot === held.at.slot) return null;
   const edit: GraphEdit = { kind: 'move', from: held.at, to: { slot, index } };
   return verdictOf(spec, edit) === true ? edit : null;
+}
+
+/** A palette's item as the piece it adds, or null for anything else carried in. */
+export function pieceOfItem(item: unknown): Piece | null {
+  if (typeof item !== 'object' || item === null) return null;
+  const { mod, move } = item as { mod?: unknown; move?: unknown };
+  if (typeof mod === 'string' && Object.hasOwn(MODULATORS, mod)) return item as Piece;
+  if (typeof move === 'string' && Object.hasOwn(MOVES, move)) return item as Piece;
+  return null;
+}
+
+/**
+ * The add a palette item dropped at `target` asks for: into the step it is dropped in, at the
+ * place marked there; or, dropped on a step drawn as a node or on a piece, into that step, last or
+ * before that piece.
+ */
+function addOf(spec: EffectSpec, item: unknown, target: ItemDropTarget): GraphEdit | null {
+  const piece = pieceOfItem(item);
+  if (!piece) return null;
+  const into = stepOf(target.container);
+  if (into) {
+    const index = target.index ?? piecesOf(spec[into]).length;
+    return { kind: 'add', piece, to: { slot: into, index } };
+  }
+  const on = target.target ? partOf(target.target) : null;
+  if (on?.kind === 'step')
+    return { kind: 'add', piece, to: { slot: on.slot, index: piecesOf(spec[on.slot]).length } };
+  if (on?.kind === 'piece') return { kind: 'add', piece, to: { slot: on.slot, index: on.index } };
+  return null;
+}
+
+/** Whether a palette item may be dropped at `target`. */
+export function itemVerdict(spec: EffectSpec, item: unknown, target: ItemDropTarget): DropVerdict {
+  const edit = addOf(spec, item, target);
+  return edit ? verdictOf(spec, edit) : false;
+}
+
+/** What a palette item dropped on the diagram asks for, or null for nothing. */
+export function editOfDrop(spec: EffectSpec, drop: ItemDrop): GraphEdit | null {
+  const edit = addOf(spec, drop.item, drop);
+  return edit && verdictOf(spec, edit) === true ? edit : null;
+}
+
+/** What Delete asks for: taking out the picked piece. Steps, channels, and wires stay. */
+export function editOfDelete(spec: EffectSpec, removed: DeleteReport): GraphEdit | null {
+  // A step picked reports its pieces too, and a step is never taken out.
+  if (removed.nodes.some((id) => stepOf(id))) return null;
+  for (const id of removed.nodes) {
+    const held = pieceAt(spec, id);
+    if (held) return { kind: 'remove', at: held.at };
+  }
+  return null;
 }

@@ -2,7 +2,15 @@ import type { CanConnect, DiagramViewApi, DiagramViewProps, NodeMove } from '@we
 import { type EffectSpec, piecesOf, type Slot } from '@/index.js';
 import { idOf, partOf } from './graph.js';
 import { commitEdit } from './graphEdits.js';
-import { editOfMove, editOfReconnect, stepVerdict, wireVerdict } from './graphEvents.js';
+import {
+  editOfDelete,
+  editOfDrop,
+  editOfMove,
+  editOfReconnect,
+  itemVerdict,
+  stepVerdict,
+  wireVerdict,
+} from './graphEvents.js';
 import type { Designer } from './open.js';
 
 const middleY = (r: { y: number; height: number }) => r.y + r.height / 2;
@@ -54,5 +62,14 @@ export function editingProps(
     },
     onMove,
     canReparent: (ids, container) => stepVerdict(spec, ids, container),
+    canDropItem: (item, target) => itemVerdict(spec, item, target),
+    onDropItem: (drop) => {
+      const edit = editOfDrop(spec, drop);
+      if (edit) commitEdit(designer, edit);
+    },
+    onDelete: (removed) => {
+      const edit = editOfDelete(spec, removed);
+      if (edit) commitEdit(designer, edit);
+    },
   };
 }

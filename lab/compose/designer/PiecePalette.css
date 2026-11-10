@@ -1,0 +1,49 @@
+/* A column beside the diagram as tall as it, scrolling within itself. */
+.designer-palette {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+  width: 128px;
+  overflow-y: auto;
+}
+
+.designer-palette-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.designer-palette-group ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.designer-palette-title {
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-xs, 11px);
+}
+
+.designer-palette-piece,
+.designer-palette-ghost {
+  padding: 1px 6px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm, 4px);
+  background: var(--wzl-input-surface, var(--wzl-surface));
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size-xs, 11px);
+}
+
+.designer-palette-piece {
+  cursor: grab;
+  touch-action: none;
+}
+
+.designer-palette-piece:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring, var(--wzl-accent));
+}
