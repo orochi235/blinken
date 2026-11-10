@@ -49,6 +49,14 @@ What a scene shows, meaning colors, brightness, timing and layout, is the same o
   folds on the CPU that frame and WebGPU uploads it.
 - **Moves read tables.** A move writes `lit` from the message bitmap at a shifted place, so its
   shader reads two blits shader tables, the bitmap and the row map (`src/moves/shader.ts`).
+- **Every order and spread folds** (2026-11-09). A move's order is its voice's `stagger`, which blits
+  asks once for each subject the voice names, as it is cued, and the shader patch takes it like the
+  plain pass does (`stagePiece` in `src/pieces.ts`); border cells get no delay, so they don't
+  lengthen the voice. A modulator's spread is a rank per dot: column, row and center are worked
+  out in the shader, and by letter or at random it reads a table of each dot's rank, built on the
+  CPU by the same `rankOf` the CPU path uses (`ranked` in `src/modulators/shader.ts`). A table is
+  one row of the board's width at random, and the whole board by letter, since kerned letters
+  share columns.
 - **`columns` on WebGPU** holds only what the CPU folded: keeping it whole would pull every channel
   every frame and cancel the GPU fold. `follow` and `setHighlight` run on the GPU there, and a
   followed sign must share its follower's device, or the follow reads back a frame late.
@@ -195,8 +203,8 @@ nothing on the CPU where blits folds owned voices over part of the board.
 
 WebGPU's frame no longer has CPU work worth a round: under 0.2 ms at 80,000 lights. What is left:
 
-- **Effects that still fold on the CPU on WebGPU**: spreads by letter or at random, and the moves
-  and modulators with no shader form (`TODO.md`, "GPU renderers").
+- **Effects that still fold on the CPU on WebGPU**: the moves and modulators with no shader form
+  (`TODO.md`, "GPU renderers").
 - **2D and WebGL's mix** is blits's CPU fold, which blinken calls but does not own.
 - **2D drawing.** In Chrome CPU profiles (not kept), the drawing code's own time was 6.5% of a 2D
   frame at 80,000 lights; the rest of the draw was the canvas filling and blurring, which a round

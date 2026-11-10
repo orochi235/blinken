@@ -14,7 +14,6 @@
 
 What the GPU work left, from the branch's last session (2026-11-04). The design and measurements are in `docs/gpu-renderers.md`.
 
-- Spreads by letter or at random stay on the CPU on WebGPU: `src/pieces.ts` cues a move's order as an unnamed stagger function over a finite span, which blits keeps on the CPU, and takes a move's shader form only at span 0. blits 1.0 folds a named stagger, or a looping one, on the GPU, so moving them over means naming the stagger and letting shader moves take one. Spreads by column, row or from the center already fold, as closed-form ranks. The built-in `neon` layer is spread by letter, so it is one of them (2026-11-04).
 - Modulators not ported: `dim`, `desaturate` and `flare` ease with CSS cubic-beziers, and a shader needs a WGSL copy of blits's easing, which blits keeps private. Moves not ported: `reel-in` spins letters through glyphs rasterized on the CPU; `melt`, `assemble` and `scatter` push each lit dot to a moving place, which has no closed form per output dot. They run on the CPU on every backend (2026-11-04).
 - The lab's thumbnails and slider readouts are pinned to 2D: about 90 canvases on the compose page exhaust WebGL's 12 contexts and starve the main sign. Segment readouts now share one surface (`docs/readouts.md`), but a whole marquee can't join one yet: a surface lays out readouts, not marquee boards, programs and layers (2026-11-04).
 - Segment readouts take no effects: segments are mix subjects and a cued layer reaches them (`test/readout-surface.test.ts`), but no readout option cues one (2026-11-04).

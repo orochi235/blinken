@@ -13,7 +13,8 @@ const swatch = (k: number) => [`c${k}L`, `c${k}a`, `c${k}b`];
 const stepAt = (u: number, n: number) => Math.min(n - 1, Math.floor(unitOf(SAW, u - 0.5) * n));
 
 const PALETTE = shader({
-  params: ['n', 'phase', 'by', 'cols', ...Array.from({ length: MOST }, (_, k) => swatch(k)).flat()],
+  ranked: true,
+  params: ['n', 'phase', ...Array.from({ length: MOST }, (_, k) => swatch(k)).flat()],
   wgsl: `var swatches = array<vec3f, ${MOST}>(${Array.from(
     { length: MOST },
     (_, k) =>
@@ -71,7 +72,7 @@ export const palette = modulator({
   },
   shader: (_at, p, rank) => {
     const n = p.colors.length;
-    if (!rank || n === 0 || n > MOST) return null;
+    if (n === 0 || n > MOST) return null;
     const swatches: Record<string, number> = {};
     for (let k = 0; k < MOST; k++) {
       const lab = oklab(p.colors[k] ?? 0);
@@ -94,7 +95,8 @@ const blend = (a: readonly number[], b: readonly number[], k: number) =>
   a.map((v, i) => v + ((b[i] ?? v) - v) * k);
 
 const TWO = shader({
-  params: ['aL', 'aa', 'ab', 'bL', 'ba', 'bb', 'depth', 'phase', 'by', 'cols'],
+  params: ['aL', 'aa', 'ab', 'bL', 'ba', 'bb', 'depth', 'phase'],
+  ranked: true,
   wgsl: `let k = blinken_unit(0.0, ph + ${RANK} * params.phase) * params.depth;
 out.tint = array<f32, 4>(0.0, 0.0, 0.0, 0.0);
 if (subject.cell < 0.5) {
@@ -139,7 +141,6 @@ export const twoColor = modulator({
     );
   },
   shader: (_at, p, rank) => {
-    if (!rank) return null;
     const [[aL = 0, aa = 0, ab = 0], [bL = 0, ba = 0, bb = 0]] = endsOf(p.colors);
     return TWO(cycleMs(p.rate), {
       aL,

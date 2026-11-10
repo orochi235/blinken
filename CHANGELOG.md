@@ -71,6 +71,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
   them alike. A `Face` takes `spread`, the places one of its columns stands for.
 - `reel-in` spins through the glyphs of the face its message is in when two custom faces share a
   name.
+- On WebGPU, a move played in an order with a lag, and a modulator spread by letter or at random
+  (the `neon` layer among them), fold on the GPU, where they kept their channels on the CPU.
 
 ## 0.2.0
 

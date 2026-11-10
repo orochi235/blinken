@@ -3,7 +3,7 @@ import { board, KIT, type Pose } from '@/board.js';
 import { rasterize } from '@/font.js';
 import { MODULATORS, type ModulatorName } from '@/modulators/index.js';
 import { ranked, recent } from '@/modulators/shader.js';
-import { place, rankOf } from '@/orders.js';
+import { ORDERS, place, rankOf } from '@/orders.js';
 import { values } from '@/params.js';
 
 const setting = {} as never;
@@ -40,7 +40,7 @@ describe('recent', () => {
 });
 
 describe('modulator shaders', () => {
-  const orders = ['together', 'column', 'column-reverse', 'center', 'row'] as const;
+  const orders = ORDERS;
   /** Settings past the defaults that take another branch of a shader. */
   const more: Partial<Record<ModulatorName, Record<string, unknown>[]>> = {
     sparkle: [{ share: 0.05 }, { share: 0 }],
@@ -65,7 +65,7 @@ describe('modulator shaders', () => {
       for (const given of [{}, ...(more[name] ?? [])])
         for (const by of orders) {
           const p = values(m, given as never) as never;
-          const sp = m.shader?.(at, p, ranked({ by }, b));
+          const sp = m.shader?.(at, p, ranked({ by }, at));
           if (!sp) continue;
           checked++;
           const plain = m.patch(at, p, rankOf({ by }, at));

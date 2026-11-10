@@ -19,10 +19,9 @@ export interface Modulator<P extends Params = Params> {
   patch(at: Placed, p: Values<P>, rank: (s: Subject) => number): Patch<Subject, Pose>;
   /**
    * The same cycle as a shader patch the gpu engine folds, on every dot and cell, reading its rank
-   * from `rank` (the order and board width a closed-form spread gives, null for any other). Absent,
-   * or giving null, where its math has no shader for that spread.
+   * from `rank`. Absent, or giving null, where its math has no shader for those settings.
    */
-  shader?(at: Placed, p: Values<P>, rank: Ranked | null): ModShader | null;
+  shader?(at: Placed, p: Values<P>, rank: Ranked): ModShader | null;
 }
 
 /** Declares a modulator, keeping its params' keys in the type `patch` sees. */

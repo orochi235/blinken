@@ -90,14 +90,20 @@ describe('stagePiece', () => {
     expect(voice.patch.at(0, b.cells[0] as never, setting)).toEqual({ lit: 0 });
   });
 
-  it('stages the plain patch for the stock mixer, and for an order that staggers the dots', () => {
-    for (const [piece, gpu] of [
-      [stand, false],
-      [{ ...stand, order: { by: 'column', lag: 20 } }, true],
-    ] as const) {
-      const { voice } = stagePiece(piece, 'active', narrow, b.dots, undefined, LOOSE, gpu);
-      expect(voice.subjects).toBe(b.dots);
-      expect(voice.stagger).toBeDefined();
-    }
+  it('stages the plain patch for the stock mixer, staggered by its order', () => {
+    const order = { by: 'column', lag: 20 } as const;
+    const { voice } = stagePiece({ ...stand, order }, 'active', narrow, b.dots, undefined, LOOSE);
+    expect(voice.subjects).toBe(b.dots);
+    expect(voice.stagger).toBeDefined();
+    expect('with' in voice.patch).toBe(false);
+  });
+
+  it('stages a move in an order that staggers the dots as its shader, staggered, for the gpu engine', () => {
+    const order = { by: 'column', lag: 20 } as const;
+    const piece = { ...stand, order };
+    const { voice } = stagePiece(piece, 'active', narrow, b.dots, undefined, LOOSE, true);
+    expect(voice.subjects).toBe(everyOf(b));
+    expect(voice.stagger?.(b.dots[3] as never)).toBe(60);
+    expect(voice.duration).toBe(stagePiece(piece, 'active', narrow, b.dots).voice.duration);
   });
 });

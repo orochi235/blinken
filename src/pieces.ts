@@ -80,8 +80,8 @@ function settingsOf(
 /**
  * A piece as the arc voice that plays it in `slot`; modulators and `active` moves loop. `hold` is
  * the effect's, where one is given, and `joins` says an active move's neighbors hold the message.
- * Staged for the gpu engine (`gpu`), a modulator, and a move playing on all its dots at once, is a
- * shader patch where it has one.
+ * Staged for the gpu engine (`gpu`), a piece is a shader patch where it has one, a move's order
+ * its stagger.
  */
 export function stagePiece(
   piece: Piece,
@@ -98,7 +98,7 @@ export function stagePiece(
     const p = settingsOf(mod, piece, slot, hold);
     const own = mod.on === 'cells' ? at.board.cells : subjects;
     const spread = piece.spread ?? TOGETHER;
-    const shaded = gpu ? mod.shader?.(at, p, ranked(spread, at.board)) : null;
+    const shaded = gpu ? mod.shader?.(at, p, ranked(spread, at)) : null;
     const voice: ArcVoice<Subject, Pose> = {
       patch: shaded ?? mod.patch(at, p, rankOf(spread, at)),
       subjects: own,
@@ -112,13 +112,19 @@ export function stagePiece(
   const order = piece.order ?? TOGETHER;
   const delay = delayOf(order, at);
   const span = spanOf(order, at);
-  const shaded = gpu && span === 0 ? move.shader?.(at, p, joins) : null;
+  const shaded = gpu ? move.shader?.(at, p, joins) : null;
   const pass = shaded ? null : (move.patch(at, p, joins) as ArcVoice<Subject, Pose>['patch']);
   const whole = subjects.length === at.board.dots.length;
+  // A cell's rank would stretch the voice past its dots' span; a shader writes it 0 throughout.
+  const stagger = (s: Subject) => (s.kind === 'cell' ? 0 : delay(s));
   const voice: ArcVoice<Subject, Pose> = {
     ...(pass
       ? { patch: pass, subjects, stagger: delay, duration: pass.duration + span }
-      : { patch: shaded as MoveShader, subjects: whole ? everyOf(at.board) : subjects }),
+      : {
+          patch: shaded as MoveShader,
+          subjects: whole ? everyOf(at.board) : subjects,
+          ...(span > 0 && { stagger, duration: (shaded as MoveShader).duration + span }),
+        }),
     ...(loop && { loop: true }),
   };
   const clips = at.text.cols > at.board.cols && !move.wide;

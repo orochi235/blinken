@@ -157,7 +157,7 @@ function layerPatch(
   const mod = modulatorOf(layer.mod);
   const p = values(mod, layer.params as never);
   const order = layer.spread ?? TOGETHER;
-  const shaded = gpu ? mod.shader?.(at, p, ranked(order, b)) : null;
+  const shaded = gpu ? mod.shader?.(at, p, ranked(order, at)) : null;
   if (shaded) return { patch: shaded, subjects: everyOf(b) };
   return {
     patch: mod.patch(at, p, rankOf(order, at)),

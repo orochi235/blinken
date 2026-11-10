@@ -206,11 +206,21 @@ describe('stageProgram layers', () => {
     expect(lit).toBeGreaterThan(0);
   });
 
-  it('keeps a layer spread by letter a plain patch', () => {
-    const [layer] = layersOf({ neon: true });
-    if (!layer) throw new Error('no layer');
-    expect(gpuDescriptor(layer.patch)).toBeUndefined();
-    expect(layer.subjects).toBe(b.dots);
+  it('stages a layer spread by letter a shader patch on every subject, playing as the plain one', () => {
+    const often = { params: { often: 60, length: 1500 } };
+    const [layer] = layersOf({ neon: often });
+    const [plain] = layersOf({ neon: often }, false);
+    if (!layer || !plain) throw new Error('no layer');
+    expect(gpuDescriptor(layer.patch)).toBeDefined();
+    expect(layer.subjects).toHaveLength(b.dots.length + b.cells.length);
+    const seen = new Set<number>();
+    for (let k = 0; k < 400; k++)
+      for (const s of b.dots) {
+        const want = plain.patch.at(k / 400, s, {} as never);
+        expect(layer.patch.at(k / 400, s, {} as never)).toEqual(want);
+        seen.add(want.gain ?? 1);
+      }
+    expect(seen.size).toBeGreaterThan(2);
   });
 
   it('keeps a layer staged for the stock mixer a plain patch on its own subjects', () => {
