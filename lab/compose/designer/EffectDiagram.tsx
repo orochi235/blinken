@@ -6,7 +6,7 @@ import { shelved, useLibrary } from '../library.js';
 import { Panel } from '../Panel.js';
 import { builtinOf } from './edit.js';
 import { editingProps } from './editingProps.js';
-import { graphOf, partOf, VIEWS, type View, viewFor } from './graph.js';
+import { graphOf, partOf, VIEWS, type View } from './graph.js';
 import { useDesk } from './open.js';
 import { PiecePalette } from './PiecePalette.js';
 import { useStaged } from './staged.js';
@@ -22,8 +22,8 @@ const TIPS: Record<View, string> = {
 };
 
 /**
- * The open effect as a diagram, in the view the switch picks. Until the switch is touched, a pick
- * moves to the view that suits it. Mounted per open effect, so each starts in `both`.
+ * The open effect as a diagram, in the view the switch picks, edited by dragging on it and from the
+ * palette beside it. Mounted per open effect, so each starts in `both`.
  */
 export function EffectDiagram() {
   const designer = useDesk();
@@ -32,7 +32,6 @@ export function EffectDiagram() {
   const spec = name === undefined ? undefined : (shelved(shelf, name) ?? builtinOf(name));
   const staged = useStaged(spec, designer.text());
   const [view, setView] = useState<View>('both');
-  const [chosen, setChosen] = useState(false);
   // A picked wire is the diagram's alone: no card stands for it.
   const [wire, setWire] = useState<string | null>(null);
   const api = useRef<DiagramViewApi>(null);
@@ -67,9 +66,7 @@ export function EffectDiagram() {
           items={VIEWS.map((v) => ({ value: v, label: v, tooltip: TIPS[v] }))}
           value={view}
           onChange={(v) => {
-            if (!v) return;
-            setChosen(true);
-            setView(v);
+            if (v) setView(v);
           }}
         />
       }
@@ -86,8 +83,6 @@ export function EffectDiagram() {
               onSelect={(id) => {
                 setWire(id && !partOf(id) ? id : null);
                 designer.setPicked(id && partOf(id) ? id : undefined);
-                const suits = id && !chosen ? viewFor(id, spec) : null;
-                if (suits) setView(suits);
               }}
               anchor="start"
               {...editingProps(

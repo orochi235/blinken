@@ -106,9 +106,25 @@ describe('moving a piece between steps', () => {
     ).toBeNull();
   });
 
-  it('asks nothing of a drag that stays in its step or leaves every step', () => {
-    for (const parent of ['step:active', null, undefined])
-      expect(editOfMove(mine, { id: 'piece:active:1', x: 0, y: 0, parent }, 0)).toBeNull();
+  it('reorders a piece dragged to another place in its own step', () => {
+    const edit = editOfMove(mine, { id: 'piece:active:3', x: 0, y: 0 }, 0);
+    expect(edit).toEqual({
+      kind: 'move',
+      from: { slot: 'active', index: 3 },
+      to: { slot: 'active', index: 0 },
+    });
+    expect(applied(mine, edit as never).active).toEqual([
+      { mod: 'hue-cycle' },
+      { move: 'stand' },
+      { mod: 'flare' },
+      { mod: 'sparkle' },
+    ]);
+  });
+
+  it('asks nothing of a drag that lands where it was or outside every step', () => {
+    expect(editOfMove(mine, { id: 'piece:active:1', x: 0, y: 0 }, 1)).toBeNull();
+    expect(editOfMove(mine, { id: 'piece:active:1', x: 0, y: 0, parent: null }, 0)).toBeNull();
+    expect(editOfMove(mine, { id: 'channel:glow', x: 0, y: 0, parent: 'step:exit' }, 0)).toBeNull();
   });
 
   it('carries a param driving the moved piece along with it', () => {

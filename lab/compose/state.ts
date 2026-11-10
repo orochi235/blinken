@@ -104,13 +104,6 @@ export const movePiece = (spec: EffectSpec, from: PieceAt, to: PieceAt): EffectS
     if (moved) slots[to.slot].splice(to.index, 0, moved);
   });
 
-/** An effect with `slot`'s pieces in `order`, each the index it had. */
-export const reorderPieces = (spec: EffectSpec, slot: Slot, order: readonly number[]): EffectSpec =>
-  rearranged(spec, (slots) => {
-    const was = slots[slot];
-    slots[slot] = order.flatMap((i) => was[i] ?? []);
-  });
-
 type Held = { piece: Piece; was?: string };
 
 /**

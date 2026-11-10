@@ -139,15 +139,3 @@ export function graphOf(
   wires();
   return { nodes: [...pieceNodes, ...channelNodes], edges, containers };
 }
-
-/** The view a picked id is best seen in, or null where any will do. */
-export function viewFor(id: string, spec: EffectSpec): View | null {
-  const part = partOf(id);
-  if (part?.kind === 'channel') return 'signal';
-  if (part?.kind === 'step') return 'time';
-  if (part?.kind === 'piece') {
-    const piece = piecesOf(spec[part.slot])[part.index];
-    return piece && 'mod' in piece ? 'signal' : null;
-  }
-  return null;
-}

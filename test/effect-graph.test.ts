@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EffectSpec } from '@/index.js';
-import { graphOf, idOf, partOf, viewFor } from '../lab/compose/designer/graph.js';
+import { graphOf, idOf, partOf } from '../lab/compose/designer/graph.js';
 
 const fall: EffectSpec = {
   name: 'fall',
@@ -89,12 +89,5 @@ describe('the effect graph', () => {
   it('leaves lengths off when staging failed', () => {
     const g = graphOf(fall, 'time', null);
     expect(g.nodes.find((n) => n.id === 'step:enter')?.lines).toEqual(['enter']);
-  });
-
-  it('says which view suits a pick', () => {
-    expect(viewFor('piece:active:1', fall)).toBe('signal');
-    expect(viewFor('channel:glow', fall)).toBe('signal');
-    expect(viewFor('step:active', fall)).toBe('time');
-    expect(viewFor('piece:enter:0', fall)).toBeNull();
   });
 });

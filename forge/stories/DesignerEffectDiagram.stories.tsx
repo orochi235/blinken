@@ -22,6 +22,6 @@ type Obj = StoryObj<typeof Story>;
 
 export const Open: Obj = {};
 export const Modulated: Obj = { args: { open: 'neon bounce' } };
-/** Flare's wire can be dragged to gain or chroma, drawn unwired, and flare into another step; sparkle's wire stays put. */
-export const Rewirable: Obj = { args: { open: 'flaring fall' } };
+/** Flare's wire can be dragged to gain or chroma, drawn unwired, and any piece to another place or step; sparkle's wire stays put. */
+export const Editable: Obj = { args: { open: 'flaring fall' } };
 export const NothingOpen: Obj = { args: { open: '' } };

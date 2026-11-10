@@ -80,13 +80,14 @@ export function stepVerdict(
 }
 
 /**
- * The move a piece dragged into another step asks for, landing at `index` there; null for any other
- * drag, which leaves the effect as it is.
+ * The move a piece dragged on the diagram asks for: into the step it was dropped in, or, kept in its
+ * own step, to another place there; `index` is where it lands among that step's other pieces. Null
+ * where it lands where it was, or outside every step.
  */
 export function editOfMove(spec: EffectSpec, move: NodeMove, index: number): GraphEdit | null {
   const held = pieceAt(spec, move.id);
-  const slot = stepOf(move.parent);
-  if (!held || !slot || slot === held.at.slot) return null;
+  const slot = move.parent === undefined ? held?.at.slot : stepOf(move.parent);
+  if (!held || !slot || (slot === held.at.slot && index === held.at.index)) return null;
   const edit: GraphEdit = { kind: 'move', from: held.at, to: { slot, index } };
   return verdictOf(spec, edit) === true ? edit : null;
 }
