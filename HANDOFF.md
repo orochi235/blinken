@@ -32,6 +32,8 @@ What a session picking up blinken needs that the code and `TODO.md` don't alread
   change (2026-11-06). A component reading a page's store gets that store from context, so its story
   provides one of its own that saves nothing: see `ComposeStore.tsx`, `designer-bench.tsx` and the
   `Paint*`/`Transitions*` stories in `forge/stories`.
+- A readout's faceplate stays opaque on the `clear` housing; as a veil it read the same as `face: 'none'` (2026-11-09, `src/render/housing.ts`).
+- Clicking a node on the effects diagram no longer switches its view: jumping to `signal`, which has no step boxes, made a click-then-drag impossible (2026-11-10, c5d125e).
 - Proportional is the default and `monospace` the switch; old links and files still read as
   monospace (2026-10-24).
 - Kerned letters keep a blank from each other diagonally too, not only across (2026-10-24).
