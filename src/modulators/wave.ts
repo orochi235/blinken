@@ -45,7 +45,8 @@ const swing = (s: Spec): Modulator => {
   const shapeOf = (p: { shape?: string }) =>
     (typeof s.shape === 'string' ? s.shape : p.shape) as WaveShape;
   const cycle = shader({
-    params: ['shape', 'amount', 'phase', 'start', 'by', 'cols'],
+    params: ['shape', 'amount', 'phase', 'start'],
+    ranked: true,
     wgsl: `let u = blinken_unit(params.shape, ph + ${RANK} * params.phase + params.start);
 let a = params.amount;
 out.${s.channel} = select(${s.wgsl}, ${f32(s.rest)}, subject.cell > 0.5);`,
@@ -85,7 +86,6 @@ out.${s.channel} = select(${s.wgsl}, ${f32(s.rest)}, subject.cell > 0.5);`,
       );
     },
     shader: (_at, v, rank) => {
-      if (!rank) return null;
       const p = v as { rate: number; phase: number; shape?: string } & Record<string, number>;
       return cycle(cycleMs(p.rate), {
         shape: SHAPES.indexOf(shapeOf(p)),

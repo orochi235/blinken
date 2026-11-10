@@ -7,7 +7,8 @@ import { RANK, rankAt, SHAPES, shader, unitOf } from './shader.js';
 const STEADY = -1;
 
 const INVERT = shader({
-  params: ['shape', 'depth', 'phase', 'by', 'cols'],
+  params: ['shape', 'depth', 'phase'],
+  ranked: true,
   wgsl: `let swing = select(1.0, blinken_unit(params.shape, ph + ${RANK} * params.phase), params.shape >= 0.0);
 out.invert = select(params.depth * swing, 0.0, subject.cell > 0.5);`,
   at: (ph, s, p) => {
@@ -60,14 +61,11 @@ export const invert = modulator({
     ),
   shader: (_at, p, rank) => {
     const steady = p.shape === 'steady';
-    // Held steady, it reads no rank, so any spread will do.
-    const order = rank ?? (steady ? { by: 0, cols: 1 } : null);
-    if (!order) return null;
     return INVERT(cycleMs(p.rate), {
       shape: steady ? STEADY : SHAPES.indexOf(p.shape as WaveShape),
       depth: p.depth,
       phase: p.phase,
-      ...order,
+      ...rank,
     });
   },
 });

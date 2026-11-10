@@ -1,10 +1,9 @@
 import { patch } from '@msb235/blits';
 import type { Pose, Subject } from '../board.js';
 import { hash, seedOf } from '../hash.js';
-import { closedRank } from '../orders.js';
 import { hashThreshold } from '../render/wgsl-hash.js';
 import { modulator } from './modulator.js';
-import { type Bound, f32, RANK, rankAt, shader } from './shader.js';
+import { type Bound, f32, RANK, rankAt, rankIn, shader } from './shader.js';
 
 /** One loop, ms, in slots of a second that each may hold one stutter of a tube. */
 const LOOP = 60_000;
@@ -40,7 +39,8 @@ function poseAt(t: number, tube: number, p: Bound): Partial<Pose> {
 }
 
 const NEON = shader({
-  params: ['often', 'length', 'seed', 'spread', 'by', 'cols'],
+  params: ['often', 'length', 'seed', 'spread'],
+  ranked: true,
   wgsl: `out.gain = 1.0;
 out.glow = 1.0;
 if (subject.cell < 0.5) {
@@ -130,8 +130,7 @@ export const neon = modulator({
     );
   },
   shader: (at, p, rank) => {
-    if (!rank) return null;
-    const spread = at.board.dots.some((d) => closedRank(rank.by, rank.cols, d) !== 0);
+    const spread = at.board.dots.some((d) => rankIn(rank, d) !== 0);
     return NEON(LOOP, {
       often: p.often,
       length: p.length,

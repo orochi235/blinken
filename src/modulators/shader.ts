@@ -1,7 +1,7 @@
 import { type WaveShape, waveAt } from '@msb235/blits';
 import { gpuOf, type ShaderPatch, type ShaderSpec, shaderPatch } from '@msb235/blits/gpu';
-import type { Board, Pose, Subject } from '../board.js';
-import { CLOSED, closedRank, type Order } from '../orders.js';
+import type { Led, Pose, Subject } from '../board.js';
+import { CLOSED, closedRank, type Order, type Placed, rankOf } from '../orders.js';
 import type { Channel } from '../planes.js';
 import { HASH_WGSL } from '../render/wgsl-hash.js';
 
@@ -63,20 +63,63 @@ fn blinken_bump(d: f32) -> f32 {
   return select(0.5 + 0.5 * cos(3.141592653589793 * d), 0.0, abs(d) >= 1.0);
 }`;
 
-/** The rank a shader reads for subject `s`: `blinken_rank` over `params.by` and `params.cols`. */
-export const RANK =
-  'blinken_rank(params.by, params.cols, subject.x, subject.y, subject.cell, subject.i)';
+/** The `by` a ranked shader reads where its order has no closed form and it reads `table_rank`. */
+export const TABLED = 5;
 
-/** `closedRank` reading the order and width a ranked shader is bound with. */
-export const rankAt = (p: Bound, s: Subject) => closedRank(p.by ?? 0, p.cols ?? 1, s);
+/**
+ * The rank a shader reads for subject `s`: `blinken_rank` over `params.by` and `params.cols`, or
+ * the dot's entry in `table_rank`, `params.tall` rows of `params.cols`.
+ */
+export const RANK = `select(blinken_rank(params.by, params.cols, subject.x, subject.y, subject.cell, subject.i), table_rank(clamp(floor(subject.x + 0.5), 0.0, params.cols - 1.0), select(0.0, subject.y, params.tall > 1.5)), params.by > ${TABLED - 0.5} && subject.cell < 0.5)`;
 
-/** The order and board width a ranked shader reads. */
-export type Ranked = { readonly by: number; readonly cols: number };
+/** The order a ranked shader reads: its closed form's code, the board's width, and its rank table. */
+export type Ranked = {
+  readonly by: number;
+  readonly cols: number;
+  /** Rows in `rank`: the board's for a rank that varies by row, else 1. */
+  readonly tall: number;
+  /** Each dot's rank, `cols` to a row, where `by` is `TABLED`; one 0 for a closed form. */
+  readonly rank: Float32Array;
+};
 
-/** The numbers a ranked shader reads for `order` on `b`, or null where its rank has no closed form. */
-export function ranked(order: Order, b: Board): Ranked | null {
+/** The place in a rank table of a dot: its column, and its row where the table has rows. */
+const cellIn = (cols: number, tall: number, s: Led) =>
+  [Math.min(cols - 1, Math.max(0, Math.round(s.x))), tall > 1 ? s.y : 0] as const;
+
+/** `RANK` in JS, reading the order and table a ranked shader is bound with. */
+export function rankAt(p: Bound, s: Subject): number {
+  if (p.by !== TABLED || s.kind === 'cell') return closedRank(p.by ?? 0, p.cols ?? 1, s);
+  const [x, y] = cellIn(p.cols as number, p.tall as number, s);
+  return (p.rank as unknown as (x: number, y: number) => number)(x, y);
+}
+
+/** `RANK` in JS for `r` before it is bound. */
+export function rankIn(r: Ranked, s: Subject): number {
+  if (r.by !== TABLED || s.kind === 'cell') return closedRank(r.by, r.cols, s);
+  const [x, y] = cellIn(r.cols, r.tall, s);
+  return r.rank[y * r.cols + x] as number;
+}
+
+const NO_TABLE = Float32Array.of(0);
+const tabled = new WeakMap<Placed, Map<string, Ranked>>();
+
+/** The numbers and rank table a ranked shader reads for `order` on `at`. */
+export function ranked(order: Order, at: Placed): Ranked {
+  const { cols, rows, dots } = at.board;
   const by = CLOSED[order.by];
-  return by === undefined ? null : { by, cols: b.cols };
+  if (by !== undefined) return { by, cols, tall: 1, rank: NO_TABLE };
+  const key = `${order.by} ${order.seed ?? 1}`;
+  const held = tabled.get(at) ?? new Map<string, Ranked>();
+  tabled.set(at, held);
+  const had = held.get(key);
+  if (had) return had;
+  const tall = order.by === 'letter' ? rows : 1;
+  const rankOfDot = rankOf(order, at);
+  const rank = new Float32Array(cols * tall);
+  for (const d of dots) if (d.y < tall) rank[d.y * cols + d.x] = rankOfDot(d);
+  const made = { by: TABLED, cols, tall, rank };
+  held.set(key, made);
+  return made;
 }
 
 /** A number as a WGSL f32 literal. */
@@ -96,6 +139,8 @@ export interface Spec {
   readonly params: readonly string[];
   /** Tables it reads as `table_<name>(x, y)` in WGSL, by name. */
   readonly tables?: Sizes;
+  /** Whether it reads `RANK`, bound with a `Ranked`'s numbers and table. */
+  readonly ranked?: boolean;
   /** The same in JS, giving every channel in `writes` for every subject: a rest where it does nothing. */
   at(ph: number, s: Subject, p: Bound, t: Tables): Partial<Pose>;
   readonly writes: readonly Channel[];
@@ -177,14 +222,21 @@ export function kernels(k: Kernel): (duration: number, sizes: Sizes, given: Give
  */
 export function shader(spec: Spec): (duration: number, values: Given) => ModShader {
   const bind = kernels({
-    params: ['cycles', ...spec.params],
+    params: ['cycles', ...(spec.ranked ? ['by', 'cols', 'tall'] : []), ...spec.params],
     wgsl: `let ph = fract(phase * params.cycles); ${spec.wgsl}`,
     at: (phase, s, v) => spec.at((phase * (v.cycles ?? 1)) % 1, s, v, v as unknown as Tables),
     writes: spec.writes,
   });
   const make = (duration: number, given: Given): ModShader => {
     const values = { cycles: 1, ...given };
-    const p = bind(duration, spec.tables ?? {}, values);
+    const tall = given.tall as number;
+    const sizes = spec.ranked
+      ? {
+          ...spec.tables,
+          rank: { width: (given.rank as ArrayLike<number>).length / tall, height: tall },
+        }
+      : (spec.tables ?? {});
+    const p = bind(duration, sizes, values);
     made.set(p, { make, values });
     return p;
   };

@@ -136,6 +136,22 @@ test('neon spread by column folds on the GPU as the CPU does', (d) =>
     [2210, 17_533, 33_871],
   ));
 
+test('neon spread at random folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'neon', spread: { by: 'random', seed: 3 }, params: { often: 60, length: 1500 } },
+    ['gain', 'glow'],
+    [2210, 17_533, 33_871, 50_102],
+  ));
+
+test('pulse spread at random folds on the GPU as the CPU does', (d) =>
+  agree(
+    dev(d),
+    { mod: 'pulse', spread: { by: 'random', seed: 5 }, params: { phase: 0.05 } },
+    ['gain'],
+    [70, 410, 777],
+  ));
+
 test('invert held steady folds on the GPU as the CPU does', (d) =>
   agree(dev(d), { mod: 'invert', params: { depth: 0.8 } }, ['invert'], [100, 900, 1700]));
 

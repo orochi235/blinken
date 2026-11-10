@@ -14,7 +14,8 @@ const gainAt = (u: number, p: Bound) => {
 };
 
 const FLASH = shader({
-  params: ['flashes', 'from', 'to', 'depth', 'phase', 'by', 'cols'],
+  params: ['flashes', 'from', 'to', 'depth', 'phase'],
+  ranked: true,
   wgsl: `let u = ph + ${RANK} * params.phase;
 let window = params.to - params.from;
 let w = (u - floor(u) - params.from) / window;
@@ -73,5 +74,5 @@ export const flash = modulator({
     patch<Subject, Pose>(p.ms, (phase, s) => ({ gain: gainAt(phase + rank(s) * p.phase, p) }), {
       writes: ['gain'],
     }),
-  shader: (_at, p, rank) => (rank ? FLASH(p.ms, { ...p, ...rank }) : null),
+  shader: (_at, p, rank) => FLASH(p.ms, { ...p, ...rank }),
 });

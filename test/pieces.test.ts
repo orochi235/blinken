@@ -29,6 +29,35 @@ describe('pieces', () => {
     expect(() => mix<Subject, Pose>(KIT).cue({ ...voice, patch: voice.patch })).not.toThrow();
   });
 
+  for (const order of [
+    { by: 'letter', lag: 90 },
+    { by: 'random', lag: 9, seed: 2 },
+  ] as const)
+    it(`stages a move ordered by ${order.by} for the gpu engine as a staggered shader playing as its pass does`, () => {
+      const piece = { move: 'bounce-in', order } as const;
+      const shaded = stagePiece(piece, 'enter', at, b.dots, undefined, undefined, true).voice;
+      const plain = stagePiece(piece, 'enter', at, b.dots).voice;
+      expect(['with' in shaded.patch, 'with' in plain.patch]).toEqual([true, false]);
+      expect(shaded.duration).toBe(plain.duration);
+      expect(shaded.stagger?.(b.cells[2] as Subject)).toBe(0);
+      const play = (voice: typeof plain) => {
+        const m = mix<Subject, Pose>(KIT);
+        m.cue(voice);
+        return m;
+      };
+      const [g, c] = [play(shaded), play(plain)];
+      let lit = 0;
+      for (let t = 0; t <= (plain.duration as number) + 50; t += 37) {
+        g.sync(t);
+        c.sync(t);
+        for (const d of b.dots) {
+          expect(g.probe(d).lit).toBeCloseTo(c.probe(d).lit, 6);
+          if (c.probe(d).lit > 0) lit++;
+        }
+      }
+      expect(lit).toBeGreaterThan(0);
+    });
+
   it('stages a modulator piece looping on its own subjects', () => {
     const dots = stagePiece({ mod: 'pulse' }, 'active', at, b.dots);
     expect(dots.voice.loop).toBe(true);

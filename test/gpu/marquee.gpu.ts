@@ -157,6 +157,25 @@ test('marquee: plays hold, wiped on by column and flashing, on WebGPU as a 2D tw
   allOnGpu(await againstTwin(d as unknown as GPUDevice, sign), 'hold');
 });
 
+test('marquee: plays bounce, its letters dropping in one after another, on WebGPU as a 2D twin does', async (d) => {
+  const sign = { ...SIGN, program: [{ effect: 'bounce', text: 'HI THERE', hex: 0x7cff6b }] };
+  allOnGpu(await againstTwin(d as unknown as GPUDevice, sign), 'bounce');
+});
+
+test('marquee: plays fall, its columns dropping in at random, on WebGPU as a 2D twin does', async (d) => {
+  const sign = { ...SIGN, program: [{ effect: 'fall', text: 'HI THERE', hex: 0xff5fd2 }] };
+  allOnGpu(await againstTwin(d as unknown as GPUDevice, sign), 'fall');
+});
+
+test('marquee: plays a scene under neon, spread by letter, on WebGPU as a 2D twin does', async (d) => {
+  const neon = { params: { often: 60, length: 1500, seed: 7 } };
+  const sign = {
+    ...SIGN,
+    program: [{ effect: 'hold', text: 'HI THERE', hex: 0xff9a2e, layers: { neon } }],
+  };
+  allOnGpu(await againstTwin(d as unknown as GPUDevice, sign), 'neon');
+});
+
 test('marquee: folds a shader patch on the GPU and pulls only what the CPU folds', async (d) => {
   const device = d as unknown as GPUDevice;
   const want = 'gain';
