@@ -37,6 +37,8 @@ describe('the effect graph', () => {
       'piece:exit:0',
       'channel:lit',
       'channel:glow',
+      'channel:gain',
+      'channel:chroma',
       'sign',
     ]);
     expect(g.edges.map((e) => `${e.from}>${e.to}`)).toEqual([
@@ -48,6 +50,17 @@ describe('the effect graph', () => {
       'channel:glow>sign',
     ]);
     expect(g.nodes[0]?.lines).toEqual(['drop-in', 'enter']);
+  });
+
+  it('draws the channels a wire could be dragged to, muted and joined to nothing', () => {
+    const g = graphOf(fall, 'both', parts);
+    expect(g.nodes.filter((n) => n.style === 'muted').map((n) => n.id)).toEqual([
+      'channel:gain',
+      'channel:chroma',
+    ]);
+    expect(g.edges.some((e) => e.to === 'channel:gain' || e.from === 'channel:gain')).toBe(false);
+    const still: EffectSpec = { name: 'still', active: { move: 'stand' } };
+    expect(graphOf(still, 'signal', null).nodes.some((n) => n.style === 'muted')).toBe(false);
   });
 
   it('draws time flow: steps in sequence with their lengths, each with its pieces', () => {

@@ -1,7 +1,9 @@
 import type { DataContainer, DataEdge, DataNode, DiagramData } from '@weasel-js/diagram';
 import {
   type Channel,
+  type ChoiceParam,
   type EffectSpec,
+  MODULATORS,
   type Piece,
   piecesOf,
   SLOTS,
@@ -50,6 +52,13 @@ export function partOf(id: string): Part | null {
 const nameOf = (p: Piece) => ('mod' in p ? p.mod : p.move);
 const seconds = (ms: number) => `${(ms / 1000).toFixed(2)} s`;
 
+/** The channels a piece's wire may be dragged to, or null where it is fixed. */
+export function wireChoices(piece: Piece): readonly Channel[] | null {
+  if (!('mod' in piece)) return null;
+  const param = MODULATORS[piece.mod].params.channel as ChoiceParam | undefined;
+  return param ? (param.choices as readonly Channel[]) : null;
+}
+
 /** Every piece of the effect with its id, in slot order. */
 const piecesIn = (spec: EffectSpec) =>
   SLOTS.flatMap((slot) =>
@@ -68,6 +77,10 @@ export function graphOf(
 ): DiagramData {
   const pieces = piecesIn(spec);
   const channels = [...new Set(pieces.flatMap(({ piece }) => writesOf(piece)))];
+  // Channels no piece drives yet but a wire could be dragged to, drawn muted.
+  const spare = [...new Set(pieces.flatMap(({ piece }) => wireChoices(piece) ?? []))].filter(
+    (c) => !channels.includes(c),
+  );
   const channelId = (channel: Channel) => idOf({ kind: 'channel', channel });
   const lengthOf = (slot: Slot) => (parts ? seconds(parts[slot].ms) : null);
   const edges: DataEdge[] = [];
@@ -76,7 +89,10 @@ export function graphOf(
   const wires = () => {
     for (const { id, piece } of pieces) for (const c of writesOf(piece)) join(id, channelId(c));
   };
-  const channelNodes = channels.map((c): DataNode => ({ id: channelId(c), lines: [c] }));
+  const channelNodes = [
+    ...channels.map((c): DataNode => ({ id: channelId(c), lines: [c] })),
+    ...spare.map((c): DataNode => ({ id: channelId(c), lines: [c], style: 'muted' })),
+  ];
   const blend = `blend ${spec.blend ?? 0} ms`;
   const sequence = () => {
     join('step:enter', 'step:active', blend);

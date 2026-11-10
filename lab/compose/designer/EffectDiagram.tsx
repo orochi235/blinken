@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { shelved, useLibrary } from '../library.js';
 import { Panel } from '../Panel.js';
 import { builtinOf } from './edit.js';
+import { editingProps } from './editingProps.js';
 import { graphOf, partOf, VIEWS, type View, viewFor } from './graph.js';
 import { useDesk } from './open.js';
 import { useStaged } from './staged.js';
@@ -31,6 +32,8 @@ export function EffectDiagram() {
   const staged = useStaged(spec, designer.text());
   const [view, setView] = useState<View>('both');
   const [chosen, setChosen] = useState(false);
+  // A picked wire is the diagram's alone: no card stands for it.
+  const [wire, setWire] = useState<string | null>(null);
   const data = useMemo(
     () => (spec ? graphOf(spec, view, staged?.parts ?? null) : null),
     [spec, view, staged],
@@ -65,13 +68,15 @@ export function EffectDiagram() {
         <div className="effects-diagram-canvas">
           <DiagramView
             specs={specs}
-            selected={shown ? picked : null}
+            selected={shown ? picked : wire}
             onSelect={(id) => {
+              setWire(id && !partOf(id) ? id : null);
               designer.setPicked(id && partOf(id) ? id : undefined);
               const suits = id && !chosen ? viewFor(id, spec) : null;
               if (suits) setView(suits);
             }}
             anchor="start"
+            {...editingProps(designer, spec)}
           />
         </div>
       ) : (
