@@ -118,6 +118,21 @@ describe('modulators', () => {
     }
   });
 
+  it('a one-channel curve drives the channel its channel setting picks, alike channels only', () => {
+    const given = { ms: 1000, depth: 0.5, easing: 'linear', sweep: 0, channel: 'chroma' };
+    const pose = poseAt('dim', 500, undefined, given);
+    expect(pose.chroma).toBeCloseTo(0.75);
+    expect(pose.gain).toBeUndefined();
+    expect(poseAt('bloom', 250, undefined, { channel: 'gain' }).gain).toBeGreaterThan(1);
+    for (const name of ['dim', 'desaturate', 'flare', 'pulse', 'bloom'] as const)
+      expect(MODULATORS[name].params.channel).toMatchObject({
+        choices: ['gain', 'chroma', 'glow'],
+        value: MODULATORS[name].writes[0],
+      });
+    for (const name of ['hue-cycle', 'sparkle', 'chase', 'glitch'] as const)
+      expect(MODULATORS[name].params.channel).toBeUndefined();
+  });
+
   it('flare goes up to 1 + depth and back', () => {
     const g = (t: number) => poseAt('flare', t, undefined, { ms: 1000, depth: 2, sweep: 0 }).glow;
     expect(g(0)).toBe(1);

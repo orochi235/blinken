@@ -21,3 +21,17 @@ export function planeOf(c: Channel): Plane {
   }
   throw new Error(`channel ${c} is on no plane`);
 }
+
+/**
+ * Channels that mix alike, each group the channels one of its members' curves could drive instead:
+ * `mul` channels together, `max` channels together, and the rest alone.
+ */
+export const ALIKE: readonly (readonly Channel[])[] = [
+  ['gain', 'chroma', 'glow'],
+  ['lit', 'invert'],
+  ['hue'],
+  ['tint'],
+];
+
+/** The channels that mix as `c` does, `c` among them. */
+export const alikeOf = (c: Channel): readonly Channel[] => ALIKE.find((g) => g.includes(c)) ?? [c];

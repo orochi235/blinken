@@ -67,6 +67,8 @@ describe('pieces', () => {
   it('says which channels a piece writes: a move lit, a modulator what it names', () => {
     expect(writesOf({ move: 'scroll-in' })).toEqual(['lit']);
     expect(writesOf({ mod: 'flare' })).toEqual(['glow']);
+    expect(writesOf({ mod: 'flare', params: { channel: 'gain' } })).toEqual(['gain']);
+    expect(writesOf({ mod: 'flare', params: { channel: 'hue' } })).toEqual(['glow']);
     expect(writesOf({ mod: 'glitch' })).toEqual(['hue', 'gain', 'invert']);
   });
 });

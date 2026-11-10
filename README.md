@@ -226,7 +226,10 @@ bulbs, and which `border: { bulbs: 'chase' }` plays), and filters that dress the
 whole sign — `scanline`, `fire`, `glitch`, `neon`, `shimmer`, `aurora`, and `gradient`. Each declares its tuning as
 `params`, plain data giving each number's label, range and default, for a control panel to be
 built from. `flash` blinks a number of times within a window of each pass, `from` and `to` as
-shares of it, which is how `hold` flashes three times in the middle third of its hold.
+shares of it, which is how `hold` flashes three times in the middle third of its hold. A modulator that
+drives one channel along one curve (`dim`, `desaturate`, `flare`, `pulse` and `bloom`) takes a
+`channel` setting: any of `gain`, `chroma` and `glow`, the channels that mix by multiplying, as its
+own does.
 
 An effect is plain data made of pieces: an `enter`, an `active` and an `exit` slot, each holding a
 piece or several that play together, an optional `order` that staggers the dots (by column, by

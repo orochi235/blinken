@@ -108,6 +108,13 @@ export const MOVE_ADDED: Added = {
   12: { 'type-on': ['pace'], 'type-off': ['pace'] },
 };
 
+/** Modulators' settings added since version 13. */
+export const MOD_ADDED: Added = {
+  14: Object.fromEntries(
+    ['dim', 'desaturate', 'flare', 'pulse', 'bloom'].map((m) => [m, ['channel']]),
+  ),
+};
+
 /** `params` as `name` had them in a link of `version`: today's, less what `added` says came later. */
 export function paramsAt(params: Params, name: string, version: number, added: Added): Params {
   const later = new Set(
