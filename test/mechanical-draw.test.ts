@@ -1,10 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Ticker } from '@/ticker.js';
 
-const reels: { k: number; at: number; box: { x: number; y: number } }[] = [];
+const reels: { k: number; at: number; box: { x: number; y: number }; travel: number }[] = [];
 vi.mock('@/mechanical/draw.js', () => ({
-  drawReel: (_c: unknown, _glyphs: unknown, at: number, box: { x: number; y: number }) =>
-    reels.push({ k: reels.length, at, box }),
+  drawReel: (
+    _c: unknown,
+    _glyphs: unknown,
+    at: number,
+    box: { x: number; y: number },
+    _style: unknown,
+    _scale: unknown,
+    travel: number,
+  ) => reels.push({ k: reels.length, at, box, travel }),
   drawFlap: () => {},
 }));
 const { createMechanical } = await import('@/mechanical/index.js');
@@ -72,6 +79,28 @@ describe('a mechanical readout', () => {
     expect(reels.at(-1)?.at).toBeCloseTo(before, 1);
     ticker.step(5000);
     expect((reels.at(-1)?.at ?? 0) % 10).toBeCloseTo(9);
+    m.destroy();
+  });
+
+  it('hands a reel the glyphs it turned this frame: none at rest, more than one when fast', () => {
+    const ticker = manual();
+    const m = createMechanical(canvas().el, {
+      kind: 'reel',
+      cells: 1,
+      value: 0,
+      speed: 240,
+      ticker,
+    });
+    expect(reels.at(-1)?.travel).toBe(0);
+    m.set(9);
+    let fastest = 0;
+    for (let i = 0; i < 10; i++) {
+      ticker.step(40);
+      fastest = Math.max(fastest, reels.at(-1)?.travel ?? 0);
+    }
+    expect(fastest).toBeGreaterThan(1);
+    m.setStyle({ ink: 'red' });
+    expect(reels.at(-1)?.travel).toBe(0);
     m.destroy();
   });
 

@@ -29,7 +29,6 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 
 ## Mechanical readouts
 
-- A fast reel shows a crisp glyph each frame, so above a few glyphs a frame it strobes rather than blurs. Motion blur means drawing several drum positions inside each frame, weighted along its travel, once the reel's speed in glyphs per frame passes about one (2026-11-06).
 - The reference documents only the main entry point, so `@msb235/blinken/mechanical`'s exports appear on the Mechanical page's prose but not in the reference; TypeDoc takes a second entry point, and `site/src/api/entries.ts` would file its exports onto that page (2026-11-06).
 - Mechanical readouts take a canvas each, placed by the page; they don't join a panel or overlay, since those draw lights (2026-11-06).
 
