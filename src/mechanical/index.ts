@@ -63,6 +63,9 @@ interface Cell {
   at: number;
 }
 
+/** The longest frame a reel's blur spans, ms, so a tab coming back doesn't smear a whole turn. */
+const MAX_FRAME_MS = 50;
+
 const easeInOut = (u: number) => (u < 0.5 ? 4 * u ** 3 : 1 - (-2 * u + 2) ** 3 / 2);
 
 /** How long a reel takes to turn `steps` glyphs at `speed` a second, ms. */
@@ -112,6 +115,8 @@ export function createMechanical(canvas: HTMLCanvasElement, opts: MechanicalOpti
   const styleOf = (c: Cell): CellStyle => ({ ...look(), ...c.own });
   let value: string | number | readonly string[] = opts.value ?? '';
   let now = performance.now();
+  /** How long the last frame lasted, ms, which a reel's blur spans. */
+  let frame = 0;
 
   /** Each cell's glyph index for `v`, a name a cell lacks keeping its current one. */
   const targets = (v: typeof value) => {
@@ -156,8 +161,10 @@ export function createMechanical(canvas: HTMLCanvasElement, opts: MechanicalOpti
       const box = { x: pad + k * (w + gap), y: pad, w, h };
       const style = styleOf(c);
       const n = c.glyphs.length;
-      if (kind === 'reel') drawReel(ctx, c.glyphs, at(c, now), box, style, scale);
-      else {
+      if (kind === 'reel') {
+        const pos = at(c, now);
+        drawReel(ctx, c.glyphs, pos, box, style, scale, pos - at(c, now - frame));
+      } else {
         const { card, phase } = flapAt(c.from, c.steps, now - c.at, speed);
         drawFlap(
           ctx,
@@ -178,6 +185,7 @@ export function createMechanical(canvas: HTMLCanvasElement, opts: MechanicalOpti
   const run = () => {
     if (stop) return;
     stop = ticker.add((t) => {
+      frame = Math.min(MAX_FRAME_MS, Math.max(0, t - now));
       now = t;
       draw();
       if (!moving(t)) {

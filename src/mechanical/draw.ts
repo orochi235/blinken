@@ -1,3 +1,4 @@
+import { blurSamples } from './blur.js';
 import type { Box, Glyph } from './glyphs.js';
 import type { CellStyle } from './style.js';
 
@@ -35,11 +36,8 @@ function roundRect(ctx: CanvasRenderingContext2D, b: Box, r: number) {
   ctx.roundRect(b.x, b.y, b.w, b.h, Math.max(0, Math.min(r, b.w / 2, b.h / 2)));
 }
 
-/**
- * A reel at `pos`, a glyph index that may fall between two: the drum turns upward as `pos` grows,
- * its glyphs foreshortened and darkened toward the window's top and bottom.
- */
-export function drawReel(
+/** The glyphs on a drum standing at `pos`, foreshortened toward the window's top and bottom. */
+function drawDrum(
   ctx: CanvasRenderingContext2D,
   glyphs: readonly Glyph[],
   pos: number,
@@ -48,11 +46,6 @@ export function drawReel(
   scale: number,
 ) {
   const n = glyphs.length;
-  ctx.save();
-  roundRect(ctx, box, style.radius * scale);
-  ctx.fillStyle = style.face;
-  ctx.fill();
-  ctx.clip();
   // The window shows one glyph and `peek` of each neighbor: the drum's half-turn spans that much.
   const pitch = box.h / (1 + 2 * style.peek);
   const radius = box.h / 2;
@@ -68,6 +61,39 @@ export function drawReel(
     ctx.scale(1, squash);
     drawGlyph(ctx, g, { x: box.x, y: -pitch / 2, w: box.w, h: pitch }, style, scale);
     ctx.restore();
+  }
+}
+
+/**
+ * A reel at `pos`, a glyph index that may fall between two: the drum turns upward as `pos` grows,
+ * its glyphs foreshortened and darkened toward the window's top and bottom. A reel that turned
+ * `travel` glyphs this frame blurs along that turn once it passes `BLUR_FROM`.
+ */
+export function drawReel(
+  ctx: CanvasRenderingContext2D,
+  glyphs: readonly Glyph[],
+  pos: number,
+  box: Box,
+  style: CellStyle,
+  scale: number,
+  travel = 0,
+) {
+  const samples = blurSamples(pos, travel);
+  ctx.save();
+  roundRect(ctx, box, style.radius * scale);
+  ctx.fillStyle = style.face;
+  ctx.fill();
+  ctx.clip();
+  if (samples.length === 1) drawDrum(ctx, glyphs, pos, box, style, scale);
+  else {
+    // Each position over the face at its weight: where ghosts overlap this runs a little dimmer
+    // than their true mean, which averaging whole drums on a layer matched at five times the cost.
+    const alpha = ctx.globalAlpha;
+    for (const s of samples) {
+      ctx.globalAlpha = alpha * s.weight;
+      drawDrum(ctx, glyphs, s.pos, box, style, scale);
+    }
+    ctx.globalAlpha = alpha;
   }
   if (style.shade > 0) {
     const fall = ctx.createLinearGradient(0, box.y, 0, box.y + box.h);
