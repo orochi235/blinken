@@ -85,6 +85,7 @@ const FILED: Record<string, Word> = {
   'defects.ts': 'defects',
   'optics.ts': 'defects',
   'readout/': 'readouts',
+  'mechanical/': 'mechanical',
   'thumbnail.ts': 'thumbnails',
   'ticker.ts': 'thumbnails',
   'board.ts': 'mix',

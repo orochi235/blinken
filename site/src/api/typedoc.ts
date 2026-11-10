@@ -82,7 +82,12 @@ export const KIND: Record<number, string> = {
 
 export const CONSTRUCTOR = 512;
 
-export const exports: Node[] = (api as unknown as Node).children ?? [];
+const MODULE = 2;
+
+/** Every entry point's exports, as one list: TypeDoc nests them under a module per entry point. */
+export const exports: Node[] = ((api as unknown as Node).children ?? []).flatMap((n) =>
+  n.kind === MODULE ? (n.children ?? []) : [n],
+);
 
 /** Every exported name, so a printed type can tell which of its names have an entry to link to. */
 export const exported = new Set(exports.map((n) => n.name));

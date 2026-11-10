@@ -12,6 +12,7 @@
     "ModShader",
     "MoveShader",
     "Shape",
-    "Ranked"
+    "Ranked",
+    "Shared"
   ]
 }
