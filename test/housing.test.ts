@@ -22,7 +22,7 @@ describe('the clear housing', () => {
   it('gives each socket the contrast it has on the dark housing', () => {
     const sockets = housingPaint('clear').sockets ?? [];
     const dark = housingPaint('dark').sockets ?? [];
-    for (const s of [SOCKET.dot, SOCKET.bulb, SOCKET.segment, SOCKET.wire, SOCKET.plate]) {
+    for (const s of [SOCKET.dot, SOCKET.bulb, SOCKET.segment, SOCKET.wire]) {
       const [r, g, b] = dark[s] as readonly [number, number, number, number];
       const hex = (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
       const want = lightness(hex) - lightness(HOUSING);
@@ -30,6 +30,12 @@ describe('the clear housing', () => {
       expect(lOf(v)).toBeCloseTo(want, 0);
       expect(sockets[s]?.[3]).toBeLessThan(0.5);
     }
+  });
+
+  it('keeps a faceplate as solid as on the dark housing', () => {
+    expect(housingPaint('clear').sockets?.[SOCKET.plate]).toEqual(
+      housingPaint('dark').sockets?.[SOCKET.plate],
+    );
   });
 
   it('lays lights over a see-through housing and adds them to the dark one', () => {

@@ -12,7 +12,7 @@ import { SOCKET } from './prims.js';
 /**
  * What a sign shows round its lights: `dark` paints the housing and its sockets, `clear` leaves the
  * housing see-through and draws each socket as a faint veil, as faint over a white page as over a
- * black one, and `none` draws neither, so only lit light shows over the page and an unlit dot is
+ * black one, though a readout's faceplate stays solid, and `none` draws neither, so only lit light shows over the page and an unlit dot is
  * simply absent.
  */
 export type Housing = 'dark' | 'clear' | 'none';
@@ -72,13 +72,18 @@ export function veil(delta: number): Rgba {
   return [onBlack, onBlack, onBlack, a];
 }
 
-/** Each socket as opaque on the dark housing, and as a veil standing out from the page as much. */
+/**
+ * Each socket as opaque on the dark housing, and as a veil standing out from the page as much. A
+ * faceplate stays opaque on both: as a veil it would read the same as no face at all.
+ */
 const dark: Rgba[] = [];
 const clear: Rgba[] = [];
 for (let s = 0; s < SOCKETS; s++) {
   const hex = DARK_SOCKETS[s] ?? HOUSING;
   dark.push([...rgb(hex), 1]);
-  clear.push(veil(Math.max(lightness(hex) - lightness(HOUSING), 0)));
+  clear.push(
+    s === SOCKET.plate ? [...rgb(hex), 1] : veil(Math.max(lightness(hex) - lightness(HOUSING), 0)),
+  );
 }
 
 const PAINTS: Readonly<Record<Housing, HousingPaint>> = {
