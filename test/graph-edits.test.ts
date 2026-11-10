@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { EffectSpec } from '@/index.js';
+import { applied, commitEdit, verdictOf } from '../lab/compose/designer/graphEdits.js';
 import {
-  applied,
-  commitEdit,
+  editOfMove,
   editOfReconnect,
-  verdictOf,
+  stepVerdict,
   wireVerdict,
-} from '../lab/compose/designer/graphEdits.js';
+} from '../lab/compose/designer/graphEvents.js';
 import { createDesigner } from '../lab/compose/designer/open.js';
 import { createLibrary } from '../lab/compose/library.js';
 
@@ -79,5 +79,53 @@ describe('rewiring on the diagram', () => {
     const desk = deskOf(mine);
     commitEdit(desk, { kind: 'rewire', at: flare, channel: 'glow' });
     expect(desk.canUndo()).toBe(false);
+  });
+});
+
+describe('moving a piece between steps', () => {
+  it('moves a modulator into another step at the index it lands on', () => {
+    const edit = editOfMove(mine, { id: 'piece:active:1', x: 0, y: 0, parent: 'step:enter' }, 0);
+    expect(edit).toEqual({ kind: 'move', from: flare, to: { slot: 'enter', index: 0 } });
+    const moved = applied(mine, edit as never);
+    expect(moved.enter).toEqual([{ mod: 'flare' }, { move: 'drop-in' }]);
+    expect(moved.active).toEqual([{ move: 'stand' }, { mod: 'sparkle' }, { mod: 'hue-cycle' }]);
+  });
+
+  it('refuses a move into a step it does not belong to, with the reason', () => {
+    expect(stepVerdict(mine, ['piece:enter:0'], 'step:exit')).toEqual({
+      refuse: 'drop-in is an enter move',
+    });
+    expect(stepVerdict(mine, ['piece:active:1'], 'step:exit')).toBe(true);
+    expect(stepVerdict(mine, ['piece:active:1'], 'channel:glow')).toBe(false);
+    expect(
+      editOfMove(mine, { id: 'piece:enter:0', x: 0, y: 0, parent: 'step:exit' }, 0),
+    ).toBeNull();
+  });
+
+  it('asks nothing of a drag that stays in its step or leaves every step', () => {
+    for (const parent of ['step:active', null, undefined])
+      expect(editOfMove(mine, { id: 'piece:active:1', x: 0, y: 0, parent }, 0)).toBeNull();
+  });
+
+  it('carries a param driving the moved piece along with it', () => {
+    const tuned: EffectSpec = {
+      ...mine,
+      params: { swell: { label: 'swell', about: '', to: ['active.1.depth', 'active.2.share'] } },
+    };
+    const moved = applied(tuned, {
+      kind: 'move',
+      from: flare,
+      to: { slot: 'exit', index: 1 },
+    });
+    expect(moved.params?.swell?.to).toEqual(['exit.1.depth', 'active.1.share']);
+  });
+
+  it('commits a move as one undo step and picks the piece where it landed', () => {
+    const desk = deskOf(mine);
+    commitEdit(desk, { kind: 'move', from: flare, to: { slot: 'exit', index: 1 } });
+    expect(desk.picked()).toBe('piece:exit:1');
+    expect(desk.library.get().mine?.exit).toEqual([{ move: 'drop-out' }, { mod: 'flare' }]);
+    desk.undo();
+    expect(desk.library.get().mine).toEqual(mine);
   });
 });

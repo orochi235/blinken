@@ -1,7 +1,7 @@
-import { DiagramView, diagramScene } from '@weasel-js/diagram';
+import { DiagramView, type DiagramViewApi, diagramScene } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import { ToggleBar } from '@weasel-js/ui';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { shelved, useLibrary } from '../library.js';
 import { Panel } from '../Panel.js';
 import { builtinOf } from './edit.js';
@@ -34,10 +34,19 @@ export function EffectDiagram() {
   const [chosen, setChosen] = useState(false);
   // A picked wire is the diagram's alone: no card stands for it.
   const [wire, setWire] = useState<string | null>(null);
+  const api = useRef<DiagramViewApi>(null);
+  // Bumped to lay the diagram out afresh after a drag that left the effect as it was.
+  const [layout, setLayout] = useState(0);
   const data = useMemo(
     () => (spec ? graphOf(spec, view, staged?.parts ?? null) : null),
     [spec, view, staged],
   );
+  // Piece ids are places, so a piece dragged to where another now stands would keep that place:
+  // a change to which pieces stand where lays the diagram out afresh.
+  const places = data?.nodes
+    .filter((n) => n.id.startsWith('piece:'))
+    .map((n) => `${n.id}=${n.lines?.[0]}`)
+    .join(' ');
   const specs = useMemo(
     () => (data ? diagramScene(data, { font: FONT, layoutOptions: { direction: 'right' } }) : null),
     [data],
@@ -67,6 +76,8 @@ export function EffectDiagram() {
       {specs && spec ? (
         <div className="effects-diagram-canvas">
           <DiagramView
+            key={`${layout} ${places}`}
+            ref={api}
             specs={specs}
             selected={shown ? picked : wire}
             onSelect={(id) => {
@@ -76,7 +87,12 @@ export function EffectDiagram() {
               if (suits) setView(suits);
             }}
             anchor="start"
-            {...editingProps(designer, spec)}
+            {...editingProps(
+              designer,
+              spec,
+              () => api.current,
+              () => setLayout((n) => n + 1),
+            )}
           />
         </div>
       ) : (
