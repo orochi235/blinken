@@ -13,8 +13,11 @@ export interface Placement {
   readonly pitch: number;
   /** Whether the glow is blurred across the whole canvas, or each primitive blooms by itself. */
   readonly blur: boolean;
-  /** Starts sizing `canvas`, calling `changed` after each resize or view change; gives a stop. */
-  start(canvas: HTMLCanvasElement, changed: () => void): () => void;
+  /**
+   * Starts sizing `canvas`, at no more than `limit` device pixels a side, calling `changed` after
+   * each resize or view change; gives a stop.
+   */
+  start(canvas: HTMLCanvasElement, changed: () => void, limit?: number): () => void;
   /** Called each frame before drawing: true where the views moved since the last call. */
   update(): boolean;
   /** Sizes the canvas again now. */
@@ -46,12 +49,19 @@ export function boardPlacement(
     views,
     pitch: 0,
     blur: true,
-    start(canvas: HTMLCanvasElement, changed: () => void) {
-      fit = fitCanvas(canvas, across, down, want, (pitch) => {
-        self.pitch = pitch;
-        views.set([0, 0, pitch, 0, 0, 0, canvas.width, canvas.height]);
-        changed();
-      });
+    start(canvas: HTMLCanvasElement, changed: () => void, limit?: number) {
+      fit = fitCanvas(
+        canvas,
+        across,
+        down,
+        want,
+        (pitch) => {
+          self.pitch = pitch;
+          views.set([0, 0, pitch, 0, 0, 0, canvas.width, canvas.height]);
+          changed();
+        },
+        limit,
+      );
       return () => fit?.stop();
     },
     update: () => false,

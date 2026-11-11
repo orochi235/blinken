@@ -62,6 +62,31 @@ describe('boardPlacement', () => {
     expect(p.pitch).toBe(144);
     stop();
   });
+
+  it('draws a canvas past the device limit at a lower pixel ratio, and says so once', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    vi.stubGlobal('devicePixelRatio', 2);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const canvas = {
+      parentElement: { clientWidth: 6000, clientHeight: 1000 },
+      style: {},
+      width: 0,
+      height: 0,
+    } as never as HTMLCanvasElement;
+    const p = boardPlacement(60, 10, () => undefined);
+    const stop = p.start(canvas, () => {}, 8192);
+    expect(canvas.width).toBeLessThanOrEqual(8192);
+    expect(canvas.height).toBe(Math.round((1000 * 8192) / 6000));
+    p.refit();
+    expect(warn).toHaveBeenCalledTimes(1);
+    stop();
+  });
 });
 
 describe('surfacePlacement', () => {
@@ -87,6 +112,29 @@ describe('surfacePlacement', () => {
     resized();
     expect([style.width, style.height]).toEqual(['300px', '150px']);
     expect([canvas.width, canvas.height]).toEqual([600, 300]);
+    stop();
+  });
+
+  it('lays its views at the ratio it sized the canvas at, under the device limit', () => {
+    vi.stubGlobal('devicePixelRatio', 2);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const canvas = { style: {}, width: 0, height: 0 } as never as HTMLCanvasElement;
+    const box = {
+      x: 4000,
+      y: 0,
+      width: 100,
+      height: 50,
+      clip: { x0: 0, y0: 0, x1: 8000, y1: 100 },
+    };
+    const spot = { width: 2, height: 1, cells: [] } as never;
+    const p = surfacePlacement(() => [{ spot, slant: 0, box: () => box }], {
+      size: () => ({ width: 8000, height: 100 }),
+      watch: () => () => {},
+    });
+    const stop = p.start(canvas, () => {}, 8000);
+    p.update();
+    expect([canvas.width, canvas.height]).toEqual([8000, 100]);
+    expect(p.views[0]).toBe(4000);
     stop();
   });
 });

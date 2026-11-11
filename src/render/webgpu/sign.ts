@@ -98,7 +98,7 @@ export function createWebGpuSignOf(
   };
   const sized = () =>
     guard(() => parts.painter.size(canvas.width, canvas.height, look(), paint, placement.views));
-  const stop = placement.start(canvas, sized);
+  const stop = placement.start(canvas, sized, device.limits.maxTextureDimension2D);
   const free = () => {
     parts.painter.destroy();
     parts.optics.destroy();

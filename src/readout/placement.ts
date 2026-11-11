@@ -1,3 +1,4 @@
+import { CANVAS_LIMIT, ratioFor } from '../render/fit.js';
 import { type Placement, VIEW } from '../render/placement.js';
 import type { Spot } from './layout.js';
 
@@ -91,12 +92,14 @@ export function surfacePlacement(
   let views = new Float32Array(VIEW);
   let fits: (Fit | null)[] = [];
   let target: HTMLCanvasElement | null = null;
+  /** Device pixels per CSS pixel the canvas was last sized at. */
+  let ratio = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
   /** Whether the views were filled since the sign last drew them. */
   let stale = false;
   const fill = (): boolean => {
     const list = readouts();
     const next = new Float32Array(Math.max(1, list.length) * VIEW);
-    const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
+    const dpr = ratio;
     fits = list.map(fitOf);
     for (const [v, f] of fits.entries()) {
       if (!f) continue;
@@ -128,13 +131,13 @@ export function surfacePlacement(
     },
     pitch: 0,
     blur: false,
-    start(canvas: HTMLCanvasElement, changed: () => void) {
+    start(canvas: HTMLCanvasElement, changed: () => void, limit = CANVAS_LIMIT) {
       target = canvas;
       const resized = () => {
-        const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
         const { width, height } = sizing.size(canvas);
-        canvas.width = Math.round(width * dpr);
-        canvas.height = Math.round(height * dpr);
+        ratio = ratioFor(canvas, width, height, limit);
+        canvas.width = Math.min(limit, Math.round(width * ratio));
+        canvas.height = Math.min(limit, Math.round(height * ratio));
         pinIfFollowing(canvas, sizing, width, height);
         fill();
         changed();

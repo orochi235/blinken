@@ -27,6 +27,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 
 **Fixed**
 
+- A sign or surface whose canvas would pass the backend's texture limit (8192 device pixels a
+  side on WebGPU by default) draws at a lower pixel ratio instead of not at all, and warns once.
 - A scrolling message no longer trails afterglow that fills the gaps between its letters: while a
   scroll plays, the sign's lights fall no slower than ¾ of a column step, unless the page set a
   `fall`. A move can ask for this with `fall`.

@@ -7,6 +7,7 @@ import type { Fade, Ghost } from '../../optics.js';
 import { webglSlot, whenSlotFree } from '../backend.js';
 import { BLOOM } from '../bloom-params.js';
 import { gaussian } from '../blur.js';
+import { CANVAS_LIMIT } from '../fit.js';
 import { backingRgba, type Housing, housingPaint, socketFloats } from '../housing.js';
 import { LAMP_SIZE, LED } from '../lights.js';
 import { createOpticsFrame, lit } from '../optics-frame.js';
@@ -201,7 +202,16 @@ export function createWebGlSignOf(
     sizeTargets(gl, res, canvas.width, canvas.height);
     paintHousing(res);
   }
-  const stop = placement.start(canvas, sized);
+  const stop = placement.start(
+    canvas,
+    sized,
+    // A lost context answers null to each of these.
+    Math.min(
+      (gl.getParameter(gl.MAX_TEXTURE_SIZE) as number | null) ?? CANVAS_LIMIT,
+      (gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number | null) ?? CANVAS_LIMIT,
+      ...((gl.getParameter(gl.MAX_VIEWPORT_DIMS) as Int32Array | null) ?? []),
+    ),
+  );
 
   const onLost = (e: Event) => {
     e.preventDefault();
