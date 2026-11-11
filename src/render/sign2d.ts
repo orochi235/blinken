@@ -120,7 +120,7 @@ export function createSign2d(
       const r = radiusOfPrim(prims, k, lamp);
       b.globalAlpha = shine;
       paintTraced(b, tracePrim(b, prims, k, r), css);
-      b.globalAlpha = shine * LED.coreAlpha;
+      b.globalAlpha = shine * paint.coreAlpha;
       paintTraced(b, tracePrim(b, prims, k, r * LED.core), cssOf(LED.coreTint));
       const wide = (out.bloom[l] as number) * spread * glowOfPrim(prims, k);
       const bloom = haloRadius(r, wide);

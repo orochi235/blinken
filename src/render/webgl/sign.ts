@@ -189,7 +189,7 @@ export function createWebGlSignOf(
     run(r.body, r);
     gl.uniform1f(r.body.u.u_core ?? null, LED.core);
     gl.uniform3f(r.body.u.u_coreTint ?? null, ...rgb(LED.coreTint));
-    gl.uniform1f(r.body.u.u_coreAlpha ?? null, LED.coreAlpha);
+    gl.uniform1f(r.body.u.u_coreAlpha ?? null, paint.coreAlpha);
     instances(r);
     if (over && !paint.blank) {
       gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);

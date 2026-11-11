@@ -241,6 +241,7 @@ export function createPainter(
       if (!t) return;
       device.queue.writeBuffer(viewsBuf, 0, views.subarray(0, Math.max(viewCount, 1) * VIEW));
       lightData.set(socketFloats(paint), 16);
+      lightData[5] = paint.coreAlpha;
       writeLook(look);
       const enc = device.createCommandEncoder();
       blank = paint.blank;

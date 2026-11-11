@@ -7,6 +7,7 @@ import {
   SEGMENT_COLOR,
   WIRE_COLOR,
 } from './bloom-params.js';
+import { LED } from './lights.js';
 import { SOCKET } from './prims.js';
 
 /**
@@ -35,7 +36,15 @@ export interface HousingPaint {
    * have added up among themselves, where adding to a translucent socket would wash a light out.
    */
   readonly lights: 'add' | 'over';
+  /**
+   * The opacity of a light's pale core at full shine. Over the page it is fainter: a core is white
+   * light, which reads as a hot center on black but as a hole in the color on a white page.
+   */
+  readonly coreAlpha: number;
 }
+
+/** A light's core over the page: enough to warm its center on black, little enough to keep its color on white. */
+export const CORE_OVER = 0.15;
 
 /** A socket's color by `SOCKET` value on the dark housing. */
 const DARK_SOCKETS: Readonly<Record<number, number>> = {
@@ -87,9 +96,9 @@ for (let s = 0; s < SOCKETS; s++) {
 }
 
 const PAINTS: Readonly<Record<Housing, HousingPaint>> = {
-  dark: { backing: HOUSING, sockets: dark, blank: false, lights: 'add' },
-  clear: { backing: null, sockets: clear, blank: false, lights: 'over' },
-  none: { backing: null, sockets: null, blank: true, lights: 'over' },
+  dark: { backing: HOUSING, sockets: dark, blank: false, lights: 'add', coreAlpha: LED.coreAlpha },
+  clear: { backing: null, sockets: clear, blank: false, lights: 'over', coreAlpha: CORE_OVER },
+  none: { backing: null, sockets: null, blank: true, lights: 'over', coreAlpha: CORE_OVER },
 };
 
 /** What `housing` paints. */

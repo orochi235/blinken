@@ -28,8 +28,6 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 
 - Dragging a piece within its step on the effects page's diagram shows no insertion bar or slide while it is carried, and Alt with an arrow key doesn't step the picked piece, though `@weasel-js/diagram`'s container reorder does both: with `onMove` set, as moving a piece between steps needs, a press on a container's member starts a plain move, never the reorder, so `onReorder` never fires (seen on 1.18.0, 2026-11-10). `lab/compose/designer/editingProps.ts` works out the new place from where the piece is dropped instead. Wants the reorder to take a press inside the container's box and hand off to the move only once the drag leaves it, which `ReorderOptions.region` describes.
 
-- Over a white page, a lit dot's pale core and its glow read as pastel rather than as the saturated light it shows over black: the core is white light, which a white page can't show. The unlit sockets were made to read alike on both (`veil` in `src/render/housing.ts`); the lit dots weren't (2026-11-05).
-
 - `npm run smoke`'s `stretched` page (a 320 × 63 sign, 20,550 lights) draws at 2–3 fps headless on studio, though its mix and draw report about 54 ms a frame together; where the rest of each frame goes isn't measured (2026-11-05).
 - An effect `order` with a lag over a piece paced by input stops once per group at every rest, though each group's dots only change at their own letter's: `type-on` ordered by letter waits n × n times for n letters, most presses showing nothing new. A lag of 0 stops once a rest (2026-11-07).
 - `<blinken-player>` carries the whole runtime, about 195 KB gzipped, whatever its program uses (`docs/player.md`) (2026-11-04).

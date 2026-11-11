@@ -27,6 +27,8 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 
 **Fixed**
 
+- Over a white page, a lit dot on the `clear` or `none` housing keeps its color instead of reading
+  as a pale ring: its white core is fainter on a housing that lays lights over the page.
 - A sign or surface whose canvas would pass the backend's texture limit (8192 device pixels a
   side on WebGPU by default) draws at a lower pixel ratio instead of not at all, and warns once.
 - A scrolling message no longer trails afterglow that fills the gaps between its letters: while a
