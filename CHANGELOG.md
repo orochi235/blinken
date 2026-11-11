@@ -27,6 +27,9 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 
 **Fixed**
 
+- A scrolling message no longer trails afterglow that fills the gaps between its letters: while a
+  scroll plays, the sign's lights fall no slower than ¾ of a column step, unless the page set a
+  `fall`. A move can ask for this with `fall`.
 - `dim` and `desaturate` hold where they end on every pass after the first, rather than snapping
   back each time they repeat.
 - An overlay stacks above elements the page adds after it (`z-index` from `--blinken-overlay-z`), so

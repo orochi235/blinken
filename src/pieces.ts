@@ -47,6 +47,8 @@ export interface StagedPiece {
    * delay; present with `rests`.
    */
   readonly delays?: readonly number[];
+  /** The longest its lights may take to go dark while it plays, ms: see `Move.fall`. */
+  readonly fall?: number;
 }
 
 /** Every subject at once: the order a piece plays in when it names none. */
@@ -138,10 +140,12 @@ export function stagePiece(
   const warnings = clips
     ? [{ slot, text: `${piece.move} clips ${at.label ?? 'the message'}` }]
     : [];
+  const fall = move.fall?.(p);
+  const base = { voice, writes: writesOf(piece), warnings, ...(fall !== undefined && { fall }) };
   const rests = move.rests?.(at, p) ?? null;
-  if (!rests) return { voice, writes: writesOf(piece), warnings };
+  if (!rests) return base;
   const delays = [...new Set(subjects.filter((s) => s.kind === 'dot').map(delay))].sort(
     (a, b) => a - b,
   );
-  return { voice, writes: writesOf(piece), warnings, rests, delays };
+  return { ...base, rests, delays };
 }

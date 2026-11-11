@@ -9,7 +9,8 @@ import { gridOf } from './grid.js';
 import { cueLayers } from './layers.js';
 import type { Marquee, MarqueeOptions } from './marquee-api.js';
 import { onGpu } from './modulators/shader.js';
-import { layOut, PassClock, type PassScene } from './pass.js';
+import { FADE } from './optics.js';
+import { fallAt, layOut, PassClock, type PassScene } from './pass.js';
 import { cueProgram, effectOf, layerOf, type StagedScene, stageProgram } from './program.js';
 import { attach, pullChannels, readChannels, register } from './render/attach.js';
 import { createOverlay } from './render/overlay.js';
@@ -46,10 +47,22 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
   drawing.bind(m);
   if (opts.rate !== undefined && opts.rate !== 1) m.ramp(opts.rate, 0);
   if (opts.defects) sign?.setDefects(opts.defects);
-  if (opts.fade) sign?.setFade(opts.fade);
   if (opts.ghost) sign?.setGhost(opts.ghost);
   if (opts.lamps) sign?.setLamps(opts.lamps);
   let color = opts.color ?? AMBER;
+  /** The fade the page set, which wins over any a playing move asks for. */
+  let asked = opts.fade;
+  /** The fade given the sign, as a key, so a frame changes it only when it changes. */
+  let given = '{}';
+  /** Gives the sign the page's fade, falling no slower than the move playing `at` asks. */
+  const fadeAt = (at: number) => {
+    const fall = asked?.fall === undefined ? fallAt(scenes, at) : undefined;
+    const fade = { ...asked, ...(fall !== undefined && { fall: Math.min(fall, FADE.fall) }) };
+    const key = JSON.stringify(fade);
+    if (key === given) return;
+    given = key;
+    sign?.setFade(fade);
+  };
 
   let program = opts.program ?? [];
   let effects = opts.effects ?? {};
@@ -90,6 +103,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     else pass = null;
   };
   again();
+  fadeAt(0);
 
   let synced = false;
   let early: { at: number; rate: number } | null = null;
@@ -168,6 +182,7 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
     }
     clock.settle(m.now);
     rest();
+    fadeAt(clock.read(m.now));
     overlay.prepare();
     pullChannels(m, b, cols, cells, drawing.cpuChannels());
     overlay.follow();
@@ -274,7 +289,8 @@ export function createMarquee(canvas: HTMLCanvasElement, opts: MarqueeOptions = 
       sign?.setDefects(defects);
     },
     setFade(fade) {
-      sign?.setFade(fade);
+      asked = fade;
+      fadeAt(clock.read(m.now));
     },
     setGhost(ghost) {
       sign?.setGhost(ghost);

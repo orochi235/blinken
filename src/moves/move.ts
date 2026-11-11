@@ -40,6 +40,11 @@ export interface Move<P extends Params = Params> {
   readonly params: P;
   /** Written for text wider than the board, so it never clips. Default false. */
   readonly wide?: boolean;
+  /**
+   * The longest a light may take to go dark, ms, for it to read cleanly while it plays; the sign
+   * falls no slower while it does, unless the page set a fade. Default: no limit.
+   */
+  fall?(p: Values<P>): number;
   /** Where it waits for input, or null when its settings pace it by time. Default: never. */
   rests?(at: Placed, p: Values<P>): Rests | null;
   /** Writes `lit` only; its duration is one pass, before any order's delay. */

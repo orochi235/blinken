@@ -49,6 +49,8 @@ export interface StagedEffect {
   readonly warnings: readonly Warning[];
   /** Where it waits for input and plays on again, from the owner's 0, in time order. */
   readonly stops: readonly Stop[];
+  /** Per part, the longest its lights may take to go dark, where a piece in it limits that. */
+  readonly falls: Readonly<Partial<Record<Slot, number>>>;
 }
 
 /** A moment a pass paced by input waits at, or with `release`, plays on from. */
@@ -195,7 +197,12 @@ export function stageEffect(
       return true;
     })
     .sort((a, b) => a.at - b.at);
-  return { arcs, ms, parts, warnings, stops };
+  const falls: Partial<Record<Slot, number>> = {};
+  SLOTS.forEach((slot, s) => {
+    const limits = (first[s] ?? []).flatMap((p) => (p.fall === undefined ? [] : [p.fall]));
+    if (limits.length > 0) falls[slot] = Math.min(...limits);
+  });
+  return { arcs, ms, parts, warnings, stops, falls };
 }
 
 /** Cues a staged effect's arcs under `owner`, each at its start; one of several is named by its index. */

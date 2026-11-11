@@ -1,5 +1,5 @@
 import type { Stop, Stretch } from './effects.js';
-import type { Slot } from './moves/index.js';
+import { SLOTS, type Slot } from './moves/index.js';
 import type { StagedScene } from './program.js';
 
 /** One scene of a pass: which scene of the program it is, and where it and its parts play, ms. */
@@ -8,6 +8,18 @@ export interface PassScene {
   readonly start: number;
   readonly ms: number;
   readonly parts: Readonly<Record<Slot, Stretch>>;
+  readonly falls: Readonly<Partial<Record<Slot, number>>>;
+}
+
+/** The longest a light may take to go dark `at` ms into the pass, or undefined for no limit. */
+export function fallAt(scenes: readonly PassScene[], at: number): number | undefined {
+  const scene = scenes.find((s) => at >= s.start && at < s.start + s.ms);
+  if (!scene) return undefined;
+  const slot = SLOTS.find((k) => {
+    const p = scene.parts[k];
+    return at >= p.start && at < p.start + p.ms;
+  });
+  return slot ? scene.falls[slot] : undefined;
 }
 
 /**
@@ -36,7 +48,7 @@ export function layOut(
     const parts = Object.fromEntries(
       Object.entries(s.staged.parts).map(([slot, p]) => [slot, { start: at + p.start, ms: p.ms }]),
     ) as Record<Slot, Stretch>;
-    const out = { scene: s.scene + offset, start, ms: s.staged.ms, parts };
+    const out = { scene: s.scene + offset, start, ms: s.staged.ms, parts, falls: s.staged.falls };
     for (const stop of s.staged.stops) stops.push({ ...stop, at: at + stop.at });
     start += s.staged.ms;
     return out;

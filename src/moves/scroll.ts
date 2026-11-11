@@ -24,6 +24,9 @@ const PARAMS = {
 } as const;
 type Scroll = Values<typeof PARAMS>;
 
+/** A light falling slower than a column's step trails afterglow into the gaps between letters. */
+const fall = (p: Scroll) => p.step * 0.75;
+
 /** Where the message's left edge is, in dot columns, off the sign at each end and standing. */
 const edges = (at: Placed, p: Scroll) => {
   const left = p.direction === 'left';
@@ -116,6 +119,7 @@ export const scrollIn = move({
   slot: 'enter',
   params: PARAMS,
   wide: true,
+  fall,
   patch: (at, p) => slide(at, p, [edges(at, p).off, edges(at, p).rest]),
   shader: (at, p) => slideShader(at, p, [edges(at, p).off, edges(at, p).rest]),
 });
@@ -127,6 +131,7 @@ export const scrollOut = move({
   slot: 'exit',
   params: PARAMS,
   wide: true,
+  fall,
   patch: (at, p) => slide(at, p, [edges(at, p).rest, edges(at, p).away]),
   shader: (at, p) => slideShader(at, p, [edges(at, p).rest, edges(at, p).away]),
 });
@@ -139,6 +144,7 @@ export const scrollAcross = move({
   slot: 'active',
   params: PARAMS,
   wide: true,
+  fall,
   patch: (at, p, joins = LOOSE) => slide(at, p, ...across(at, p, joins)),
   shader: (at, p, joins = LOOSE) => slideShader(at, p, ...across(at, p, joins)),
 });

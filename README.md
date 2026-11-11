@@ -335,7 +335,9 @@ sign.setDefects(scatter(sign.board, { dead: 0.03, dim: 0.05, flicker: 0.01 }, 7)
 ```
 
 Two more settings mimic the hardware. `fade` is how long a light takes to light and to go dark,
-in ms; the default, 12 up and 110 down, is a filament's, and 0 for both is an LED's hard switch.
+in ms; the default, 12 up and 110 down, is a filament's, and 0 for both is an LED's hard switch. While
+a scroll plays, a sign falls no slower than ¾ of a column step, so the message trails no afterglow
+into the gaps between letters; a `fall` the page sets wins.
 `ghost` is how much an unlit dot shows of its lit neighbors, as a multiplexed sign leaks current
 along its drivers: `row` is the share of its row's mean brightness, `col` of its column's.
 
