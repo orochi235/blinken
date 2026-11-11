@@ -27,6 +27,10 @@ version, and anything else the patch. Each release lists its changes as **Breaki
 
 **Fixed**
 
+- `dim` and `desaturate` hold where they end on every pass after the first, rather than snapping
+  back each time they repeat.
+- An overlay stacks above elements the page adds after it (`z-index` from `--blinken-overlay-z`), so
+  a card added later no longer covers a readout or takes the presses meant for it.
 - The 22-segment `e` closes its bowl and `k`'s leg meets its stem, as the DL-3422 draws them.
 - Lines of outlined or shadowed text no longer overlap: lines stand the rows a style adds further
   apart, both in a `\n`-separated message and in one repeated down a tall board. `Bitmap.pitch` gives

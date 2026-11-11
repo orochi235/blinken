@@ -44,7 +44,7 @@ interface Spec {
   depthAbout: string;
 }
 
-/** Plays its channel once along an easing over the pass: a spread staggers the starts over `sweep` of it, every subject done by its end. */
+/** Plays its channel along an easing over the pass, held at its end after the first where it doesn't come back: a spread staggers the starts over `sweep` of it, every subject done by its end. */
 const eased = (s: Spec): Modulator => {
   const channel = channelParam(s.channel);
   return modulator({
@@ -77,11 +77,14 @@ const eased = (s: Spec): Modulator => {
         const b = stops[i + 1] as Stop;
         return a.value + (b.value - a.value) * ease((u - a.at) / (b.at - a.at));
       };
+      // A change that doesn't come back holds its end past the first pass, rather than snap back.
+      const oneWay = (stops[0] as Stop).value !== (stops.at(-1) as Stop).value;
       const maxRank = at.board.dots.reduce((m, d) => Math.max(m, rank(d)), 0);
       const sweep = maxRank > 0 ? p.sweep : 0;
       return patch<Subject, Pose>(
         p.ms,
-        (phase, subject) => {
+        (phase, subject, setting) => {
+          if (oneWay && setting.pass > 0) return { [out]: valueAt(1) } as Partial<Pose>;
           const start = maxRank > 0 ? (rank(subject) / maxRank) * sweep : 0;
           const u = Math.min(1, Math.max(0, (phase - start) / (1 - sweep)));
           return { [out]: valueAt(u) } as Partial<Pose>;
