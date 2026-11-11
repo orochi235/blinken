@@ -18,7 +18,7 @@ import { addField, type FieldOptions, pressTyped, typedPick } from './text-typed
 
 const STYLE = `
 .blinken-text { position: absolute; pointer-events: none; overflow: hidden; }
-.blinken-text-fixed { position: fixed; inset: 0; }
+.blinken-text-fixed { position: fixed; inset: 0; z-index: var(--blinken-overlay-z, 2147483647); }
 .blinken-text-readout { position: absolute; pointer-events: auto; cursor: text; user-select: none; -webkit-user-select: none; }
 .blinken-text-cell {
   position: absolute; box-sizing: border-box; margin: 0; padding: 0;

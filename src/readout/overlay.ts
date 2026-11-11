@@ -2,7 +2,7 @@ import type { Surface, SurfaceOptions } from './api.js';
 import type { Box, Canvas } from './placement.js';
 import { createSurface } from './surface.js';
 
-const STYLE = `.blinken-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; }`;
+const STYLE = `.blinken-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: var(--blinken-overlay-z, 2147483647); }`;
 const styled = new WeakSet<Document>();
 
 /** Adds the overlay's stylesheet to `doc` once. */

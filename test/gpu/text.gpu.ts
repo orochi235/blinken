@@ -134,6 +134,18 @@ test('a drag from a panel readout to an overlay one selects them alone, in page 
   p.done();
 });
 
+test('a box the page adds after an overlay leaves its readout the presses over it', async () => {
+  const p = page();
+  const o = p.overlay();
+  const card = p.boxAt(150);
+  p.add(o, { value: 'TOP', follow: card });
+  for (let k = 0; k < 3; k++) p.step();
+  click(at(readoutShowing('TOP')[1]), { detail: 2 });
+  await tick();
+  same(lit(readoutShowing('TOP')), '111', 'picks');
+  p.done();
+});
+
 test('copy writes readouts on one row left to right, whatever order they were made in', async () => {
   const p = page();
   p.add(p.panel, { value: 'RIGHT', at: { x: 300, y: 0 }, height: 40 });

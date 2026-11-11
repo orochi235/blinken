@@ -191,7 +191,9 @@ score.set(1984);
 
 A panel's readouts sit at `at` and `height` in its canvas's CSS pixels. An overlay is one canvas
 fixed over the viewport; each of its readouts is fitted inside the element it follows and clipped
-where that element's scrolling ancestors clip it. `face: 'none'` drops the dark faceplate, leaving
+where that element's scrolling ancestors clip it. It stacks above the page (`z-index` from the
+`--blinken-overlay-z` custom property, the largest there is by default), so an element added after
+it doesn't cover it. `face: 'none'` drops the dark faceplate, leaving
 only lit segments over the page. A readout takes `color`, `slant`, `ends`, `align`, a leading ½
 digit (`half`) and `defects` by `{ cell, slot }`; a surface takes `gpu`, `backend`, `lamps`,
 `fade`, `ghost` and `ticker`. How they're drawn is in `docs/readouts.md`; the lab's `readouts`
