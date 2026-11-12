@@ -6,6 +6,7 @@ import {
   editOfDrop,
   editOfMove,
   editOfReconnect,
+  editOfReorder,
   itemVerdict,
   pieceOfItem,
   stepVerdict,
@@ -83,6 +84,29 @@ describe('rewiring on the diagram', () => {
     const desk = deskOf(mine);
     commitEdit(desk, { kind: 'rewire', at: flare, channel: 'glow' });
     expect(desk.canUndo()).toBe(false);
+  });
+});
+
+describe('reordering a step', () => {
+  it('moves the one piece whose place changed', () => {
+    const order = ['piece:active:0', 'piece:active:3', 'piece:active:1', 'piece:active:2'];
+    expect(editOfReorder(mine, { parent: 'step:active', order })).toEqual({
+      kind: 'move',
+      from: { slot: 'active', index: 3 },
+      to: { slot: 'active', index: 1 },
+    });
+    const down = ['piece:active:1', 'piece:active:2', 'piece:active:0', 'piece:active:3'];
+    expect(editOfReorder(mine, { parent: 'step:active', order: down })).toEqual({
+      kind: 'move',
+      from: { slot: 'active', index: 0 },
+      to: { slot: 'active', index: 2 },
+    });
+  });
+
+  it('asks nothing of an order unchanged, or of a container that is no step', () => {
+    const same = ['piece:active:0', 'piece:active:1', 'piece:active:2', 'piece:active:3'];
+    expect(editOfReorder(mine, { parent: 'step:active', order: same })).toBeNull();
+    expect(editOfReorder(mine, { parent: 'channel:glow', order: same })).toBeNull();
   });
 });
 

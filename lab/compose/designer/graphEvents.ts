@@ -6,9 +6,10 @@ import type {
   ItemDropTarget,
   NodeMove,
   ReconnectChange,
+  ReorderChange,
 } from '@weasel-js/diagram';
 import { type Channel, type EffectSpec, MODULATORS, MOVES, type Piece, piecesOf } from '@/index.js';
-import { partOf } from './graph.js';
+import { idOf, partOf } from './graph.js';
 import { type GraphEdit, pieceAt, refuse, slotVerdict, verdictOf } from './graphEdits.js';
 
 /* What each drag the effect diagram reports asks of the open effect, as a `GraphEdit`. */
@@ -90,6 +91,18 @@ export function editOfMove(spec: EffectSpec, move: NodeMove, index: number): Gra
   if (!held || !slot || (slot === held.at.slot && index === held.at.index)) return null;
   const edit: GraphEdit = { kind: 'move', from: held.at, to: { slot, index } };
   return verdictOf(spec, edit) === true ? edit : null;
+}
+
+/** The move a step's pieces dragged into `change.order` asks for: the one piece whose place changed. */
+export function editOfReorder(spec: EffectSpec, change: ReorderChange): GraphEdit | null {
+  const slot = stepOf(change.parent);
+  if (!slot) return null;
+  const was = piecesOf(spec[slot]).map((_, index) => idOf({ kind: 'piece', slot, index }));
+  const now = change.order.filter((id) => was.includes(id));
+  if (now.length !== was.length) return null;
+  const without = (ids: readonly string[], id: string) => ids.filter((x) => x !== id).join();
+  const moved = now.find((id, i) => id !== was[i] && without(now, id) === without(was, id));
+  return moved ? editOfMove(spec, { id: moved, x: 0, y: 0 }, now.indexOf(moved)) : null;
 }
 
 /** A palette's item as the piece it adds, or null for anything else carried in. */

@@ -131,6 +131,7 @@ export function graphOf(
     (slot): DataContainer => ({
       id: idOf({ kind: 'step', slot }),
       role: 'container',
+      reorder: 'y',
       label: lengthOf(slot) ? `${slot} · ${lengthOf(slot)}` : slot,
       members: pieces.filter((p) => p.slot === slot).map((p) => p.id),
     }),

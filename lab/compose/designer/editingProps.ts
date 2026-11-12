@@ -7,6 +7,7 @@ import {
   editOfDrop,
   editOfMove,
   editOfReconnect,
+  editOfReorder,
   itemVerdict,
   stepVerdict,
   wireVerdict,
@@ -43,7 +44,8 @@ export function editingProps(
     const node = (moving.end === 'to' ? to : from).nodeId;
     return wireVerdict(spec, moving.edge, moving.end, node);
   };
-  // A piece dragged within its step, or into another, moves there; any other drag is put back.
+  // A piece dragged into another step moves there; any other drag is put back. Within its own
+  // step the reorder takes the drag, unless it lands somewhere the reorder hands it back.
   const onMove = (moves: readonly NodeMove[]) => {
     const move = moves.find((m) => partOf(m.id)?.kind === 'piece');
     if (!move) return;
@@ -63,6 +65,11 @@ export function editingProps(
       if (edit) commitEdit(designer, edit);
     },
     onMove,
+    onReorder: (change) => {
+      const edit = editOfReorder(spec, change);
+      if (edit) commitEdit(designer, edit);
+      else relayout();
+    },
     canReparent: (ids, container) => stepVerdict(spec, ids, container),
     canDropItem: (item, target) => itemVerdict(spec, item, target),
     onDropItem: (drop) => {
