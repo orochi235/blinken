@@ -11,6 +11,7 @@ import {
   type SlotPieces,
   type StagedPiece,
   stagePiece,
+  type Wait,
   type Warning,
 } from './pieces.js';
 import type { EffectParam } from './tuning.js';
@@ -63,6 +64,35 @@ export interface Stop {
 export interface Stretch {
   readonly start: number;
   readonly ms: number;
+}
+
+/**
+ * Where a pass paced by input waits: every rest at which the paced dots show something new since the
+ * last stop kept, or since the effect began, so no press shows nothing, and the release of every
+ * group of dots whose rests were kept. Groups sharing a moment, as every group does at a lag of 0,
+ * share its stop.
+ */
+function stopsOf(waits: readonly (Wait & { readonly from: number })[]): Stop[] {
+  const frame = (t: number) => waits.flatMap((w) => w.show(t - w.from));
+  const rests = [...new Set(waits.flatMap((w) => w.rests.at.map((r) => w.from + r)))].sort(
+    (a, b) => a - b,
+  );
+  let last = frame(0);
+  const kept = rests.filter((t) => {
+    const now = frame(t);
+    if (now.every((v, i) => v === last[i])) return false;
+    last = now;
+    return true;
+  });
+  const releases = new Set(
+    waits
+      .filter((w) => w.rests.at.some((r) => kept.includes(w.from + r)))
+      .map((w) => w.from + w.rests.release),
+  );
+  return [
+    ...kept.map((at) => ({ at })),
+    ...[...releases].map((at) => ({ at, release: true as const })),
+  ].sort((a, b) => a.at - b.at);
 }
 
 /** A modulator setting `tint` outweighs the scene color rather than averaging with it evenly. */
@@ -150,14 +180,12 @@ export function stageEffect(
   const color = solid(Math.max(1, ms), hex, gpu);
   const dots = (pieces: readonly StagedPiece[], s: number) =>
     pieces.filter((_, i) => !onCells(pieceAt(s, i)));
+  const staged = groups.map((subjects, g) =>
+    g === 0 ? first.map(dots) : stageAll(subjects, (piece) => !onCells(piece)),
+  );
   // The scene color spans each group's arc as one voice layered into every part.
   const arcs = groups.map((subjects, g) =>
-    arcOf(
-      g === 0 ? first.map(dots) : stageAll(subjects, (piece) => !onCells(piece)),
-      { patch: color, subjects },
-      held,
-      g * lag,
-    ),
+    arcOf(staged[g] ?? [], { patch: color, subjects }, held, g * lag),
   );
   // Border cells are one subject set for the whole effect: one arc, its active over every group's.
   const cells = first.map((pieces, s) => pieces.filter((_, i) => onCells(pieceAt(s, i))));
@@ -170,33 +198,17 @@ export function stageEffect(
     active: { start: enter + span, ms: Math.max(0, held - span) },
     exit: { start: enter + held, ms: exit + span },
   };
-  // Every group's pieces wait where the first group's do, a lag later each, and within a group
-  // a piece's own order puts off each of its dots' rests by that dot's delay.
+  // Each group waits a lag after the last, and within a group a piece's own order puts off its
+  // dots' rests by their delay.
   const starts = [0, enter, enter + held];
-  const own = first.flatMap((pieces, s) =>
-    pieces.flatMap(({ rests, delays = [0] }) =>
-      rests
-        ? delays.flatMap((d) => {
-            const from = (starts[s] as number) + d;
-            return [
-              ...rests.at.map((t) => ({ at: from + t })),
-              { at: from + rests.release, release: true as const },
-            ];
-          })
-        : [],
+  const waits = staged.flatMap((slots, g) =>
+    slots.flatMap((pieces, s) =>
+      pieces.flatMap(({ waits = [] }) =>
+        waits.map((w) => ({ ...w, from: (starts[s] as number) + g * lag + w.delay })),
+      ),
     ),
   );
-  // Groups sharing a moment, as every group does at a lag of 0, share its stop.
-  const seen = new Set<string>();
-  const stops = groups
-    .flatMap((_, g) => own.map((stop) => ({ ...stop, at: stop.at + g * lag })))
-    .filter((stop) => {
-      const key = `${stop.at}${'release' in stop ? 'r' : ''}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .sort((a, b) => a.at - b.at);
+  const stops = stopsOf(waits);
   const falls: Partial<Record<Slot, number>> = {};
   SLOTS.forEach((slot, s) => {
     const limits = (first[s] ?? []).flatMap((p) => (p.fall === undefined ? [] : [p.fall]));

@@ -284,18 +284,23 @@ describe('stops', () => {
     ]);
   });
 
-  it('interleaves the groups of an order by their lag', () => {
+  it('waits, over an order with a lag, only where the sign shows something new', () => {
     const lagged = { ...typed, exit: undefined, order: { by: 'letter', lag: 40 } } as const;
-    const staged = stageEffect(lagged, at, HEX);
+    const rests = stageEffect(lagged, at, HEX)
+      .stops.filter((s) => !s.release)
+      .map((s) => s.at);
+    const m = cued(lagged);
+    let last = litNow(m, 0);
+    for (const t of rests) {
+      const now = litNow(m, t);
+      expect(now, `stop at ${t}`).not.toEqual(last);
+      last = now;
+    }
+    // Letter k's group types it at its rest k + 1; the last letter lands at its release.
     const on = restsOf('type-on', { pace: 'input' });
-    const groups = groupsOf(lagged.order, at).length;
-    const want = Array.from({ length: groups }, (_, g) => [
-      ...on.at.map((t) => ({ at: g * 40 + t })),
-      { at: g * 40 + on.release, release: true as const },
-    ])
-      .flat()
-      .sort((a, b) => a.at - b.at);
-    expect(staged.stops).toEqual(want);
+    const n = at.text.letters.length;
+    for (let k = 0; k + 1 < n; k++) expect(rests).toContain(k * 40 + (on.at[k + 1] as number));
+    expect(rests.length).toBeLessThan(n * n);
   });
 
   it('keeps one of each stop the groups share, so a press never waits again at the same moment', () => {

@@ -1,5 +1,5 @@
-import type { ArcVoice } from '@msb235/blits';
-import { everyOf, type Pose, type Subject } from './board.js';
+import type { ArcVoice, Patch } from '@msb235/blits';
+import { everyOf, type Led, type Pose, type Subject } from './board.js';
 import { MODULATORS, type ModulatorName } from './modulators/index.js';
 import { ranked } from './modulators/shader.js';
 import { type Joins, LOOSE, MOVES, type MoveName, type Rests, type Slot } from './moves/index.js';
@@ -40,15 +40,48 @@ export interface StagedPiece {
   readonly voice: ArcVoice<Subject, Pose>;
   readonly writes: readonly Channel[];
   readonly warnings: readonly Warning[];
-  /** Where it waits for input, from its own start; absent when it is paced by time. */
-  readonly rests?: Rests;
   /**
-   * Each delay its own order gives its dots, least first, so the rests are folded in once a
-   * delay; present with `rests`.
+   * Where it waits for input, per delay its own order gives its dots, least first; absent when it
+   * is paced by time.
    */
-  readonly delays?: readonly number[];
+  readonly waits?: readonly Wait[];
   /** The longest its lights may take to go dark while it plays, ms: see `Move.fall`. */
   readonly fall?: number;
+}
+
+/** The dots a piece's own order puts off by `delay`, and where they wait for input. */
+export interface Wait {
+  readonly delay: number;
+  /** Where these dots wait, from the piece's start before the delay. */
+  readonly rests: Rests;
+  /** What these dots show `t` ms into their own pass. */
+  show(t: number): readonly number[];
+}
+
+/** A pass paced by input, split by the delay its own order gives each dot. */
+function waitsOf(
+  pass: Patch<Led, Pose>,
+  rests: Rests,
+  subjects: readonly Subject[],
+  delay: (s: Subject) => number,
+): Wait[] {
+  const byDelay = new Map<number, Led[]>();
+  for (const s of subjects) {
+    if (s.kind !== 'dot') continue;
+    const d = delay(s);
+    const g = byDelay.get(d);
+    if (g) g.push(s);
+    else byDelay.set(d, [s]);
+  }
+  const phase = (t: number) =>
+    pass.duration > 0 ? Math.min(1, Math.max(0, t / pass.duration)) : 0;
+  return [...byDelay.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([d, dots]) => ({
+      delay: d,
+      rests,
+      show: (t) => dots.map((dot) => pass.at(phase(t), dot, {} as never).lit ?? 0),
+    }));
 }
 
 /** Every subject at once: the order a piece plays in when it names none. */
@@ -144,8 +177,6 @@ export function stagePiece(
   const base = { voice, writes: writesOf(piece), warnings, ...(fall !== undefined && { fall }) };
   const rests = move.rests?.(at, p) ?? null;
   if (!rests) return base;
-  const delays = [...new Set(subjects.filter((s) => s.kind === 'dot').map(delay))].sort(
-    (a, b) => a - b,
-  );
-  return { ...base, rests, delays };
+  const drawn = (pass ?? move.patch(at, p, joins)) as Patch<Led, Pose>;
+  return { ...base, waits: waitsOf(drawn, rests, subjects, delay) };
 }

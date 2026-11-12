@@ -27,7 +27,6 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 ## Known gaps
 
 - `npm run smoke`'s `stretched` page (a 320 × 63 sign, 20,550 lights) draws at 2–3 fps headless on studio, though its mix and draw report about 54 ms a frame together; where the rest of each frame goes isn't measured (2026-11-05).
-- An effect `order` with a lag over a piece paced by input stops once per group at every rest, though each group's dots only change at their own letter's: `type-on` ordered by letter waits n × n times for n letters, most presses showing nothing new. A lag of 0 stops once a rest (2026-11-07).
 - `<blinken-player>` carries the whole runtime, about 195 KB gzipped, whatever its program uses (`docs/player.md`) (2026-11-04).
 
 - The `strokes` face samples each glyph as if it starts on an up-pointing triangle; text placed at an odd column or row draws each triangle flipped, which roughens its strokes, and a scroll by one place shows it every other step (2026-11-04).
