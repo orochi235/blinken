@@ -33,6 +33,5 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - The triangle grid draws no seams between its hexagons: they only describe the tiling. Other tilings (squares cut into four, say) would each be a `triangleAt` of their own (2026-11-04).
 
 - The play page's blits panel pill (`mount()` from `@msb235/blits-panel`, dev only) opens in the top-left corner, over the lab shell's page switcher; it can be dragged off it. Moving its default corner is blits-panel's call (2026-11-06).
-- On the effects page in a window 1200px wide or less, the diagram and the card designer still share one scrolling column, so picking a node scrolls its card into view and carries the diagram off screen; wider, the designer has a column of its own (2026-11-01).
 - `wave` on a 7-row sign clips a letter's top or bottom row at each step, since the font leaves no spare rows; it reads cleanly from 9 rows up.
 - `swarm` on a message about as wide as the sign fills it with in-flight dots, so the scatter reads as a haze rather than separate dots.
