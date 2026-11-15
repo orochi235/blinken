@@ -20,6 +20,8 @@ What the GPU work left, from the branch's last session (2026-11-04). The design 
 - The WebGL blur's taps are `max(1, 3σ/16)` texels apart, so at a large pitch times pixel ratio (around 120 device pixels) it may band; not measured (2026-11-04).
 - Every marquee statically imports the GPU modules, so a page that never draws with WebGPU still downloads them: `src/render/webgpu` is 25.5 KB of the 544 KB minified bundle (measured with esbuild's metafile, 2026-11-05); blits's GPU engine, another 59 KB, stays either way, since the built-in effects import `shaderPatch` and a mix takes its engine when made. Splitting it off means `gpu()` loading the module, so a handle built by hand needs a loader call too, or a WebGPU sign that draws nothing until its module lands (2026-11-04).
 
+- A sign reports what it fell back to (`Marquee.backend`) but not why: a `webgl` request that drew in 2D because the page had no WebGL context to give reads the same as a `2d` request. A `fallback` reason beside `backend` (`src/marquee-api.ts`) would let a host or the lab say so. No test plays one program on every available backend and compares the frames; the GPU suite (`test/gpu/`) is where that goes (filed 2026-11-15 from automated review).
+
 ## Mechanical readouts
 
 - Mechanical readouts take a canvas each, placed by the page; they don't join a panel or overlay, since those draw lights (2026-11-06).
